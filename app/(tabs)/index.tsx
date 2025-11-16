@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,22 @@ import {
   ScrollView,
   ActivityIndicator,
   TextInput,
+  Animated,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Search, Mic, Sparkles, BookOpen, Users, Heart } from 'lucide-react-native';
+import { Search, Mic, Sparkles, BookOpen, Trophy, Share2 } from 'lucide-react-native';
 import { profileService, storyService } from '@/services/database';
 import { ProfileWithRelations, Story } from '@/types/database';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
-import { useCallback } from 'react';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { PremiumCard } from '@/components/PremiumCard';
+import { useFadeIn, useSlideInUp } from '@/utils/animations';
+import { hapticFeedback } from '@/utils/haptics';
+import { analytics } from '@/services/analyticsService';
+import { achievementService, Achievement } from '@/services/achievementService';
+import { AchievementModal } from '@/components/AchievementModal';
+import { appRating } from '@/utils/appRating';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -22,10 +30,16 @@ export default function HomeScreen() {
   const [stories, setStories] = useState<Story[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
+  const [achievementStats, setAchievementStats] = useState({ total: 0, unlocked: 0, percentage: 0 });
+
+  const fadeIn = useFadeIn();
 
   useFocusEffect(
     useCallback(() => {
       loadData();
+      analytics.screen('Home');
+      checkForRating();
     }, [])
   );
 
@@ -38,9 +52,10 @@ export default function HomeScreen() {
         return;
       }
 
-      const [profileData, storiesData] = await Promise.all([
+      const [profileData, storiesData, stats] = await Promise.all([
         profileService.getWithRelations(profileId),
         storyService.getByProfileId(profileId),
+        achievementService.getAchievementStats(),
       ]);
 
       if (!profileData) {
@@ -50,15 +65,30 @@ export default function HomeScreen() {
 
       setProfile(profileData);
       setStories(storiesData || []);
+      setAchievementStats(stats);
       setIsLoading(false);
+
+      // Load achievements
+      await achievementService.loadAchievements();
     } catch (error) {
       console.error('Error loading data:', error);
+      analytics.trackError(error as Error, { screen: 'Home', action: 'loadData' });
       setIsLoading(false);
     }
   };
 
-  const handleGenerateStory = () => {
+  const checkForRating = async () => {
+    await appRating.loadRatingData();
+    setTimeout(() => {
+      appRating.showRatingPrompt();
+    }, 2000);
+  };
+
+  const handleGenerateStory = async () => {
     if (!profile) return;
+
+    await hapticFeedback.medium();
+    analytics.track('generate_story_initiated', { from: 'home_screen' });
 
     router.push({
       pathname: '/story/generate',
@@ -69,11 +99,21 @@ export default function HomeScreen() {
     });
   };
 
-  const handleStoryPress = (storyId: string) => {
+  const handleStoryPress = async (storyId: string) => {
+    await hapticFeedback.light();
+    analytics.track('story_opened', { story_id: storyId, from: 'home_screen' });
+
     router.push({
       pathname: '/story/playback',
       params: { storyId },
     });
+  };
+
+  const handleAchievementsPress = () => {
+    hapticFeedback.light();
+    analytics.track('achievements_viewed');
+    // Navigate to achievements screen (to be created)
+    router.push('/achievements' as any);
   };
 
   if (isLoading) {
@@ -102,24 +142,34 @@ export default function HomeScreen() {
   const recentStories = stories.slice(0, 3);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}>
-      <View style={styles.topBar}>
-        <Text style={styles.appTitle}>DreamTales</Text>
-        <View style={styles.topBarIcons}>
-          <View style={styles.coinBadge}>
-            <Text style={styles.coinText}>00</Text>
+    <>
+      <LinearGradient
+        colors={COLORS.backgroundGradient as any}
+        style={StyleSheet.absoluteFill}
+      />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
+        <Animated.View style={[styles.topBar, { opacity: fadeIn }]}>
+          <View>
+            <Text style={styles.greeting}>Hello, {profile?.kid_name || 'Friend'}! 👋</Text>
+            <Text style={styles.appTitle}>Jahera</Text>
           </View>
-          <TouchableOpacity style={styles.notificationIcon}>
-            <View style={styles.notificationDot} />
-            <Text style={styles.notificationIconText}>🔔</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+          <View style={styles.topBarIcons}>
+            <TouchableOpacity onPress={handleAchievementsPress}>
+              <LinearGradient
+                colors={COLORS.gradients.sunset as any}
+                style={styles.achievementBadge}
+              >
+                <Trophy size={18} color={COLORS.text.inverse} />
+                <Text style={styles.achievementText}>{achievementStats.unlocked}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
         <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
+          <PremiumCard style={styles.searchInputContainer} shadow="sm" padding={SPACING.md}>
             <Search size={20} color={COLORS.text.secondary} />
             <TextInput
               style={styles.searchInput}
@@ -128,9 +178,18 @@ export default function HomeScreen() {
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
-          </View>
-          <TouchableOpacity style={styles.voiceButton}>
-            <Mic size={20} color="#FFFFFF" />
+          </PremiumCard>
+          <TouchableOpacity
+            style={styles.voiceButton}
+            onPress={() => hapticFeedback.light()}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={COLORS.gradients.primary as any}
+              style={styles.voiceButtonGradient}
+            >
+              <Mic size={20} color={COLORS.text.inverse} />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -138,14 +197,22 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>Story Categories</Text>
           <View style={styles.categoriesGrid}>
             {categories.map((category, index) => (
-              <TouchableOpacity
+              <PremiumCard
                 key={category.id}
-                style={[styles.categoryBubble, { backgroundColor: category.color }]}
+                gradient={index === 0 ? (COLORS.gradients.sunset as any) : undefined}
+                style={[
+                  styles.categoryBubble,
+                  !COLORS.gradients.sunset && { backgroundColor: category.color },
+                ]}
                 onPress={index === 0 ? handleGenerateStory : undefined}
-                activeOpacity={0.7}>
+                shadow="md"
+                padding={SPACING.md}
+              >
                 <Text style={styles.categoryIcon}>{category.icon}</Text>
-                <Text style={styles.categoryName}>{category.name}</Text>
-              </TouchableOpacity>
+                <Text style={[styles.categoryName, index === 0 && { color: COLORS.text.inverse }]}>
+                  {category.name}
+                </Text>
+              </PremiumCard>
             ))}
           </View>
         </View>
@@ -154,25 +221,35 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>Recent Stories</Text>
           <View style={styles.storiesGrid}>
             {recentStories.length === 0 ? (
-              <TouchableOpacity style={styles.emptyStoryCard} onPress={handleGenerateStory}>
+              <PremiumCard
+                style={styles.emptyStoryCard}
+                onPress={handleGenerateStory}
+                shadow="lg"
+                padding={SPACING.xl}
+              >
                 <Sparkles size={40} color={COLORS.primary} strokeWidth={1.5} />
                 <Text style={styles.emptyStoryText}>Create Your First Story!</Text>
                 <Text style={styles.emptyStorySubtext}>Tap to generate</Text>
-              </TouchableOpacity>
+              </PremiumCard>
             ) : (
-              recentStories.map(story => (
-                <TouchableOpacity
+              recentStories.map((story, index) => (
+                <PremiumCard
                   key={story.id}
                   style={styles.storyCard}
                   onPress={() => handleStoryPress(story.id)}
-                  activeOpacity={0.8}>
-                  <View style={styles.storyImagePlaceholder}>
+                  shadow="md"
+                  padding={0}
+                >
+                  <LinearGradient
+                    colors={['#FF9B71', '#FF7A50'] as any}
+                    style={styles.storyImagePlaceholder}
+                  >
                     <BookOpen size={32} color="#FFFFFF" strokeWidth={1.5} />
-                  </View>
+                  </LinearGradient>
                   <Text style={styles.storyCardTitle} numberOfLines={2}>
                     {story.title}
                   </Text>
-                </TouchableOpacity>
+                </PremiumCard>
               ))
             )}
           </View>
@@ -181,15 +258,20 @@ export default function HomeScreen() {
         {stories.length > 3 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>All Stories</Text>
-            {stories.slice(3).map(story => (
-              <TouchableOpacity
+            {stories.slice(3).map((story, index) => (
+              <PremiumCard
                 key={story.id}
                 style={styles.listStoryCard}
                 onPress={() => handleStoryPress(story.id)}
-                activeOpacity={0.8}>
-                <View style={styles.listStoryImage}>
+                shadow="sm"
+                padding={0}
+              >
+                <LinearGradient
+                  colors={['#7FCCB5', '#66B89F'] as any}
+                  style={styles.listStoryImage}
+                >
                   <BookOpen size={24} color="#FFFFFF" strokeWidth={1.5} />
-                </View>
+                </LinearGradient>
                 <View style={styles.listStoryInfo}>
                   <Text style={styles.listStoryTitle} numberOfLines={1}>
                     {story.title}
@@ -198,11 +280,18 @@ export default function HomeScreen() {
                     {story.season} • {story.time_of_day}
                   </Text>
                 </View>
-              </TouchableOpacity>
+              </PremiumCard>
             ))}
           </View>
         )}
-    </ScrollView>
+      </ScrollView>
+
+      <AchievementModal
+        visible={!!unlockedAchievement}
+        achievement={unlockedAchievement}
+        onClose={() => setUnlockedAchievement(null)}
+      />
+    </>
   );
 }
 
@@ -225,7 +314,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
     paddingBottom: SPACING.xxxl,
@@ -237,64 +325,47 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
-    backgroundColor: COLORS.background,
+  },
+  greeting: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text.secondary,
+    marginBottom: SPACING.xs,
   },
   appTitle: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
+    fontSize: FONT_SIZES.xxxl,
+    fontWeight: FONT_WEIGHTS.extrabold,
+    color: COLORS.primary,
   },
   topBarIcons: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
   },
-  coinBadge: {
-    backgroundColor: COLORS.secondary,
+  achievementBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
+    paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.round,
+    ...SHADOWS.sm,
   },
-  coinText: {
+  achievementText: {
     fontSize: FONT_SIZES.sm,
     fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
-  },
-  notificationIcon: {
-    position: 'relative',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#85C1E2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.error,
-  },
-  notificationIconText: {
-    fontSize: FONT_SIZES.lg,
+    color: COLORS.text.inverse,
   },
   searchContainer: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.xl,
     marginBottom: SPACING.xl,
     gap: SPACING.md,
+    alignItems: 'center',
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.cardBackground,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
     gap: SPACING.md,
   },
   searchInput: {
@@ -306,7 +377,11 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: COLORS.primary,
+    overflow: 'hidden',
+    ...SHADOWS.md,
+  },
+  voiceButtonGradient: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -328,18 +403,16 @@ const styles = StyleSheet.create({
   categoryBubble: {
     width: 80,
     height: 100,
-    borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: SPACING.md,
   },
   categoryIcon: {
-    fontSize: 32,
+    fontSize: 36,
     marginBottom: SPACING.sm,
   },
   categoryName: {
     fontSize: FONT_SIZES.xs,
-    fontWeight: FONT_WEIGHTS.semibold,
+    fontWeight: FONT_WEIGHTS.bold,
     color: COLORS.text.primary,
     textAlign: 'center',
   },
@@ -351,13 +424,10 @@ const styles = StyleSheet.create({
   emptyStoryCard: {
     flex: 1,
     aspectRatio: 0.75,
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderWidth: 3,
+    borderColor: COLORS.primaryLight,
     borderStyle: 'dashed',
   },
   emptyStoryText: {
@@ -374,8 +444,6 @@ const styles = StyleSheet.create({
   },
   storyCard: {
     width: 140,
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
   },
   storyImagePlaceholder: {
@@ -394,10 +462,8 @@ const styles = StyleSheet.create({
   },
   listStoryCard: {
     flexDirection: 'row',
-    backgroundColor: COLORS.cardBackground,
     marginHorizontal: SPACING.xl,
     marginBottom: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
   },
   listStoryImage: {
