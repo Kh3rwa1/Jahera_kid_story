@@ -89,6 +89,33 @@ export const ProfileCardSkeleton = () => (
   </View>
 );
 
+interface LoadingSkeletonProps {
+  type?: 'card' | 'list' | 'profile';
+  count?: number;
+}
+
+export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'card', count = 3 }) => {
+  const renderSkeleton = () => {
+    switch (type) {
+      case 'list':
+        return <ListItemSkeleton />;
+      case 'profile':
+        return <ProfileCardSkeleton />;
+      case 'card':
+      default:
+        return <StoryCardSkeleton />;
+    }
+  };
+
+  return (
+    <>
+      {Array.from({ length: count }).map((_, index) => (
+        <View key={index}>{renderSkeleton()}</View>
+      ))}
+    </>
+  );
+};
+
 const styles = StyleSheet.create({
   storyCard: {
     width: 140,
