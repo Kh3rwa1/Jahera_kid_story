@@ -1,17 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Pressable,
+  Dimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
 import { storyService } from '@/services/database';
 import { Story } from '@/types/database';
-import { Play, Pause, RotateCcw, X } from 'lucide-react-native';
+import { Play, Pause, RotateCcw, X, ChevronDown, Award } from 'lucide-react-native';
+import { Container } from '@/components/Container';
+import { Typography } from '@/components/Typography';
+import { PremiumButton } from '@/components/PremiumButton';
+import { PremiumCard } from '@/components/PremiumCard';
+import { AudioWaveform } from '@/components/AudioWaveform';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { ErrorState } from '@/components/ErrorState';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { hapticFeedback } from '@/utils/haptics';
+import { useFadeIn, useSlideInUp } from '@/utils/animations';
 
 export default function StoryPlayback() {
   const router = useRouter();
@@ -90,10 +102,11 @@ export default function StoryPlayback() {
     }
   };
 
-  const handlePlayPause = async () => {
+  const handlePlayPause = useCallback(async () => {
     if (!sound) return;
 
     try {
+      hapticFeedback.medium();
       if (isPlaying) {
         await sound.pauseAsync();
       } else {
@@ -102,25 +115,43 @@ export default function StoryPlayback() {
     } catch (error) {
       console.error('Error playing/pausing audio:', error);
     }
-  };
+  }, [sound, isPlaying]);
 
-  const handleRestart = async () => {
+  const handleRestart = useCallback(async () => {
     if (!sound) return;
 
     try {
+      hapticFeedback.light();
       await sound.setPositionAsync(0);
       await sound.playAsync();
     } catch (error) {
       console.error('Error restarting audio:', error);
     }
-  };
+  }, [sound]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
+    hapticFeedback.light();
     if (sound) {
       sound.stopAsync();
     }
     router.back();
-  };
+  }, [sound, router]);
+
+  const handleProgressBarPress = useCallback(async (event: any) => {
+    if (!sound || !duration) return;
+
+    const { locationX } = event.nativeEvent;
+    const screenWidth = Dimensions.get('window').width - (SPACING.xl * 2);
+    const percentage = locationX / screenWidth;
+    const newPosition = duration * percentage;
+
+    try {
+      hapticFeedback.light();
+      await sound.setPositionAsync(newPosition);
+    } catch (error) {
+      console.error('Error seeking audio:', error);
+    }
+  }, [sound, duration]);
 
   const formatTime = (millis: number): string => {
     const totalSeconds = Math.floor(millis / 1000);
@@ -131,248 +162,303 @@ export default function StoryPlayback() {
 
   if (isLoading || !story) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0d6efd" />
-      </View>
+      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+        <LoadingSkeleton type="card" count={3} />
+      </Container>
     );
   }
 
+  if (!story) {
+    return (
+      <Container gradient gradientColors={COLORS.backgroundGradient}>
+        <ErrorState
+          type="notFound"
+          title="Story Not Found"
+          message="We couldn't find this story. It may have been deleted."
+          onGoHome={() => router.replace('/(tabs)')}
+        />
+      </Container>
+    );
+  }
+
+  const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
+
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.closeButton} onPress={handleClose} activeOpacity={0.7}>
-        <X size={24} color="#6c757d" />
-      </TouchableOpacity>
+    <Container safeArea={false} padding={false} gradient gradientColors={COLORS.backgroundGradient}>
+      {/* Header with close button */}
+      <View style={styles.header}>
+        <Pressable
+          style={styles.closeButton}
+          onPress={handleClose}
+          accessibilityLabel="Close playback"
+          accessibilityRole="button"
+        >
+          <ChevronDown size={28} color={COLORS.text.primary} strokeWidth={2.5} />
+        </Pressable>
+      </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{story.title}</Text>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Story Title */}
+        <View style={styles.titleContainer}>
+          <Typography variant="displayMedium" align="center" style={styles.title}>
+            {story.title}
+          </Typography>
           <View style={styles.metadata}>
-            <Text style={styles.metadataText}>
-              {story.season} · {story.time_of_day}
-            </Text>
+            <PremiumCard padding={SPACING.sm} shadow="sm" style={styles.metadataBadge}>
+              <Typography variant="caption" color="secondary">
+                {story.season}
+              </Typography>
+            </PremiumCard>
+            <PremiumCard padding={SPACING.sm} shadow="sm" style={styles.metadataBadge}>
+              <Typography variant="caption" color="secondary">
+                {story.time_of_day}
+              </Typography>
+            </PremiumCard>
           </View>
         </View>
 
-        <View style={styles.visualContainer}>
-          <View style={styles.playingIndicator}>
-            {isPlaying ? (
-              <Text style={styles.playingText}>🎵 Playing...</Text>
-            ) : (
-              <Text style={styles.playingText}>⏸️ Paused</Text>
-            )}
+        {/* Waveform Visualization */}
+        <PremiumCard gradient={COLORS.cardGradient} shadow="lg" style={styles.waveformCard}>
+          <AudioWaveform isPlaying={isPlaying} color={COLORS.primary} />
+          <View style={styles.statusContainer}>
+            <Typography variant="label" color={isPlaying ? 'primary' : 'secondary'}>
+              {isPlaying ? 'Now Playing' : 'Paused'}
+            </Typography>
           </View>
-        </View>
+        </PremiumCard>
 
+        {/* Story Text Toggle */}
         {showText && (
-          <View style={styles.textContainer}>
-            <ScrollView style={styles.textScroll}>
-              <Text style={styles.storyText}>{story.content}</Text>
+          <PremiumCard style={styles.textCard} shadow="md">
+            <ScrollView style={styles.textScroll} nestedScrollEnabled>
+              <Typography variant="bodyMedium" color="secondary" style={styles.storyText}>
+                {story.content}
+              </Typography>
             </ScrollView>
-          </View>
+          </PremiumCard>
         )}
 
-        <TouchableOpacity
+        <PremiumButton
+          title={showText ? 'Hide Story Text' : 'Show Story Text'}
+          onPress={() => {
+            hapticFeedback.light();
+            setShowText(!showText);
+          }}
+          variant="ghost"
+          size="medium"
           style={styles.showTextButton}
-          onPress={() => setShowText(!showText)}
-          activeOpacity={0.7}>
-          <Text style={styles.showTextButtonText}>
-            {showText ? 'Hide Text' : 'Show Text'}
-          </Text>
-        </TouchableOpacity>
+          accessibilityLabel={showText ? 'Hide story text' : 'Show story text'}
+        />
 
-        <TouchableOpacity
-          style={styles.quizButton}
+        {/* Quiz Button */}
+        <PremiumButton
+          title="Start Quiz"
           onPress={() => router.push({ pathname: '/story/quiz', params: { storyId: story.id } })}
-          activeOpacity={0.8}>
-          <Text style={styles.quizButtonText}>🎯 Start Quiz</Text>
-        </TouchableOpacity>
+          variant="primary"
+          size="large"
+          icon={<Award size={24} color={COLORS.text.inverse} />}
+          style={styles.quizButton}
+          gradient={COLORS.gradients.sunset}
+          accessibilityLabel="Start quiz for this story"
+        />
       </ScrollView>
 
-      <View style={styles.controls}>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${(position / duration) * 100}%` }]} />
+      {/* Audio Controls */}
+      <LinearGradient
+        colors={['transparent', COLORS.cardBackground]}
+        style={styles.controlsGradient}
+      >
+        <View style={styles.controls}>
+          {/* Progress Bar with Scrubbing */}
+          <Pressable
+            onPress={handleProgressBarPress}
+            style={styles.progressBarContainer}
+            accessibilityLabel={`Progress: ${formatTime(position)} of ${formatTime(duration)}`}
+            accessibilityRole="adjustable"
+          >
+            <View style={styles.progressBar}>
+              <LinearGradient
+                colors={COLORS.gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.progressFill, { width: `${progressPercentage}%` }]}
+              />
+              <View style={[styles.progressThumb, { left: `${progressPercentage}%` }]} />
+            </View>
+          </Pressable>
+
+          <View style={styles.timeContainer}>
+            <Typography variant="caption" color="secondary">
+              {formatTime(position)}
+            </Typography>
+            <Typography variant="caption" color="secondary">
+              {formatTime(duration)}
+            </Typography>
+          </View>
+
+          {/* Control Buttons */}
+          <View style={styles.controlButtons}>
+            <Pressable
+              onPress={handleRestart}
+              disabled={!sound}
+              style={({ pressed }) => [
+                styles.controlButton,
+                pressed && styles.controlButtonPressed,
+              ]}
+              accessibilityLabel="Restart story"
+              accessibilityRole="button"
+            >
+              <RotateCcw size={28} color={sound ? COLORS.text.primary : COLORS.text.light} />
+            </Pressable>
+
+            <Pressable
+              onPress={handlePlayPause}
+              disabled={!sound}
+              style={({ pressed }) => [
+                styles.playButton,
+                pressed && styles.playButtonPressed,
+                !sound && styles.playButtonDisabled,
+              ]}
+              accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+              accessibilityRole="button"
+            >
+              <LinearGradient
+                colors={sound ? COLORS.gradients.primary : [COLORS.text.light, COLORS.text.light]}
+                style={styles.playButtonGradient}
+              >
+                {isPlaying ? (
+                  <Pause size={40} color={COLORS.text.inverse} fill={COLORS.text.inverse} />
+                ) : (
+                  <Play size={40} color={COLORS.text.inverse} fill={COLORS.text.inverse} />
+                )}
+              </LinearGradient>
+            </Pressable>
+
+            {/* Spacer for symmetry */}
+            <View style={styles.controlButton} />
+          </View>
         </View>
-
-        <View style={styles.timeContainer}>
-          <Text style={styles.timeText}>{formatTime(position)}</Text>
-          <Text style={styles.timeText}>{formatTime(duration)}</Text>
-        </View>
-
-        <View style={styles.controlButtons}>
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={handleRestart}
-            activeOpacity={0.7}
-            disabled={!sound}>
-            <RotateCcw size={28} color="#495057" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.playButton, !sound && styles.playButtonDisabled]}
-            onPress={handlePlayPause}
-            activeOpacity={0.8}
-            disabled={!sound}>
-            {isPlaying ? (
-              <Pause size={40} color="#fff" fill="#fff" />
-            ) : (
-              <Play size={40} color="#fff" fill="#fff" />
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.controlButton} />
-        </View>
-      </View>
-    </View>
+      </LinearGradient>
+    </Container>
   );
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
+  header: {
+    paddingTop: SPACING.xxxl + 20,
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.md,
   },
   closeButton: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    zIndex: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.cardBackground,
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOWS.md,
   },
   content: {
     flex: 1,
   },
   contentContainer: {
-    paddingTop: 80,
-    paddingHorizontal: 20,
-    paddingBottom: 240,
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: 260,
   },
-  header: {
-    marginBottom: 32,
+  titleContainer: {
+    marginBottom: SPACING.xxxl,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#212529',
-    marginBottom: 12,
-    textAlign: 'center',
+    marginBottom: SPACING.md,
   },
   metadata: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: SPACING.sm,
   },
-  metadataText: {
-    fontSize: 14,
-    color: '#6c757d',
+  metadataBadge: {
+    borderRadius: BORDER_RADIUS.md,
     textTransform: 'capitalize',
   },
-  visualContainer: {
+  waveformCard: {
+    marginBottom: SPACING.xl,
+    padding: SPACING.xl,
+    borderRadius: BORDER_RADIUS.xl,
+    overflow: 'hidden',
+  },
+  statusContainer: {
+    marginTop: SPACING.lg,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
   },
-  playingIndicator: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#e9ecef',
-  },
-  playingText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#495057',
-  },
-  textContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginTop: 20,
+  textCard: {
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.md,
     maxHeight: 300,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
   },
   textScroll: {
     maxHeight: 260,
   },
   storyText: {
-    fontSize: 16,
-    color: '#495057',
     lineHeight: 26,
   },
   showTextButton: {
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    marginTop: SPACING.md,
     alignSelf: 'center',
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  showTextButtonText: {
-    fontSize: 14,
-    color: '#6c757d',
-    fontWeight: '600',
   },
   quizButton: {
-    marginTop: 20,
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    backgroundColor: '#FF6B35',
-    borderRadius: 16,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.xl,
     alignSelf: 'center',
-    borderWidth: 3,
-    borderColor: '#FFD93D',
   },
-  quizButtonText: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  controls: {
+  controlsGradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
-    paddingTop: 20,
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
+    paddingTop: SPACING.xxxl,
+  },
+  controls: {
+    backgroundColor: COLORS.cardBackground,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.xxxl + 10,
+    paddingHorizontal: SPACING.xl,
+    borderTopLeftRadius: BORDER_RADIUS.xl,
+    borderTopRightRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.lg,
+  },
+  progressBarContainer: {
+    marginBottom: SPACING.md,
   },
   progressBar: {
-    height: 6,
-    backgroundColor: '#e9ecef',
-    borderRadius: 3,
-    marginBottom: 12,
-    overflow: 'hidden',
+    height: 8,
+    backgroundColor: COLORS.text.light + '30',
+    borderRadius: BORDER_RADIUS.sm,
+    overflow: 'visible',
+    position: 'relative',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#0d6efd',
-    borderRadius: 3,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  progressThumb: {
+    position: 'absolute',
+    top: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    marginLeft: -8,
+    ...SHADOWS.md,
   },
   timeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  timeText: {
-    fontSize: 12,
-    color: '#6c757d',
-    fontWeight: '600',
+    marginBottom: SPACING.lg,
   },
   controlButtons: {
     flexDirection: 'row',
@@ -386,15 +472,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  controlButtonPressed: {
+    opacity: 0.6,
+  },
   playButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#0d6efd',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  playButtonGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.colored,
+  },
+  playButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.95 }],
+  },
   playButtonDisabled: {
-    backgroundColor: '#adb5bd',
+    opacity: 0.5,
   },
 });
