@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SUPPORTED_LANGUAGES, MAX_LANGUAGES, Language } from '@/constants/languages';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
 
 export default function LanguageSelection() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function LanguageSelection() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Choose Your Languages</Text>
+        <Text style={styles.title}>Choose Your Languages 🌍</Text>
         <Text style={styles.subtitle}>
           Select up to {MAX_LANGUAGES} languages for your stories
         </Text>
@@ -92,7 +93,7 @@ export default function LanguageSelection() {
           onPress={handleContinue}
           disabled={selectedLanguages.length === 0}
           activeOpacity={0.8}>
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={styles.continueButtonText}>Continue →</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -102,106 +103,110 @@ export default function LanguageSelection() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: COLORS.background,
   },
   header: {
     paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    paddingHorizontal: SPACING.xxl,
+    paddingBottom: SPACING.xxl,
+    backgroundColor: COLORS.background,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#212529',
-    marginBottom: 8,
+    fontSize: FONT_SIZES.xxxl,
+    fontWeight: FONT_WEIGHTS.bold,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6c757d',
-    marginBottom: 12,
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text.secondary,
+    marginBottom: SPACING.lg,
   },
   counter: {
-    fontSize: 14,
-    color: '#495057',
-    fontWeight: '600',
+    fontSize: FONT_SIZES.md,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHTS.bold,
   },
   languageList: {
     flex: 1,
   },
   languageListContent: {
-    padding: 16,
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.xxl,
   },
   languageCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    backgroundColor: COLORS.cardBackground,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+    marginBottom: SPACING.md,
     borderWidth: 2,
-    borderColor: '#e9ecef',
+    borderColor: COLORS.cardBackground,
   },
   languageCardSelected: {
-    borderColor: '#0d6efd',
-    backgroundColor: '#e7f1ff',
+    borderColor: COLORS.primary,
+    backgroundColor: '#FFE5DB',
   },
   flag: {
-    fontSize: 32,
-    marginRight: 16,
+    fontSize: 36,
+    marginRight: SPACING.lg,
   },
   languageInfo: {
     flex: 1,
   },
   languageName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#212529',
-    marginBottom: 2,
+    fontSize: FONT_SIZES.lg,
+    fontWeight: FONT_WEIGHTS.semibold,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.xs,
   },
   languageNameSelected: {
-    color: '#0d6efd',
+    color: COLORS.primary,
   },
   languageNative: {
-    fontSize: 14,
-    color: '#6c757d',
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.text.secondary,
   },
   languageNativeSelected: {
-    color: '#0b5ed7',
+    color: COLORS.primary,
   },
   checkmark: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#0d6efd',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkmarkText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: FONT_SIZES.lg,
+    fontWeight: FONT_WEIGHTS.bold,
   },
   footer: {
-    padding: 20,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
+    padding: SPACING.xxl,
+    backgroundColor: COLORS.background,
   },
   continueButton: {
-    backgroundColor: '#0d6efd',
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   continueButtonDisabled: {
-    backgroundColor: '#adb5bd',
+    backgroundColor: COLORS.text.light,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   continueButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: FONT_SIZES.lg,
+    fontWeight: FONT_WEIGHTS.bold,
   },
 });

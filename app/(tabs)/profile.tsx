@@ -87,7 +87,10 @@ export default function ProfileScreen() {
   const recentAttempts = quizAttempts.slice(0, 5);
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}>
       <View style={styles.topBar}>
         <View>
           <Text style={styles.pageTitle}>Progress</Text>
@@ -97,11 +100,6 @@ export default function ProfileScreen() {
           <Settings size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
       </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
             <Text style={styles.avatarText}>{profile.kid_name.charAt(0).toUpperCase()}</Text>
@@ -251,8 +249,7 @@ export default function ProfileScreen() {
             )}
           </View>
         )}
-      </ScrollView>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -276,6 +273,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  scrollContent: {
+    paddingBottom: SPACING.xxxl,
   },
   topBar: {
     flexDirection: 'row',
@@ -303,12 +303,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cardBackground,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: SPACING.xxxl,
   },
   profileCard: {
     backgroundColor: COLORS.cardBackground,

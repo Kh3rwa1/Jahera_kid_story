@@ -94,7 +94,10 @@ export default function HistoryScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}>
       <View style={styles.topBar}>
         <View>
           <Text style={styles.pageTitle}>My Library</Text>
@@ -134,11 +137,6 @@ export default function HistoryScreen() {
           ))}
         </ScrollView>
       )}
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
         {filteredStories.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
@@ -192,8 +190,7 @@ export default function HistoryScreen() {
             ))}
           </View>
         )}
-      </ScrollView>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -212,6 +209,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  scrollContent: {
+    paddingBottom: SPACING.xxxl,
   },
   topBar: {
     paddingTop: 60,
@@ -260,12 +260,6 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: '#FFFFFF',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: SPACING.xxxl,
   },
   emptyState: {
     alignItems: 'center',

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Book } from 'lucide-react-native';
+import { Sparkles } from 'lucide-react-native';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
 
 export default function Welcome() {
   const router = useRouter();
@@ -43,28 +44,28 @@ export default function Welcome() {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Book size={80} color="#FF6B35" strokeWidth={1.5} />
+          <Sparkles size={80} color={COLORS.primary} strokeWidth={1.5} />
         </View>
 
-        <Text style={styles.title}>Story & Quiz Adventures</Text>
+        <Text style={styles.title}>DreamTales</Text>
         <Text style={styles.subtitle}>
-          Short, fun stories with exciting quizzes for young learners
+          Magical stories and fun adventures await!
         </Text>
 
         <View style={styles.features}>
-          <View style={styles.featureItem}>
+          <View style={[styles.featureItem, { backgroundColor: '#FFE8DB' }]}>
             <Text style={styles.featureIcon}>📖</Text>
-            <Text style={styles.featureText}>Short, engaging stories (2-3 sentences)</Text>
+            <Text style={styles.featureText}>Short, engaging stories</Text>
           </View>
-          <View style={styles.featureItem}>
+          <View style={[styles.featureItem, { backgroundColor: '#E8F5E9' }]}>
             <Text style={styles.featureIcon}>🎯</Text>
             <Text style={styles.featureText}>Fun quizzes after each story</Text>
           </View>
-          <View style={styles.featureItem}>
+          <View style={[styles.featureItem, { backgroundColor: '#FFF3CD' }]}>
             <Text style={styles.featureIcon}>🌈</Text>
             <Text style={styles.featureText}>Colorful, kid-friendly design</Text>
           </View>
-          <View style={styles.featureItem}>
+          <View style={[styles.featureItem, { backgroundColor: '#E8E7FF' }]}>
             <Text style={styles.featureIcon}>🌍</Text>
             <Text style={styles.featureText}>Multi-language support</Text>
           </View>
@@ -73,7 +74,7 @@ export default function Welcome() {
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.startButton} onPress={handleGetStarted} activeOpacity={0.8}>
-          <Text style={styles.startButtonText}>Get Started</Text>
+          <Text style={styles.startButtonText}>Get Started ✨</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -85,16 +86,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF8E7',
+    backgroundColor: COLORS.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#FFF8E7',
+    backgroundColor: COLORS.background,
   },
   content: {
     flex: 1,
     paddingTop: 100,
-    paddingHorizontal: 24,
+    paddingHorizontal: SPACING.xxl,
     alignItems: 'center',
   },
   iconContainer: {
@@ -104,22 +105,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFE5DB',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 32,
+    marginBottom: SPACING.xxxl,
   },
   title: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#212529',
-    marginBottom: 16,
+    fontSize: FONT_SIZES.huge,
+    fontWeight: FONT_WEIGHTS.bold,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.lg,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 18,
-    color: '#6c757d',
+    fontSize: FONT_SIZES.lg,
+    color: COLORS.text.secondary,
     textAlign: 'center',
     lineHeight: 28,
-    marginBottom: 48,
-    paddingHorizontal: 16,
+    marginBottom: SPACING.xxxl,
+    paddingHorizontal: SPACING.lg,
   },
   features: {
     width: '100%',
@@ -127,36 +128,37 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+    padding: SPACING.xl,
+    borderRadius: BORDER_RADIUS.xl,
+    marginBottom: SPACING.md,
   },
   featureIcon: {
     fontSize: 32,
-    marginRight: 16,
+    marginRight: SPACING.lg,
   },
   featureText: {
-    fontSize: 16,
-    color: '#495057',
-    fontWeight: '500',
+    flex: 1,
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text.primary,
+    fontWeight: FONT_WEIGHTS.semibold,
   },
   footer: {
-    padding: 24,
+    padding: SPACING.xxl,
   },
   startButton: {
-    backgroundColor: '#FF6B35',
-    paddingVertical: 18,
-    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#FFD93D',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   startButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: FONT_SIZES.xl,
+    fontWeight: FONT_WEIGHTS.bold,
   },
 });

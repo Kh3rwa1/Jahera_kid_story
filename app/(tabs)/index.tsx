@@ -102,7 +102,10 @@ export default function HomeScreen() {
   const recentStories = stories.slice(0, 3);
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}>
       <View style={styles.topBar}>
         <Text style={styles.appTitle}>DreamTales</Text>
         <View style={styles.topBarIcons}>
@@ -115,11 +118,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <Search size={20} color={COLORS.text.secondary} />
@@ -204,8 +202,7 @@ export default function HomeScreen() {
             ))}
           </View>
         )}
-      </ScrollView>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -229,6 +226,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  scrollContent: {
+    paddingBottom: SPACING.xxxl,
   },
   topBar: {
     flexDirection: 'row',
@@ -280,12 +280,6 @@ const styles = StyleSheet.create({
   },
   notificationIconText: {
     fontSize: FONT_SIZES.lg,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: SPACING.xxxl,
   },
   searchContainer: {
     flexDirection: 'row',
