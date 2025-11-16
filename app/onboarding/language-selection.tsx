@@ -2,19 +2,25 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SUPPORTED_LANGUAGES, MAX_LANGUAGES, Language } from '@/constants/languages';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import { Globe2 } from 'lucide-react-native';
 
 export default function LanguageSelection() {
   const router = useRouter();
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
 
-  const toggleLanguage = (language: Language) => {
+  const toggleLanguage = async (language: Language) => {
     const isSelected = selectedLanguages.some(l => l.code === language.code);
 
     if (isSelected) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setSelectedLanguages(selectedLanguages.filter(l => l.code !== language.code));
     } else {
       if (selectedLanguages.length >= MAX_LANGUAGES) {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert(
           'Maximum Reached',
           `You can select up to ${MAX_LANGUAGES} languages.`,
@@ -22,18 +28,21 @@ export default function LanguageSelection() {
         );
         return;
       }
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setSelectedLanguages([...selectedLanguages, language]);
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedLanguages.length === 0) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       Alert.alert('Select Language', 'Please select at least one language to continue.', [
         { text: 'OK' },
       ]);
       return;
     }
 
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     router.push({
       pathname: '/onboarding/kid-name',
       params: {
@@ -43,87 +52,160 @@ export default function LanguageSelection() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Choose Your Languages 🌍</Text>
+    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
+      {/* Header with animation */}
+      <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
+        <View style={styles.iconBadge}>
+          <Globe2 size={32} color={COLORS.primary} strokeWidth={2.5} />
+        </View>
+        <Text style={styles.title}>Choose Your Languages</Text>
         <Text style={styles.subtitle}>
-          Select up to {MAX_LANGUAGES} languages for your stories
+          Select up to {MAX_LANGUAGES} languages for personalized stories
         </Text>
-        <Text style={styles.counter}>
-          {selectedLanguages.length} / {MAX_LANGUAGES} selected
-        </Text>
-      </View>
 
-      <ScrollView style={styles.languageList} contentContainerStyle={styles.languageListContent}>
-        {SUPPORTED_LANGUAGES.map(language => {
+        {/* Progress indicator */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <Animated.View
+              style={[
+                styles.progressFill,
+                { width: `${(selectedLanguages.length / MAX_LANGUAGES) * 100}%` }
+              ]}
+            />
+          </View>
+          <Text style={styles.counter}>
+            {selectedLanguages.length} of {MAX_LANGUAGES} selected
+          </Text>
+        </View>
+      </Animated.View>
+
+      <ScrollView
+        style={styles.languageList}
+        contentContainerStyle={styles.languageListContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {SUPPORTED_LANGUAGES.map((language, index) => {
           const isSelected = selectedLanguages.some(l => l.code === language.code);
 
           return (
-            <TouchableOpacity
+            <Animated.View
               key={language.code}
-              style={[styles.languageCard, isSelected && styles.languageCardSelected]}
-              onPress={() => toggleLanguage(language)}
-              activeOpacity={0.7}>
-              <Text style={styles.flag}>{language.flag}</Text>
-              <View style={styles.languageInfo}>
-                <Text style={[styles.languageName, isSelected && styles.languageNameSelected]}>
-                  {language.name}
-                </Text>
-                <Text
-                  style={[styles.languageNative, isSelected && styles.languageNativeSelected]}>
-                  {language.nativeName}
-                </Text>
-              </View>
-              {isSelected && (
-                <View style={styles.checkmark}>
-                  <Text style={styles.checkmarkText}>✓</Text>
+              entering={FadeInDown.delay(200 + index * 50).springify()}
+            >
+              <TouchableOpacity
+                style={[styles.languageCard, isSelected && styles.languageCardSelected]}
+                onPress={() => toggleLanguage(language)}
+                activeOpacity={0.7}
+              >
+                {isSelected && (
+                  <LinearGradient
+                    colors={[COLORS.primaryLight, COLORS.primary]}
+                    style={StyleSheet.absoluteFill}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  />
+                )}
+                <View style={styles.languageContent}>
+                  <View style={styles.flagContainer}>
+                    <Text style={styles.flag}>{language.flag}</Text>
+                  </View>
+                  <View style={styles.languageInfo}>
+                    <Text style={[styles.languageName, isSelected && styles.languageNameSelected]}>
+                      {language.name}
+                    </Text>
+                    <Text style={[styles.languageNative, isSelected && styles.languageNativeSelected]}>
+                      {language.nativeName}
+                    </Text>
+                  </View>
+                  {isSelected && (
+                    <Animated.View
+                      entering={FadeInDown.springify()}
+                      style={styles.checkmark}
+                    >
+                      <Text style={styles.checkmarkText}>✓</Text>
+                    </Animated.View>
+                  )}
                 </View>
-              )}
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </Animated.View>
           );
         })}
       </ScrollView>
 
-      <View style={styles.footer}>
+      {/* Footer with CTA */}
+      <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.footer}>
         <TouchableOpacity
-          style={[
-            styles.continueButton,
-            selectedLanguages.length === 0 && styles.continueButtonDisabled,
-          ]}
           onPress={handleContinue}
           disabled={selectedLanguages.length === 0}
-          activeOpacity={0.8}>
-          <Text style={styles.continueButtonText}>Continue →</Text>
+          activeOpacity={0.9}
+        >
+          <LinearGradient
+            colors={selectedLanguages.length === 0
+              ? [COLORS.text.light, COLORS.text.light]
+              : [COLORS.primary, COLORS.primaryDark]
+            }
+            style={styles.continueButton}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={styles.continueButtonText}>
+              {selectedLanguages.length === 0 ? 'Select a language' : 'Continue →'}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
-      </View>
-    </View>
+      </Animated.View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     paddingTop: 60,
     paddingHorizontal: SPACING.xxl,
-    paddingBottom: SPACING.xxl,
-    backgroundColor: COLORS.background,
+    paddingBottom: SPACING.lg,
+  },
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: 'rgba(255, 102, 52, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.lg,
   },
   title: {
-    fontSize: FONT_SIZES.xxxl,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontSize: 32,
+    fontWeight: FONT_WEIGHTS.extrabold,
     color: COLORS.text.primary,
     marginBottom: SPACING.sm,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: FONT_SIZES.md,
     color: COLORS.text.secondary,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xl,
+    lineHeight: 22,
+    fontWeight: FONT_WEIGHTS.medium,
+  },
+  progressContainer: {
+    gap: SPACING.sm,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: 'rgba(255, 102, 52, 0.15)',
+    borderRadius: BORDER_RADIUS.sm,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.sm,
   },
   counter: {
-    fontSize: FONT_SIZES.md,
+    fontSize: FONT_SIZES.sm,
     color: COLORS.primary,
     fontWeight: FONT_WEIGHTS.bold,
   },
@@ -132,81 +214,84 @@ const styles = StyleSheet.create({
   },
   languageListContent: {
     paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.md,
     paddingBottom: SPACING.xxl,
+    gap: SPACING.sm,
   },
   languageCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.cardBackground,
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
-    marginBottom: SPACING.md,
-    borderWidth: 2,
-    borderColor: COLORS.cardBackground,
+    borderRadius: BORDER_RADIUS.lg,
+    marginBottom: SPACING.sm,
+    overflow: 'hidden',
+    ...SHADOWS.md,
   },
   languageCardSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: '#FFE5DB',
+    ...SHADOWS.lg,
+  },
+  languageContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.lg,
+    backgroundColor: COLORS.cardBackground,
+  },
+  flagContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SPACING.md,
   },
   flag: {
-    fontSize: 36,
-    marginRight: SPACING.lg,
+    fontSize: 32,
   },
   languageInfo: {
     flex: 1,
   },
   languageName: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.semibold,
+    fontSize: FONT_SIZES.md,
+    fontWeight: FONT_WEIGHTS.bold,
     color: COLORS.text.primary,
-    marginBottom: SPACING.xs,
+    marginBottom: 2,
   },
   languageNameSelected: {
-    color: COLORS.primary,
+    color: '#FFFFFF',
   },
   languageNative: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.text.secondary,
+    fontWeight: FONT_WEIGHTS.medium,
   },
   languageNativeSelected: {
-    color: COLORS.primary,
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   checkmark: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.primary,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkmarkText: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.lg,
+    color: COLORS.primary,
+    fontSize: FONT_SIZES.md,
     fontWeight: FONT_WEIGHTS.bold,
   },
   footer: {
     padding: SPACING.xxl,
-    backgroundColor: COLORS.background,
+    paddingBottom: SPACING.xxxl + 10,
   },
   continueButton: {
-    backgroundColor: COLORS.primary,
     paddingVertical: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  continueButtonDisabled: {
-    backgroundColor: COLORS.text.light,
-    shadowOpacity: 0,
-    elevation: 0,
+    ...SHADOWS.colored,
   },
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: FONT_SIZES.lg,
     fontWeight: FONT_WEIGHTS.bold,
+    letterSpacing: 0.3,
   },
 });

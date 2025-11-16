@@ -153,10 +153,11 @@ export default function HomeScreen() {
   }
 
   const categories = [
-    { id: 1, name: 'New Story', icon: '✨', color: COLORS.categoryColors.green },
-    { id: 2, name: 'Adventure', icon: '🚀', color: COLORS.categoryColors.teal },
-    { id: 3, name: 'Animals', icon: '🦁', color: COLORS.categoryColors.peach },
-    { id: 4, name: 'Friends', icon: '🎭', color: COLORS.categoryColors.purple },
+    { id: 1, name: 'Create Story', icon: '✨', color: COLORS.gradients.sunset, gradient: true },
+    { id: 2, name: 'Adventure', icon: '🚀', color: COLORS.categoryColors.tealGradient, gradient: true },
+    { id: 3, name: 'Animals', icon: '🦁', color: COLORS.categoryColors.peachGradient, gradient: true },
+    { id: 4, name: 'Friends', icon: '👫', color: COLORS.categoryColors.purpleGradient, gradient: true },
+    { id: 5, name: 'Fantasy', icon: '🧙', color: COLORS.gradients.magic, gradient: true },
   ];
 
   const recentStories = stories.slice(0, 3);
@@ -172,12 +173,12 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
         <Animated.View style={[styles.topBar, { opacity: fadeIn }]}>
-          <View>
-            <Typography variant="bodyMedium" color="secondary" style={styles.greeting}>
+          <View style={styles.greetingSection}>
+            <Typography variant="bodyLarge" color="secondary" style={styles.greeting}>
               Hello, {profile?.kid_name || 'Friend'}! 👋
             </Typography>
             <Typography variant="displayMedium" color="primary" style={styles.appTitle}>
-              Jahera
+              Ready for an Adventure?
             </Typography>
           </View>
           <View style={styles.topBarIcons}>
@@ -187,8 +188,8 @@ export default function HomeScreen() {
               accessibilityRole="button"
             >
               <LinearGradient colors={COLORS.gradients.sunset as any} style={styles.achievementBadge}>
-                <Trophy size={18} color={COLORS.text.inverse} />
-                <Typography variant="captionBold" color="inverse">
+                <Trophy size={20} color={COLORS.text.inverse} strokeWidth={2.5} />
+                <Typography variant="captionBold" color="inverse" style={styles.achievementText}>
                   {achievementStats.unlocked}
                 </Typography>
               </LinearGradient>
@@ -232,14 +233,11 @@ export default function HomeScreen() {
             {categories.map((category, index) => (
               <PremiumCard
                 key={category.id}
-                gradient={index === 0 ? (COLORS.gradients.sunset as any) : undefined}
-                style={[
-                  styles.categoryBubble,
-                  !COLORS.gradients.sunset && { backgroundColor: category.color },
-                ]}
+                gradient={category.gradient ? (category.color as any) : undefined}
+                style={styles.categoryBubble}
                 onPress={index === 0 ? handleGenerateStory : undefined}
-                shadow="md"
-                padding={SPACING.md}
+                shadow="lg"
+                padding={SPACING.lg}
                 accessibilityLabel={`${category.name} category`}
                 accessibilityRole="button"
               >
@@ -249,7 +247,7 @@ export default function HomeScreen() {
                 <Typography
                   variant="caption"
                   align="center"
-                  color={index === 0 ? 'inverse' : 'primary'}
+                  color="inverse"
                   style={styles.categoryName}
                 >
                   {category.name}
@@ -363,16 +361,21 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingTop: 60,
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.xl,
+  },
+  greetingSection: {
+    flex: 1,
+    gap: SPACING.xs,
   },
   greeting: {
-    marginBottom: SPACING.xs,
+    marginBottom: 2,
+    fontWeight: '500' as any,
   },
   appTitle: {
-    // Additional styles if needed
+    letterSpacing: -0.5,
   },
   topBarIcons: {
     flexDirection: 'row',
@@ -383,10 +386,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md + 2,
+    paddingVertical: SPACING.sm + 2,
     borderRadius: BORDER_RADIUS.round,
-    ...SHADOWS.sm,
+    ...SHADOWS.md,
+  },
+  achievementText: {
+    fontSize: 14,
+    fontWeight: '800' as any,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -427,20 +434,22 @@ const styles = StyleSheet.create({
   },
   categoriesGrid: {
     paddingHorizontal: SPACING.xl,
-    gap: SPACING.lg,
+    gap: SPACING.md,
   },
   categoryBubble: {
-    width: 90,
-    height: 110,
+    width: 100,
+    height: 120,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: BORDER_RADIUS.xl,
   },
   categoryIcon: {
     marginBottom: SPACING.sm,
+    fontSize: 36,
   },
   categoryName: {
-    // Additional styles if needed
+    fontWeight: '700' as any,
+    fontSize: 12,
   },
   emptyStateContainer: {
     paddingHorizontal: SPACING.xl,
