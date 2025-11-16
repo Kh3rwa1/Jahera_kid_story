@@ -1,18 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
-  Alert,
+  Animated,
+  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { storyService, quizService } from '@/services/database';
 import { Story, QuizQuestionWithAnswers } from '@/types/database';
-import { Volume2, CheckCircle2, XCircle, Sparkles } from 'lucide-react-native';
+import { CheckCircle2, XCircle, Trophy, Target, Home, ChevronRight } from 'lucide-react-native';
+import { Container } from '@/components/Container';
+import { Typography } from '@/components/Typography';
+import { PremiumButton } from '@/components/PremiumButton';
+import { PremiumCard } from '@/components/PremiumCard';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { ErrorState } from '@/components/ErrorState';
+import { CelebrationOverlay } from '@/components/CelebrationOverlay';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { hapticFeedback } from '@/utils/haptics';
+import { useFadeIn, useSlideInUp } from '@/utils/animations';
 
 export default function QuizScreen() {
   const router = useRouter();
@@ -25,6 +34,9 @@ export default function QuizScreen() {
   const [score, setScore] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showResult, setShowResult] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [questionFadeAnim] = useState(new Animated.Value(1));
+  const [questionSlideAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
     loadQuiz();
@@ -50,105 +62,202 @@ export default function QuizScreen() {
     }
   };
 
-  const handleAnswerSelect = (answerOrder: string) => {
-    if (selectedAnswer !== null) return;
+  const animateQuestionTransition = useCallback(() => {
+    // Fade out and slide left
+    Animated.parallel([
+      Animated.timing(questionFadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(questionSlideAnim, {
+        toValue: -50,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Reset position and fade in
+      questionSlideAnim.setValue(50);
+      Animated.parallel([
+        Animated.timing(questionFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(questionSlideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+  }, [questionFadeAnim, questionSlideAnim]);
 
-    const currentQuestion = questions[currentQuestionIndex];
-    const correctAnswer = currentQuestion.answers.find(a => a.is_correct);
+  const handleAnswerSelect = useCallback(
+    (answerOrder: string) => {
+      if (selectedAnswer !== null) return;
 
-    setSelectedAnswer(answerOrder);
-    const correct = answerOrder === correctAnswer?.answer_order;
-    setIsCorrect(correct);
+      const currentQuestion = questions[currentQuestionIndex];
+      const correctAnswer = currentQuestion.answers.find((a) => a.is_correct);
 
-    if (correct) {
-      setScore(score + 1);
-    }
-  };
+      setSelectedAnswer(answerOrder);
+      const correct = answerOrder === correctAnswer?.answer_order;
+      setIsCorrect(correct);
 
-  const handleNextQuestion = async () => {
+      if (correct) {
+        hapticFeedback.success();
+        setScore(score + 1);
+      } else {
+        hapticFeedback.error();
+      }
+    },
+    [selectedAnswer, questions, currentQuestionIndex, score]
+  );
+
+  const handleNextQuestion = useCallback(async () => {
+    hapticFeedback.light();
+
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedAnswer(null);
-      setIsCorrect(null);
+      animateQuestionTransition();
+      setTimeout(() => {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+        setSelectedAnswer(null);
+        setIsCorrect(null);
+      }, 200);
     } else {
       const profileId = await AsyncStorage.getItem('profileId');
       if (profileId && story) {
-        await quizService.createAttempt(profileId, story.id, score, questions.length);
+        await quizService.createAttempt(profileId, story.id, score + (isCorrect ? 0 : 0), questions.length);
       }
-      setShowResult(true);
+      setShowCelebration(true);
+      setTimeout(() => {
+        setShowResult(true);
+        setShowCelebration(false);
+      }, 2000);
     }
-  };
+  }, [currentQuestionIndex, questions, story, score, isCorrect, animateQuestionTransition]);
 
-  const handleFinish = () => {
+  const handleFinish = useCallback(() => {
+    hapticFeedback.medium();
     router.push('/(tabs)/history');
-  };
+  }, [router]);
+
+  const handleGoHome = useCallback(() => {
+    hapticFeedback.medium();
+    router.replace('/(tabs)');
+  }, [router]);
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF6B35" />
-      </View>
+      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+        <LoadingSkeleton type="card" count={2} />
+      </Container>
     );
   }
 
   if (!story || questions.length === 0) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>No quiz available</Text>
-      </View>
+      <Container gradient gradientColors={COLORS.backgroundGradient}>
+        <ErrorState
+          type="notFound"
+          title="No Quiz Available"
+          message="There's no quiz for this story yet. Try another story!"
+          onGoHome={handleGoHome}
+        />
+      </Container>
     );
   }
 
   if (showResult) {
     const percentage = Math.round((score / questions.length) * 100);
+    const isPerfect = percentage === 100;
+    const isGreat = percentage >= 66 && percentage < 100;
+
+    const getMessage = () => {
+      if (isPerfect) return { title: 'Perfect Score!', subtitle: "You're a superstar!" };
+      if (isGreat) return { title: 'Great Work!', subtitle: 'Keep it up!' };
+      return { title: 'Good Try!', subtitle: 'Practice makes perfect!' };
+    };
+
+    const message = getMessage();
 
     return (
-      <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.resultContainer}>
+      <Container scroll gradient gradientColors={COLORS.backgroundGradient}>
+        <View style={styles.resultContainer}>
+          {/* Trophy Icon */}
           <View style={styles.resultHeader}>
-            <View style={styles.sparkleIcon}>
-              <Sparkles size={60} color="#FFD93D" strokeWidth={2} />
-            </View>
-            <Text style={styles.resultTitle}>Amazing Job!</Text>
-            <Text style={styles.resultSubtitle}>You completed the quiz!</Text>
+            <PremiumCard
+              gradient={isPerfect ? COLORS.gradients.sunset : COLORS.gradients.primary}
+              style={styles.trophyContainer}
+              shadow="xl"
+            >
+              <Trophy size={80} color={COLORS.text.inverse} strokeWidth={2} />
+            </PremiumCard>
+
+            <Typography variant="displayMedium" align="center" style={styles.resultTitle}>
+              {message.title}
+            </Typography>
+            <Typography variant="bodyLarge" color="secondary" align="center">
+              You completed the quiz!
+            </Typography>
           </View>
 
-          <View style={styles.scoreCard}>
-            <Text style={styles.scoreLabel}>Your Score</Text>
-            <Text style={styles.scoreValue}>
+          {/* Score Card */}
+          <PremiumCard shadow="lg" style={styles.scoreCard}>
+            <Typography variant="label" color="secondary" align="center">
+              Your Score
+            </Typography>
+            <Typography variant="displayLarge" align="center" style={styles.scoreValue}>
               {score} / {questions.length}
-            </Text>
-            <View style={styles.percentageCircle}>
-              <Text style={styles.percentageText}>{percentage}%</Text>
-            </View>
-          </View>
+            </Typography>
 
-          <View style={styles.encouragement}>
-            {percentage === 100 && (
-              <>
-                <Text style={styles.encouragementText}>🌟 Perfect Score! 🌟</Text>
-                <Text style={styles.encouragementSubtext}>You're a super star!</Text>
-              </>
-            )}
-            {percentage >= 66 && percentage < 100 && (
-              <>
-                <Text style={styles.encouragementText}>🎉 Great Work! 🎉</Text>
-                <Text style={styles.encouragementSubtext}>Keep it up!</Text>
-              </>
-            )}
-            {percentage < 66 && (
-              <>
-                <Text style={styles.encouragementText}>👍 Good Try! 👍</Text>
-                <Text style={styles.encouragementSubtext}>Practice makes perfect!</Text>
-              </>
-            )}
-          </View>
+            {/* Percentage Circle */}
+            <LinearGradient
+              colors={isPerfect ? COLORS.gradients.success : COLORS.gradients.primary}
+              style={styles.percentageCircle}
+            >
+              <Typography variant="displayMedium" color="inverse">
+                {percentage}%
+              </Typography>
+            </LinearGradient>
+          </PremiumCard>
 
-          <TouchableOpacity style={styles.finishButton} onPress={handleFinish} activeOpacity={0.8}>
-            <Text style={styles.finishButtonText}>Continue</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
+          {/* Encouragement */}
+          <PremiumCard
+            gradient={COLORS.cardGradient}
+            style={styles.encouragementCard}
+            shadow="md"
+          >
+            <Typography variant="h2" align="center" color="primary">
+              {message.title}
+            </Typography>
+            <Typography variant="bodyMedium" color="secondary" align="center" style={{ marginTop: SPACING.sm }}>
+              {message.subtitle}
+            </Typography>
+          </PremiumCard>
+
+          {/* Action Buttons */}
+          <View style={styles.resultActions}>
+            <PremiumButton
+              title="View Library"
+              onPress={handleFinish}
+              variant="primary"
+              size="large"
+              gradient={COLORS.gradients.sunset}
+              fullWidth
+              icon={<Target size={24} color={COLORS.text.inverse} />}
+            />
+            <PremiumButton
+              title="Go Home"
+              onPress={handleGoHome}
+              variant="outline"
+              size="medium"
+              fullWidth
+              icon={<Home size={20} color={COLORS.primary} />}
+            />
+          </View>
+        </View>
+      </Container>
     );
   }
 
@@ -156,335 +265,288 @@ export default function QuizScreen() {
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
-    <View style={styles.container}>
+    <Container gradient gradientColors={COLORS.backgroundGradient} safeArea padding={false}>
+      {showCelebration && <CelebrationOverlay />}
+
+      {/* Progress Header */}
       <View style={styles.header}>
         <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            {currentQuestionIndex + 1}/{questions.length}
-          </Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          <Typography variant="h4" color="primary" align="center">
+            Question {currentQuestionIndex + 1} of {questions.length}
+          </Typography>
+          <View style={styles.progressBarContainer}>
+            <View style={styles.progressBar}>
+              <LinearGradient
+                colors={COLORS.gradients.sunset}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.progressFill, { width: `${progress}%` }]}
+              />
+            </View>
           </View>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.quizContainer}>
-        <View style={styles.storyPreview}>
-          <Text style={styles.storyTitle}>{story.title}</Text>
-        </View>
+      <ScrollView contentContainerStyle={styles.quizContainer} showsVerticalScrollIndicator={false}>
+        {/* Story Title Card */}
+        <PremiumCard gradient={COLORS.cardGradient} shadow="md" style={styles.storyPreview}>
+          <Typography variant="h4" align="center">
+            {story.title}
+          </Typography>
+        </PremiumCard>
 
-        <View style={styles.questionCard}>
-          <TouchableOpacity style={styles.speakerButton} activeOpacity={0.7}>
-            <Volume2 size={24} color="#6C63FF" />
-          </TouchableOpacity>
+        {/* Question Card with Animation */}
+        <Animated.View
+          style={[
+            styles.questionCardContainer,
+            {
+              opacity: questionFadeAnim,
+              transform: [{ translateX: questionSlideAnim }],
+            },
+          ]}
+        >
+          <PremiumCard shadow="lg" style={styles.questionCard}>
+            <Typography variant="h3" align="center" style={styles.questionText}>
+              {currentQuestion.question_text}
+            </Typography>
 
-          <Text style={styles.questionText}>{currentQuestion.question_text}</Text>
+            {/* Answer Options */}
+            <View style={styles.answersContainer}>
+              {currentQuestion.answers.map((answer, index) => {
+                const isSelected = selectedAnswer === answer.answer_order;
+                const showCorrect = selectedAnswer !== null && answer.is_correct;
+                const showWrong = isSelected && !answer.is_correct;
 
-          <View style={styles.answersContainer}>
-            {currentQuestion.answers.map(answer => {
-              const isSelected = selectedAnswer === answer.answer_order;
-              const showCorrect = selectedAnswer !== null && answer.is_correct;
-              const showWrong = isSelected && !answer.is_correct;
+                const getAnswerGradient = () => {
+                  if (showCorrect) return COLORS.gradients.success;
+                  if (showWrong) return [COLORS.errorLight, COLORS.error];
+                  if (isSelected) return COLORS.gradients.primary;
+                  return undefined;
+                };
 
-              return (
-                <TouchableOpacity
-                  key={answer.id}
-                  style={[
-                    styles.answerButton,
-                    isSelected && styles.answerButtonSelected,
-                    showCorrect && styles.answerButtonCorrect,
-                    showWrong && styles.answerButtonWrong,
-                  ]}
-                  onPress={() => handleAnswerSelect(answer.answer_order)}
-                  activeOpacity={0.7}
-                  disabled={selectedAnswer !== null}>
-                  <View style={styles.answerContent}>
-                    <View
+                return (
+                  <Pressable
+                    key={answer.id}
+                    onPress={() => handleAnswerSelect(answer.answer_order)}
+                    disabled={selectedAnswer !== null}
+                    style={({ pressed }) => [
+                      styles.answerButton,
+                      pressed && styles.answerButtonPressed,
+                    ]}
+                    accessibilityLabel={`Answer ${answer.answer_order}: ${answer.answer_text}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected, disabled: selectedAnswer !== null }}
+                  >
+                    <PremiumCard
+                      gradient={getAnswerGradient()}
+                      shadow={isSelected || showCorrect ? 'md' : 'sm'}
                       style={[
-                        styles.answerLetter,
-                        answer.answer_order === 'A' && styles.answerLetterA,
-                        answer.answer_order === 'B' && styles.answerLetterB,
-                        answer.answer_order === 'C' && styles.answerLetterC,
-                      ]}>
-                      <Text style={styles.answerLetterText}>{answer.answer_order}</Text>
-                    </View>
-                    <Text style={styles.answerText}>{answer.answer_text}</Text>
-                    {showCorrect && <CheckCircle2 size={28} color="#4CAF50" />}
-                    {showWrong && <XCircle size={28} color="#F44336" />}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+                        styles.answerContent,
+                        !getAnswerGradient() && styles.answerContentDefault,
+                      ]}
+                    >
+                      <View style={styles.answerLetter}>
+                        <LinearGradient
+                          colors={
+                            showCorrect
+                              ? COLORS.gradients.success
+                              : showWrong
+                              ? [COLORS.error, COLORS.errorLight]
+                              : COLORS.gradients.primary
+                          }
+                          style={styles.answerLetterGradient}
+                        >
+                          <Typography variant="h3" color="inverse">
+                            {answer.answer_order}
+                          </Typography>
+                        </LinearGradient>
+                      </View>
+
+                      <Typography
+                        variant="bodyLarge"
+                        style={styles.answerText}
+                        color={showCorrect || showWrong || isSelected ? 'inverse' : 'primary'}
+                      >
+                        {answer.answer_text}
+                      </Typography>
+
+                      {showCorrect && <CheckCircle2 size={28} color={COLORS.text.inverse} />}
+                      {showWrong && <XCircle size={28} color={COLORS.text.inverse} />}
+                    </PremiumCard>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </PremiumCard>
+        </Animated.View>
       </ScrollView>
 
+      {/* Next Button Footer */}
       {selectedAnswer !== null && (
         <View style={styles.footer}>
-          <TouchableOpacity
-            style={styles.nextButton}
+          <PremiumButton
+            title={currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'See Results'}
             onPress={handleNextQuestion}
-            activeOpacity={0.8}>
-            <Text style={styles.nextButtonText}>
-              {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'See Results'}
-            </Text>
-          </TouchableOpacity>
+            variant="primary"
+            size="large"
+            fullWidth
+            gradient={COLORS.gradients.sunset}
+            icon={<ChevronRight size={24} color={COLORS.text.inverse} />}
+            accessibilityLabel={
+              currentQuestionIndex < questions.length - 1
+                ? 'Continue to next question'
+                : 'View quiz results'
+            }
+          />
         </View>
       )}
-    </View>
+    </Container>
   );
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF8E7',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF8E7',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#F44336',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF8E7',
-  },
+  // Header
   header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
+    paddingTop: SPACING.xxxl + 20,
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.lg,
+    backgroundColor: COLORS.cardBackground,
+    ...SHADOWS.sm,
   },
   progressContainer: {
-    gap: 8,
+    gap: SPACING.md,
   },
-  progressText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FF6B35',
-    textAlign: 'center',
+  progressBarContainer: {
+    marginTop: SPACING.sm,
   },
   progressBar: {
-    height: 12,
-    backgroundColor: '#FFE5DB',
-    borderRadius: 6,
+    height: 10,
+    backgroundColor: COLORS.primaryLight + '40',
+    borderRadius: BORDER_RADIUS.sm,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#FF6B35',
-    borderRadius: 6,
+    borderRadius: BORDER_RADIUS.sm,
   },
+
+  // Quiz Content
   quizContainer: {
-    padding: 20,
+    padding: SPACING.xl,
+    paddingBottom: 120,
   },
   storyPreview: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 24,
-    borderWidth: 3,
-    borderColor: '#FFD93D',
+    marginBottom: SPACING.xxl,
+    borderRadius: BORDER_RADIUS.xl,
   },
-  storyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2C3E50',
-    textAlign: 'center',
+  questionCardContainer: {
+    width: '100%',
   },
   questionCard: {
-    backgroundColor: '#FFFFFF',
-    padding: 24,
-    borderRadius: 24,
-    borderWidth: 3,
-    borderColor: '#6C63FF',
-  },
-  speakerButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#E8E7FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: 20,
+    padding: SPACING.xxl,
+    borderRadius: BORDER_RADIUS.xl,
   },
   questionText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2C3E50',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 34,
+    marginBottom: SPACING.xxxl,
   },
   answersContainer: {
-    gap: 16,
+    gap: SPACING.lg,
   },
   answerButton: {
-    backgroundColor: '#F8F9FA',
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 3,
-    borderColor: '#E0E0E0',
+    marginBottom: SPACING.xs,
   },
-  answerButtonSelected: {
-    borderColor: '#6C63FF',
-    backgroundColor: '#F0EFFF',
-  },
-  answerButtonCorrect: {
-    borderColor: '#4CAF50',
-    backgroundColor: '#E8F5E9',
-  },
-  answerButtonWrong: {
-    borderColor: '#F44336',
-    backgroundColor: '#FFEBEE',
+  answerButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
   },
   answerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+  },
+  answerContentDefault: {
+    backgroundColor: COLORS.cardBackground,
   },
   answerLetter: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+  },
+  answerLetterGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  answerLetterA: {
-    backgroundColor: '#FF6B6B',
-  },
-  answerLetterB: {
-    backgroundColor: '#4ECDC4',
-  },
-  answerLetterC: {
-    backgroundColor: '#FFD93D',
-  },
-  answerLetterText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    ...SHADOWS.sm,
   },
   answerText: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2C3E50',
-    lineHeight: 26,
   },
+
+  // Footer
   footer: {
-    padding: 20,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 3,
-    borderTopColor: '#FFE5DB',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: SPACING.xl,
+    paddingBottom: SPACING.xxxl,
+    backgroundColor: COLORS.cardBackground,
+    borderTopLeftRadius: BORDER_RADIUS.xl,
+    borderTopRightRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.lg,
   },
-  nextButton: {
-    backgroundColor: '#FF6B35',
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  nextButtonText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
-  },
+
+  // Results Screen
   resultContainer: {
-    padding: 20,
+    padding: SPACING.xl,
     alignItems: 'center',
   },
   resultHeader: {
     alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 32,
+    marginTop: SPACING.xxxl,
+    marginBottom: SPACING.xxxl,
   },
-  sparkleIcon: {
+  trophyContainer: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xxl,
+  },
+  resultTitle: {
+    marginBottom: SPACING.md,
+  },
+  scoreCard: {
+    padding: SPACING.xxxl,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: SPACING.xxl,
+    borderRadius: BORDER_RADIUS.xl,
+  },
+  scoreValue: {
+    marginVertical: SPACING.lg,
+  },
+  percentageCircle: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#FFF3CD',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginTop: SPACING.lg,
+    ...SHADOWS.colored,
   },
-  resultTitle: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#FF6B35',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 18,
-    color: '#6C757D',
-  },
-  scoreCard: {
-    backgroundColor: '#FFFFFF',
-    padding: 32,
-    borderRadius: 24,
-    alignItems: 'center',
+  encouragementCard: {
     width: '100%',
-    marginBottom: 24,
-    borderWidth: 3,
-    borderColor: '#6C63FF',
+    padding: SPACING.xxl,
+    borderRadius: BORDER_RADIUS.xl,
+    marginBottom: SPACING.xxxl,
   },
-  scoreLabel: {
-    fontSize: 18,
-    color: '#6C757D',
-    marginBottom: 12,
-  },
-  scoreValue: {
-    fontSize: 48,
-    fontWeight: '700',
-    color: '#2C3E50',
-    marginBottom: 16,
-  },
-  percentageCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#4CAF50',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  percentageText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  encouragement: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  encouragementText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#FF6B35',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  encouragementSubtext: {
-    fontSize: 16,
-    color: '#6C757D',
-    textAlign: 'center',
-  },
-  finishButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 18,
-    paddingHorizontal: 48,
-    borderRadius: 16,
+  resultActions: {
     width: '100%',
-    alignItems: 'center',
-  },
-  finishButtonText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
+    gap: SPACING.md,
   },
 });

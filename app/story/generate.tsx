@@ -1,13 +1,27 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { profileService, storyService, quizService } from '@/services/database';
 import { generateAdventureStory } from '@/services/aiService';
 import { generateAudio } from '@/services/audioService';
 import { getCurrentContext } from '@/utils/contextUtils';
 import { ProfileWithRelations } from '@/types/database';
-import { Sparkles, AlertCircle } from 'lucide-react-native';
-import { COLORS, SPACING, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
+import { Sparkles, BookOpen, Volume2, HelpCircle, Check } from 'lucide-react-native';
+import { Container } from '@/components/Container';
+import { Typography } from '@/components/Typography';
+import { PremiumButton } from '@/components/PremiumButton';
+import { PremiumCard } from '@/components/PremiumCard';
+import { ErrorState } from '@/components/ErrorState';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import { hapticFeedback } from '@/utils/haptics';
+
+interface GenerationStep {
+  id: string;
+  label: string;
+  icon: typeof BookOpen;
+  completed: boolean;
+}
 
 export default function GenerateStory() {
   const router = useRouter();
@@ -15,10 +29,54 @@ export default function GenerateStory() {
   const [status, setStatus] = useState('Preparing your adventure...');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [steps, setSteps] = useState<GenerationStep[]>([
+    { id: 'profile', label: 'Loading profile', icon: Sparkles, completed: false },
+    { id: 'story', label: 'Creating story', icon: BookOpen, completed: false },
+    { id: 'quiz', label: 'Generating quiz', icon: HelpCircle, completed: false },
+    { id: 'audio', label: 'Adding narration', icon: Volume2, completed: false },
+  ]);
+
+  const [sparkleAnim] = useState(new Animated.Value(0));
+  const [pulseAnim] = useState(new Animated.Value(1));
 
   useEffect(() => {
+    // Sparkle rotation animation
+    Animated.loop(
+      Animated.timing(sparkleAnim, {
+        toValue: 1,
+        duration: 3000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
     generateStory();
   }, []);
+
+  const completeStep = (stepId: string) => {
+    setSteps((prevSteps) =>
+      prevSteps.map((step) => (step.id === stepId ? { ...step, completed: true } : step))
+    );
+    hapticFeedback.light();
+  };
 
   const generateStory = async () => {
     try {
@@ -34,6 +92,7 @@ export default function GenerateStory() {
         return;
       }
 
+      completeStep('profile');
       setStatus('Creating your adventure story...');
       setProgress(40);
 
@@ -45,7 +104,8 @@ export default function GenerateStory() {
         return;
       }
 
-      setStatus('Generating audio narration...');
+      completeStep('story');
+      setStatus('Creating quiz questions...');
       setProgress(60);
 
       const storyRecord = await storyService.create({
@@ -64,7 +124,7 @@ export default function GenerateStory() {
         return;
       }
 
-      setStatus('Creating quiz questions...');
+      completeStep('quiz');
       setProgress(70);
 
       for (let i = 0; i < story.quiz.length; i++) {
@@ -91,8 +151,10 @@ export default function GenerateStory() {
         await storyService.update(storyRecord.id, { audio_url: audioPath });
       }
 
+      completeStep('audio');
       setStatus('Story ready!');
       setProgress(100);
+      hapticFeedback.success();
 
       setTimeout(() => {
         router.replace({
@@ -127,141 +189,171 @@ export default function GenerateStory() {
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <View style={styles.content}>
-          <View style={[styles.iconContainer, { backgroundColor: '#FFE5E5' }]}>
-            <AlertCircle size={60} color={COLORS.error} strokeWidth={2} />
-          </View>
-
-          <Text style={styles.title}>Generation Failed</Text>
-          <Text style={styles.errorMessage}>{error}</Text>
-
-          <View style={styles.errorButtons}>
-            <TouchableOpacity style={styles.retryButton} onPress={handleRetry} activeOpacity={0.8}>
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.backButton} onPress={handleGoBack} activeOpacity={0.8}>
-              <Text style={styles.backButtonText}>Go Back</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+        <ErrorState
+          type="general"
+          title="Generation Failed"
+          message={error}
+          onRetry={handleRetry}
+          onGoHome={handleGoBack}
+          showDetails={false}
+        />
+      </Container>
     );
   }
 
+  const sparkleRotation = sparkleAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
-    <View style={styles.container}>
+    <Container gradient gradientColors={COLORS.backgroundGradient} centered>
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Sparkles size={60} color="#0d6efd" strokeWidth={2} />
-        </View>
+        {/* Animated Icon */}
+        <Animated.View
+          style={[
+            styles.iconContainer,
+            {
+              transform: [{ rotate: sparkleRotation }, { scale: pulseAnim }],
+            },
+          ]}
+        >
+          <PremiumCard gradient={COLORS.gradients.sunset} style={styles.iconCard} shadow="xl">
+            <Sparkles size={80} color={COLORS.text.inverse} strokeWidth={2} />
+          </PremiumCard>
+        </Animated.View>
 
-        <Text style={styles.title}>Generating Story</Text>
-        <Text style={styles.status}>{status}</Text>
+        {/* Title and Status */}
+        <Typography variant="displayMedium" align="center" style={styles.title}>
+          Creating Your Story
+        </Typography>
+        <Typography variant="bodyLarge" color="secondary" align="center" style={styles.status}>
+          {status}
+        </Typography>
 
+        {/* Progress Bar */}
         <View style={styles.progressBarContainer}>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+            <LinearGradient
+              colors={COLORS.gradients.sunset}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.progressFill, { width: `${progress}%` }]}
+            />
           </View>
-          <Text style={styles.progressText}>{progress}%</Text>
+          <Typography variant="label" align="center" style={styles.progressText}>
+            {progress}% Complete
+          </Typography>
         </View>
 
-        <ActivityIndicator size="large" color="#0d6efd" style={styles.loader} />
+        {/* Step Indicators */}
+        <PremiumCard shadow="md" style={styles.stepsCard}>
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            return (
+              <View key={step.id} style={styles.stepItem}>
+                <View
+                  style={[
+                    styles.stepIcon,
+                    step.completed && styles.stepIconCompleted,
+                  ]}
+                >
+                  {step.completed ? (
+                    <Check size={20} color={COLORS.text.inverse} strokeWidth={3} />
+                  ) : (
+                    <Icon
+                      size={20}
+                      color={step.completed ? COLORS.text.inverse : COLORS.text.light}
+                      strokeWidth={2}
+                    />
+                  )}
+                </View>
+                <Typography
+                  variant="bodySmall"
+                  color={step.completed ? 'primary' : 'light'}
+                  style={[styles.stepLabel, step.completed && styles.stepLabelCompleted]}
+                >
+                  {step.label}
+                </Typography>
+              </View>
+            );
+          })}
+        </PremiumCard>
       </View>
-    </View>
+    </Container>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
   content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
+    width: '100%',
+    maxWidth: 400,
+    paddingHorizontal: SPACING.xl,
   },
   iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#e7f1ff',
+    alignSelf: 'center',
+    marginBottom: SPACING.xxxl,
+  },
+  iconCard: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 32,
-  },
-  errorMessage: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    marginBottom: SPACING.xxl,
-    lineHeight: 24,
-    maxWidth: 300,
-  },
-  errorButtons: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-  },
-  retryButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xxl,
-    borderRadius: 16,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.bold,
-  },
-  backButton: {
-    backgroundColor: '#F0F0F0',
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xxl,
-    borderRadius: 16,
-  },
-  backButtonText: {
-    color: COLORS.text.primary,
-    fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.semibold,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#212529',
-    marginBottom: 12,
-    textAlign: 'center',
+    marginBottom: SPACING.md,
   },
   status: {
-    fontSize: 16,
-    color: '#6c757d',
-    marginBottom: 32,
-    textAlign: 'center',
+    marginBottom: SPACING.xxxl,
   },
   progressBarContainer: {
     width: '100%',
-    marginBottom: 24,
+    marginBottom: SPACING.xxl,
   },
   progressBar: {
     height: 12,
-    backgroundColor: '#e9ecef',
-    borderRadius: 6,
+    backgroundColor: COLORS.text.light + '30',
+    borderRadius: BORDER_RADIUS.md,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: SPACING.md,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#0d6efd',
-    borderRadius: 6,
+    borderRadius: BORDER_RADIUS.md,
   },
   progressText: {
-    fontSize: 14,
-    color: '#6c757d',
-    textAlign: 'center',
-    fontWeight: '600',
+    marginTop: SPACING.xs,
   },
-  loader: {
-    marginTop: 16,
+  stepsCard: {
+    width: '100%',
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+    gap: SPACING.md,
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  stepIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.text.light + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepIconCompleted: {
+    backgroundColor: COLORS.success,
+    ...SHADOWS.sm,
+  },
+  stepLabel: {
+    flex: 1,
+  },
+  stepLabelCompleted: {
+    textDecorationLine: 'line-through',
   },
 });
