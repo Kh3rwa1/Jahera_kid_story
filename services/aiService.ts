@@ -1,7 +1,7 @@
 import { ProfileWithRelations } from '@/types/database';
 import { StoryContext } from '@/utils/contextUtils';
+import { apiKeysService } from './apiKeysService';
 
-const OPENROUTER_API_KEY = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export interface QuizQuestion {
@@ -118,13 +118,19 @@ export async function generateAdventureStory(
   context: StoryContext
 ): Promise<GeneratedStory | null> {
   try {
+    const apiKey = await apiKeysService.getOpenAIKey();
+
+    if (!apiKey || !apiKeysService.validateApiKey('openai_api_key', apiKey)) {
+      throw new Error('OpenAI API key not configured. Please add it in settings.');
+    }
+
     const prompt = buildPrompt(profile, languageCode, context);
 
     const response = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         'HTTP-Referer': 'https://adventure-stories.app',
         'X-Title': 'Adventure Stories App',
       },

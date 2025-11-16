@@ -11,7 +11,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { profileService, storyService, quizService } from '@/services/database';
 import { ProfileWithRelations, QuizAttempt } from '@/types/database';
-import { Trophy, Target, BookOpen, Award, Settings } from 'lucide-react-native';
+import { Trophy, Target, BookOpen, Award, Settings, Key } from 'lucide-react-native';
 import { useCallback } from 'react';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
 
@@ -107,6 +107,14 @@ export default function ProfileScreen() {
           <Text style={styles.profileName}>{profile.kid_name}</Text>
           <Text style={styles.profileSubtext}>{profile.languages.length} languages</Text>
         </View>
+
+        <TouchableOpacity
+          style={styles.apiKeysButton}
+          onPress={() => router.push('/settings/api-keys')}
+          activeOpacity={0.8}>
+          <Key size={20} color={COLORS.primary} />
+          <Text style={styles.apiKeysButtonText}>Manage API Keys</Text>
+        </TouchableOpacity>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Statistics</Text>
@@ -335,6 +343,24 @@ const styles = StyleSheet.create({
   profileSubtext: {
     fontSize: FONT_SIZES.md,
     color: COLORS.text.secondary,
+  },
+  apiKeysButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.cardBackground,
+    marginHorizontal: SPACING.xl,
+    marginBottom: SPACING.xl,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    gap: SPACING.sm,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  apiKeysButtonText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: FONT_WEIGHTS.semibold,
+    color: COLORS.primary,
   },
   section: {
     marginBottom: SPACING.xxl,
