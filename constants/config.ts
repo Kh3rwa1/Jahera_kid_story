@@ -1,5 +1,5 @@
 export const APP_CONFIG = {
-  APP_NAME: 'DreamTales',
+  APP_NAME: 'Jahera',
   VERSION: '1.0.0',
 
   RETRY: {
