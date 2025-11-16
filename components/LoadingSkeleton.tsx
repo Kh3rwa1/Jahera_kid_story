@@ -1,6 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, BORDER_RADIUS } from '@/constants/theme';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 interface SkeletonProps {
   width?: number | string;
@@ -10,38 +13,51 @@ interface SkeletonProps {
 }
 
 export const Skeleton = ({ width = '100%', height = 20, borderRadius = 8, style }: SkeletonProps) => {
-  const opacity = useRef(new Animated.Value(0.3)).current;
+  const shimmerTranslate = useRef(new Animated.Value(-1)).current;
 
   useEffect(() => {
     Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.3,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
+      Animated.timing(shimmerTranslate, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      })
     ).start();
   }, []);
 
+  const shimmerStyle = {
+    transform: [
+      {
+        translateX: shimmerTranslate.interpolate({
+          inputRange: [-1, 1],
+          outputRange: [-screenWidth, screenWidth],
+        }),
+      },
+    ],
+  };
+
   return (
-    <Animated.View
+    <View
       style={[
         {
           width,
           height,
           borderRadius,
-          backgroundColor: '#E0E0E0',
-          opacity,
+          backgroundColor: '#E8E8E8',
+          overflow: 'hidden',
         },
         style,
       ]}
-    />
+    >
+      <Animated.View style={[StyleSheet.absoluteFill, shimmerStyle]}>
+        <LinearGradient
+          colors={['transparent', 'rgba(255, 255, 255, 0.5)', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+    </View>
   );
 };
 
