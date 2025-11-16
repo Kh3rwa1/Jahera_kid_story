@@ -1,24 +1,29 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   TextInput,
   Animated,
+  Pressable,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Search, Mic, Sparkles, BookOpen, Trophy, Share2 } from 'lucide-react-native';
+import { Search, Mic, Sparkles, BookOpen, Trophy } from 'lucide-react-native';
 import { profileService, storyService } from '@/services/database';
 import { ProfileWithRelations, Story } from '@/types/database';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import { Container } from '@/components/Container';
+import { Typography } from '@/components/Typography';
 import { PremiumCard } from '@/components/PremiumCard';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { ErrorState } from '@/components/ErrorState';
+import { EmptyState } from '@/components/EmptyState';
 import { useFadeIn, useSlideInUp } from '@/utils/animations';
 import { hapticFeedback } from '@/utils/haptics';
+import { useResponsive } from '@/hooks/useResponsive';
 import { analytics } from '@/services/analyticsService';
 import { achievementService, Achievement } from '@/services/achievementService';
 import { AchievementModal } from '@/components/AchievementModal';
@@ -26,9 +31,11 @@ import { appRating } from '@/utils/appRating';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const responsive = useResponsive();
   const [profile, setProfile] = useState<ProfileWithRelations | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
   const [achievementStats, setAchievementStats] = useState({ total: 0, unlocked: 0, percentage: 0 });
@@ -73,6 +80,7 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('Error loading data:', error);
       analytics.trackError(error as Error, { screen: 'Home', action: 'loadData' });
+      setError('Failed to load your data. Please try again.');
       setIsLoading(false);
     }
   };
@@ -118,17 +126,29 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </View>
+      <Container gradient gradientColors={COLORS.backgroundGradient}>
+        <View style={styles.loadingContent}>
+          <LoadingSkeleton type="card" count={4} />
+        </View>
+      </Container>
     );
   }
 
-  if (!profile) {
+  if (error || !profile) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Failed to load profile</Text>
-      </View>
+      <Container gradient gradientColors={COLORS.backgroundGradient}>
+        <ErrorState
+          type="general"
+          title="Unable to Load Data"
+          message={error || 'Failed to load your profile. Please try again.'}
+          onRetry={() => {
+            setError(null);
+            setIsLoading(true);
+            loadData();
+          }}
+          onGoHome={() => router.replace('/')}
+        />
+      </Container>
     );
   }
 
@@ -153,19 +173,26 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}>
         <Animated.View style={[styles.topBar, { opacity: fadeIn }]}>
           <View>
-            <Text style={styles.greeting}>Hello, {profile?.kid_name || 'Friend'}! 👋</Text>
-            <Text style={styles.appTitle}>Jahera</Text>
+            <Typography variant="bodyMedium" color="secondary" style={styles.greeting}>
+              Hello, {profile?.kid_name || 'Friend'}! 👋
+            </Typography>
+            <Typography variant="displayMedium" color="primary" style={styles.appTitle}>
+              Jahera
+            </Typography>
           </View>
           <View style={styles.topBarIcons}>
-            <TouchableOpacity onPress={handleAchievementsPress}>
-              <LinearGradient
-                colors={COLORS.gradients.sunset as any}
-                style={styles.achievementBadge}
-              >
+            <Pressable
+              onPress={handleAchievementsPress}
+              accessibilityLabel={`Achievements: ${achievementStats.unlocked} unlocked`}
+              accessibilityRole="button"
+            >
+              <LinearGradient colors={COLORS.gradients.sunset as any} style={styles.achievementBadge}>
                 <Trophy size={18} color={COLORS.text.inverse} />
-                <Text style={styles.achievementText}>{achievementStats.unlocked}</Text>
+                <Typography variant="captionBold" color="inverse">
+                  {achievementStats.unlocked}
+                </Typography>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </Animated.View>
         <View style={styles.searchContainer}>
@@ -194,8 +221,14 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Story Categories</Text>
-          <View style={styles.categoriesGrid}>
+          <Typography variant="h3" style={styles.sectionTitle}>
+            Story Categories
+          </Typography>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesGrid}
+          >
             {categories.map((category, index) => (
               <PremiumCard
                 key={category.id}
@@ -207,78 +240,99 @@ export default function HomeScreen() {
                 onPress={index === 0 ? handleGenerateStory : undefined}
                 shadow="md"
                 padding={SPACING.md}
+                accessibilityLabel={`${category.name} category`}
+                accessibilityRole="button"
               >
-                <Text style={styles.categoryIcon}>{category.icon}</Text>
-                <Text style={[styles.categoryName, index === 0 && { color: COLORS.text.inverse }]}>
+                <Typography variant="displayMedium" style={styles.categoryIcon}>
+                  {category.icon}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  align="center"
+                  color={index === 0 ? 'inverse' : 'primary'}
+                  style={styles.categoryName}
+                >
                   {category.name}
-                </Text>
+                </Typography>
               </PremiumCard>
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Stories</Text>
-          <View style={styles.storiesGrid}>
-            {recentStories.length === 0 ? (
-              <PremiumCard
-                style={styles.emptyStoryCard}
-                onPress={handleGenerateStory}
-                shadow="lg"
-                padding={SPACING.xl}
-              >
-                <Sparkles size={40} color={COLORS.primary} strokeWidth={1.5} />
-                <Text style={styles.emptyStoryText}>Create Your First Story!</Text>
-                <Text style={styles.emptyStorySubtext}>Tap to generate</Text>
-              </PremiumCard>
-            ) : (
-              recentStories.map((story, index) => (
-                <PremiumCard
-                  key={story.id}
-                  style={styles.storyCard}
-                  onPress={() => handleStoryPress(story.id)}
-                  shadow="md"
-                  padding={0}
-                >
-                  <LinearGradient
-                    colors={['#FF9B71', '#FF7A50'] as any}
-                    style={styles.storyImagePlaceholder}
+          <Typography variant="h3" style={styles.sectionTitle}>
+            Recent Stories
+          </Typography>
+          {recentStories.length === 0 ? (
+            <View style={styles.emptyStateContainer}>
+              <EmptyState
+                type="stories"
+                title="No Stories Yet"
+                description="Start your journey by creating your first magical story!"
+                action={{
+                  label: 'Create Story',
+                  onPress: handleGenerateStory,
+                }}
+              />
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.storiesGrid}
+            >
+              {recentStories.map((story) => {
+                const cardWidth = responsive.isMobile ? 140 : 180;
+                return (
+                  <PremiumCard
+                    key={story.id}
+                    style={[styles.storyCard, { width: cardWidth }]}
+                    onPress={() => handleStoryPress(story.id)}
+                    shadow="md"
+                    padding={0}
+                    accessibilityLabel={`Story: ${story.title}`}
+                    accessibilityRole="button"
                   >
-                    <BookOpen size={32} color="#FFFFFF" strokeWidth={1.5} />
-                  </LinearGradient>
-                  <Text style={styles.storyCardTitle} numberOfLines={2}>
-                    {story.title}
-                  </Text>
-                </PremiumCard>
-              ))
-            )}
-          </View>
+                    <LinearGradient colors={COLORS.gradients.primary} style={styles.storyImagePlaceholder}>
+                      <BookOpen size={32} color={COLORS.text.inverse} strokeWidth={1.5} />
+                    </LinearGradient>
+                    <View style={styles.storyCardContent}>
+                      <Typography variant="bodySmall" numberOfLines={2}>
+                        {story.title}
+                      </Typography>
+                    </View>
+                  </PremiumCard>
+                );
+              })}
+            </ScrollView>
+          )}
         </View>
 
         {stories.length > 3 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>All Stories</Text>
-            {stories.slice(3).map((story, index) => (
+            <Typography variant="h3" style={styles.sectionTitle}>
+              All Stories
+            </Typography>
+            {stories.slice(3).map((story) => (
               <PremiumCard
                 key={story.id}
                 style={styles.listStoryCard}
                 onPress={() => handleStoryPress(story.id)}
                 shadow="sm"
                 padding={0}
+                accessibilityLabel={`Story: ${story.title}, ${story.season}, ${story.time_of_day}`}
+                accessibilityRole="button"
               >
-                <LinearGradient
-                  colors={['#7FCCB5', '#66B89F'] as any}
-                  style={styles.listStoryImage}
-                >
-                  <BookOpen size={24} color="#FFFFFF" strokeWidth={1.5} />
+                <LinearGradient colors={COLORS.gradients.ocean} style={styles.listStoryImage}>
+                  <BookOpen size={24} color={COLORS.text.inverse} strokeWidth={1.5} />
                 </LinearGradient>
                 <View style={styles.listStoryInfo}>
-                  <Text style={styles.listStoryTitle} numberOfLines={1}>
+                  <Typography variant="bodyMedium" numberOfLines={1}>
                     {story.title}
-                  </Text>
-                  <Text style={styles.listStoryMeta}>
+                  </Typography>
+                  <Typography variant="caption" color="secondary" style={styles.listStoryMeta}>
                     {story.season} • {story.time_of_day}
-                  </Text>
+                  </Typography>
                 </View>
               </PremiumCard>
             ))}
@@ -296,21 +350,9 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-  },
-  errorText: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.error,
+  loadingContent: {
+    padding: SPACING.xl,
+    gap: SPACING.md,
   },
   container: {
     flex: 1,
@@ -327,14 +369,10 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.lg,
   },
   greeting: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text.secondary,
     marginBottom: SPACING.xs,
   },
   appTitle: {
-    fontSize: FONT_SIZES.xxxl,
-    fontWeight: FONT_WEIGHTS.extrabold,
-    color: COLORS.primary,
+    // Additional styles if needed
   },
   topBarIcons: {
     flexDirection: 'row',
@@ -349,11 +387,6 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.round,
     ...SHADOWS.sm,
-  },
-  achievementText: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.inverse,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -370,7 +403,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: FONT_SIZES.md,
+    fontSize: 16,
     color: COLORS.text.primary,
   },
   voiceButton: {
@@ -389,87 +422,56 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xxl,
   },
   sectionTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
     marginBottom: SPACING.lg,
     paddingHorizontal: SPACING.xl,
   },
   categoriesGrid: {
-    flexDirection: 'row',
     paddingHorizontal: SPACING.xl,
     gap: SPACING.lg,
   },
   categoryBubble: {
-    width: 80,
-    height: 100,
+    width: 90,
+    height: 110,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: BORDER_RADIUS.xl,
   },
   categoryIcon: {
-    fontSize: 36,
     marginBottom: SPACING.sm,
   },
   categoryName: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
-    textAlign: 'center',
+    // Additional styles if needed
+  },
+  emptyStateContainer: {
+    paddingHorizontal: SPACING.xl,
   },
   storiesGrid: {
-    flexDirection: 'row',
     paddingHorizontal: SPACING.xl,
     gap: SPACING.lg,
   },
-  emptyStoryCard: {
-    flex: 1,
-    aspectRatio: 0.75,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: COLORS.primaryLight,
-    borderStyle: 'dashed',
-  },
-  emptyStoryText: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
-    marginTop: SPACING.md,
-    textAlign: 'center',
-  },
-  emptyStorySubtext: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text.secondary,
-    marginTop: SPACING.xs,
-  },
   storyCard: {
-    width: 140,
     overflow: 'hidden',
+    borderRadius: BORDER_RADIUS.xl,
   },
   storyImagePlaceholder: {
     width: '100%',
     height: 180,
-    backgroundColor: '#FF9B71',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  storyCardTitle: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: FONT_WEIGHTS.semibold,
-    color: COLORS.text.primary,
+  storyCardContent: {
     padding: SPACING.md,
-    lineHeight: 18,
   },
   listStoryCard: {
     flexDirection: 'row',
     marginHorizontal: SPACING.xl,
     marginBottom: SPACING.md,
     overflow: 'hidden',
+    borderRadius: BORDER_RADIUS.lg,
   },
   listStoryImage: {
     width: 80,
     height: 80,
-    backgroundColor: '#7FCCB5',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -477,16 +479,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: SPACING.lg,
     justifyContent: 'center',
-  },
-  listStoryTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.semibold,
-    color: COLORS.text.primary,
-    marginBottom: SPACING.xs,
+    gap: SPACING.xs,
   },
   listStoryMeta: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text.secondary,
     textTransform: 'capitalize',
   },
 });
