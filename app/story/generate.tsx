@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { profileService, storyService, quizService } from '@/services/database';
 import { generateAdventureStory } from '@/services/aiService';
 import { generateAudio } from '@/services/audioService';
 import { getCurrentContext } from '@/utils/contextUtils';
 import { ProfileWithRelations } from '@/types/database';
-import { Sparkles } from 'lucide-react-native';
+import { Sparkles, AlertCircle } from 'lucide-react-native';
+import { COLORS, SPACING, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
 
 export default function GenerateStory() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [status, setStatus] = useState('Preparing your adventure...');
   const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     generateStory();
@@ -102,9 +104,50 @@ export default function GenerateStory() {
       }, 500);
     } catch (error) {
       console.error('Error generating story:', error);
-      router.back();
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate story';
+
+      if (errorMessage.includes('API key not configured')) {
+        setError('Please add your OpenAI API key in Profile → Manage API Keys');
+      } else {
+        setError(errorMessage);
+      }
     }
   };
+
+  const handleRetry = () => {
+    setError(null);
+    setProgress(0);
+    setStatus('Preparing your adventure...');
+    generateStory();
+  };
+
+  const handleGoBack = () => {
+    router.back();
+  };
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <View style={[styles.iconContainer, { backgroundColor: '#FFE5E5' }]}>
+            <AlertCircle size={60} color={COLORS.error} strokeWidth={2} />
+          </View>
+
+          <Text style={styles.title}>Generation Failed</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+
+          <View style={styles.errorButtons}>
+            <TouchableOpacity style={styles.retryButton} onPress={handleRetry} activeOpacity={0.8}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.backButton} onPress={handleGoBack} activeOpacity={0.8}>
+              <Text style={styles.backButtonText}>Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -132,7 +175,7 @@ export default function GenerateStory() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: COLORS.background,
   },
   content: {
     flex: 1,
@@ -148,6 +191,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
+  },
+  errorMessage: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    marginBottom: SPACING.xxl,
+    lineHeight: 24,
+    maxWidth: 300,
+  },
+  errorButtons: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+  },
+  retryButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xxl,
+    borderRadius: 16,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: FONT_SIZES.md,
+    fontWeight: FONT_WEIGHTS.bold,
+  },
+  backButton: {
+    backgroundColor: '#F0F0F0',
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xxl,
+    borderRadius: 16,
+  },
+  backButtonText: {
+    color: COLORS.text.primary,
+    fontSize: FONT_SIZES.md,
+    fontWeight: FONT_WEIGHTS.semibold,
   },
   title: {
     fontSize: 28,
