@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Sparkles, Heart, Star, Wand2, BookOpen } from 'lucide-react-native';
@@ -16,9 +16,11 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+const isSmallDevice = width < 375 || height < 667;
 
 // Floating icon component
 const FloatingIcon = ({ icon: Icon, delay = 0, duration = 2000 }: any) => {
@@ -90,29 +92,36 @@ export default function Welcome() {
 
   if (isLoading) {
     return (
-      <LinearGradient colors={COLORS.backgroundGradient} style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </LinearGradient>
+      <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
+        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
     );
   }
 
   return (
-    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
-      {/* Floating decorative icons */}
-      <View style={styles.floatingIconsContainer}>
-        <View style={[styles.floatingIcon, { top: 80, left: 30 }]}>
-          <FloatingIcon icon={Star} delay={0} />
-        </View>
-        <View style={[styles.floatingIcon, { top: 120, right: 40 }]}>
-          <FloatingIcon icon={Heart} delay={300} />
-        </View>
-        <View style={[styles.floatingIcon, { top: 200, left: width - 60 }]}>
-          <FloatingIcon icon={Wand2} delay={600} />
-        </View>
-        <View style={[styles.floatingIcon, { top: 280, left: 50 }]}>
-          <FloatingIcon icon={BookOpen} delay={900} />
-        </View>
-      </View>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
+        {/* Floating decorative icons - only show on larger devices */}
+        {!isSmallDevice && (
+          <View style={styles.floatingIconsContainer}>
+            <View style={[styles.floatingIcon, { top: '10%', left: '8%' }]}>
+              <FloatingIcon icon={Star} delay={0} />
+            </View>
+            <View style={[styles.floatingIcon, { top: '15%', right: '10%' }]}>
+              <FloatingIcon icon={Heart} delay={300} />
+            </View>
+            <View style={[styles.floatingIcon, { top: '25%', right: '15%' }]}>
+              <FloatingIcon icon={Wand2} delay={600} />
+            </View>
+            <View style={[styles.floatingIcon, { top: '35%', left: '12%' }]}>
+              <FloatingIcon icon={BookOpen} delay={900} />
+            </View>
+          </View>
+        )}
 
       <View style={styles.content}>
         {/* Hero icon with gradient background */}
@@ -240,12 +249,16 @@ export default function Welcome() {
           No signup required • Free to start
         </Animated.Text>
       </Animated.View>
-    </LinearGradient>
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   loadingContainer: {
+    flex: 1,
+  },
+  loadingContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -265,22 +278,22 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingTop: 80,
-    paddingHorizontal: SPACING.xxl,
+    paddingTop: isSmallDevice ? SPACING.xl : SPACING.xxxl * 2,
+    paddingHorizontal: SPACING.xl,
     alignItems: 'center',
     zIndex: 1,
   },
   iconContainer: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    width: isSmallDevice ? 120 : 160,
+    height: isSmallDevice ? 120 : 160,
+    borderRadius: isSmallDevice ? 60 : 80,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.xxl,
+    marginBottom: isSmallDevice ? SPACING.lg : SPACING.xxl,
     ...SHADOWS.xl,
   },
   title: {
-    fontSize: 42,
+    fontSize: isSmallDevice ? 36 : 42,
     fontWeight: FONT_WEIGHTS.extrabold,
     color: COLORS.text.primary,
     marginBottom: SPACING.md,
@@ -288,11 +301,11 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: FONT_SIZES.lg,
+    fontSize: isSmallDevice ? FONT_SIZES.md : FONT_SIZES.lg,
     color: COLORS.text.secondary,
     textAlign: 'center',
-    lineHeight: 26,
-    marginBottom: SPACING.xxxl,
+    lineHeight: isSmallDevice ? 22 : 26,
+    marginBottom: isSmallDevice ? SPACING.xl : SPACING.xxxl,
     paddingHorizontal: SPACING.md,
     fontWeight: FONT_WEIGHTS.medium,
   },
@@ -334,14 +347,14 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHTS.medium,
   },
   footer: {
-    padding: SPACING.xxl,
-    paddingBottom: SPACING.xxxl + 10,
+    padding: SPACING.xl,
+    paddingBottom: isSmallDevice ? SPACING.lg : SPACING.xxl,
     alignItems: 'center',
     zIndex: 1,
   },
   startButton: {
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xxxl + SPACING.lg,
+    paddingVertical: isSmallDevice ? SPACING.md : SPACING.lg,
+    paddingHorizontal: isSmallDevice ? SPACING.xxl : SPACING.xxxl + SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
     flexDirection: 'row',
     alignItems: 'center',
