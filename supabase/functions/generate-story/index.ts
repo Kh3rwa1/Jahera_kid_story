@@ -169,7 +169,7 @@ Do not include any other text, explanation, or markdown formatting. Just the JSO
         'X-Title': 'Adventure Stories App',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp:free',
+        model: 'meta-llama/llama-3.2-3b-instruct:free',
         messages: [
           {
             role: 'user',
