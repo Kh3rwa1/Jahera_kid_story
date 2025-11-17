@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,6 +18,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
 const isSmallDevice = width < 375 || height < 667;
@@ -55,6 +56,8 @@ export default function Welcome() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const scaleButton = useSharedValue(1);
+  const loadingAnimation = useRef<LottieView>(null);
+  const successAnimation = useRef<LottieView>(null);
 
   useEffect(() => {
     checkProfile();
@@ -97,7 +100,13 @@ export default function Welcome() {
       <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
         <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
           <View style={styles.loadingContent}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <LottieView
+              ref={loadingAnimation}
+              source={require('@/assets/lottie/loading.json')}
+              autoPlay
+              loop
+              style={styles.lottieLoading}
+            />
           </View>
         </LinearGradient>
       </SafeAreaView>
@@ -126,16 +135,18 @@ export default function Welcome() {
         )}
 
       <View style={styles.content}>
-        {/* Hero icon with gradient background */}
-        <Animated.View entering={FadeInUp.delay(200).springify()}>
-          <LinearGradient
-            colors={[COLORS.primaryLight, COLORS.primary]}
-            style={styles.iconContainer}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Sparkles size={80} color="#FFFFFF" strokeWidth={2} />
-          </LinearGradient>
+        {/* Hero Lottie animation */}
+        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.heroAnimationContainer}>
+          <LottieView
+            ref={successAnimation}
+            source={require('@/assets/lottie/success.json')}
+            autoPlay
+            loop
+            style={styles.lottieHero}
+          />
+          <View style={styles.heroIconOverlay}>
+            <Sparkles size={80} color={COLORS.primary} strokeWidth={2} />
+          </View>
         </Animated.View>
 
         {/* Title with animation */}
@@ -143,7 +154,7 @@ export default function Welcome() {
           entering={FadeInUp.delay(400).springify()}
           style={styles.title}
         >
-          DreamTales
+          Jahera
         </Animated.Text>
 
         <Animated.Text
@@ -285,13 +296,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1,
   },
-  iconContainer: {
+  heroAnimationContainer: {
+    width: isSmallDevice ? 120 : 160,
+    height: isSmallDevice ? 120 : 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: isSmallDevice ? SPACING.lg : SPACING.xxl,
+    position: 'relative',
+  },
+  lottieHero: {
+    width: isSmallDevice ? 200 : 260,
+    height: isSmallDevice ? 200 : 260,
+    position: 'absolute',
+  },
+  lottieLoading: {
+    width: 150,
+    height: 150,
+  },
+  heroIconOverlay: {
     width: isSmallDevice ? 120 : 160,
     height: isSmallDevice ? 120 : 160,
     borderRadius: isSmallDevice ? 60 : 80,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: isSmallDevice ? SPACING.lg : SPACING.xxl,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     ...SHADOWS.xl,
   },
   title: {
