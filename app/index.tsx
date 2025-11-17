@@ -65,15 +65,9 @@ export default function Welcome() {
 
   const checkProfile = async () => {
     try {
-      const profileId = await AsyncStorage.getItem('profileId');
-
-      if (profileId) {
-        setTimeout(() => {
-          router.replace('/(tabs)');
-        }, 100);
-      } else {
-        setIsLoading(false);
-      }
+      // Clear any old profile data for now
+      await AsyncStorage.removeItem('profileId');
+      setIsLoading(false);
     } catch (error) {
       console.error('Error checking profile:', error);
       setIsLoading(false);
