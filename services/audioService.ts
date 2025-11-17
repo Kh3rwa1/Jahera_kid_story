@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system';
+import { apiKeysService } from './apiKeysService';
 
-const ELEVENLABS_API_KEY = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
 const ELEVENLABS_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
 
 const LANGUAGE_VOICE_MAP: Record<string, string> = {
@@ -38,6 +38,12 @@ export async function generateAudio(
   storyId: string
 ): Promise<string | null> {
   try {
+    const elevenLabsApiKey = await apiKeysService.getElevenLabsKey();
+
+    if (!elevenLabsApiKey || elevenLabsApiKey === 'your-api-key-here') {
+      throw new Error('ElevenLabs API key not configured. Please add it in Settings > API Keys.');
+    }
+
     const voiceId = getVoiceForLanguage(languageCode);
     const url = `${ELEVENLABS_URL}/${voiceId}`;
 
@@ -45,7 +51,7 @@ export async function generateAudio(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'xi-api-key': ELEVENLABS_API_KEY || '',
+        'xi-api-key': elevenLabsApiKey,
       },
       body: JSON.stringify({
         text,
@@ -58,8 +64,9 @@ export async function generateAudio(
     });
 
     if (!response.ok) {
-      console.error('ElevenLabs API error:', response.status);
-      return null;
+      const errorText = await response.text();
+      console.error('ElevenLabs API error:', response.status, errorText);
+      throw new Error(`ElevenLabs API error: ${response.status}`);
     }
 
     const audioDir = `${FileSystem.documentDirectory}audio/`;
