@@ -65,7 +65,9 @@ export default function Welcome() {
       const profileId = await AsyncStorage.getItem('profileId');
 
       if (profileId) {
-        router.replace('/(tabs)');
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 100);
       } else {
         setIsLoading(false);
       }
