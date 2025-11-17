@@ -10,27 +10,35 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import { User, ArrowLeft } from 'lucide-react-native';
 
 export default function KidName() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [name, setName] = useState('');
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const trimmedName = name.trim();
 
     if (trimmedName.length === 0) {
-      Alert.alert('Name Required', 'Please enter your child\'s name to continue.', [
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert('Name Required', "Please enter your child's name to continue.", [
         { text: 'OK' },
       ]);
       return;
     }
 
     if (trimmedName.length < 2) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       Alert.alert('Invalid Name', 'Name must be at least 2 characters long.', [{ text: 'OK' }]);
       return;
     }
 
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     router.push({
       pathname: '/onboarding/family-members',
       params: {
@@ -40,149 +48,199 @@ export default function KidName() {
     });
   };
 
+  const handleBack = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  };
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.header}>
+    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}>
+        {/* Header */}
+        <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
+            <ArrowLeft size={24} color={COLORS.text.primary} strokeWidth={2} />
+          </TouchableOpacity>
+
+          <View style={styles.iconBadge}>
+            <User size={32} color={COLORS.primary} strokeWidth={2.5} />
+          </View>
+
           <Text style={styles.title}>What's your child's name?</Text>
           <Text style={styles.subtitle}>
-            We'll use this name to personalize the adventure stories
+            We'll personalize magical stories just for them ✨
           </Text>
+        </Animated.View>
+
+        {/* Input Section */}
+        <View style={styles.content}>
+          <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter name here..."
+              placeholderTextColor={COLORS.text.light}
+              value={name}
+              onChangeText={setName}
+              autoFocus
+              autoCapitalize="words"
+              returnKeyType="next"
+              onSubmitEditing={handleContinue}
+            />
+            {name.length > 0 && (
+              <Animated.View entering={FadeInDown.springify()} style={styles.characterCount}>
+                <Text style={styles.characterCountText}>
+                  {name.length < 2 ? `${2 - name.length} more character${2 - name.length > 1 ? 's' : ''}` : '✓ Looks great!'}
+                </Text>
+              </Animated.View>
+            )}
+          </Animated.View>
+
+          {/* Progress indicator */}
+          <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <Animated.View
+                style={[styles.progressFill, { width: '25%' }]}
+              />
+            </View>
+            <Text style={styles.progressText}>Step 2 of 4</Text>
+          </Animated.View>
         </View>
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter name"
-            placeholderTextColor="#adb5bd"
-            value={name}
-            onChangeText={setName}
-            autoFocus
-            autoCapitalize="words"
-            returnKeyType="next"
-            onSubmitEditing={handleContinue}
-          />
-        </View>
-
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '25%' }]} />
-          </View>
-          <Text style={styles.progressText}>Step 2 of 4</Text>
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          activeOpacity={0.7}>
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.continueButton, name.trim().length === 0 && styles.continueButtonDisabled]}
-          onPress={handleContinue}
-          disabled={name.trim().length === 0}
-          activeOpacity={0.8}>
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+        {/* Footer */}
+        <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.footer}>
+          <TouchableOpacity
+            onPress={handleContinue}
+            disabled={name.trim().length < 2}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={name.trim().length < 2
+                ? [COLORS.text.light, COLORS.text.light]
+                : [COLORS.primary, COLORS.primaryDark]
+              }
+              style={styles.continueButton}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.continueButtonText}>
+                {name.trim().length < 2 ? 'Enter a name' : 'Continue →'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
-  content: {
+  keyboardView: {
     flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 20,
   },
   header: {
-    marginBottom: 40,
+    paddingTop: 60,
+    paddingHorizontal: SPACING.xxl,
+    paddingBottom: SPACING.xxxl,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xl,
+    ...SHADOWS.sm,
+  },
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: 'rgba(255, 102, 52, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.lg,
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
-    color: '#212529',
-    marginBottom: 12,
+    fontWeight: FONT_WEIGHTS.extrabold,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.sm,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6c757d',
-    lineHeight: 24,
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text.secondary,
+    lineHeight: 22,
+    fontWeight: FONT_WEIGHTS.medium,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: SPACING.xxl,
   },
   inputContainer: {
-    marginBottom: 40,
+    marginBottom: SPACING.xxxl,
   },
   input: {
-    backgroundColor: '#fff',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    fontSize: 20,
-    color: '#212529',
+    backgroundColor: COLORS.cardBackground,
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: BORDER_RADIUS.lg,
+    fontSize: 24,
+    fontWeight: FONT_WEIGHTS.semibold,
+    color: COLORS.text.primary,
     borderWidth: 2,
-    borderColor: '#e9ecef',
+    borderColor: COLORS.primary + '30',
+    ...SHADOWS.md,
+  },
+  characterCount: {
+    marginTop: SPACING.md,
+    alignItems: 'flex-end',
+  },
+  characterCountText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHTS.semibold,
   },
   progressContainer: {
-    marginTop: 20,
+    gap: SPACING.sm,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: '#e9ecef',
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: 'rgba(255, 102, 52, 0.15)',
+    borderRadius: BORDER_RADIUS.sm,
     overflow: 'hidden',
-    marginBottom: 8,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#0d6efd',
-    borderRadius: 4,
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.sm,
   },
   progressText: {
-    fontSize: 14,
-    color: '#6c757d',
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHTS.bold,
     textAlign: 'center',
   },
   footer: {
-    flexDirection: 'row',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-    gap: 12,
-  },
-  backButton: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    backgroundColor: '#e9ecef',
-  },
-  backButtonText: {
-    color: '#495057',
-    fontSize: 16,
-    fontWeight: '600',
+    padding: SPACING.xxl,
+    paddingBottom: SPACING.xxxl + 10,
   },
   continueButton: {
-    flex: 2,
-    backgroundColor: '#0d6efd',
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
-  },
-  continueButtonDisabled: {
-    backgroundColor: '#adb5bd',
+    ...SHADOWS.colored,
   },
   continueButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: FONT_SIZES.lg,
+    fontWeight: FONT_WEIGHTS.bold,
+    letterSpacing: 0.3,
   },
 });
