@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,9 +7,11 @@ import {
   TextInput,
   Animated,
   Pressable,
+  Platform,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Search, Mic, Sparkles, BookOpen, Trophy } from 'lucide-react-native';
 import { profileService, storyService } from '@/services/database';
@@ -120,56 +122,78 @@ export default function HomeScreen() {
   const handleAchievementsPress = () => {
     hapticFeedback.light();
     analytics.track('achievements_viewed');
-    // Navigate to achievements screen (to be created)
-    router.push('/achievements' as any);
+    // TODO: Navigate to achievements screen when created
+    // router.push('/achievements');
   };
+
+  // Filter stories based on search query
+  const filteredStories = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return stories;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return stories.filter(
+      (story) =>
+        story.title.toLowerCase().includes(query) ||
+        story.season?.toLowerCase().includes(query) ||
+        story.time_of_day?.toLowerCase().includes(query)
+    );
+  }, [stories, searchQuery]);
+
+  const categories = useMemo(
+    () => [
+      { id: 1, name: 'Create Story', icon: '✨', color: COLORS.gradients.sunset, gradient: true },
+      { id: 2, name: 'Adventure', icon: '🚀', color: COLORS.categoryColors.tealGradient, gradient: true },
+      { id: 3, name: 'Animals', icon: '🦁', color: COLORS.categoryColors.peachGradient, gradient: true },
+      { id: 4, name: 'Friends', icon: '👫', color: COLORS.categoryColors.purpleGradient, gradient: true },
+      { id: 5, name: 'Fantasy', icon: '🧙', color: COLORS.gradients.magic, gradient: true },
+    ],
+    []
+  );
+
+  const recentStories = useMemo(() => filteredStories.slice(0, 3), [filteredStories]);
 
   if (isLoading) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient}>
-        <View style={styles.loadingContent}>
-          <LoadingSkeleton type="card" count={4} />
-        </View>
-      </Container>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
+          <View style={styles.loadingContent}>
+            <LoadingSkeleton type="card" count={4} />
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
     );
   }
 
   if (error || !profile) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient}>
-        <ErrorState
-          type="general"
-          title="Unable to Load Data"
-          message={error || 'Failed to load your profile. Please try again.'}
-          onRetry={() => {
-            setError(null);
-            setIsLoading(true);
-            loadData();
-          }}
-          onGoHome={() => router.replace('/')}
-        />
-      </Container>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
+          <ErrorState
+            type="general"
+            title="Unable to Load Data"
+            message={error || 'Failed to load your profile. Please try again.'}
+            onRetry={() => {
+              setError(null);
+              setIsLoading(true);
+              loadData();
+            }}
+            onGoHome={() => router.replace('/')}
+          />
+        </LinearGradient>
+      </SafeAreaView>
     );
   }
 
-  const categories = [
-    { id: 1, name: 'Create Story', icon: '✨', color: COLORS.gradients.sunset, gradient: true },
-    { id: 2, name: 'Adventure', icon: '🚀', color: COLORS.categoryColors.tealGradient, gradient: true },
-    { id: 3, name: 'Animals', icon: '🦁', color: COLORS.categoryColors.peachGradient, gradient: true },
-    { id: 4, name: 'Friends', icon: '👫', color: COLORS.categoryColors.purpleGradient, gradient: true },
-    { id: 5, name: 'Fantasy', icon: '🧙', color: COLORS.gradients.magic, gradient: true },
-  ];
-
-  const recentStories = stories.slice(0, 3);
-
   return (
-    <>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <LinearGradient
-        colors={COLORS.backgroundGradient as any}
+        colors={COLORS.backgroundGradient}
         style={StyleSheet.absoluteFill}
       />
       <ScrollView
-        style={styles.container}
+        style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
         <Animated.View style={[styles.topBar, { opacity: fadeIn }]}>
@@ -187,7 +211,7 @@ export default function HomeScreen() {
               accessibilityLabel={`Achievements: ${achievementStats.unlocked} unlocked`}
               accessibilityRole="button"
             >
-              <LinearGradient colors={COLORS.gradients.sunset as any} style={styles.achievementBadge}>
+              <LinearGradient colors={COLORS.gradients.sunset} style={styles.achievementBadge}>
                 <Trophy size={20} color={COLORS.text.inverse} strokeWidth={2.5} />
                 <Typography variant="captionBold" color="inverse" style={styles.achievementText}>
                   {achievementStats.unlocked}
@@ -213,7 +237,7 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <LinearGradient
-              colors={COLORS.gradients.primary as any}
+              colors={COLORS.gradients.primary}
               style={styles.voiceButtonGradient}
             >
               <Mic size={20} color={COLORS.text.inverse} />
@@ -233,7 +257,7 @@ export default function HomeScreen() {
             {categories.map((category, index) => (
               <PremiumCard
                 key={category.id}
-                gradient={category.gradient ? (category.color as any) : undefined}
+                gradient={category.gradient ? category.color : undefined}
                 style={styles.categoryBubble}
                 onPress={index === 0 ? handleGenerateStory : undefined}
                 shadow="lg"
@@ -306,12 +330,12 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {stories.length > 3 && (
+        {filteredStories.length > 3 && (
           <View style={styles.section}>
             <Typography variant="h3" style={styles.sectionTitle}>
               All Stories
             </Typography>
-            {stories.slice(3).map((story) => (
+            {filteredStories.slice(3).map((story) => (
               <PremiumCard
                 key={story.id}
                 style={styles.listStoryCard}
@@ -343,7 +367,7 @@ export default function HomeScreen() {
         achievement={unlockedAchievement}
         onClose={() => setUnlockedAchievement(null)}
       />
-    </>
+    </SafeAreaView>
   );
 }
 
@@ -355,6 +379,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContainer: {
+    flex: 1,
+  },
   scrollContent: {
     paddingBottom: SPACING.xxxl,
   },
@@ -362,7 +389,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingTop: 60,
+    paddingTop: SPACING.md,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xl,
   },
