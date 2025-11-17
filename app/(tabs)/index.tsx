@@ -57,7 +57,10 @@ export default function HomeScreen() {
       const profileId = await AsyncStorage.getItem('profileId');
 
       if (!profileId) {
-        router.replace('/');
+        setIsLoading(false);
+        setTimeout(() => {
+          router.replace('/');
+        }, 100);
         return;
       }
 
@@ -68,7 +71,11 @@ export default function HomeScreen() {
       ]);
 
       if (!profileData) {
-        router.replace('/');
+        setIsLoading(false);
+        await AsyncStorage.removeItem('profileId');
+        setTimeout(() => {
+          router.replace('/');
+        }, 100);
         return;
       }
 
