@@ -1,27 +1,40 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { LucideIcon } from 'lucide-react-native';
+import { BookOpen, Sparkles } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
 
 interface EmptyStateProps {
-  icon: LucideIcon;
+  type?: 'stories' | 'general';
   title: string;
-  message: string;
-  actionText?: string;
-  onAction?: () => void;
+  description: string;
+  action?: {
+    label: string;
+    onPress: () => void;
+  };
 }
 
-export const EmptyState = ({ icon: Icon, title, message, actionText, onAction }: EmptyStateProps) => {
+const getIconForType = (type: string = 'general') => {
+  switch (type) {
+    case 'stories':
+      return BookOpen;
+    default:
+      return Sparkles;
+  }
+};
+
+export const EmptyState = ({ type = 'general', title, description, action }: EmptyStateProps) => {
+  const Icon = getIconForType(type);
+
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
         <Icon size={64} color={COLORS.primary} strokeWidth={1.5} />
       </View>
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.message}>{message}</Text>
-      {actionText && onAction && (
-        <TouchableOpacity style={styles.button} onPress={onAction} activeOpacity={0.8}>
-          <Text style={styles.buttonText}>{actionText}</Text>
+      <Text style={styles.message}>{description}</Text>
+      {action && (
+        <TouchableOpacity style={styles.button} onPress={action.onPress} activeOpacity={0.8}>
+          <Text style={styles.buttonText}>{action.label}</Text>
         </TouchableOpacity>
       )}
     </View>
