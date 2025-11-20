@@ -49,18 +49,17 @@ export default function StoryPlayback() {
   const loadStory = async () => {
     try {
       const storyId = params.storyId as string;
-      const storyData = await storyService.getByProfileId(storyId);
+      const storyData = await storyService.getById(storyId);
 
-      if (!storyData || storyData.length === 0) {
+      if (!storyData) {
         router.back();
         return;
       }
 
-      const currentStory = storyData[0];
-      setStory(currentStory);
+      setStory(storyData);
 
-      if (currentStory.audio_url) {
-        await loadAudio(currentStory.audio_url);
+      if (storyData.audio_url) {
+        await loadAudio(storyData.audio_url);
       }
 
       setIsLoading(false);
