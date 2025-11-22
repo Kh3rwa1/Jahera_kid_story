@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 60,
     paddingHorizontal: SPACING.xxl,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.md,
   },
   iconBadge: {
     width: 64,
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: FONT_SIZES.md,
     color: COLORS.text.secondary,
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
     lineHeight: 22,
     fontWeight: FONT_WEIGHTS.medium,
   },
@@ -214,13 +214,12 @@ const styles = StyleSheet.create({
   },
   languageListContent: {
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.md,
-    paddingBottom: SPACING.xxl,
-    gap: SPACING.sm,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.xl,
+    gap: SPACING.xs,
   },
   languageCard: {
     borderRadius: BORDER_RADIUS.lg,
-    marginBottom: SPACING.sm,
     overflow: 'hidden',
     ...SHADOWS.md,
   },
@@ -230,7 +229,7 @@ const styles = StyleSheet.create({
   languageContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.lg,
+    padding: SPACING.md,
     backgroundColor: COLORS.cardBackground,
   },
   flagContainer: {
@@ -279,8 +278,9 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHTS.bold,
   },
   footer: {
-    padding: SPACING.xxl,
-    paddingBottom: SPACING.xxxl + 10,
+    paddingHorizontal: SPACING.xxl,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.xxl + 10,
   },
   continueButton: {
     paddingVertical: SPACING.lg,

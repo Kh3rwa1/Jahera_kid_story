@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 60,
     paddingHorizontal: SPACING.xxl,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.md,
   },
   backButton: {
     width: 40,
@@ -288,7 +288,8 @@ const styles = StyleSheet.create({
   },
   inputSection: {
     paddingHorizontal: SPACING.xxl,
-    paddingBottom: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.md,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -323,13 +324,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xxl,
   },
   listContent: {
-    paddingBottom: SPACING.lg,
-    gap: SPACING.sm,
+    paddingBottom: SPACING.md,
+    gap: SPACING.xs,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.xxxl * 2,
+    paddingVertical: SPACING.xxxl,
   },
   emptyIconContainer: {
     width: 80,
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
   friendCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.lg,
+    padding: SPACING.md,
     borderRadius: BORDER_RADIUS.lg,
     ...SHADOWS.sm,
   },
@@ -389,8 +390,8 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.lg,
-    gap: SPACING.sm,
+    paddingVertical: SPACING.md,
+    gap: SPACING.xs,
   },
   progressBar: {
     height: 6,
@@ -411,8 +412,9 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    padding: SPACING.xxl,
-    paddingBottom: SPACING.xxxl + 10,
+    paddingHorizontal: SPACING.xxl,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.xxl + 10,
     gap: SPACING.md,
   },
   skipButton: {
