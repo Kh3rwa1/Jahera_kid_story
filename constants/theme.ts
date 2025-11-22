@@ -7,6 +7,7 @@ export const COLORS = {
   secondaryLight: '#FFEB99',
   background: '#FFF8F0',
   backgroundGradient: ['#FFFBF5', '#FFF0E5', '#FFE8D8'],
+  mintBackgroundGradient: ['#E8F8F5', '#D5F2ED', '#C1ECE4'],
   cardBackground: '#FFFFFF',
   cardGradient: ['#FFFFFF', '#FFFBF8'],
   text: {
