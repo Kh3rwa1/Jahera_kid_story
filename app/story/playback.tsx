@@ -21,13 +21,16 @@ import { PremiumCard } from '@/components/PremiumCard';
 import { AudioWaveform } from '@/components/AudioWaveform';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { useFadeIn, useSlideInUp } from '@/utils/animations';
 
 export default function StoryPlayback() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
   const [story, setStory] = useState<Story | null>(null);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -187,7 +190,7 @@ export default function StoryPlayback() {
 
   if (isLoading || !story) {
     return (
-      <Container gradient gradientColors={COLORS.mintBackgroundGradient} centered>
+      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
         <LoadingSkeleton type="card" count={3} />
       </Container>
     );
@@ -195,7 +198,7 @@ export default function StoryPlayback() {
 
   if (!story) {
     return (
-      <Container gradient gradientColors={COLORS.mintBackgroundGradient}>
+      <Container gradient gradientColors={COLORS.backgroundGradient}>
         <ErrorState
           type="notFound"
           title="Story Not Found"
@@ -209,7 +212,7 @@ export default function StoryPlayback() {
   const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
 
   return (
-    <Container safeArea={false} padding={false} gradient gradientColors={COLORS.mintBackgroundGradient}>
+    <Container safeArea={false} padding={false} gradient gradientColors={COLORS.backgroundGradient}>
       {/* Header with close button */}
       <View style={styles.header}>
         <Pressable
