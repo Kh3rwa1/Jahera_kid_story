@@ -158,18 +158,23 @@ export default function Welcome() {
           Where imagination comes to life! ✨
         </Animated.Text>
 
-        {/* Premium feature cards */}
+        {/* Premium feature cards with enhanced design */}
         <View style={styles.features}>
           <Animated.View entering={FadeInDown.delay(600).springify()}>
             <LinearGradient
-              colors={['#FFE8DB', '#FFDCC9']}
+              colors={['rgba(255, 232, 219, 0.95)', 'rgba(255, 220, 201, 0.85)']}
               style={styles.featureItem}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <View style={styles.featureIconContainer}>
+              <LinearGradient
+                colors={['#FFFFFF', 'rgba(255, 232, 219, 0.5)']}
+                style={styles.featureIconContainer}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
                 <Text style={styles.featureIcon}>📚</Text>
-              </View>
+              </LinearGradient>
               <View style={styles.featureTextContainer}>
                 <Text style={styles.featureTitle}>Magical Stories</Text>
                 <Text style={styles.featureDescription}>Personalized tales just for you</Text>
@@ -179,14 +184,19 @@ export default function Welcome() {
 
           <Animated.View entering={FadeInDown.delay(700).springify()}>
             <LinearGradient
-              colors={['#E8F5E9', '#D4EDD7']}
+              colors={['rgba(232, 245, 233, 0.95)', 'rgba(212, 237, 215, 0.85)']}
               style={styles.featureItem}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <View style={styles.featureIconContainer}>
+              <LinearGradient
+                colors={['#FFFFFF', 'rgba(232, 245, 233, 0.5)']}
+                style={styles.featureIconContainer}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
                 <Text style={styles.featureIcon}>🎮</Text>
-              </View>
+              </LinearGradient>
               <View style={styles.featureTextContainer}>
                 <Text style={styles.featureTitle}>Fun Quizzes</Text>
                 <Text style={styles.featureDescription}>Test your knowledge & earn rewards</Text>
@@ -196,14 +206,19 @@ export default function Welcome() {
 
           <Animated.View entering={FadeInDown.delay(800).springify()}>
             <LinearGradient
-              colors={['#FFF3E0', '#FFE9C5']}
+              colors={['rgba(255, 243, 224, 0.95)', 'rgba(255, 233, 197, 0.85)']}
               style={styles.featureItem}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <View style={styles.featureIconContainer}>
+              <LinearGradient
+                colors={['#FFFFFF', 'rgba(255, 243, 224, 0.5)']}
+                style={styles.featureIconContainer}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
                 <Text style={styles.featureIcon}>🌍</Text>
-              </View>
+              </LinearGradient>
               <View style={styles.featureTextContainer}>
                 <Text style={styles.featureTitle}>Multi-Language</Text>
                 <Text style={styles.featureDescription}>Stories in your favorite language</Text>
@@ -213,14 +228,19 @@ export default function Welcome() {
 
           <Animated.View entering={FadeInDown.delay(900).springify()}>
             <LinearGradient
-              colors={['#F3E5F5', '#E1BEE7']}
+              colors={['rgba(243, 229, 245, 0.95)', 'rgba(225, 190, 231, 0.85)']}
               style={styles.featureItem}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <View style={styles.featureIconContainer}>
+              <LinearGradient
+                colors={['#FFFFFF', 'rgba(243, 229, 245, 0.5)']}
+                style={styles.featureIconContainer}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
                 <Text style={styles.featureIcon}>🎨</Text>
-              </View>
+              </LinearGradient>
               <View style={styles.featureTextContainer}>
                 <Text style={styles.featureTitle}>Beautiful Design</Text>
                 <Text style={styles.featureDescription}>Kid-friendly & delightful</Text>
@@ -313,8 +333,10 @@ const styles = StyleSheet.create({
     borderRadius: isSmallDevice ? 60 : 80,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    ...SHADOWS.xl,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    ...SHADOWS.xxl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
   },
   title: {
     fontSize: isSmallDevice ? 36 : 42,
@@ -340,18 +362,20 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    ...SHADOWS.md,
+    padding: SPACING.xl,
+    borderRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
   },
   featureIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    width: 60,
+    height: 60,
+    borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.md,
+    marginRight: SPACING.lg,
+    ...SHADOWS.sm,
   },
   featureIcon: {
     fontSize: 28,
@@ -377,14 +401,17 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   startButton: {
-    paddingVertical: isSmallDevice ? SPACING.md : SPACING.lg,
-    paddingHorizontal: isSmallDevice ? SPACING.xxl : SPACING.xxxl + SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
+    paddingVertical: isSmallDevice ? SPACING.lg : SPACING.xl,
+    paddingHorizontal: isSmallDevice ? SPACING.xxl + SPACING.sm : SPACING.xxxl + SPACING.xl,
+    borderRadius: BORDER_RADIUS.pill,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    ...SHADOWS.colored,
+    ...SHADOWS.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    minHeight: 56,
   },
   startButtonText: {
     color: '#FFFFFF',
