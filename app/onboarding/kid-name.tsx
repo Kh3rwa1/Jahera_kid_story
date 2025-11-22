@@ -54,7 +54,7 @@ export default function KidName() {
   };
 
   return (
-    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
+    <LinearGradient colors={COLORS.mintBackgroundGradient} style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}>
@@ -65,7 +65,7 @@ export default function KidName() {
           </TouchableOpacity>
 
           <View style={styles.iconBadge}>
-            <User size={32} color={COLORS.primary} strokeWidth={2.5} />
+            <User size={32} color="#7FD8BE" strokeWidth={2.5} />
           </View>
 
           <Text style={styles.title}>What's your child's name?</Text>
@@ -100,8 +100,11 @@ export default function KidName() {
           {/* Progress indicator */}
           <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.progressContainer}>
             <View style={styles.progressBar}>
-              <Animated.View
+              <LinearGradient
+                colors={['#7FD8BE', '#66C3A8']}
                 style={[styles.progressFill, { width: '25%' }]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
               />
             </View>
             <Text style={styles.progressText}>Step 2 of 4</Text>
@@ -118,7 +121,7 @@ export default function KidName() {
             <LinearGradient
               colors={name.trim().length < 2
                 ? [COLORS.text.light, COLORS.text.light]
-                : [COLORS.primary, COLORS.primaryDark]
+                : ['#7FD8BE', '#66C3A8']
               }
               style={styles.continueButton}
               start={{ x: 0, y: 0 }}
@@ -161,7 +164,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: 'rgba(255, 102, 52, 0.1)',
+    backgroundColor: 'rgba(127, 216, 190, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
@@ -195,7 +198,7 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHTS.semibold,
     color: COLORS.text.primary,
     borderWidth: 2,
-    borderColor: COLORS.primary + '30',
+    borderColor: 'rgba(127, 216, 190, 0.3)',
     ...SHADOWS.md,
   },
   characterCount: {
@@ -204,7 +207,7 @@ const styles = StyleSheet.create({
   },
   characterCountText: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.primary,
+    color: '#7FD8BE',
     fontWeight: FONT_WEIGHTS.semibold,
   },
   progressContainer: {
@@ -212,18 +215,17 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 6,
-    backgroundColor: 'rgba(255, 102, 52, 0.15)',
+    backgroundColor: 'rgba(127, 216, 190, 0.2)',
     borderRadius: BORDER_RADIUS.sm,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.sm,
   },
   progressText: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.primary,
+    color: '#7FD8BE',
     fontWeight: FONT_WEIGHTS.bold,
     textAlign: 'center',
   },

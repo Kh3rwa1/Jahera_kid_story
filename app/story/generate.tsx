@@ -189,7 +189,7 @@ export default function GenerateStory() {
 
   if (error) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+      <Container gradient gradientColors={COLORS.mintBackgroundGradient} centered>
         <ErrorState
           type="general"
           title="Generation Failed"
@@ -208,7 +208,7 @@ export default function GenerateStory() {
   });
 
   return (
-    <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+    <Container gradient gradientColors={COLORS.mintBackgroundGradient} centered>
       <View style={styles.content}>
         {/* Animated Icon */}
         <Animated.View

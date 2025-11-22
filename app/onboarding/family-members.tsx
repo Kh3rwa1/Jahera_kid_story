@@ -67,7 +67,7 @@ export default function FamilyMembers() {
   };
 
   return (
-    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
+    <LinearGradient colors={COLORS.mintBackgroundGradient} style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}>
@@ -78,7 +78,7 @@ export default function FamilyMembers() {
           </TouchableOpacity>
 
           <View style={styles.iconBadge}>
-            <Users size={32} color={COLORS.primary} strokeWidth={2.5} />
+            <Users size={32} color="#7FD8BE" strokeWidth={2.5} />
           </View>
 
           <Text style={styles.title}>Add Family Members</Text>
@@ -175,7 +175,7 @@ export default function FamilyMembers() {
           </TouchableOpacity>
           <TouchableOpacity onPress={handleContinue} activeOpacity={0.9} style={{ flex: 1 }}>
             <LinearGradient
-              colors={[COLORS.primary, COLORS.primaryDark]}
+              colors={['#7FD8BE', '#66C3A8']}
               style={styles.continueButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: 'rgba(255, 102, 52, 0.1)',
+    backgroundColor: 'rgba(127, 216, 190, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
@@ -251,13 +251,13 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     color: COLORS.text.primary,
     borderWidth: 2,
-    borderColor: COLORS.primary + '30',
+    borderColor: 'rgba(127, 216, 190, 0.3)',
     ...SHADOWS.sm,
   },
   addButton: {
     width: 48,
     height: 48,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#7FD8BE',
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: BORDER_RADIUS.xl,
-    backgroundColor: 'rgba(255, 102, 52, 0.1)',
+    backgroundColor: 'rgba(127, 216, 190, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: 'rgba(255, 102, 52, 0.1)',
+    backgroundColor: 'rgba(127, 216, 190, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: SPACING.md,
@@ -342,18 +342,18 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 6,
-    backgroundColor: 'rgba(255, 102, 52, 0.15)',
+    backgroundColor: 'rgba(127, 216, 190, 0.2)',
     borderRadius: BORDER_RADIUS.sm,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#7FD8BE',
     borderRadius: BORDER_RADIUS.sm,
   },
   progressText: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.primary,
+    color: '#7FD8BE',
     fontWeight: FONT_WEIGHTS.bold,
     textAlign: 'center',
   },
