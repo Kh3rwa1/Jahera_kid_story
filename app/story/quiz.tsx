@@ -19,7 +19,7 @@ import { PremiumCard } from '@/components/PremiumCard';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
-import { SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { useFadeIn, useSlideInUp } from '@/utils/animations';
@@ -28,7 +28,7 @@ export default function QuizScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { currentTheme } = useTheme();
-  const COLORS = currentTheme.colors;
+  const themeColors = currentTheme.colors;
   const [story, setStory] = useState<Story | null>(null);
   const [questions, setQuestions] = useState<QuizQuestionWithAnswers[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -152,7 +152,7 @@ export default function QuizScreen() {
 
   if (isLoading) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+      <Container gradient gradientColors={themeColors.backgroundGradient} centered>
         <LoadingSkeleton type="card" count={2} />
       </Container>
     );
@@ -160,7 +160,7 @@ export default function QuizScreen() {
 
   if (!story || questions.length === 0) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient}>
+      <Container gradient gradientColors={themeColors.backgroundGradient}>
         <ErrorState
           type="notFound"
           title="No Quiz Available"
@@ -185,16 +185,16 @@ export default function QuizScreen() {
     const message = getMessage();
 
     return (
-      <Container scroll gradient gradientColors={COLORS.backgroundGradient}>
+      <Container scroll gradient gradientColors={themeColors.backgroundGradient}>
         <View style={styles.resultContainer}>
           {/* Trophy Icon */}
           <View style={styles.resultHeader}>
             <PremiumCard
-              gradient={isPerfect ? COLORS.gradients.sunset : COLORS.gradients.primary}
+              gradient={isPerfect ? themeColors.gradients.sunset : themeColors.gradients.primary}
               style={styles.trophyContainer}
               shadow="xl"
             >
-              <Trophy size={80} color={COLORS.text.inverse} strokeWidth={2} />
+              <Trophy size={80} color={themeColors.text.inverse} strokeWidth={2} />
             </PremiumCard>
 
             <Typography variant="displayMedium" align="center" style={styles.resultTitle}>
@@ -216,7 +216,7 @@ export default function QuizScreen() {
 
             {/* Percentage Circle */}
             <LinearGradient
-              colors={isPerfect ? COLORS.gradients.success : COLORS.gradients.primary}
+              colors={isPerfect ? themeColors.gradients.success : themeColors.gradients.primary}
               style={styles.percentageCircle}
             >
               <Typography variant="displayMedium" color="inverse">
@@ -227,7 +227,7 @@ export default function QuizScreen() {
 
           {/* Encouragement */}
           <PremiumCard
-            gradient={COLORS.cardGradient}
+            gradient={themeColors.cardGradient}
             style={styles.encouragementCard}
             shadow="md"
           >
@@ -246,9 +246,9 @@ export default function QuizScreen() {
               onPress={handleFinish}
               variant="primary"
               size="large"
-              gradient={COLORS.gradients.sunset}
+              gradient={themeColors.gradients.sunset}
               fullWidth
-              icon={<Target size={24} color={COLORS.text.inverse} />}
+              icon={<Target size={24} color={themeColors.text.inverse} />}
             />
             <PremiumButton
               title="Go Home"
@@ -256,7 +256,7 @@ export default function QuizScreen() {
               variant="outline"
               size="medium"
               fullWidth
-              icon={<Home size={20} color={COLORS.primary} />}
+              icon={<Home size={20} color={themeColors.primary} />}
             />
           </View>
         </View>
@@ -268,7 +268,7 @@ export default function QuizScreen() {
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
-    <Container gradient gradientColors={COLORS.backgroundGradient} safeArea padding={false}>
+    <Container gradient gradientColors={themeColors.backgroundGradient} safeArea padding={false}>
       {showCelebration && <CelebrationOverlay />}
 
       {/* Progress Header */}
@@ -280,7 +280,7 @@ export default function QuizScreen() {
           <View style={styles.progressBarContainer}>
             <View style={styles.progressBar}>
               <LinearGradient
-                colors={COLORS.gradients.sunset}
+                colors={themeColors.gradients.sunset}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[styles.progressFill, { width: `${progress}%` }]}
@@ -292,7 +292,7 @@ export default function QuizScreen() {
 
       <ScrollView contentContainerStyle={styles.quizContainer} showsVerticalScrollIndicator={false}>
         {/* Story Title Card */}
-        <PremiumCard gradient={COLORS.cardGradient} shadow="md" style={styles.storyPreview}>
+        <PremiumCard gradient={themeColors.cardGradient} shadow="md" style={styles.storyPreview}>
           <Typography variant="h4" align="center">
             {story.title}
           </Typography>
@@ -321,9 +321,9 @@ export default function QuizScreen() {
                 const showWrong = isSelected && !answer.is_correct;
 
                 const getAnswerGradient = () => {
-                  if (showCorrect) return COLORS.gradients.success;
-                  if (showWrong) return [COLORS.errorLight, COLORS.error];
-                  if (isSelected) return COLORS.gradients.primary;
+                  if (showCorrect) return themeColors.gradients.success;
+                  if (showWrong) return [themeColors.errorLight, themeColors.error];
+                  if (isSelected) return themeColors.gradients.primary;
                   return undefined;
                 };
 
@@ -352,10 +352,10 @@ export default function QuizScreen() {
                         <LinearGradient
                           colors={
                             showCorrect
-                              ? COLORS.gradients.success
+                              ? themeColors.gradients.success
                               : showWrong
-                              ? [COLORS.error, COLORS.errorLight]
-                              : COLORS.gradients.primary
+                              ? [themeColors.error, themeColors.errorLight]
+                              : themeColors.gradients.primary
                           }
                           style={styles.answerLetterGradient}
                         >
@@ -373,8 +373,8 @@ export default function QuizScreen() {
                         {answer.answer_text}
                       </Typography>
 
-                      {showCorrect && <CheckCircle2 size={28} color={COLORS.text.inverse} />}
-                      {showWrong && <XCircle size={28} color={COLORS.text.inverse} />}
+                      {showCorrect && <CheckCircle2 size={28} color={themeColors.text.inverse} />}
+                      {showWrong && <XCircle size={28} color={themeColors.text.inverse} />}
                     </PremiumCard>
                   </Pressable>
                 );
@@ -393,8 +393,8 @@ export default function QuizScreen() {
             variant="primary"
             size="large"
             fullWidth
-            gradient={COLORS.gradients.sunset}
-            icon={<ChevronRight size={24} color={COLORS.text.inverse} />}
+            gradient={themeColors.gradients.sunset}
+            icon={<ChevronRight size={24} color={themeColors.text.inverse} />}
             accessibilityLabel={
               currentQuestionIndex < questions.length - 1
                 ? 'Continue to next question'
