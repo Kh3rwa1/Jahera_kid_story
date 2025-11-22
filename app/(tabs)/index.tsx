@@ -24,6 +24,10 @@ import { PremiumCard } from '@/components/PremiumCard';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { EmptyState } from '@/components/EmptyState';
+import { ShimmerEffect } from '@/components/ShimmerEffect';
+import { FloatingParticles } from '@/components/FloatingParticles';
+import { AnimatedGradientBackground } from '@/components/AnimatedGradientBackground';
+import { GoldSparkles } from '@/components/GoldSparkles';
 import { useFadeIn, useSlideInUp } from '@/utils/animations';
 import { hapticFeedback } from '@/utils/haptics';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -165,11 +169,19 @@ export default function HomeScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
-          <View style={styles.loadingContent}>
-            <LoadingSkeleton type="card" count={4} />
-          </View>
-        </LinearGradient>
+        <AnimatedGradientBackground
+          colorSets={[
+            COLORS.backgroundGradient,
+            ['#FFF9FC', '#FFF0F7', '#FFE8F5'],
+            ['#F9FCFF', '#F0F9FF', '#E5F4FF'],
+            ['#FFFBF5', '#FFF0E5', '#FFE8D8'],
+          ]}
+          duration={6000}
+        />
+        <FloatingParticles count={15} />
+        <View style={styles.loadingContent}>
+          <LoadingSkeleton type="card" count={4} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -177,29 +189,43 @@ export default function HomeScreen() {
   if (error || !profile) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
-          <ErrorState
-            type="general"
-            title="Unable to Load Data"
-            message={error || 'Failed to load your profile. Please try again.'}
-            onRetry={() => {
-              setError(null);
-              setIsLoading(true);
-              loadData();
-            }}
-            onGoHome={() => router.replace('/')}
-          />
-        </LinearGradient>
+        <AnimatedGradientBackground
+          colorSets={[
+            COLORS.backgroundGradient,
+            ['#FFF9FC', '#FFF0F7', '#FFE8F5'],
+            ['#F9FCFF', '#F0F9FF', '#E5F4FF'],
+            ['#FFFBF5', '#FFF0E5', '#FFE8D8'],
+          ]}
+          duration={6000}
+        />
+        <FloatingParticles count={15} />
+        <ErrorState
+          type="general"
+          title="Unable to Load Data"
+          message={error || 'Failed to load your profile. Please try again.'}
+          onRetry={() => {
+            setError(null);
+            setIsLoading(true);
+            loadData();
+          }}
+          onGoHome={() => router.replace('/')}
+        />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <LinearGradient
-        colors={COLORS.backgroundGradient}
-        style={StyleSheet.absoluteFill}
+      <AnimatedGradientBackground
+        colorSets={[
+          COLORS.backgroundGradient,
+          ['#FFF9FC', '#FFF0F7', '#FFE8F5'],
+          ['#F9FCFF', '#F0F9FF', '#E5F4FF'],
+          ['#FFFBF5', '#FFF0E5', '#FFE8D8'],
+        ]}
+        duration={6000}
       />
+      <FloatingParticles count={20} />
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
@@ -210,9 +236,13 @@ export default function HomeScreen() {
           <View style={styles.userSection}>
             <View style={styles.avatarContainer}>
               <LinearGradient
-                colors={COLORS.gradients.sunset}
+                colors={COLORS.gradients.premium}
                 style={styles.avatarGradient}
               >
+                <ShimmerEffect
+                  colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.7)', 'rgba(255, 255, 255, 0)']}
+                  duration={2500}
+                />
                 <Typography variant="h2" color="inverse">
                   {profile?.kid_name?.charAt(0) || '😊'}
                 </Typography>
@@ -243,7 +273,7 @@ export default function HomeScreen() {
         <View style={styles.heroSection}>
           <PremiumCard
             style={styles.heroCard}
-            shadow="lg"
+            shadow="xxl"
             padding={0}
             onPress={handleGenerateStory}
           >
@@ -251,6 +281,11 @@ export default function HomeScreen() {
               colors={['#D5F2ED', '#B8EAE0']}
               style={styles.heroCardGradient}
             >
+              <ShimmerEffect
+                colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.8)', 'rgba(255, 255, 255, 0)']}
+                duration={3000}
+              />
+              <GoldSparkles count={10} width={400} height={200} />
               <View style={styles.heroContent}>
                 <View style={styles.heroIllustration}>
                   <Typography style={styles.heroEmoji}>👧🏻</Typography>
@@ -272,7 +307,7 @@ export default function HomeScreen() {
 
                 <View style={styles.heroButton}>
                   <LinearGradient
-                    colors={COLORS.gradients.sunset}
+                    colors={COLORS.gradients.premium}
                     style={styles.heroButtonGradient}
                   >
                     <Sparkles size={18} color={COLORS.text.inverse} strokeWidth={2.5} />
@@ -323,13 +358,17 @@ export default function HomeScreen() {
                     key={story.id}
                     style={styles.storyCard}
                     onPress={() => handleStoryPress(story.id)}
-                    shadow="md"
+                    shadow="xl"
                     padding={0}
                   >
                     <LinearGradient
                       colors={gradient}
                       style={styles.storyImage}
                     >
+                      <ShimmerEffect
+                        colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0)']}
+                        duration={2500}
+                      />
                       <BookOpen size={40} color={COLORS.text.inverse} strokeWidth={1.5} />
                     </LinearGradient>
 
@@ -381,10 +420,14 @@ export default function HomeScreen() {
                     key={story.id}
                     style={styles.listStoryCard}
                     onPress={() => handleStoryPress(story.id)}
-                    shadow="sm"
+                    shadow="lg"
                     padding={0}
                   >
                     <LinearGradient colors={gradient} style={styles.listStoryImage}>
+                      <ShimmerEffect
+                        colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.5)', 'rgba(255, 255, 255, 0)']}
+                        duration={2000}
+                      />
                       <BookOpen size={24} color={COLORS.text.inverse} strokeWidth={1.5} />
                     </LinearGradient>
                     <View style={styles.listStoryInfo}>
