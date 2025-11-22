@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SUPPORTED_LANGUAGES, MAX_LANGUAGES, Language } from '@/constants/languages';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -10,6 +11,8 @@ import { Globe2 } from 'lucide-react-native';
 
 export default function LanguageSelection() {
   const router = useRouter();
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
 
   const toggleLanguage = async (language: Language) => {
@@ -52,7 +55,7 @@ export default function LanguageSelection() {
   };
 
   return (
-    <LinearGradient colors={COLORS.mintBackgroundGradient} style={styles.container}>
+    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
       {/* Header with animation */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
         <View style={styles.iconBadge}>
