@@ -92,7 +92,7 @@ export default function Welcome() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
-        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
+        <LinearGradient colors={COLORS.mintBackgroundGradient} style={StyleSheet.absoluteFill}>
           <View style={styles.loadingContent}>
             <LottieView
               ref={loadingAnimation}
@@ -109,7 +109,7 @@ export default function Welcome() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
+      <LinearGradient colors={COLORS.mintBackgroundGradient} style={StyleSheet.absoluteFill}>
         {/* Floating decorative icons - only show on larger devices */}
         {!isSmallDevice && (
           <View style={styles.floatingIconsContainer}>
@@ -162,13 +162,13 @@ export default function Welcome() {
         <View style={styles.features}>
           <Animated.View entering={FadeInDown.delay(600).springify()}>
             <LinearGradient
-              colors={['rgba(255, 232, 219, 0.95)', 'rgba(255, 220, 201, 0.85)']}
+              colors={['rgba(184, 234, 224, 0.95)', 'rgba(127, 216, 190, 0.85)']}
               style={styles.featureItem}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <LinearGradient
-                colors={['#FFFFFF', 'rgba(255, 232, 219, 0.5)']}
+                colors={['#FFFFFF', 'rgba(184, 234, 224, 0.5)']}
                 style={styles.featureIconContainer}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -184,13 +184,13 @@ export default function Welcome() {
 
           <Animated.View entering={FadeInDown.delay(700).springify()}>
             <LinearGradient
-              colors={['rgba(232, 245, 233, 0.95)', 'rgba(212, 237, 215, 0.85)']}
+              colors={['rgba(212, 241, 232, 0.95)', 'rgba(168, 230, 207, 0.85)']}
               style={styles.featureItem}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <LinearGradient
-                colors={['#FFFFFF', 'rgba(232, 245, 233, 0.5)']}
+                colors={['#FFFFFF', 'rgba(212, 241, 232, 0.5)']}
                 style={styles.featureIconContainer}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -206,13 +206,13 @@ export default function Welcome() {
 
           <Animated.View entering={FadeInDown.delay(800).springify()}>
             <LinearGradient
-              colors={['rgba(255, 243, 224, 0.95)', 'rgba(255, 233, 197, 0.85)']}
+              colors={['rgba(196, 228, 243, 0.95)', 'rgba(133, 193, 226, 0.85)']}
               style={styles.featureItem}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <LinearGradient
-                colors={['#FFFFFF', 'rgba(255, 243, 224, 0.5)']}
+                colors={['#FFFFFF', 'rgba(196, 228, 243, 0.5)']}
                 style={styles.featureIconContainer}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -228,13 +228,13 @@ export default function Welcome() {
 
           <Animated.View entering={FadeInDown.delay(900).springify()}>
             <LinearGradient
-              colors={['rgba(243, 229, 245, 0.95)', 'rgba(225, 190, 231, 0.85)']}
+              colors={['rgba(217, 255, 245, 0.95)', 'rgba(152, 255, 224, 0.85)']}
               style={styles.featureItem}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <LinearGradient
-                colors={['#FFFFFF', 'rgba(243, 229, 245, 0.5)']}
+                colors={['#FFFFFF', 'rgba(217, 255, 245, 0.5)']}
                 style={styles.featureIconContainer}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -258,7 +258,7 @@ export default function Welcome() {
         <Animated.View style={buttonAnimatedStyle}>
           <TouchableOpacity onPress={handleGetStarted} activeOpacity={0.9}>
             <LinearGradient
-              colors={[COLORS.primary, COLORS.primaryDark]}
+              colors={['#7FD8BE', '#66C3A8']}
               style={styles.startButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}

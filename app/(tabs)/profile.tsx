@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: '#E8F8F5',
   },
   loadingLottie: {
     width: 150,
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: '#E8F8F5',
   },
   errorText: {
     fontSize: FONT_SIZES.md,
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#E8F8F5',
   },
   scrollContent: {
     paddingBottom: SPACING.xxxl,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#E8F8F5',
   },
   pageTitle: {
     fontSize: FONT_SIZES.xxl,
