@@ -1,8 +1,11 @@
 import { Tabs } from 'expo-router';
 import { Home, Library, Award, Settings } from 'lucide-react-native';
-import { COLORS } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TabLayout() {
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
+
   return (
     <Tabs
       screenOptions={{
@@ -47,6 +50,13 @@ export default function TabLayout() {
         options={{
           title: 'Progress',
           tabBarIcon: ({ size, color }) => <Award size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ size, color }) => <Settings size={size} color={color} />,
         }}
       />
     </Tabs>
