@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, Users, ArrowLeft, Plus } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, { FadeInDown, FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SUPPORTED_LANGUAGES, MAX_LANGUAGES, Language } from '@/constants/languages';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
