@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, Users, ArrowLeft, Plus } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
-import Animated, { FadeInDown, FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, FadeOutUp, ZoomIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
@@ -21,7 +21,7 @@ export default function FamilyMembers() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { currentTheme } = useTheme();
-  const COLORS = currentTheme.colors;
+  const themeColors = currentTheme.colors;
   const [familyMembers, setFamilyMembers] = useState<string[]>([]);
   const [currentName, setCurrentName] = useState('');
 
@@ -70,22 +70,33 @@ export default function FamilyMembers() {
   };
 
   return (
-    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
+    <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}>
         {/* Header */}
         <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
-            <ArrowLeft size={24} color={COLORS.text.primary} strokeWidth={2} />
+          <TouchableOpacity
+            onPress={handleBack}
+            style={[styles.backButton, { backgroundColor: themeColors.cardBackground }]}
+            activeOpacity={0.7}
+          >
+            <ArrowLeft size={24} color={themeColors.text.primary} strokeWidth={2} />
           </TouchableOpacity>
 
-          <View style={styles.iconBadge}>
-            <Users size={32} color="#7FD8BE" strokeWidth={2.5} />
-          </View>
+          <LinearGradient
+            colors={[themeColors.primary + '25', themeColors.primary + '15']}
+            style={styles.iconBadge}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Users size={40} color={themeColors.primary} strokeWidth={2.5} />
+          </LinearGradient>
 
-          <Text style={styles.title}>Add Family Members</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: themeColors.text.primary }]}>
+            Add Family Members 👨‍👩‍👧‍👦
+          </Text>
+          <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
             Who should join {params.kidName} in the adventures?
           </Text>
         </Animated.View>
@@ -93,26 +104,31 @@ export default function FamilyMembers() {
         {/* Input Section */}
         <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.inputSection}>
           <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter family member name..."
-              placeholderTextColor={COLORS.text.light}
-              value={currentName}
-              onChangeText={setCurrentName}
-              autoCapitalize="words"
-              returnKeyType="done"
-              onSubmitEditing={addFamilyMember}
-            />
+            <LinearGradient
+              colors={[themeColors.cardBackground, themeColors.cardBackground]}
+              style={styles.inputWrapper}
+            >
+              <TextInput
+                style={[styles.input, { color: themeColors.text.primary }]}
+                placeholder="Type a family member name..."
+                placeholderTextColor={themeColors.text.light}
+                value={currentName}
+                onChangeText={setCurrentName}
+                autoCapitalize="words"
+                returnKeyType="done"
+                onSubmitEditing={addFamilyMember}
+              />
+            </LinearGradient>
             <TouchableOpacity
               style={[
                 styles.addButton,
-                currentName.trim().length === 0 && styles.addButtonDisabled,
+                { backgroundColor: currentName.trim().length === 0 ? themeColors.text.light : themeColors.primary }
               ]}
               onPress={addFamilyMember}
               disabled={currentName.trim().length === 0}
               activeOpacity={0.7}
             >
-              <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
+              <Plus size={24} color="#FFFFFF" strokeWidth={3} />
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -125,29 +141,38 @@ export default function FamilyMembers() {
         >
           {familyMembers.length === 0 ? (
             <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.emptyState}>
-              <View style={styles.emptyIconContainer}>
+              <LinearGradient
+                colors={[themeColors.primary + '15', themeColors.primary + '08']}
+                style={styles.emptyIconContainer}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
                 <Text style={styles.emptyIcon}>👨‍👩‍👧‍👦</Text>
-              </View>
-              <Text style={styles.emptyStateText}>No family members yet</Text>
-              <Text style={styles.emptyStateSubtext}>
-                Add parents, siblings, or other family members
+              </LinearGradient>
+              <Text style={[styles.emptyStateText, { color: themeColors.text.primary }]}>
+                No family members yet
+              </Text>
+              <Text style={[styles.emptyStateSubtext, { color: themeColors.text.secondary }]}>
+                Add parents, siblings, or grandparents! 💝
               </Text>
             </Animated.View>
           ) : (
             familyMembers.map((member, index) => (
               <Animated.View
                 key={index}
-                entering={FadeInDown.delay(index * 50).springify()}
+                entering={ZoomIn.delay(index * 50).springify()}
                 exiting={FadeOutUp.springify()}
               >
                 <LinearGradient
-                  colors={['#FFFFFF', '#FFFBF5']}
+                  colors={themeColors.gradients.primary}
                   style={styles.memberCard}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
                   <View style={styles.memberIconContainer}>
-                    <Text style={styles.memberIcon}>👤</Text>
+                    <Text style={styles.memberIcon}>
+                      {index % 4 === 0 ? '👨' : index % 4 === 1 ? '👩' : index % 4 === 2 ? '👧' : '👦'}
+                    </Text>
                   </View>
                   <Text style={styles.memberName}>{member}</Text>
                   <TouchableOpacity
@@ -155,7 +180,7 @@ export default function FamilyMembers() {
                     style={styles.removeButton}
                     activeOpacity={0.7}
                   >
-                    <X size={18} color={COLORS.error} strokeWidth={2.5} />
+                    <X size={18} color="#FF5252" strokeWidth={3} />
                   </TouchableOpacity>
                 </LinearGradient>
               </Animated.View>
@@ -165,25 +190,51 @@ export default function FamilyMembers() {
 
         {/* Progress */}
         <Animated.View entering={FadeInUp.delay(350).springify()} style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <Animated.View style={[styles.progressFill, { width: '50%' }]} />
+          <View style={styles.progressHeader}>
+            <Text style={[styles.progressLabel, { color: themeColors.text.secondary }]}>
+              Your Progress
+            </Text>
+            <Text style={[styles.progressStep, { color: themeColors.primary }]}>
+              Step 3 of 4
+            </Text>
           </View>
-          <Text style={styles.progressText}>Step 3 of 4</Text>
+          <View style={[styles.progressBar, { backgroundColor: themeColors.primary + '20' }]}>
+            <LinearGradient
+              colors={themeColors.gradients.primary}
+              style={[styles.progressFill, { width: '75%' }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            />
+          </View>
+          <View style={styles.progressDots}>
+            <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.primary }]} />
+            <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.primary }]} />
+            <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.primary }]} />
+            <View style={[styles.dot, { backgroundColor: themeColors.primary + '30' }]} />
+          </View>
         </Animated.View>
 
         {/* Footer */}
         <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.footer}>
-          <TouchableOpacity onPress={handleSkip} style={styles.skipButton} activeOpacity={0.7}>
-            <Text style={styles.skipButtonText}>Skip</Text>
+          <TouchableOpacity
+            onPress={handleSkip}
+            style={[styles.skipButton, { backgroundColor: themeColors.cardBackground }]}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.skipButtonText, { color: themeColors.text.secondary }]}>
+              Skip for now
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleContinue} activeOpacity={0.9} style={{ flex: 1 }}>
             <LinearGradient
-              colors={['#7FD8BE', '#66C3A8']}
+              colors={themeColors.gradients.primary}
               style={styles.continueButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.continueButtonText}>Continue →</Text>
+              <Text style={styles.continueButtonText}>
+                Next Step →
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -205,69 +256,61 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.xl,
     ...SHADOWS.sm,
   },
   iconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: 'rgba(127, 216, 190, 0.2)',
+    width: 80,
+    height: 80,
+    borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
+    ...SHADOWS.md,
   },
   title: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: FONT_WEIGHTS.extrabold,
-    color: COLORS.text.primary,
     marginBottom: SPACING.sm,
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text.secondary,
-    lineHeight: 22,
+    fontSize: FONT_SIZES.lg,
+    lineHeight: 26,
     fontWeight: FONT_WEIGHTS.medium,
   },
   inputSection: {
     paddingHorizontal: SPACING.xxl,
-    paddingTop: SPACING.md,
+    paddingTop: SPACING.lg,
     paddingBottom: SPACING.md,
   },
   inputContainer: {
     flexDirection: 'row',
     gap: SPACING.sm,
   },
-  input: {
+  inputWrapper: {
     flex: 1,
-    backgroundColor: COLORS.cardBackground,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text.primary,
-    borderWidth: 2,
-    borderColor: 'rgba(127, 216, 190, 0.3)',
+    borderRadius: BORDER_RADIUS.xl,
     ...SHADOWS.sm,
   },
+  input: {
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    fontSize: FONT_SIZES.lg,
+    fontWeight: FONT_WEIGHTS.medium,
+  },
   addButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#7FD8BE',
-    borderRadius: BORDER_RADIUS.lg,
+    width: 56,
+    height: 56,
+    borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.md,
-  },
-  addButtonDisabled: {
-    backgroundColor: COLORS.text.light,
   },
   listContainer: {
     flex: 1,
@@ -275,90 +318,109 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: SPACING.md,
-    gap: SPACING.xs,
+    gap: SPACING.md,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.xxxl,
+    paddingVertical: SPACING.xxxl * 1.5,
   },
   emptyIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: BORDER_RADIUS.xl,
-    backgroundColor: 'rgba(127, 216, 190, 0.2)',
+    width: 100,
+    height: 100,
+    borderRadius: BORDER_RADIUS.xxl,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xl,
+    ...SHADOWS.md,
   },
   emptyIcon: {
-    fontSize: 40,
+    fontSize: 50,
   },
   emptyStateText: {
-    fontSize: FONT_SIZES.lg,
-    color: COLORS.text.primary,
-    fontWeight: FONT_WEIGHTS.semibold,
-    marginBottom: SPACING.xs,
+    fontSize: FONT_SIZES.xl,
+    fontWeight: FONT_WEIGHTS.bold,
+    marginBottom: SPACING.sm,
   },
   emptyStateSubtext: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text.secondary,
+    fontSize: FONT_SIZES.md,
     fontWeight: FONT_WEIGHTS.medium,
+    textAlign: 'center',
   },
   memberCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-    ...SHADOWS.sm,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.lg,
   },
   memberIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: 'rgba(127, 216, 190, 0.2)',
+    width: 48,
+    height: 48,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.md,
+    marginRight: SPACING.lg,
+    ...SHADOWS.sm,
   },
   memberIcon: {
-    fontSize: 20,
+    fontSize: 24,
   },
   memberName: {
     flex: 1,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text.primary,
-    fontWeight: FONT_WEIGHTS.semibold,
+    fontSize: FONT_SIZES.lg,
+    color: '#FFFFFF',
+    fontWeight: FONT_WEIGHTS.bold,
   },
   removeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+    width: 36,
+    height: 36,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOWS.sm,
   },
   progressContainer: {
     paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.md,
-    gap: SPACING.xs,
+    paddingVertical: SPACING.lg,
+    gap: SPACING.md,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  progressLabel: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: FONT_WEIGHTS.semibold,
+  },
+  progressStep: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: FONT_WEIGHTS.bold,
   },
   progressBar: {
-    height: 6,
-    backgroundColor: 'rgba(127, 216, 190, 0.2)',
-    borderRadius: BORDER_RADIUS.sm,
+    height: 10,
+    borderRadius: BORDER_RADIUS.md,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#7FD8BE',
-    borderRadius: BORDER_RADIUS.sm,
+    borderRadius: BORDER_RADIUS.md,
   },
-  progressText: {
-    fontSize: FONT_SIZES.sm,
-    color: '#7FD8BE',
-    fontWeight: FONT_WEIGHTS.bold,
-    textAlign: 'center',
+  progressDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: SPACING.md,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  dotCompleted: {
+    ...SHADOWS.sm,
   },
   footer: {
     flexDirection: 'row',
@@ -370,27 +432,25 @@ const styles = StyleSheet.create({
   skipButton: {
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.xl,
-    borderRadius: BORDER_RADIUS.xl,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: BORDER_RADIUS.pill,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.sm,
   },
   skipButtonText: {
-    color: COLORS.text.secondary,
     fontSize: FONT_SIZES.md,
     fontWeight: FONT_WEIGHTS.semibold,
   },
   continueButton: {
     paddingVertical: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.pill,
     alignItems: 'center',
-    ...SHADOWS.colored,
+    ...SHADOWS.xl,
   },
   continueButtonText: {
     color: '#FFFFFF',
-    fontSize: FONT_SIZES.lg,
+    fontSize: FONT_SIZES.xl,
     fontWeight: FONT_WEIGHTS.bold,
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
 });
