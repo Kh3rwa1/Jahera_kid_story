@@ -13,7 +13,7 @@ import { Typography } from '@/components/Typography';
 import { PremiumButton } from '@/components/PremiumButton';
 import { PremiumCard } from '@/components/PremiumCard';
 import { ErrorState } from '@/components/ErrorState';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
 

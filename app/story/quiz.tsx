@@ -19,7 +19,7 @@ import { PremiumCard } from '@/components/PremiumCard';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { useFadeIn, useSlideInUp } from '@/utils/animations';
@@ -130,7 +130,7 @@ export default function QuizScreen() {
     } else {
       const profileId = await AsyncStorage.getItem('profileId');
       if (profileId && story) {
-        await quizService.createAttempt(profileId, story.id, score + (isCorrect ? 0 : 0), questions.length);
+        await quizService.createAttempt(profileId, story.id, score + (isCorrect ? 1 : 0), questions.length);
       }
       setShowCelebration(true);
       setTimeout(() => {
