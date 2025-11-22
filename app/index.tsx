@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Sparkles, Heart, Star, Wand2, BookOpen } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
   useAnimatedStyle,
@@ -26,7 +26,7 @@ const isSmallDevice = width < 375 || height < 667;
 
 export default function Welcome() {
   const router = useRouter();
-  const { currentTheme } = useTheme();
+  const { currentTheme, isLoading: themeLoading } = useTheme();
   const themeColors = currentTheme.colors;
   const [isLoading, setIsLoading] = useState(true);
   const scaleButton = useSharedValue(1);
@@ -68,7 +68,6 @@ export default function Welcome() {
 
   const checkProfile = async () => {
     try {
-      // Clear any old profile data for now
       await AsyncStorage.removeItem('profileId');
       setIsLoading(false);
     } catch (error) {
@@ -92,7 +91,7 @@ export default function Welcome() {
     transform: [{ scale: scaleButton.value }],
   }));
 
-  if (isLoading) {
+  if (isLoading || themeLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
         <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill}>
@@ -344,14 +343,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: isSmallDevice ? 36 : 42,
     fontWeight: FONT_WEIGHTS.extrabold,
-    color: COLORS.text.primary,
+    color: '#1A1F36',
     marginBottom: SPACING.md,
     textAlign: 'center',
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: isSmallDevice ? FONT_SIZES.md : FONT_SIZES.lg,
-    color: COLORS.text.secondary,
+    color: '#6C7A89',
     textAlign: 'center',
     lineHeight: isSmallDevice ? 22 : 26,
     marginBottom: isSmallDevice ? SPACING.xl : SPACING.xxxl,
@@ -389,12 +388,12 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: FONT_SIZES.md,
     fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
+    color: '#1A1F36',
     marginBottom: 2,
   },
   featureDescription: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.text.secondary,
+    color: '#6C7A89',
     fontWeight: FONT_WEIGHTS.medium,
   },
   footer: {
@@ -428,7 +427,7 @@ const styles = StyleSheet.create({
   footerText: {
     marginTop: SPACING.lg,
     fontSize: FONT_SIZES.sm,
-    color: COLORS.text.secondary,
+    color: '#6C7A89',
     fontWeight: FONT_WEIGHTS.medium,
   },
 });
