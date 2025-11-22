@@ -17,7 +17,6 @@ interface ShimmerEffectProps {
   height?: number | string;
   colors?: string[];
   duration?: number;
-  angle?: number;
 }
 
 export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
@@ -25,7 +24,6 @@ export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
   height = '100%',
   colors = ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.5)', 'rgba(255, 255, 255, 0)'],
   duration = 2000,
-  angle = 45,
 }) => {
   const shimmerTranslate = useSharedValue(-1);
 
@@ -44,7 +42,7 @@ export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
     const translateX = interpolate(shimmerTranslate.value, [-1, 1], [-400, 400]);
 
     return {
-      transform: [{ translateX }, { rotate: `${angle}deg` }],
+      transform: [{ translateX }],
     };
   });
 
