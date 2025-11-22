@@ -13,7 +13,7 @@ import { Typography } from '@/components/Typography';
 import { PremiumButton } from '@/components/PremiumButton';
 import { PremiumCard } from '@/components/PremiumCard';
 import { ErrorState } from '@/components/ErrorState';
-import { SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
 
@@ -28,7 +28,7 @@ export default function GenerateStory() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { currentTheme } = useTheme();
-  const COLORS = currentTheme.colors;
+  const themeColors = currentTheme.colors;
   const [status, setStatus] = useState('Preparing your adventure...');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -200,7 +200,7 @@ export default function GenerateStory() {
 
   if (error) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+      <Container gradient gradientColors={themeColors.backgroundGradient} centered>
         <ErrorState
           type="general"
           title="Generation Failed"
@@ -219,7 +219,7 @@ export default function GenerateStory() {
   });
 
   return (
-    <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+    <Container gradient gradientColors={themeColors.backgroundGradient} centered>
       <View style={styles.content}>
         {/* Animated Icon */}
         <Animated.View
@@ -230,8 +230,8 @@ export default function GenerateStory() {
             },
           ]}
         >
-          <PremiumCard gradient={COLORS.gradients.sunset} style={styles.iconCard} shadow="xl">
-            <Sparkles size={80} color={COLORS.text.inverse} strokeWidth={2} />
+          <PremiumCard gradient={themeColors.gradients.sunset} style={styles.iconCard} shadow="xl">
+            <Sparkles size={80} color={themeColors.text.inverse} strokeWidth={2} />
           </PremiumCard>
         </Animated.View>
 
@@ -247,7 +247,7 @@ export default function GenerateStory() {
         <View style={styles.progressBarContainer}>
           <View style={styles.progressBar}>
             <LinearGradient
-              colors={COLORS.gradients.sunset}
+              colors={themeColors.gradients.sunset}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.progressFill, { width: `${progress}%` }]}
@@ -271,11 +271,11 @@ export default function GenerateStory() {
                   ]}
                 >
                   {step.completed ? (
-                    <Check size={20} color={COLORS.text.inverse} strokeWidth={3} />
+                    <Check size={20} color={themeColors.text.inverse} strokeWidth={3} />
                   ) : (
                     <Icon
                       size={20}
-                      color={step.completed ? COLORS.text.inverse : COLORS.text.light}
+                      color={step.completed ? themeColors.text.inverse : themeColors.text.light}
                       strokeWidth={2}
                     />
                   )}
