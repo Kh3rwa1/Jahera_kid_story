@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,26 +10,82 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  withSpring,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  interpolate
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { User, ArrowLeft } from 'lucide-react-native';
+import { User, ArrowLeft, Heart, Star, Sparkles } from 'lucide-react-native';
 
 export default function KidName() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { currentTheme } = useTheme();
-  const COLORS = currentTheme.colors;
+  const themeColors = currentTheme.colors;
   const [name, setName] = useState('');
+
+  // Floating animations
+  const float1 = useSharedValue(0);
+  const float2 = useSharedValue(0);
+  const float3 = useSharedValue(0);
+
+  useEffect(() => {
+    float1.value = withRepeat(
+      withSequence(
+        withSpring(-10, { damping: 3 }),
+        withSpring(0, { damping: 3 })
+      ),
+      -1,
+      false
+    );
+    float2.value = withRepeat(
+      withSequence(
+        withSpring(-15, { damping: 3 }),
+        withSpring(0, { damping: 3 })
+      ),
+      -1,
+      false
+    );
+    float3.value = withRepeat(
+      withSequence(
+        withSpring(-12, { damping: 3 }),
+        withSpring(0, { damping: 3 })
+      ),
+      -1,
+      false
+    );
+  }, []);
+
+  const float1Style = useAnimatedStyle(() => ({
+    transform: [{ translateY: float1.value }],
+    opacity: interpolate(float1.value, [-10, 0], [0.4, 0.7]),
+  }));
+
+  const float2Style = useAnimatedStyle(() => ({
+    transform: [{ translateY: float2.value }],
+    opacity: interpolate(float2.value, [-15, 0], [0.4, 0.7]),
+  }));
+
+  const float3Style = useAnimatedStyle(() => ({
+    transform: [{ translateY: float3.value }],
+    opacity: interpolate(float3.value, [-12, 0], [0.4, 0.7]),
+  }));
 
   const handleContinue = async () => {
     const trimmedName = name.trim();
 
     if (trimmedName.length === 0) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Name Required', "Please enter your child's name to continue.", [
+      Alert.alert('✨ Name Required', "Please enter your child's name to continue.", [
         { text: 'OK' },
       ]);
       return;
@@ -37,7 +93,7 @@ export default function KidName() {
 
     if (trimmedName.length < 2) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Invalid Name', 'Name must be at least 2 characters long.', [{ text: 'OK' }]);
+      Alert.alert('🌟 Almost There!', 'Name must be at least 2 characters long.', [{ text: 'OK' }]);
       return;
     }
 
@@ -57,60 +113,109 @@ export default function KidName() {
   };
 
   return (
-    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
+    <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}>
+
+        {/* Floating decorative elements */}
+        <Animated.View style={[styles.floatingElement, { top: '10%', left: '12%' }, float1Style]}>
+          <Heart size={28} color={themeColors.primary} strokeWidth={2} />
+        </Animated.View>
+        <Animated.View style={[styles.floatingElement, { top: '15%', right: '10%' }, float2Style]}>
+          <Star size={24} color={themeColors.primary} strokeWidth={2} />
+        </Animated.View>
+        <Animated.View style={[styles.floatingElement, { top: '25%', left: '8%' }, float3Style]}>
+          <Sparkles size={22} color={themeColors.primary} strokeWidth={2} />
+        </Animated.View>
+
         {/* Header */}
         <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
-            <ArrowLeft size={24} color={COLORS.text.primary} strokeWidth={2} />
+          <TouchableOpacity
+            onPress={handleBack}
+            style={[styles.backButton, { backgroundColor: themeColors.cardBackground }]}
+            activeOpacity={0.7}
+          >
+            <ArrowLeft size={24} color={themeColors.text.primary} strokeWidth={2} />
           </TouchableOpacity>
 
-          <View style={styles.iconBadge}>
-            <User size={32} color="#7FD8BE" strokeWidth={2.5} />
-          </View>
+          <LinearGradient
+            colors={[themeColors.primary + '25', themeColors.primary + '15']}
+            style={styles.iconBadge}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <User size={40} color={themeColors.primary} strokeWidth={2.5} />
+          </LinearGradient>
 
-          <Text style={styles.title}>What's your child's name?</Text>
-          <Text style={styles.subtitle}>
-            We'll personalize magical stories just for them ✨
+          <Text style={[styles.title, { color: themeColors.text.primary }]}>
+            What's your child's name? ✨
+          </Text>
+          <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
+            We'll create magical stories starring them!
           </Text>
         </Animated.View>
 
         {/* Input Section */}
         <View style={styles.content}>
           <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter name here..."
-              placeholderTextColor={COLORS.text.light}
-              value={name}
-              onChangeText={setName}
-              autoFocus
-              autoCapitalize="words"
-              returnKeyType="next"
-              onSubmitEditing={handleContinue}
-            />
+            <LinearGradient
+              colors={name.length >= 2
+                ? [themeColors.primary + '10', themeColors.primary + '05']
+                : [themeColors.cardBackground, themeColors.cardBackground]
+              }
+              style={styles.inputWrapper}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <TextInput
+                style={[styles.input, { color: themeColors.text.primary }]}
+                placeholder="Enter name here..."
+                placeholderTextColor={themeColors.text.light}
+                value={name}
+                onChangeText={setName}
+                autoFocus
+                autoCapitalize="words"
+                returnKeyType="next"
+                onSubmitEditing={handleContinue}
+              />
+            </LinearGradient>
             {name.length > 0 && (
-              <Animated.View entering={FadeInDown.springify()} style={styles.characterCount}>
-                <Text style={styles.characterCountText}>
-                  {name.length < 2 ? `${2 - name.length} more character${2 - name.length > 1 ? 's' : ''}` : '✓ Looks great!'}
+              <Animated.View entering={FadeInDown.springify()} style={styles.feedbackContainer}>
+                <Text style={[styles.feedbackText, { color: themeColors.primary }]}>
+                  {name.length < 2
+                    ? `${2 - name.length} more character${2 - name.length > 1 ? 's' : ''} needed`
+                    : `✓ Perfect! ${name} will love these stories! 🎉`
+                  }
                 </Text>
               </Animated.View>
             )}
           </Animated.View>
 
-          {/* Progress indicator */}
+          {/* Enhanced Progress indicator */}
           <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.progressContainer}>
-            <View style={styles.progressBar}>
+            <View style={styles.progressHeader}>
+              <Text style={[styles.progressLabel, { color: themeColors.text.secondary }]}>
+                Your Progress
+              </Text>
+              <Text style={[styles.progressStep, { color: themeColors.primary }]}>
+                Step 2 of 4
+              </Text>
+            </View>
+            <View style={[styles.progressBar, { backgroundColor: themeColors.primary + '20' }]}>
               <LinearGradient
-                colors={['#7FD8BE', '#66C3A8']}
-                style={[styles.progressFill, { width: '25%' }]}
+                colors={themeColors.gradients.primary}
+                style={[styles.progressFill, { width: '50%' }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               />
             </View>
-            <Text style={styles.progressText}>Step 2 of 4</Text>
+            <View style={styles.progressDots}>
+              <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.primary }]} />
+              <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.primary }]} />
+              <View style={[styles.dot, { backgroundColor: themeColors.primary + '30' }]} />
+              <View style={[styles.dot, { backgroundColor: themeColors.primary + '30' }]} />
+            </View>
           </Animated.View>
         </View>
 
@@ -123,15 +228,15 @@ export default function KidName() {
           >
             <LinearGradient
               colors={name.trim().length < 2
-                ? [COLORS.text.light, COLORS.text.light]
-                : ['#7FD8BE', '#66C3A8']
+                ? [themeColors.text.light, themeColors.text.light]
+                : themeColors.gradients.primary
               }
               style={styles.continueButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <Text style={styles.continueButtonText}>
-                {name.trim().length < 2 ? 'Enter a name' : 'Continue →'}
+                {name.trim().length < 2 ? 'Enter a name to continue' : 'Next Step →'}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -148,105 +253,130 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  floatingElement: {
+    position: 'absolute',
+    zIndex: 0,
+  },
   header: {
     paddingTop: 60,
     paddingHorizontal: SPACING.xxl,
     paddingBottom: SPACING.xl,
+    zIndex: 1,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.xl,
     ...SHADOWS.sm,
   },
   iconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: 'rgba(127, 216, 190, 0.2)',
+    width: 80,
+    height: 80,
+    borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
+    ...SHADOWS.md,
   },
   title: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: FONT_WEIGHTS.extrabold,
-    color: COLORS.text.primary,
     marginBottom: SPACING.sm,
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text.secondary,
-    lineHeight: 22,
+    fontSize: FONT_SIZES.lg,
+    lineHeight: 26,
     fontWeight: FONT_WEIGHTS.medium,
   },
   content: {
     flex: 1,
     paddingHorizontal: SPACING.xxl,
+    zIndex: 1,
   },
   inputContainer: {
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.xxl,
   },
-  input: {
-    backgroundColor: COLORS.cardBackground,
-    paddingVertical: SPACING.md + 2,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    fontSize: 22,
-    fontWeight: FONT_WEIGHTS.semibold,
-    color: COLORS.text.primary,
-    borderWidth: 2,
-    borderColor: 'rgba(127, 216, 190, 0.3)',
+  inputWrapper: {
+    borderRadius: BORDER_RADIUS.xl,
+    padding: 3,
     ...SHADOWS.md,
   },
-  characterCount: {
-    marginTop: SPACING.md,
-    alignItems: 'flex-end',
+  input: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: BORDER_RADIUS.lg,
+    fontSize: 26,
+    fontWeight: FONT_WEIGHTS.bold,
+    textAlign: 'center',
   },
-  characterCountText: {
-    fontSize: FONT_SIZES.sm,
-    color: '#7FD8BE',
+  feedbackContainer: {
+    marginTop: SPACING.lg,
+    alignItems: 'center',
+  },
+  feedbackText: {
+    fontSize: FONT_SIZES.md,
     fontWeight: FONT_WEIGHTS.semibold,
+    textAlign: 'center',
   },
   progressContainer: {
-    gap: SPACING.sm,
+    gap: SPACING.md,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  progressLabel: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: FONT_WEIGHTS.semibold,
+  },
+  progressStep: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: FONT_WEIGHTS.bold,
   },
   progressBar: {
-    height: 6,
-    backgroundColor: 'rgba(127, 216, 190, 0.2)',
-    borderRadius: BORDER_RADIUS.sm,
+    height: 10,
+    borderRadius: BORDER_RADIUS.md,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: BORDER_RADIUS.sm,
+    borderRadius: BORDER_RADIUS.md,
   },
-  progressText: {
-    fontSize: FONT_SIZES.sm,
-    color: '#7FD8BE',
-    fontWeight: FONT_WEIGHTS.bold,
-    textAlign: 'center',
+  progressDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: SPACING.md,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  dotCompleted: {
+    ...SHADOWS.sm,
   },
   footer: {
     paddingHorizontal: SPACING.xxl,
     paddingTop: SPACING.md,
     paddingBottom: SPACING.xxl + 10,
+    zIndex: 1,
   },
   continueButton: {
-    paddingVertical: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
+    paddingVertical: SPACING.xl,
+    borderRadius: BORDER_RADIUS.pill,
     alignItems: 'center',
-    ...SHADOWS.colored,
+    ...SHADOWS.xl,
   },
   continueButtonText: {
     color: '#FFFFFF',
-    fontSize: FONT_SIZES.lg,
+    fontSize: FONT_SIZES.xl,
     fontWeight: FONT_WEIGHTS.bold,
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
 });
