@@ -1,9 +1,18 @@
-import React, { useRef } from 'react';
-import { TouchableOpacity, Text, StyleSheet, Animated, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { Text, ViewStyle, TextStyle, ActivityIndicator, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  interpolate,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
-import { hapticFeedback } from '@/utils/haptics';
-import { createPressAnimation } from '@/utils/animations';
+
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PremiumButtonProps {
   title: string;
@@ -32,41 +41,68 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   style,
   textStyle,
 }) => {
-  const scale = useRef(new Animated.Value(1)).current;
-  const pressAnimation = createPressAnimation(scale, hapticFeedback.light);
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const shadowScale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  const shadowStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: shadowScale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (!disabled && !loading) {
+      scale.value = withSpring(0.96, { damping: 15, stiffness: 400 });
+      opacity.value = withTiming(0.9, { duration: 100 });
+      shadowScale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!disabled && !loading) {
+      scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+      opacity.value = withTiming(1, { duration: 150 });
+      shadowScale.value = withSpring(1, { damping: 15, stiffness: 400 });
+    }
+  };
 
   const handlePress = () => {
     if (!disabled && !loading) {
-      hapticFeedback.medium();
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onPress();
     }
   };
 
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
-      borderRadius: BORDER_RADIUS.lg,
+      borderRadius: BORDER_RADIUS.xl,
       alignItems: 'center',
       justifyContent: 'center',
       flexDirection: 'row',
       gap: SPACING.sm,
     };
 
-    // Size styles
+    // Size styles with premium spacing
     const sizeStyles = {
       small: {
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.sm,
-        minHeight: 36,
-      },
-      medium: {
         paddingHorizontal: SPACING.xl,
         paddingVertical: SPACING.md,
-        minHeight: 48,
+        minHeight: 40,
       },
-      large: {
+      medium: {
         paddingHorizontal: SPACING.xxl,
         paddingVertical: SPACING.lg,
-        minHeight: 56,
+        minHeight: 52,
+      },
+      large: {
+        paddingHorizontal: SPACING.xxxl,
+        paddingVertical: SPACING.xl,
+        minHeight: 60,
       },
     };
 
@@ -123,23 +159,26 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
 
   if (variant === 'primary' || variant === 'secondary') {
     return (
-      <Animated.View style={[{ transform: [{ scale }] }, style]}>
-        <TouchableOpacity
-          onPress={handlePress}
-          disabled={disabled || loading}
-          activeOpacity={0.8}
-          {...pressAnimation}
+      <AnimatedPressable
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled || loading}
+        style={[animatedStyle, style]}
+      >
+        <AnimatedLinearGradient
+          colors={getGradientColors()}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[
+            containerStyle,
+            variant === 'primary' ? SHADOWS.lg : SHADOWS.md,
+            shadowStyle,
+          ]}
         >
-          <LinearGradient
-            colors={getGradientColors()}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[containerStyle, variant === 'primary' ? SHADOWS.md : SHADOWS.sm]}
-          >
-            {renderContent()}
-          </LinearGradient>
-        </TouchableOpacity>
-      </Animated.View>
+          {renderContent()}
+        </AnimatedLinearGradient>
+      </AnimatedPressable>
     );
   }
 
@@ -151,16 +190,20 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   };
 
   return (
-    <Animated.View style={[{ transform: [{ scale }] }, style]}>
-      <TouchableOpacity
-        onPress={handlePress}
-        disabled={disabled || loading}
-        activeOpacity={0.8}
-        style={[containerStyle, outlineStyle, variant === 'outline' && SHADOWS.sm]}
-        {...pressAnimation}
-      >
-        {renderContent()}
-      </TouchableOpacity>
-    </Animated.View>
+    <AnimatedPressable
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={disabled || loading}
+      style={[
+        containerStyle,
+        outlineStyle,
+        variant === 'outline' && SHADOWS.sm,
+        animatedStyle,
+        style,
+      ]}
+    >
+      {renderContent()}
+    </AnimatedPressable>
   );
 };
