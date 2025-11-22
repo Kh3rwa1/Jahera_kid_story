@@ -11,7 +11,6 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PremiumButtonProps {
@@ -164,20 +163,19 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}
-        style={[animatedStyle, style]}
+        style={[animatedStyle, shadowStyle, style]}
       >
-        <AnimatedLinearGradient
+        <LinearGradient
           colors={getGradientColors()}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
             containerStyle,
             variant === 'primary' ? SHADOWS.lg : SHADOWS.md,
-            shadowStyle,
           ]}
         >
           {renderContent()}
-        </AnimatedLinearGradient>
+        </LinearGradient>
       </AnimatedPressable>
     );
   }
