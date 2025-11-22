@@ -70,7 +70,7 @@ const AnimatedSparkle: React.FC<{ sparkle: Sparkle }> = ({ sparkle }) => {
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }, { rotate: `${rotation.value}deg` }],
+    transform: [{ scale: scale.value }, { rotateZ: `${rotation.value}deg` }],
     opacity: opacity.value,
   }));
 
