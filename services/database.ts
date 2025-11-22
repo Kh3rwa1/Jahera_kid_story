@@ -334,21 +334,6 @@ export const storyService = {
 
     return true;
   },
-
-  async getById(id: string): Promise<Story | null> {
-    const { data, error } = await supabase
-      .from('stories')
-      .select()
-      .eq('id', id)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching story:', error);
-      return null;
-    }
-
-    return data;
-  },
 };
 
 export const quizService = {

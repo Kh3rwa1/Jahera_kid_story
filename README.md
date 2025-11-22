@@ -253,20 +253,32 @@ npm run build:web
 
 ## 📦 Production Deployment
 
-See [PRODUCTION.md](./PRODUCTION.md) for comprehensive deployment guide.
+See **[PUBLISHING.md](./PUBLISHING.md)** for comprehensive app store publishing guide.
 
 ### Quick Deploy
 
 ```bash
 # iOS
-eas build --platform ios
+eas build --platform ios --profile production-store
 
 # Android
-eas build --platform android
+eas build --platform android --profile production-store
 
-# Web
-npm run build:web
+# Submit to stores
+eas submit --platform ios --latest
+eas submit --platform android --latest
 ```
+
+### Quality Assurance
+
+Before publishing, complete the **[TESTING_CHECKLIST.md](./TESTING_CHECKLIST.md)** with 200+ test cases covering:
+- Core functionality (story generation, audio, quiz)
+- UI/UX quality (animations, design, responsiveness)
+- Error handling (blank screens, API failures)
+- Performance (load times, memory, battery)
+- Security and privacy
+- Accessibility (WCAG AA compliance)
+- Cross-platform compatibility
 
 ## 📚 Supported Languages
 
@@ -331,6 +343,17 @@ MIT License - Feel free to use this project for personal or commercial purposes.
 
 ## 🌟 What's New in v1.0
 
+### AAA+ Quality Updates
+- ✅ **Fixed blank screen issue** - Proper error handling during story generation
+- ✅ **Audio generation improvements** - Retry mechanism with exponential backoff
+- ✅ **Story regeneration** - Generate new stories from playback screen
+- ✅ **Enhanced error messages** - User-friendly error states with retry options
+- ✅ **Graceful audio fallback** - Stories work even if audio fails
+- ✅ **Auto-show text** - Story text displays automatically when audio unavailable
+- ✅ **Production-ready build** - EAS configuration for app store publishing
+- ✅ **Comprehensive testing** - 200+ test cases for quality assurance
+
+### Premium Features
 - ✅ Premium UI with gradients and shadows
 - ✅ Smooth animations and haptic feedback
 - ✅ Achievement system with celebrations

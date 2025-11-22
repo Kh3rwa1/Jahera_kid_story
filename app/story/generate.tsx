@@ -88,7 +88,7 @@ export default function GenerateStory() {
 
       const profile = await profileService.getWithRelations(profileId);
       if (!profile) {
-        router.back();
+        setError('Profile not found. Please make sure you have created a profile first.');
         return;
       }
 
@@ -100,7 +100,7 @@ export default function GenerateStory() {
       const story = await generateAdventureStory(profile, languageCode, context);
 
       if (!story) {
-        router.back();
+        setError('Failed to generate story. Please check your API keys in Profile → Manage API Keys and try again.');
         return;
       }
 
@@ -120,7 +120,7 @@ export default function GenerateStory() {
       });
 
       if (!storyRecord) {
-        router.back();
+        setError('Failed to save story to database. Please check your internet connection and try again.');
         return;
       }
 
@@ -145,14 +145,22 @@ export default function GenerateStory() {
       setStatus('Generating audio narration...');
       setProgress(85);
 
-      const audioPath = await generateAudio(story.content, languageCode, storyRecord.id);
+      try {
+        const audioPath = await generateAudio(story.content, languageCode, storyRecord.id);
 
-      if (audioPath) {
-        await storyService.update(storyRecord.id, { audio_url: audioPath });
+        if (audioPath) {
+          await storyService.update(storyRecord.id, { audio_url: audioPath });
+          completeStep('audio');
+          setStatus('Story ready with audio narration!');
+        } else {
+          console.warn('Audio generation failed, continuing without audio');
+          setStatus('Story ready (audio narration unavailable)');
+        }
+      } catch (audioError) {
+        console.error('Audio generation error:', audioError);
+        setStatus('Story ready (audio narration failed)');
       }
 
-      completeStep('audio');
-      setStatus('Story ready!');
       setProgress(100);
       hapticFeedback.success();
 
