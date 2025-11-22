@@ -10,7 +10,8 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -19,6 +20,8 @@ import { User, ArrowLeft } from 'lucide-react-native';
 export default function KidName() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
   const [name, setName] = useState('');
 
   const handleContinue = async () => {
@@ -54,7 +57,7 @@ export default function KidName() {
   };
 
   return (
-    <LinearGradient colors={COLORS.mintBackgroundGradient} style={styles.container}>
+    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}>

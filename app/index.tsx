@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Sparkles, Heart, Star, Wand2, BookOpen } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -23,41 +24,43 @@ import LottieView from 'lottie-react-native';
 const { width, height } = Dimensions.get('window');
 const isSmallDevice = width < 375 || height < 667;
 
-// Floating icon component
-const FloatingIcon = ({ icon: Icon, delay = 0, duration = 2000 }: any) => {
-  const translateY = useSharedValue(0);
-
-  useEffect(() => {
-    translateY.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(
-          withSpring(-15, { damping: 2, stiffness: 80 }),
-          withSpring(0, { damping: 2, stiffness: 80 })
-        ),
-        -1,
-        false
-      )
-    );
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  return (
-    <Animated.View style={animatedStyle}>
-      <Icon size={32} color={COLORS.primary} strokeWidth={2} />
-    </Animated.View>
-  );
-};
-
 export default function Welcome() {
   const router = useRouter();
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
   const [isLoading, setIsLoading] = useState(true);
   const scaleButton = useSharedValue(1);
   const loadingAnimation = useRef<LottieView>(null);
   const successAnimation = useRef<LottieView>(null);
+
+  // Floating icon component
+  const FloatingIcon = ({ icon: Icon, delay = 0, duration = 2000 }: any) => {
+    const translateY = useSharedValue(0);
+
+    useEffect(() => {
+      translateY.value = withDelay(
+        delay,
+        withRepeat(
+          withSequence(
+            withSpring(-15, { damping: 2, stiffness: 80 }),
+            withSpring(0, { damping: 2, stiffness: 80 })
+          ),
+          -1,
+          false
+        )
+      );
+    }, []);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ translateY: translateY.value }],
+    }));
+
+    return (
+      <Animated.View style={animatedStyle}>
+        <Icon size={32} color={COLORS.primary} strokeWidth={2} />
+      </Animated.View>
+    );
+  };
 
   useEffect(() => {
     checkProfile();
@@ -92,7 +95,7 @@ export default function Welcome() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
-        <LinearGradient colors={COLORS.mintBackgroundGradient} style={StyleSheet.absoluteFill}>
+        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
           <View style={styles.loadingContent}>
             <LottieView
               ref={loadingAnimation}
@@ -109,7 +112,7 @@ export default function Welcome() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <LinearGradient colors={COLORS.mintBackgroundGradient} style={StyleSheet.absoluteFill}>
+      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
         {/* Floating decorative icons - only show on larger devices */}
         {!isSmallDevice && (
           <View style={styles.floatingIconsContainer}>

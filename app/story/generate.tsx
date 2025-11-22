@@ -13,7 +13,8 @@ import { Typography } from '@/components/Typography';
 import { PremiumButton } from '@/components/PremiumButton';
 import { PremiumCard } from '@/components/PremiumCard';
 import { ErrorState } from '@/components/ErrorState';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
 
 interface GenerationStep {
@@ -26,6 +27,8 @@ interface GenerationStep {
 export default function GenerateStory() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
   const [status, setStatus] = useState('Preparing your adventure...');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -197,7 +200,7 @@ export default function GenerateStory() {
 
   if (error) {
     return (
-      <Container gradient gradientColors={COLORS.mintBackgroundGradient} centered>
+      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
         <ErrorState
           type="general"
           title="Generation Failed"
@@ -216,7 +219,7 @@ export default function GenerateStory() {
   });
 
   return (
-    <Container gradient gradientColors={COLORS.mintBackgroundGradient} centered>
+    <Container gradient gradientColors={COLORS.backgroundGradient} centered>
       <View style={styles.content}>
         {/* Animated Icon */}
         <Animated.View

@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, Users, ArrowLeft, Plus } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import Animated, { FadeInDown, FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -19,6 +20,8 @@ import * as Haptics from 'expo-haptics';
 export default function FamilyMembers() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
   const [familyMembers, setFamilyMembers] = useState<string[]>([]);
   const [currentName, setCurrentName] = useState('');
 
@@ -67,7 +70,7 @@ export default function FamilyMembers() {
   };
 
   return (
-    <LinearGradient colors={COLORS.mintBackgroundGradient} style={styles.container}>
+    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}>
