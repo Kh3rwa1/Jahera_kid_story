@@ -15,7 +15,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, UserPlus, ArrowLeft, Plus, Sparkles } from 'lucide-react-native';
 import { profileService, languageService, familyMemberService, friendService } from '@/services/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, { FadeInDown, FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';

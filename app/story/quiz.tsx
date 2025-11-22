@@ -19,7 +19,7 @@ import { PremiumCard } from '@/components/PremiumCard';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
-import { SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { useFadeIn, useSlideInUp } from '@/utils/animations';

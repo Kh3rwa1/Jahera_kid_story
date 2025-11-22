@@ -1,7 +1,23 @@
 import { DEFAULT_THEME } from './themeSchemes';
 
-// Export colors from the default theme (Mint)
-// Components can use these for static imports or use useTheme() hook for dynamic theming
+/**
+ * COLORS - Theme color constants
+ *
+ * IMPORTANT: Always import COLORS at the top of your file when using it in StyleSheet.create()
+ *
+ * @example
+ * // ✅ CORRECT - Import COLORS for StyleSheet
+ * import { COLORS, SPACING } from '@/constants/theme';
+ *
+ * const styles = StyleSheet.create({
+ *   container: {
+ *     backgroundColor: COLORS.background,
+ *     padding: SPACING.md,
+ *   },
+ * });
+ *
+ * @see /utils/themeHelpers.ts for advanced theming patterns
+ */
 export const COLORS = {
   ...DEFAULT_THEME.colors,
   // Legacy alias for backward compatibility
