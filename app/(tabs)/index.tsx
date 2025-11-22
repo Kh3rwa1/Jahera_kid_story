@@ -17,8 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Search, Mic, Sparkles, BookOpen, Trophy, RefreshCw, MapPin, Star } from 'lucide-react-native';
 import { profileService, storyService } from '@/services/database';
 import { ProfileWithRelations, Story } from '@/types/database';
-import { SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 import { Container } from '@/components/Container';
 import { Typography } from '@/components/Typography';
 import { PremiumCard } from '@/components/PremiumCard';
@@ -36,8 +35,6 @@ import { appRating } from '@/utils/appRating';
 export default function HomeScreen() {
   const router = useRouter();
   const responsive = useResponsive();
-  const { currentTheme } = useTheme();
-  const COLORS = currentTheme.colors;
   const [profile, setProfile] = useState<ProfileWithRelations | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
   const [isLoading, setIsLoading] = useState(true);
