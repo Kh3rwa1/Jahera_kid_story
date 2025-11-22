@@ -32,6 +32,39 @@ function getVoiceForLanguage(languageCode: string): string {
   return LANGUAGE_VOICE_MAP[languageCode] || DEFAULT_VOICE_ID;
 }
 
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: any;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      // Don't retry on auth errors or bad request
+      if (error instanceof Error &&
+          (error.message.includes('401') ||
+           error.message.includes('400') ||
+           error.message.includes('API key not configured'))) {
+        throw error;
+      }
+
+      // Wait before retrying (exponential backoff)
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 export async function generateAudio(
   text: string,
   languageCode: string,
@@ -41,42 +74,50 @@ export async function generateAudio(
     const elevenLabsApiKey = await apiKeysService.getElevenLabsKey();
 
     if (!elevenLabsApiKey || elevenLabsApiKey === 'your-api-key-here') {
-      throw new Error('ElevenLabs API key not configured. Please add it in Settings > API Keys.');
+      console.warn('ElevenLabs API key not configured');
+      return null; // Allow story to proceed without audio
     }
 
     const voiceId = getVoiceForLanguage(languageCode);
     const url = `${ELEVENLABS_URL}/${voiceId}`;
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'xi-api-key': elevenLabsApiKey,
-      },
-      body: JSON.stringify({
-        text,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
+    // Retry the API call with exponential backoff
+    const response = await retryWithBackoff(async () => {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'xi-api-key': elevenLabsApiKey,
         },
-      }),
-    });
+        body: JSON.stringify({
+          text,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+          },
+        }),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ElevenLabs API error:', response.status, errorText);
-      throw new Error(`ElevenLabs API error: ${response.status}`);
-    }
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        console.error('ElevenLabs API error:', resp.status, errorText);
+        throw new Error(`ElevenLabs API error: ${resp.status} - ${errorText.slice(0, 100)}`);
+      }
+
+      return resp;
+    });
 
     const audioDir = `${FileSystem.documentDirectory}audio/`;
     const audioPath = `${audioDir}${storyId}.mp3`;
 
+    // Ensure directory exists
     const dirInfo = await FileSystem.getInfoAsync(audioDir);
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(audioDir, { intermediates: true });
     }
 
+    // Convert audio to base64 and save
     const arrayBuffer = await response.arrayBuffer();
     const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
@@ -84,9 +125,12 @@ export async function generateAudio(
       encoding: FileSystem.EncodingType.Base64,
     });
 
+    console.log(`Audio generated successfully: ${audioPath}`);
     return audioPath;
   } catch (error) {
     console.error('Error generating audio:', error);
+    // Return null to allow story to continue without audio
+    // The calling code will handle displaying appropriate message to user
     return null;
   }
 }

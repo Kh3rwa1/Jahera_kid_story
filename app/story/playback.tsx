@@ -13,7 +13,7 @@ import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storyService } from '@/services/database';
 import { Story } from '@/types/database';
-import { Play, Pause, RotateCcw, X, ChevronDown, Award } from 'lucide-react-native';
+import { Play, Pause, RotateCcw, X, ChevronDown, Award, RefreshCw } from 'lucide-react-native';
 import { Container } from '@/components/Container';
 import { Typography } from '@/components/Typography';
 import { PremiumButton } from '@/components/PremiumButton';
@@ -35,6 +35,7 @@ export default function StoryPlayback() {
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showText, setShowText] = useState(false);
+  const [audioError, setAudioError] = useState(false);
 
   useEffect(() => {
     loadStory();
@@ -52,7 +53,8 @@ export default function StoryPlayback() {
       const storyData = await storyService.getById(storyId);
 
       if (!storyData) {
-        router.back();
+        console.error('Story not found:', storyId);
+        setIsLoading(false);
         return;
       }
 
@@ -60,12 +62,16 @@ export default function StoryPlayback() {
 
       if (storyData.audio_url) {
         await loadAudio(storyData.audio_url);
+      } else {
+        console.warn('Story has no audio URL');
+        setAudioError(true);
+        setShowText(true); // Auto-show text when audio is unavailable
       }
 
       setIsLoading(false);
     } catch (error) {
       console.error('Error loading story:', error);
-      router.back();
+      setIsLoading(false);
     }
   };
 
@@ -83,8 +89,11 @@ export default function StoryPlayback() {
       );
 
       setSound(audioSound);
+      setAudioError(false);
     } catch (error) {
       console.error('Error loading audio:', error);
+      setAudioError(true);
+      setShowText(true); // Auto-show text when audio loading fails
     }
   };
 
@@ -135,6 +144,23 @@ export default function StoryPlayback() {
     }
     router.back();
   }, [sound, router]);
+
+  const handleRegenerate = useCallback(() => {
+    if (!story) return;
+
+    hapticFeedback.medium();
+    if (sound) {
+      sound.stopAsync();
+    }
+
+    router.push({
+      pathname: '/story/generate',
+      params: {
+        profileId: story.profile_id,
+        languageCode: story.language_code,
+      },
+    });
+  }, [story, sound, router]);
 
   const handleProgressBarPress = useCallback(async (event: any) => {
     if (!sound || !duration) return;
@@ -222,12 +248,28 @@ export default function StoryPlayback() {
 
         {/* Waveform Visualization */}
         <PremiumCard gradient={COLORS.cardGradient} shadow="lg" style={styles.waveformCard}>
-          <AudioWaveform isPlaying={isPlaying} color={COLORS.primary} />
-          <View style={styles.statusContainer}>
-            <Typography variant="label" color={isPlaying ? 'primary' : 'secondary'}>
-              {isPlaying ? 'Now Playing' : 'Paused'}
-            </Typography>
-          </View>
+          {audioError ? (
+            <>
+              <View style={styles.audioErrorContainer}>
+                <Volume2 size={60} color={COLORS.text.light} strokeWidth={1.5} />
+                <Typography variant="bodyMedium" color="secondary" align="center" style={styles.audioErrorText}>
+                  Audio narration unavailable
+                </Typography>
+                <Typography variant="caption" color="light" align="center">
+                  Read the story text below
+                </Typography>
+              </View>
+            </>
+          ) : (
+            <>
+              <AudioWaveform isPlaying={isPlaying} color={COLORS.primary} />
+              <View style={styles.statusContainer}>
+                <Typography variant="label" color={isPlaying ? 'primary' : 'secondary'}>
+                  {isPlaying ? 'Now Playing' : 'Paused'}
+                </Typography>
+              </View>
+            </>
+          )}
         </PremiumCard>
 
         {/* Story Text Toggle */}
@@ -253,17 +295,29 @@ export default function StoryPlayback() {
           accessibilityLabel={showText ? 'Hide story text' : 'Show story text'}
         />
 
-        {/* Quiz Button */}
-        <PremiumButton
-          title="Start Quiz"
-          onPress={() => router.push({ pathname: '/story/quiz', params: { storyId: story.id } })}
-          variant="primary"
-          size="large"
-          icon={<Award size={24} color={COLORS.text.inverse} />}
-          style={styles.quizButton}
-          gradient={COLORS.gradients.sunset}
-          accessibilityLabel="Start quiz for this story"
-        />
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <PremiumButton
+            title="Generate New Story"
+            onPress={handleRegenerate}
+            variant="outline"
+            size="large"
+            icon={<RefreshCw size={22} color={COLORS.primary} />}
+            style={styles.regenerateButton}
+            accessibilityLabel="Generate a new story"
+          />
+
+          <PremiumButton
+            title="Start Quiz"
+            onPress={() => router.push({ pathname: '/story/quiz', params: { storyId: story.id } })}
+            variant="primary"
+            size="large"
+            icon={<Award size={24} color={COLORS.text.inverse} />}
+            style={styles.quizButton}
+            gradient={COLORS.gradients.sunset}
+            accessibilityLabel="Start quiz for this story"
+          />
+        </View>
       </ScrollView>
 
       {/* Audio Controls */}
@@ -389,10 +443,21 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
     borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
+    minHeight: 200,
+    justifyContent: 'center',
   },
   statusContainer: {
     marginTop: SPACING.lg,
     alignItems: 'center',
+  },
+  audioErrorContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.md,
+    paddingVertical: SPACING.lg,
+  },
+  audioErrorText: {
+    marginTop: SPACING.sm,
   },
   textCard: {
     marginTop: SPACING.xl,
@@ -409,10 +474,16 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     alignSelf: 'center',
   },
-  quizButton: {
+  actionButtons: {
     marginTop: SPACING.xl,
     marginBottom: SPACING.xl,
-    alignSelf: 'center',
+    gap: SPACING.md,
+  },
+  regenerateButton: {
+    width: '100%',
+  },
+  quizButton: {
+    width: '100%',
   },
   controlsGradient: {
     position: 'absolute',
