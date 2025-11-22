@@ -149,7 +149,7 @@ export default function QuizScreen() {
 
   if (isLoading) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+      <Container gradient gradientColors={COLORS.mintBackgroundGradient} centered>
         <LoadingSkeleton type="card" count={2} />
       </Container>
     );
@@ -157,7 +157,7 @@ export default function QuizScreen() {
 
   if (!story || questions.length === 0) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient}>
+      <Container gradient gradientColors={COLORS.mintBackgroundGradient}>
         <ErrorState
           type="notFound"
           title="No Quiz Available"
@@ -182,7 +182,7 @@ export default function QuizScreen() {
     const message = getMessage();
 
     return (
-      <Container scroll gradient gradientColors={COLORS.backgroundGradient}>
+      <Container scroll gradient gradientColors={COLORS.mintBackgroundGradient}>
         <View style={styles.resultContainer}>
           {/* Trophy Icon */}
           <View style={styles.resultHeader}>
@@ -265,7 +265,7 @@ export default function QuizScreen() {
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
-    <Container gradient gradientColors={COLORS.backgroundGradient} safeArea padding={false}>
+    <Container gradient gradientColors={COLORS.mintBackgroundGradient} safeArea padding={false}>
       {showCelebration && <CelebrationOverlay />}
 
       {/* Progress Header */}

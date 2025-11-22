@@ -161,7 +161,7 @@ export default function StoryPlayback() {
 
   if (isLoading || !story) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+      <Container gradient gradientColors={COLORS.mintBackgroundGradient} centered>
         <LoadingSkeleton type="card" count={3} />
       </Container>
     );
@@ -169,7 +169,7 @@ export default function StoryPlayback() {
 
   if (!story) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient}>
+      <Container gradient gradientColors={COLORS.mintBackgroundGradient}>
         <ErrorState
           type="notFound"
           title="Story Not Found"
@@ -183,7 +183,7 @@ export default function StoryPlayback() {
   const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
 
   return (
-    <Container safeArea={false} padding={false} gradient gradientColors={COLORS.backgroundGradient}>
+    <Container safeArea={false} padding={false} gradient gradientColors={COLORS.mintBackgroundGradient}>
       {/* Header with close button */}
       <View style={styles.header}>
         <Pressable
