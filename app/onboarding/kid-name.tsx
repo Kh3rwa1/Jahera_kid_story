@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 60,
     paddingHorizontal: SPACING.xxl,
-    paddingBottom: SPACING.xxxl,
+    paddingBottom: SPACING.xl,
   },
   backButton: {
     width: 40,
@@ -184,14 +184,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xxl,
   },
   inputContainer: {
-    marginBottom: SPACING.xxxl,
+    marginBottom: SPACING.xl,
   },
   input: {
     backgroundColor: COLORS.cardBackground,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md + 2,
+    paddingHorizontal: SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: FONT_WEIGHTS.semibold,
     color: COLORS.text.primary,
     borderWidth: 2,
@@ -228,8 +228,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
-    padding: SPACING.xxl,
-    paddingBottom: SPACING.xxxl + 10,
+    paddingHorizontal: SPACING.xxl,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.xxl + 10,
   },
   continueButton: {
     paddingVertical: SPACING.lg,
