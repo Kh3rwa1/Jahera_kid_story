@@ -52,11 +52,11 @@ export default function LanguageSelection() {
   };
 
   return (
-    <LinearGradient colors={COLORS.backgroundGradient} style={styles.container}>
+    <LinearGradient colors={COLORS.mintBackgroundGradient} style={styles.container}>
       {/* Header with animation */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
         <View style={styles.iconBadge}>
-          <Globe2 size={32} color={COLORS.primary} strokeWidth={2.5} />
+          <Globe2 size={32} color="#7FD8BE" strokeWidth={2.5} />
         </View>
         <Text style={styles.title}>Choose Your Languages</Text>
         <Text style={styles.subtitle}>
@@ -66,11 +66,14 @@ export default function LanguageSelection() {
         {/* Progress indicator */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <Animated.View
+            <LinearGradient
+              colors={['#7FD8BE', '#66C3A8']}
               style={[
                 styles.progressFill,
                 { width: `${(selectedLanguages.length / MAX_LANGUAGES) * 100}%` }
               ]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
             />
           </View>
           <Text style={styles.counter}>
@@ -99,7 +102,7 @@ export default function LanguageSelection() {
               >
                 {isSelected && (
                   <LinearGradient
-                    colors={[COLORS.primaryLight, COLORS.primary]}
+                    colors={['#7FD8BE', '#66C3A8']}
                     style={StyleSheet.absoluteFill}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
@@ -142,7 +145,7 @@ export default function LanguageSelection() {
           <LinearGradient
             colors={selectedLanguages.length === 0
               ? [COLORS.text.light, COLORS.text.light]
-              : [COLORS.primary, COLORS.primaryDark]
+              : ['#7FD8BE', '#66C3A8']
             }
             style={styles.continueButton}
             start={{ x: 0, y: 0 }}
@@ -171,7 +174,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: 'rgba(255, 102, 52, 0.1)',
+    backgroundColor: 'rgba(127, 216, 190, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
@@ -195,18 +198,17 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 6,
-    backgroundColor: 'rgba(255, 102, 52, 0.15)',
+    backgroundColor: 'rgba(127, 216, 190, 0.2)',
     borderRadius: BORDER_RADIUS.sm,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.sm,
   },
   counter: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.primary,
+    color: '#7FD8BE',
     fontWeight: FONT_WEIGHTS.bold,
   },
   languageList: {
@@ -273,7 +275,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkmarkText: {
-    color: COLORS.primary,
+    color: '#7FD8BE',
     fontSize: FONT_SIZES.md,
     fontWeight: FONT_WEIGHTS.bold,
   },
