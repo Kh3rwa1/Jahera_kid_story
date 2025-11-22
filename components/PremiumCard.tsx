@@ -1,17 +1,28 @@
 import React from 'react';
 import { View, StyleSheet, Pressable, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
-import { hapticFeedback } from '@/utils/haptics';
+
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PremiumCardProps {
   children: React.ReactNode;
   gradient?: string[];
   onPress?: () => void;
   style?: ViewStyle;
-  shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+  shadow?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'colored' | 'coloredLight' | 'purple' | 'blue' | 'green';
   padding?: number;
   animated?: boolean;
+  accessibilityLabel?: string;
+  accessibilityRole?: 'button' | 'link' | 'none';
 }
 
 export const PremiumCard: React.FC<PremiumCardProps> = ({
@@ -23,9 +34,32 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
   padding = SPACING.lg,
   animated = true,
 }) => {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  const handlePressIn = () => {
+    if (onPress && animated) {
+      scale.value = withSpring(0.97, { damping: 15, stiffness: 400 });
+      opacity.value = withTiming(0.92, { duration: 100 });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handlePressOut = () => {
+    if (onPress && animated) {
+      scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+      opacity.value = withTiming(1, { duration: 150 });
+    }
+  };
+
   const handlePress = () => {
     if (onPress) {
-      hapticFeedback.light();
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onPress();
     }
   };
@@ -40,15 +74,11 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
   if (gradient) {
     if (onPress) {
       return (
-        <Pressable
+        <AnimatedPressable
           onPress={handlePress}
-          style={({ pressed }) => [
-            style,
-            {
-              transform: [{ scale: pressed && animated ? 0.98 : 1 }],
-              opacity: pressed && animated ? 0.9 : 1,
-            },
-          ]}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={[animatedStyle, style]}
         >
           <LinearGradient
             colors={gradient}
@@ -58,7 +88,7 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
           >
             {children}
           </LinearGradient>
-        </Pressable>
+        </AnimatedPressable>
       );
     }
 
@@ -82,19 +112,14 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
 
   if (onPress) {
     return (
-      <Pressable
+      <AnimatedPressable
         onPress={handlePress}
-        style={({ pressed }) => [
-          baseCardStyle,
-          style,
-          {
-            transform: [{ scale: pressed && animated ? 0.98 : 1 }],
-            opacity: pressed && animated ? 0.9 : 1,
-          },
-        ]}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[baseCardStyle, animatedStyle, style]}
       >
         {children}
-      </Pressable>
+      </AnimatedPressable>
     );
   }
 
