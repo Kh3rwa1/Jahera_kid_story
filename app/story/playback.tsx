@@ -13,7 +13,7 @@ import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storyService } from '@/services/database';
 import { Story } from '@/types/database';
-import { Play, Pause, RotateCcw, X, ChevronDown, Award, RefreshCw } from 'lucide-react-native';
+import { Play, Pause, RotateCcw, X, ChevronDown, Award, RefreshCw, Volume2 } from 'lucide-react-native';
 import { Container } from '@/components/Container';
 import { Typography } from '@/components/Typography';
 import { PremiumButton } from '@/components/PremiumButton';
