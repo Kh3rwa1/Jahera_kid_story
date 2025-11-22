@@ -10,8 +10,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
-
 interface ShimmerEffectProps {
   width?: number | string;
   height?: number | string;
@@ -47,10 +45,7 @@ export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
   });
 
   return (
-    <AnimatedLinearGradient
-      colors={colors}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
+    <Animated.View
       style={[
         styles.shimmer,
         {
@@ -60,7 +55,14 @@ export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
         shimmerStyle,
       ]}
       pointerEvents="none"
-    />
+    >
+      <LinearGradient
+        colors={colors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+    </Animated.View>
   );
 };
 

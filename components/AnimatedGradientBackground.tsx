@@ -1,16 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
-  useAnimatedProps,
+  useAnimatedStyle,
   withRepeat,
   withTiming,
   Easing,
-  interpolateColor,
+  interpolate,
+  runOnJS,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 interface AnimatedGradientBackgroundProps {
   colorSets?: string[][];
@@ -26,33 +25,45 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
   ],
   duration = 8000,
 }) => {
+  const [currentColorSet, setCurrentColorSet] = useState(colorSets[0]);
+  const [nextColorSet, setNextColorSet] = useState(colorSets[1]);
   const progress = useSharedValue(0);
+  const opacity = useSharedValue(0);
 
   useEffect(() => {
-    progress.value = withRepeat(
-      withTiming(colorSets.length - 1, {
-        duration: duration * colorSets.length,
+    let currentIndex = 0;
+
+    const interval = setInterval(() => {
+      const nextIndex = (currentIndex + 1) % colorSets.length;
+      const afterNextIndex = (nextIndex + 1) % colorSets.length;
+
+      setCurrentColorSet(colorSets[nextIndex]);
+      setNextColorSet(colorSets[afterNextIndex]);
+      currentIndex = nextIndex;
+    }, duration);
+
+    opacity.value = withRepeat(
+      withTiming(1, {
+        duration: duration / 2,
         easing: Easing.inOut(Easing.ease),
       }),
       -1,
       true
     );
-  }, [colorSets.length, duration]);
 
-  const animatedProps = useAnimatedProps(() => {
-    // Calculate which color set we're transitioning between
-    const index = Math.floor(progress.value);
-    const nextIndex = (index + 1) % colorSets.length;
-    const interpolation = progress.value - index;
+    return () => clearInterval(interval);
+  }, [colorSets, duration]);
 
-    return {
-      colors: [
-        interpolateColor(interpolation, [0, 1], [colorSets[index][0], colorSets[nextIndex][0]]),
-        interpolateColor(interpolation, [0, 1], [colorSets[index][1], colorSets[nextIndex][1]]),
-        interpolateColor(interpolation, [0, 1], [colorSets[index][2], colorSets[nextIndex][2]]),
-      ],
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(opacity.value, [0, 1], [0, 0.5]),
+  }));
 
-  return <AnimatedLinearGradient animatedProps={animatedProps} style={StyleSheet.absoluteFill} />;
+  return (
+    <>
+      <LinearGradient colors={currentColorSet} style={StyleSheet.absoluteFill} />
+      <Animated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
+        <LinearGradient colors={nextColorSet} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+    </>
+  );
 };
