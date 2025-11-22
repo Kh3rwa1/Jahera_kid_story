@@ -2,7 +2,11 @@ import { DEFAULT_THEME } from './themeSchemes';
 
 // Export colors from the default theme (Mint)
 // Components can use these for static imports or use useTheme() hook for dynamic theming
-export const COLORS = DEFAULT_THEME.colors;
+export const COLORS = {
+  ...DEFAULT_THEME.colors,
+  // Legacy alias for backward compatibility
+  mintBackgroundGradient: DEFAULT_THEME.colors.backgroundGradient,
+};
 
 export const SPACING = {
   xs: 4,
