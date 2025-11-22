@@ -10,7 +10,6 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PremiumCardProps {
