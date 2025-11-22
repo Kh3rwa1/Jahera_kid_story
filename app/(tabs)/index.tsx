@@ -8,12 +8,13 @@ import {
   Animated,
   Pressable,
   Platform,
+  Image,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Search, Mic, Sparkles, BookOpen, Trophy } from 'lucide-react-native';
+import { Search, Mic, Sparkles, BookOpen, Trophy, RefreshCw, MapPin, Star } from 'lucide-react-native';
 import { profileService, storyService } from '@/services/database';
 import { ProfileWithRelations, Story } from '@/types/database';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
@@ -196,102 +197,105 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <LinearGradient
-        colors={COLORS.backgroundGradient}
+        colors={COLORS.mintBackgroundGradient}
         style={StyleSheet.absoluteFill}
       />
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <Animated.View style={[styles.topBar, { opacity: fadeIn }]}>
-          <View style={styles.greetingSection}>
-            <Typography variant="bodyLarge" color="secondary" style={styles.greeting}>
-              Hello, {profile?.kid_name || 'Friend'}! 👋
-            </Typography>
-            <Typography variant="displayMedium" color="primary" style={styles.appTitle}>
-              Ready for an Adventure?
-            </Typography>
-          </View>
-          <View style={styles.topBarIcons}>
-            <Pressable
-              onPress={handleAchievementsPress}
-              accessibilityLabel={`Achievements: ${achievementStats.unlocked} unlocked`}
-              accessibilityRole="button"
-            >
-              <LinearGradient colors={COLORS.gradients.sunset} style={styles.achievementBadge}>
-                <Trophy size={20} color={COLORS.text.inverse} strokeWidth={2.5} />
-                <Typography variant="captionBold" color="inverse" style={styles.achievementText}>
-                  {achievementStats.unlocked}
+
+        {/* Header with Avatar */}
+        <Animated.View style={[styles.header, { opacity: fadeIn }]}>
+          <View style={styles.userSection}>
+            <View style={styles.avatarContainer}>
+              <LinearGradient
+                colors={COLORS.gradients.sunset}
+                style={styles.avatarGradient}
+              >
+                <Typography variant="h2" color="inverse">
+                  {profile?.kid_name?.charAt(0) || '😊'}
                 </Typography>
               </LinearGradient>
-            </Pressable>
+            </View>
+            <View style={styles.greetingContainer}>
+              <Typography variant="caption" color="secondary" style={styles.welcomeText}>
+                Welcome back 👋
+              </Typography>
+              <Typography variant="h4" color="primary" style={styles.userName}>
+                {profile?.kid_name || 'Friend'}
+              </Typography>
+            </View>
           </View>
-        </Animated.View>
-        <View style={styles.searchContainer}>
-          <PremiumCard style={styles.searchInputContainer} shadow="sm" padding={SPACING.md}>
-            <Search size={20} color={COLORS.text.secondary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search for a story"
-              placeholderTextColor={COLORS.text.light}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </PremiumCard>
           <TouchableOpacity
-            style={styles.voiceButton}
-            onPress={() => hapticFeedback.light()}
-            activeOpacity={0.8}
+            style={styles.refreshButton}
+            onPress={() => {
+              hapticFeedback.light();
+              loadData();
+            }}
+            activeOpacity={0.7}
+          >
+            <RefreshCw size={20} color={COLORS.text.primary} strokeWidth={2} />
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Hero Feature Card */}
+        <View style={styles.heroSection}>
+          <PremiumCard
+            style={styles.heroCard}
+            shadow="lg"
+            padding={0}
+            onPress={handleGenerateStory}
           >
             <LinearGradient
-              colors={COLORS.gradients.primary}
-              style={styles.voiceButtonGradient}
+              colors={['#D5F2ED', '#B8EAE0']}
+              style={styles.heroCardGradient}
             >
-              <Mic size={20} color={COLORS.text.inverse} />
+              <View style={styles.heroContent}>
+                <View style={styles.heroIllustration}>
+                  <Typography style={styles.heroEmoji}>👧🏻</Typography>
+                  <View style={styles.decorativeElements}>
+                    <Typography style={styles.decorativeEmoji}>🌿</Typography>
+                    <Typography style={[styles.decorativeEmoji, styles.decorativeEmoji2]}>✨</Typography>
+                    <Typography style={[styles.decorativeEmoji, styles.decorativeEmoji3]}>🦋</Typography>
+                  </View>
+                </View>
+
+                <View style={styles.heroTextContainer}>
+                  <Typography variant="h3" color="primary" style={styles.heroTitle}>
+                    Explore The Beauty
+                  </Typography>
+                  <Typography variant="bodySmall" color="secondary" style={styles.heroSubtitle}>
+                    Get special stories & adventures
+                  </Typography>
+                </View>
+
+                <View style={styles.heroButton}>
+                  <LinearGradient
+                    colors={COLORS.gradients.sunset}
+                    style={styles.heroButtonGradient}
+                  >
+                    <Sparkles size={18} color={COLORS.text.inverse} strokeWidth={2.5} />
+                  </LinearGradient>
+                </View>
+              </View>
             </LinearGradient>
-          </TouchableOpacity>
+          </PremiumCard>
         </View>
 
+        {/* Popular Now Section */}
         <View style={styles.section}>
-          <Typography variant="h3" style={styles.sectionTitle}>
-            Story Categories
-          </Typography>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesGrid}
-          >
-            {categories.map((category, index) => (
-              <PremiumCard
-                key={category.id}
-                gradient={category.gradient ? category.color : undefined}
-                style={styles.categoryBubble}
-                onPress={index === 0 ? handleGenerateStory : undefined}
-                shadow="lg"
-                padding={SPACING.lg}
-                accessibilityLabel={`${category.name} category`}
-                accessibilityRole="button"
-              >
-                <Typography variant="displayMedium" style={styles.categoryIcon}>
-                  {category.icon}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  align="center"
-                  color="inverse"
-                  style={styles.categoryName}
-                >
-                  {category.name}
-                </Typography>
-              </PremiumCard>
-            ))}
-          </ScrollView>
-        </View>
+          <View style={styles.sectionHeader}>
+            <Typography variant="h3" color="primary" style={styles.sectionTitle}>
+              Popular Now
+            </Typography>
+            <TouchableOpacity onPress={() => hapticFeedback.light()}>
+              <Typography variant="bodySmall" color="secondary" style={styles.viewAllText}>
+                View All
+              </Typography>
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.section}>
-          <Typography variant="h3" style={styles.sectionTitle}>
-            Recent Stories
-          </Typography>
           {recentStories.length === 0 ? (
             <View style={styles.emptyStateContainer}>
               <EmptyState
@@ -305,66 +309,99 @@ export default function HomeScreen() {
               />
             </View>
           ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.storiesGrid}
-            >
-              {recentStories.map((story) => {
-                const cardWidth = responsive.isMobile ? 140 : 180;
+            <View style={styles.storiesContainer}>
+              {recentStories.map((story, index) => {
+                const gradients = [
+                  COLORS.categoryColors.tealGradient,
+                  COLORS.categoryColors.peachGradient,
+                  COLORS.categoryColors.purpleGradient,
+                ];
+                const gradient = gradients[index % gradients.length];
+
                 return (
                   <PremiumCard
                     key={story.id}
-                    style={[styles.storyCard, { width: cardWidth }]}
+                    style={styles.storyCard}
                     onPress={() => handleStoryPress(story.id)}
                     shadow="md"
                     padding={0}
-                    accessibilityLabel={`Story: ${story.title}`}
-                    accessibilityRole="button"
                   >
-                    <LinearGradient colors={COLORS.gradients.primary} style={styles.storyImagePlaceholder}>
-                      <BookOpen size={32} color={COLORS.text.inverse} strokeWidth={1.5} />
+                    <LinearGradient
+                      colors={gradient}
+                      style={styles.storyImage}
+                    >
+                      <BookOpen size={40} color={COLORS.text.inverse} strokeWidth={1.5} />
                     </LinearGradient>
+
                     <View style={styles.storyCardContent}>
-                      <Typography variant="bodySmall" numberOfLines={2}>
+                      <Typography variant="bodyMedium" numberOfLines={2} style={styles.storyTitle}>
                         {story.title}
                       </Typography>
+
+                      <View style={styles.storyMeta}>
+                        <View style={styles.storyLocation}>
+                          <MapPin size={14} color={COLORS.text.secondary} strokeWidth={2} />
+                          <Typography variant="caption" color="secondary" numberOfLines={1}>
+                            {story.season || 'Adventure'}
+                          </Typography>
+                        </View>
+
+                        <View style={styles.storyRating}>
+                          <Star size={14} color="#FFD700" fill="#FFD700" strokeWidth={0} />
+                          <Typography variant="caption" color="secondary">
+                            4.8
+                          </Typography>
+                        </View>
+                      </View>
                     </View>
                   </PremiumCard>
                 );
               })}
-            </ScrollView>
+            </View>
           )}
         </View>
 
+        {/* All Stories */}
         {filteredStories.length > 3 && (
           <View style={styles.section}>
-            <Typography variant="h3" style={styles.sectionTitle}>
+            <Typography variant="h3" color="primary" style={styles.sectionTitle}>
               All Stories
             </Typography>
-            {filteredStories.slice(3).map((story) => (
-              <PremiumCard
-                key={story.id}
-                style={styles.listStoryCard}
-                onPress={() => handleStoryPress(story.id)}
-                shadow="sm"
-                padding={0}
-                accessibilityLabel={`Story: ${story.title}, ${story.season}, ${story.time_of_day}`}
-                accessibilityRole="button"
-              >
-                <LinearGradient colors={COLORS.gradients.ocean} style={styles.listStoryImage}>
-                  <BookOpen size={24} color={COLORS.text.inverse} strokeWidth={1.5} />
-                </LinearGradient>
-                <View style={styles.listStoryInfo}>
-                  <Typography variant="bodyMedium" numberOfLines={1}>
-                    {story.title}
-                  </Typography>
-                  <Typography variant="caption" color="secondary" style={styles.listStoryMeta}>
-                    {story.season} • {story.time_of_day}
-                  </Typography>
-                </View>
-              </PremiumCard>
-            ))}
+            <View style={styles.allStoriesContainer}>
+              {filteredStories.slice(3).map((story, index) => {
+                const gradients = [
+                  COLORS.categoryColors.blueGradient,
+                  COLORS.categoryColors.greenGradient,
+                  COLORS.accent.lavenderGradient,
+                ];
+                const gradient = gradients[index % gradients.length];
+
+                return (
+                  <PremiumCard
+                    key={story.id}
+                    style={styles.listStoryCard}
+                    onPress={() => handleStoryPress(story.id)}
+                    shadow="sm"
+                    padding={0}
+                  >
+                    <LinearGradient colors={gradient} style={styles.listStoryImage}>
+                      <BookOpen size={24} color={COLORS.text.inverse} strokeWidth={1.5} />
+                    </LinearGradient>
+                    <View style={styles.listStoryInfo}>
+                      <Typography variant="bodyMedium" numberOfLines={1}>
+                        {story.title}
+                      </Typography>
+                      <View style={styles.listStoryMeta}>
+                        <MapPin size={12} color={COLORS.text.secondary} strokeWidth={2} />
+                        <Typography variant="caption" color="secondary">
+                          {story.season} • {story.time_of_day}
+                        </Typography>
+                      </View>
+                    </View>
+                  </PremiumCard>
+                );
+              })}
+            </View>
           </View>
         )}
       </ScrollView>
@@ -390,129 +427,199 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: SPACING.xxxl,
+    paddingBottom: SPACING.xxxl * 2,
   },
-  topBar: {
+
+  // Header styles
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingTop: SPACING.md,
+    alignItems: 'center',
     paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.lg,
     paddingBottom: SPACING.xl,
   },
-  greetingSection: {
-    flex: 1,
-    gap: SPACING.xs,
-  },
-  greeting: {
-    marginBottom: 2,
-    fontWeight: '500' as any,
-  },
-  appTitle: {
-    letterSpacing: -0.5,
-  },
-  topBarIcons: {
+  userSection: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
   },
-  achievementBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.pill,
-    ...SHADOWS.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  achievementText: {
-    fontSize: 14,
-    fontWeight: '800' as any,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xl,
-    gap: SPACING.md,
-    alignItems: 'center',
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: COLORS.text.primary,
-  },
-  voiceButton: {
-    width: 52,
-    height: 52,
-    borderRadius: BORDER_RADIUS.xl,
+  avatarContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     overflow: 'hidden',
-    ...SHADOWS.lg,
+    ...SHADOWS.md,
   },
-  voiceButtonGradient: {
+  avatarGradient: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  greetingContainer: {
+    gap: 2,
+  },
+  welcomeText: {
+    fontWeight: '500' as any,
+  },
+  userName: {
+    fontWeight: '700' as any,
+  },
+  refreshButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.cardBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.sm,
+  },
+
+  // Hero Card styles
+  heroSection: {
+    paddingHorizontal: SPACING.xl,
+    marginBottom: SPACING.xxl,
+  },
+  heroCard: {
+    borderRadius: BORDER_RADIUS.xxl,
+    overflow: 'hidden',
+  },
+  heroCardGradient: {
+    padding: SPACING.xl,
+    minHeight: 200,
+  },
+  heroContent: {
+    position: 'relative',
+  },
+  heroIllustration: {
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+    position: 'relative',
+  },
+  heroEmoji: {
+    fontSize: 80,
+  },
+  decorativeElements: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  decorativeEmoji: {
+    fontSize: 24,
+    position: 'absolute',
+    top: 10,
+    left: 20,
+  },
+  decorativeEmoji2: {
+    top: 30,
+    right: 30,
+    left: 'auto' as any,
+  },
+  decorativeEmoji3: {
+    bottom: 10,
+    left: 40,
+    top: 'auto' as any,
+  },
+  heroTextContainer: {
+    gap: SPACING.xs,
+    marginBottom: SPACING.md,
+  },
+  heroTitle: {
+    fontWeight: '800' as any,
+  },
+  heroSubtitle: {
+    fontWeight: '500' as any,
+  },
+  heroButton: {
+    alignSelf: 'flex-end',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+    ...SHADOWS.lg,
+  },
+  heroButtonGradient: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Section styles
   section: {
     marginBottom: SPACING.xxl,
   },
-  sectionTitle: {
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
     marginBottom: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
   },
-  categoriesGrid: {
-    paddingHorizontal: SPACING.xl,
+  sectionTitle: {
+    fontWeight: '700' as any,
+  },
+  viewAllText: {
+    fontWeight: '600' as any,
+  },
+
+  // Stories Container
+  storiesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: SPACING.lg,
     gap: SPACING.md,
   },
-  categoryBubble: {
-    width: 110,
-    height: 130,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: BORDER_RADIUS.xxl,
-  },
-  categoryIcon: {
-    marginBottom: SPACING.sm,
-    fontSize: 36,
-  },
-  categoryName: {
-    fontWeight: '700' as any,
-    fontSize: 12,
-  },
-  emptyStateContainer: {
-    paddingHorizontal: SPACING.xl,
-  },
-  storiesGrid: {
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.lg,
-  },
   storyCard: {
+    width: '47%',
+    borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
-    borderRadius: BORDER_RADIUS.xxl,
   },
-  storyImagePlaceholder: {
+  storyImage: {
     width: '100%',
-    height: 200,
+    height: 140,
     alignItems: 'center',
     justifyContent: 'center',
   },
   storyCardContent: {
     padding: SPACING.md,
+    backgroundColor: COLORS.cardBackground,
+  },
+  storyTitle: {
+    fontWeight: '600' as any,
+    marginBottom: SPACING.xs,
+  },
+  storyMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  storyLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  storyRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+
+  // Empty state
+  emptyStateContainer: {
+    paddingHorizontal: SPACING.xl,
+  },
+
+  // All Stories
+  allStoriesContainer: {
+    paddingHorizontal: SPACING.xl,
+    gap: SPACING.md,
   },
   listStoryCard: {
     flexDirection: 'row',
-    marginHorizontal: SPACING.xl,
-    marginBottom: SPACING.md,
     overflow: 'hidden',
     borderRadius: BORDER_RADIUS.xl,
+    marginBottom: SPACING.sm,
   },
   listStoryImage: {
     width: 80,
@@ -525,8 +632,11 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     justifyContent: 'center',
     gap: SPACING.xs,
+    backgroundColor: COLORS.cardBackground,
   },
   listStoryMeta: {
-    textTransform: 'capitalize',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 });
