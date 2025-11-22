@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Sparkles, Heart, Star, Wand2, BookOpen } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
   useAnimatedStyle,
@@ -27,7 +27,7 @@ const isSmallDevice = width < 375 || height < 667;
 export default function Welcome() {
   const router = useRouter();
   const { currentTheme } = useTheme();
-  const COLORS = currentTheme.colors;
+  const themeColors = currentTheme.colors;
   const [isLoading, setIsLoading] = useState(true);
   const scaleButton = useSharedValue(1);
   const loadingAnimation = useRef<LottieView>(null);
@@ -57,7 +57,7 @@ export default function Welcome() {
 
     return (
       <Animated.View style={animatedStyle}>
-        <Icon size={32} color={COLORS.primary} strokeWidth={2} />
+        <Icon size={32} color={themeColors.primary} strokeWidth={2} />
       </Animated.View>
     );
   };
@@ -95,7 +95,7 @@ export default function Welcome() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
-        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
+        <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill}>
           <View style={styles.loadingContent}>
             <LottieView
               ref={loadingAnimation}
@@ -112,7 +112,7 @@ export default function Welcome() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill}>
+      <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill}>
         {/* Floating decorative icons - only show on larger devices */}
         {!isSmallDevice && (
           <View style={styles.floatingIconsContainer}>
@@ -142,7 +142,7 @@ export default function Welcome() {
             style={styles.lottieHero}
           />
           <View style={styles.heroIconOverlay}>
-            <Sparkles size={80} color={COLORS.primary} strokeWidth={2} />
+            <Sparkles size={80} color={themeColors.primary} strokeWidth={2} />
           </View>
         </Animated.View>
 
