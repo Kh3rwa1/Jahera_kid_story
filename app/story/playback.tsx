@@ -21,7 +21,7 @@ import { PremiumCard } from '@/components/PremiumCard';
 import { AudioWaveform } from '@/components/AudioWaveform';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
-import { SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { useFadeIn, useSlideInUp } from '@/utils/animations';
@@ -30,7 +30,7 @@ export default function StoryPlayback() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { currentTheme } = useTheme();
-  const COLORS = currentTheme.colors;
+  const themeColors = currentTheme.colors;
   const [story, setStory] = useState<Story | null>(null);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -190,7 +190,7 @@ export default function StoryPlayback() {
 
   if (isLoading || !story) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
+      <Container gradient gradientColors={themeColors.backgroundGradient} centered>
         <LoadingSkeleton type="card" count={3} />
       </Container>
     );
@@ -198,7 +198,7 @@ export default function StoryPlayback() {
 
   if (!story) {
     return (
-      <Container gradient gradientColors={COLORS.backgroundGradient}>
+      <Container gradient gradientColors={themeColors.backgroundGradient}>
         <ErrorState
           type="notFound"
           title="Story Not Found"
@@ -212,7 +212,7 @@ export default function StoryPlayback() {
   const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
 
   return (
-    <Container safeArea={false} padding={false} gradient gradientColors={COLORS.backgroundGradient}>
+    <Container safeArea={false} padding={false} gradient gradientColors={themeColors.backgroundGradient}>
       {/* Header with close button */}
       <View style={styles.header}>
         <Pressable
@@ -221,7 +221,7 @@ export default function StoryPlayback() {
           accessibilityLabel="Close playback"
           accessibilityRole="button"
         >
-          <ChevronDown size={28} color={COLORS.text.primary} strokeWidth={2.5} />
+          <ChevronDown size={28} color={themeColors.text.primary} strokeWidth={2.5} />
         </Pressable>
       </View>
 
@@ -250,11 +250,11 @@ export default function StoryPlayback() {
         </View>
 
         {/* Waveform Visualization */}
-        <PremiumCard gradient={COLORS.cardGradient} shadow="lg" style={styles.waveformCard}>
+        <PremiumCard gradient={themeColors.cardGradient} shadow="lg" style={styles.waveformCard}>
           {audioError ? (
             <>
               <View style={styles.audioErrorContainer}>
-                <Volume2 size={60} color={COLORS.text.light} strokeWidth={1.5} />
+                <Volume2 size={60} color={themeColors.text.light} strokeWidth={1.5} />
                 <Typography variant="bodyMedium" color="secondary" align="center" style={styles.audioErrorText}>
                   Audio narration unavailable
                 </Typography>
@@ -265,7 +265,7 @@ export default function StoryPlayback() {
             </>
           ) : (
             <>
-              <AudioWaveform isPlaying={isPlaying} color={COLORS.primary} />
+              <AudioWaveform isPlaying={isPlaying} color={themeColors.primary} />
               <View style={styles.statusContainer}>
                 <Typography variant="label" color={isPlaying ? 'primary' : 'secondary'}>
                   {isPlaying ? 'Now Playing' : 'Paused'}
@@ -305,7 +305,7 @@ export default function StoryPlayback() {
             onPress={handleRegenerate}
             variant="outline"
             size="large"
-            icon={<RefreshCw size={22} color={COLORS.primary} />}
+            icon={<RefreshCw size={22} color={themeColors.primary} />}
             style={styles.regenerateButton}
             accessibilityLabel="Generate a new story"
           />
@@ -315,9 +315,9 @@ export default function StoryPlayback() {
             onPress={() => router.push({ pathname: '/story/quiz', params: { storyId: story.id } })}
             variant="primary"
             size="large"
-            icon={<Award size={24} color={COLORS.text.inverse} />}
+            icon={<Award size={24} color={themeColors.text.inverse} />}
             style={styles.quizButton}
-            gradient={COLORS.gradients.sunset}
+            gradient={themeColors.gradients.sunset}
             accessibilityLabel="Start quiz for this story"
           />
         </View>
@@ -325,7 +325,7 @@ export default function StoryPlayback() {
 
       {/* Audio Controls */}
       <LinearGradient
-        colors={['transparent', COLORS.cardBackground]}
+        colors={['transparent', themeColors.cardBackground]}
         style={styles.controlsGradient}
       >
         <View style={styles.controls}>
@@ -338,7 +338,7 @@ export default function StoryPlayback() {
           >
             <View style={styles.progressBar}>
               <LinearGradient
-                colors={COLORS.gradients.primary}
+                colors={themeColors.gradients.primary}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[styles.progressFill, { width: `${progressPercentage}%` }]}
@@ -368,7 +368,7 @@ export default function StoryPlayback() {
               accessibilityLabel="Restart story"
               accessibilityRole="button"
             >
-              <RotateCcw size={28} color={sound ? COLORS.text.primary : COLORS.text.light} />
+              <RotateCcw size={28} color={sound ? themeColors.text.primary : themeColors.text.light} />
             </Pressable>
 
             <Pressable
@@ -383,13 +383,13 @@ export default function StoryPlayback() {
               accessibilityRole="button"
             >
               <LinearGradient
-                colors={sound ? COLORS.gradients.primary : [COLORS.text.light, COLORS.text.light]}
+                colors={sound ? themeColors.gradients.primary : [themeColors.text.light, themeColors.text.light]}
                 style={styles.playButtonGradient}
               >
                 {isPlaying ? (
-                  <Pause size={40} color={COLORS.text.inverse} fill={COLORS.text.inverse} />
+                  <Pause size={40} color={themeColors.text.inverse} fill={themeColors.text.inverse} />
                 ) : (
-                  <Play size={40} color={COLORS.text.inverse} fill={COLORS.text.inverse} />
+                  <Play size={40} color={themeColors.text.inverse} fill={themeColors.text.inverse} />
                 )}
               </LinearGradient>
             </Pressable>
