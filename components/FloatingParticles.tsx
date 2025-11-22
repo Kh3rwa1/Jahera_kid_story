@@ -23,8 +23,6 @@ interface Particle {
   colors: string[];
 }
 
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
-
 const FloatingParticle: React.FC<{ particle: Particle }> = ({ particle }) => {
   const translateY = useSharedValue(particle.startY);
   const translateX = useSharedValue(0);
@@ -80,8 +78,7 @@ const FloatingParticle: React.FC<{ particle: Particle }> = ({ particle }) => {
   }));
 
   return (
-    <AnimatedLinearGradient
-      colors={particle.colors}
+    <Animated.View
       style={[
         styles.particle,
         {
@@ -92,9 +89,14 @@ const FloatingParticle: React.FC<{ particle: Particle }> = ({ particle }) => {
         },
         animatedStyle,
       ]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    />
+    >
+      <LinearGradient
+        colors={particle.colors}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+    </Animated.View>
   );
 };
 
