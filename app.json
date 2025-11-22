@@ -8,18 +8,28 @@
     "scheme": "jahera",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "description": "Jahera - AI-powered personalized story adventures for kids. Create magical, educational stories tailored to your child's interests, family, and friends with multilingual narration.",
+    "primaryColor": "#4ECDC4",
+    "backgroundColor": "#FFF8E7",
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFF8E7"
     },
+    "privacy": "public",
+    "category": "education",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jahera.kids",
       "buildNumber": "1.0.0",
+      "requireFullScreen": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Jahera needs microphone access for voice input features.",
-        "NSCameraUsageDescription": "Jahera needs camera access to create personalized story experiences."
+        "NSCameraUsageDescription": "Jahera needs camera access to create personalized story experiences.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -30,8 +40,10 @@
         "backgroundColor": "#FFF8E7"
       },
       "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET"
+      ],
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.jahera.kids"
     },
     "web": {
       "bundler": "metro",
