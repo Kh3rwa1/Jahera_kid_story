@@ -19,13 +19,16 @@ import { PremiumCard } from '@/components/PremiumCard';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { useFadeIn, useSlideInUp } from '@/utils/animations';
 
 export default function QuizScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
   const [story, setStory] = useState<Story | null>(null);
   const [questions, setQuestions] = useState<QuizQuestionWithAnswers[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -149,7 +152,7 @@ export default function QuizScreen() {
 
   if (isLoading) {
     return (
-      <Container gradient gradientColors={COLORS.mintBackgroundGradient} centered>
+      <Container gradient gradientColors={COLORS.backgroundGradient} centered>
         <LoadingSkeleton type="card" count={2} />
       </Container>
     );
@@ -157,7 +160,7 @@ export default function QuizScreen() {
 
   if (!story || questions.length === 0) {
     return (
-      <Container gradient gradientColors={COLORS.mintBackgroundGradient}>
+      <Container gradient gradientColors={COLORS.backgroundGradient}>
         <ErrorState
           type="notFound"
           title="No Quiz Available"
@@ -182,7 +185,7 @@ export default function QuizScreen() {
     const message = getMessage();
 
     return (
-      <Container scroll gradient gradientColors={COLORS.mintBackgroundGradient}>
+      <Container scroll gradient gradientColors={COLORS.backgroundGradient}>
         <View style={styles.resultContainer}>
           {/* Trophy Icon */}
           <View style={styles.resultHeader}>
@@ -265,7 +268,7 @@ export default function QuizScreen() {
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
-    <Container gradient gradientColors={COLORS.mintBackgroundGradient} safeArea padding={false}>
+    <Container gradient gradientColors={COLORS.backgroundGradient} safeArea padding={false}>
       {showCelebration && <CelebrationOverlay />}
 
       {/* Progress Header */}
