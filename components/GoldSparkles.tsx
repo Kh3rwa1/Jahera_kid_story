@@ -69,10 +69,13 @@ const AnimatedSparkle: React.FC<{ sparkle: Sparkle }> = ({ sparkle }) => {
     );
   }, []);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }, { rotateZ: `${rotation.value}deg` }],
-    opacity: opacity.value,
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [{ scale: scale.value }, { rotateZ: `${rotation.value}deg` }],
+      opacity: opacity.value,
+    };
+  });
 
   const Icon = sparkle.type === 'star' ? Star : Sparkles;
 

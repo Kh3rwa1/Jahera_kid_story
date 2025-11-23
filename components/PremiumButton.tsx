@@ -44,14 +44,20 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   const opacity = useSharedValue(1);
   const shadowScale = useSharedValue(1);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [{ scale: scale.value }],
+      opacity: opacity.value,
+    };
+  });
 
-  const shadowStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: shadowScale.value }],
-  }));
+  const shadowStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [{ scale: shadowScale.value }],
+    };
+  });
 
   const handlePressIn = () => {
     if (!disabled && !loading) {

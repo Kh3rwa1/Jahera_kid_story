@@ -37,6 +37,7 @@ export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
   }, [duration]);
 
   const shimmerStyle = useAnimatedStyle(() => {
+    'worklet';
     const translateX = interpolate(shimmerTranslate.value, [-1, 1], [-400, 400]);
 
     return {

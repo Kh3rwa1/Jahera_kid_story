@@ -47,10 +47,13 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const scale = useSharedValue(1);
   const pressed = useSharedValue(0);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: interpolate(pressed.value, [0, 1], [1, 0.95]),
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [{ scale: scale.value }],
+      opacity: interpolate(pressed.value, [0, 1], [1, 0.95]),
+    };
+  });
 
   const handlePressIn = () => {
     if (onPress) {
