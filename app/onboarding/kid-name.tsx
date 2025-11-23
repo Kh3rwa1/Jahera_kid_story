@@ -65,20 +65,29 @@ export default function KidName() {
     );
   }, []);
 
-  const float1Style = useAnimatedStyle(() => ({
-    transform: [{ translateY: float1.value }],
-    opacity: interpolate(float1.value, [-10, 0], [0.4, 0.7]),
-  }));
+  const float1Style = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [{ translateY: float1.value }],
+      opacity: interpolate(float1.value, [-10, 0], [0.4, 0.7]),
+    };
+  });
 
-  const float2Style = useAnimatedStyle(() => ({
-    transform: [{ translateY: float2.value }],
-    opacity: interpolate(float2.value, [-15, 0], [0.4, 0.7]),
-  }));
+  const float2Style = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [{ translateY: float2.value }],
+      opacity: interpolate(float2.value, [-15, 0], [0.4, 0.7]),
+    };
+  });
 
-  const float3Style = useAnimatedStyle(() => ({
-    transform: [{ translateY: float3.value }],
-    opacity: interpolate(float3.value, [-12, 0], [0.4, 0.7]),
-  }));
+  const float3Style = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [{ translateY: float3.value }],
+      opacity: interpolate(float3.value, [-12, 0], [0.4, 0.7]),
+    };
+  });
 
   const handleContinue = async () => {
     const trimmedName = name.trim();

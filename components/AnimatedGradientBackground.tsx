@@ -54,9 +54,12 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
     return () => clearInterval(interval);
   }, [colorSets, duration]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(opacity.value, [0, 1], [0, 0.5]),
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      opacity: interpolate(opacity.value, [0, 1], [0, 0.5]),
+    };
+  });
 
   return (
     <>

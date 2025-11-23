@@ -58,20 +58,29 @@ export default function LanguageSelection() {
     );
   }, []);
 
-  const sparkle1Style = useAnimatedStyle(() => ({
-    opacity: interpolate(sparkle1.value, [0, 1], [0.3, 1]),
-    transform: [{ scale: interpolate(sparkle1.value, [0, 1], [0.8, 1.2]) }],
-  }));
+  const sparkle1Style = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      opacity: interpolate(sparkle1.value, [0, 1], [0.3, 1]),
+      transform: [{ scale: interpolate(sparkle1.value, [0, 1], [0.8, 1.2]) }],
+    };
+  });
 
-  const sparkle2Style = useAnimatedStyle(() => ({
-    opacity: interpolate(sparkle2.value, [0, 1], [0.3, 1]),
-    transform: [{ scale: interpolate(sparkle2.value, [0, 1], [0.8, 1.2]) }],
-  }));
+  const sparkle2Style = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      opacity: interpolate(sparkle2.value, [0, 1], [0.3, 1]),
+      transform: [{ scale: interpolate(sparkle2.value, [0, 1], [0.8, 1.2]) }],
+    };
+  });
 
-  const sparkle3Style = useAnimatedStyle(() => ({
-    opacity: interpolate(sparkle3.value, [0, 1], [0.3, 1]),
-    transform: [{ scale: interpolate(sparkle3.value, [0, 1], [0.8, 1.2]) }],
-  }));
+  const sparkle3Style = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      opacity: interpolate(sparkle3.value, [0, 1], [0.3, 1]),
+      transform: [{ scale: interpolate(sparkle3.value, [0, 1], [0.8, 1.2]) }],
+    };
+  });
 
   const toggleLanguage = async (language: Language) => {
     const isSelected = selectedLanguages.some(l => l.code === language.code);
