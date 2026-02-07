@@ -106,7 +106,7 @@ export default function GenerateStory() {
       const story = await generateAdventureStory(profile, languageCode, context);
 
       if (!story) {
-        setError('Failed to generate story. Please check your API keys in Profile → Manage API Keys and try again.');
+        setError('Our story magic needs a little help — ask a grown-up to check the settings.');
         return;
       }
 
@@ -160,11 +160,11 @@ export default function GenerateStory() {
           setStatus('Story ready with audio narration!');
         } else {
           console.warn('Audio generation failed, continuing without audio');
-          setStatus('Story ready (audio narration unavailable)');
+          setStatus('Your story is ready! Audio will be available next time.');
         }
       } catch (audioError) {
         console.error('Audio generation error:', audioError);
-        setStatus('Story ready (audio narration failed)');
+        setStatus('Your story is ready! Audio will be available next time.');
       }
 
       setProgress(100);
@@ -183,7 +183,7 @@ export default function GenerateStory() {
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate story';
 
       if (errorMessage.includes('API key not configured')) {
-        setError('Please add your OpenAI API key in Profile → Manage API Keys');
+        setError('Our story magic needs a little help — ask a grown-up to check the settings.');
       } else {
         setError(errorMessage);
       }

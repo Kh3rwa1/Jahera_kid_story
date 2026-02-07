@@ -36,6 +36,9 @@ export async function generateAdventureStory(
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token || supabaseAnonKey;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
@@ -47,7 +50,10 @@ export async function generateAdventureStory(
         languageCode,
         context,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -70,6 +76,9 @@ export async function generateAdventureStory(
     return story;
   } catch (error) {
     console.error('Error generating story:', error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Story generation timed out. Please try again.');
+    }
     if (error instanceof Error) {
       throw error;
     }

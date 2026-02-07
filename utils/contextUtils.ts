@@ -10,11 +10,11 @@ export interface StoryContext {
 }
 
 export function getSeason(date: Date): Season {
-  const month = date.getMonth();
+  const month = date.getMonth() + 1;
 
-  if (month >= 2 && month <= 4) return 'spring';
-  if (month >= 5 && month <= 7) return 'summer';
-  if (month >= 8 && month <= 10) return 'fall';
+  if (month >= 3 && month <= 5) return 'spring';
+  if (month >= 6 && month <= 8) return 'summer';
+  if (month >= 9 && month <= 11) return 'fall';
   return 'winter';
 }
 

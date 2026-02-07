@@ -28,16 +28,23 @@ export default function Friends() {
   const themeColors = currentTheme.colors;
   const [friends, setFriends] = useState<string[]>([]);
   const [currentName, setCurrentName] = useState('');
+  const [emptyNameHint, setEmptyNameHint] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const addFriend = async () => {
     const trimmedName = currentName.trim();
 
-    if (trimmedName.length > 0) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      setFriends([...friends, trimmedName]);
-      setCurrentName('');
+    if (!trimmedName.length) {
+      setEmptyNameHint(true);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      setTimeout(() => setEmptyNameHint(false), 1200);
+      return;
     }
+
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setFriends([...friends, trimmedName]);
+    setCurrentName('');
+    setEmptyNameHint(false);
   };
 
   const removeFriend = async (index: number) => {
@@ -140,7 +147,12 @@ export default function Friends() {
                 placeholder="Enter friend's name..."
                 placeholderTextColor={themeColors.text.light}
                 value={currentName}
-                onChangeText={setCurrentName}
+                onChangeText={(value) => {
+                  setCurrentName(value);
+                  if (emptyNameHint && value.trim().length > 0) {
+                    setEmptyNameHint(false);
+                  }
+                }}
                 autoCapitalize="words"
                 returnKeyType="done"
                 onSubmitEditing={addFriend}
@@ -157,12 +169,17 @@ export default function Friends() {
                 }
               ]}
               onPress={addFriend}
-              disabled={currentName.trim().length === 0 || isLoading}
+              disabled={isLoading}
               activeOpacity={0.7}
             >
               <Plus size={24} color="#FFFFFF" strokeWidth={3} />
             </TouchableOpacity>
           </View>
+          {emptyNameHint ? (
+            <Animated.Text entering={FadeInDown.springify()} style={[styles.inputHint, { color: themeColors.warning }]}>
+              Type a name first!
+            </Animated.Text>
+          ) : null}
         </Animated.View>
 
         {/* List */}
@@ -330,6 +347,12 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.lg,
     lineHeight: 26,
     fontWeight: FONT_WEIGHTS.medium,
+  },
+  inputHint: {
+    marginTop: SPACING.sm,
+    marginLeft: SPACING.sm,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: FONT_WEIGHTS.semibold,
   },
   inputSection: {
     paddingHorizontal: SPACING.xxl,
