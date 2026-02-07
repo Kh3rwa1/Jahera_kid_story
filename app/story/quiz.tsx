@@ -40,6 +40,7 @@ export default function QuizScreen() {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [score, setScore] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const questionFadeAnim = useSharedValue(1);
@@ -59,21 +60,24 @@ export default function QuizScreen() {
 
   const loadQuiz = async () => {
     try {
+      setIsLoading(true);
+      setLoadError(null);
       const storyId = params.storyId as string;
       const storyData = await storyService.getById(storyId);
       const quizData = await quizService.getQuestionsByStoryId(storyId);
 
-      if (!storyData || !quizData) {
-        router.back();
+      if (!storyData || quizData === null) {
+        setLoadError("Oops, the quiz got lost! Let's try another story.");
         return;
       }
 
       setStory(storyData);
       setQuestions(quizData);
-      setIsLoading(false);
     } catch (error) {
       console.error('Error loading quiz:', error);
-      router.back();
+      setLoadError("Oops, the quiz got lost! Let's try another story.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -147,6 +151,20 @@ export default function QuizScreen() {
     return (
       <Container gradient gradientColors={themeColors.backgroundGradient} centered>
         <LoadingSkeleton type="card" count={2} />
+      </Container>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Container gradient gradientColors={themeColors.backgroundGradient}>
+        <ErrorState
+          type="general"
+          title="Oops!"
+          message={loadError}
+          onRetry={loadQuiz}
+          onGoHome={handleGoHome}
+        />
       </Container>
     );
   }

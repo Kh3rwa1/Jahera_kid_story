@@ -382,39 +382,26 @@ export const quizService = {
   },
 
   async getQuestionsByStoryId(storyId: string): Promise<QuizQuestionWithAnswers[] | null> {
-    const { data: questions, error: questionsError } = await supabase
+    const { data, error } = await supabase
       .from('quiz_questions')
-      .select()
+      .select(`
+        *,
+        answers:quiz_answers(*)
+      `)
       .eq('story_id', storyId)
-      .order('question_order');
+      .order('question_order')
+      .order('answer_order', { referencedTable: 'quiz_answers', ascending: true });
 
-    if (questionsError) {
-      console.error('Error fetching quiz questions:', questionsError);
+    if (error) {
+      console.error('Error fetching quiz questions with answers:', error);
       return null;
     }
 
-    if (!questions || questions.length === 0) {
+    if (!data || data.length === 0) {
       return [];
     }
 
-    const questionsWithAnswers = await Promise.all(
-      questions.map(async question => {
-        const { data: answers, error: answersError } = await supabase
-          .from('quiz_answers')
-          .select()
-          .eq('question_id', question.id)
-          .order('answer_order');
-
-        if (answersError) {
-          console.error('Error fetching quiz answers:', answersError);
-          return { ...question, answers: [] };
-        }
-
-        return { ...question, answers: answers || [] };
-      })
-    );
-
-    return questionsWithAnswers;
+    return data as QuizQuestionWithAnswers[];
   },
 
   async createAttempt(

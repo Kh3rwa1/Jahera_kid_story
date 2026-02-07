@@ -169,6 +169,9 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled: disabled || loading }}
         style={[animatedStyle, shadowStyle, style]}
       >
         <LinearGradient
@@ -199,6 +202,9 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: disabled || loading }}
       style={[
         containerStyle,
         outlineStyle,
