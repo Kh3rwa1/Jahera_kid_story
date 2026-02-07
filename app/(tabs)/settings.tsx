@@ -7,16 +7,19 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import {
   Key,
   Palette,
   Info,
   ChevronRight,
   Sparkles,
+  Heart,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
-import { LinearGradient } from 'expo-linear-gradient';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 
 interface SettingItem {
   id: string;
@@ -52,80 +55,100 @@ export default function SettingsTab() {
   ];
 
   return (
-    <View style={[styles.container, { backgroundColor: COLORS.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: COLORS.background }]}>
-        <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: COLORS.text.primary }]}>
-            Settings
-          </Text>
-          <Text style={[styles.headerSubtitle, { color: COLORS.text.secondary }]}>
-            Customize your experience
-          </Text>
-        </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: COLORS.text.primary }]}>
+          Settings
+        </Text>
+        <Text style={[styles.headerSubtitle, { color: COLORS.text.secondary }]}>
+          Customize your experience
+        </Text>
       </View>
 
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
-        {/* Welcome Banner */}
-        <LinearGradient
-          colors={COLORS.gradients.sunset}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.welcomeBanner}>
-          <Sparkles size={32} color="#FFFFFF" />
-          <View style={styles.bannerContent}>
-            <Text style={styles.bannerTitle}>Make Jahera Yours!</Text>
-            <Text style={styles.bannerText}>
-              Customize every aspect of your storytelling experience
-            </Text>
-          </View>
-        </LinearGradient>
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View entering={FadeInDown.delay(100).springify()}>
+          <LinearGradient
+            colors={COLORS.gradients.sunset}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.welcomeBanner}
+          >
+            <View style={styles.bannerIconWrap}>
+              <Sparkles size={28} color="#FFFFFF" />
+            </View>
+            <View style={styles.bannerContent}>
+              <Text style={styles.bannerTitle}>Make Jahera Yours!</Text>
+              <Text style={styles.bannerText}>
+                Customize every aspect of your storytelling experience
+              </Text>
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
-        {/* Settings Items */}
         <View style={styles.settingsSection}>
-          {settingItems.map(item => (
-            <TouchableOpacity
+          {settingItems.map((item, index) => (
+            <Animated.View
               key={item.id}
-              style={[styles.settingCard, { backgroundColor: COLORS.cardBackground }]}
-              onPress={() => router.push(item.route as any)}
-              activeOpacity={0.7}>
-              <LinearGradient
-                colors={item.gradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.iconContainer}>
-                {item.icon}
-              </LinearGradient>
-              <View style={styles.settingInfo}>
-                <Text style={[styles.settingTitle, { color: COLORS.text.primary }]}>
-                  {item.title}
-                </Text>
-                <Text style={[styles.settingDescription, { color: COLORS.text.secondary }]}>
-                  {item.description}
-                </Text>
-              </View>
-              <ChevronRight size={20} color={COLORS.text.light} />
-            </TouchableOpacity>
+              entering={FadeInDown.delay(200 + index * 80).springify()}
+            >
+              <TouchableOpacity
+                style={[styles.settingCard, { backgroundColor: COLORS.cardBackground }]}
+                onPress={() => router.push(item.route as any)}
+                activeOpacity={0.7}
+              >
+                <LinearGradient
+                  colors={item.gradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.iconContainer}
+                >
+                  {item.icon}
+                </LinearGradient>
+                <View style={styles.settingInfo}>
+                  <Text style={[styles.settingTitle, { color: COLORS.text.primary }]}>
+                    {item.title}
+                  </Text>
+                  <Text style={[styles.settingDescription, { color: COLORS.text.secondary }]}>
+                    {item.description}
+                  </Text>
+                </View>
+                <ChevronRight size={20} color={COLORS.text.light} />
+              </TouchableOpacity>
+            </Animated.View>
           ))}
         </View>
 
-        {/* App Info */}
-        <View style={[styles.infoBox, { backgroundColor: COLORS.gradients.primary[0] + '15' }]}>
-          <Info size={20} color={COLORS.primary} />
-          <View style={styles.infoContent}>
-            <Text style={[styles.infoTitle, { color: COLORS.text.primary }]}>
-              Jahera - AI Story Adventures
-            </Text>
-            <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>
-              Version 1.0.0 • Made with love for kids
-            </Text>
+        <Animated.View entering={FadeInDown.delay(400).springify()}>
+          <View style={[styles.infoBox, { backgroundColor: COLORS.gradients.primary[0] + '15' }]}>
+            <Info size={20} color={COLORS.primary} />
+            <View style={styles.infoContent}>
+              <Text style={[styles.infoTitle, { color: COLORS.text.primary }]}>
+                Jahera - AI Story Adventures
+              </Text>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>
+                  Version 1.0.0
+                </Text>
+                <View style={styles.infoDot} />
+                <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>
+                  Made with
+                </Text>
+                <Heart size={12} color={COLORS.error} fill={COLORS.error} />
+                <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>
+                  for kids
+                </Text>
+              </View>
+            </View>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -134,27 +157,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 60,
+    paddingTop: SPACING.lg,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
-  },
-  headerContent: {
-    flex: 1,
   },
   headerTitle: {
     fontSize: FONT_SIZES.xxxl,
     fontWeight: FONT_WEIGHTS.bold,
+    marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: FONT_SIZES.sm,
-    marginTop: 4,
   },
   content: {
     flex: 1,
   },
   scrollContent: {
     padding: SPACING.xl,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   welcomeBanner: {
     flexDirection: 'row',
@@ -163,11 +183,15 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
     alignItems: 'center',
     marginBottom: SPACING.xxl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    ...SHADOWS.lg,
+  },
+  bannerIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bannerContent: {
     flex: 1,
@@ -194,11 +218,7 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
     gap: SPACING.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    ...SHADOWS.sm,
   },
   iconContainer: {
     width: 52,
@@ -206,11 +226,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    ...SHADOWS.md,
   },
   settingInfo: {
     flex: 1,
@@ -238,6 +254,17 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     fontWeight: FONT_WEIGHTS.semibold,
     marginBottom: SPACING.xs,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  infoDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#999',
   },
   infoText: {
     fontSize: FONT_SIZES.sm,

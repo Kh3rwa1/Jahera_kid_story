@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Sparkles, Heart, Star, Wand2, BookOpen } from 'lucide-react-native';
+import { Sparkles, BookOpen, Globe, Gamepad2, ArrowRight } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
@@ -14,12 +14,11 @@ import Animated, {
   useSharedValue,
   FadeInDown,
   FadeInUp,
-  interpolate,
+  withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
-import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
 const isSmallDevice = width < 375 || height < 667;
@@ -30,37 +29,18 @@ export default function Welcome() {
   const themeColors = currentTheme.colors;
   const [isLoading, setIsLoading] = useState(true);
   const scaleButton = useSharedValue(1);
-  const loadingAnimation = useRef<LottieView>(null);
-  const successAnimation = useRef<LottieView>(null);
+  const glowOpacity = useSharedValue(0.4);
 
-  // Floating icon component
-  const FloatingIcon = ({ icon: Icon, delay = 0, duration = 2000 }: any) => {
-    const translateY = useSharedValue(0);
-
-    useEffect(() => {
-      translateY.value = withDelay(
-        delay,
-        withRepeat(
-          withSequence(
-            withSpring(-15, { damping: 2, stiffness: 80 }),
-            withSpring(0, { damping: 2, stiffness: 80 })
-          ),
-          -1,
-          false
-        )
-      );
-    }, []);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ translateY: translateY.value }],
-    }));
-
-    return (
-      <Animated.View style={animatedStyle}>
-        <Icon size={32} color={themeColors.primary} strokeWidth={2} />
-      </Animated.View>
+  useEffect(() => {
+    glowOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.8, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.4, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
     );
-  };
+  }, []);
 
   useEffect(() => {
     checkProfile();
@@ -68,7 +48,11 @@ export default function Welcome() {
 
   const checkProfile = async () => {
     try {
-      await AsyncStorage.removeItem('profileId');
+      const profileId = await AsyncStorage.getItem('profileId');
+      if (profileId) {
+        router.replace('/(tabs)');
+        return;
+      }
       setIsLoading(false);
     } catch (error) {
       console.error('Error checking profile:', error);
@@ -76,8 +60,7 @@ export default function Welcome() {
     }
   };
 
-  const handleGetStarted = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  const handleGetStarted = () => {
     scaleButton.value = withSequence(
       withSpring(0.95, { damping: 10 }),
       withSpring(1, { damping: 10 })
@@ -87,198 +70,132 @@ export default function Welcome() {
     }, 100);
   };
 
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleButton.value }],
-  }));
+  const buttonAnimatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [{ scale: scaleButton.value }],
+    };
+  });
+
+  const glowStyle = useAnimatedStyle(() => {
+    'worklet';
+    return { opacity: glowOpacity.value };
+  });
 
   if (isLoading || themeLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
-        <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill}>
-          <View style={styles.loadingContent}>
-            <LottieView
-              ref={loadingAnimation}
-              source={require('@/assets/lottie/loading.json')}
-              autoPlay
-              loop
-              style={styles.lottieLoading}
-            />
-          </View>
-        </LinearGradient>
+        <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
+        <View style={styles.loadingContent}>
+          <Animated.View
+            entering={FadeInUp.delay(100).springify()}
+            style={styles.loadingIconWrap}
+          >
+            <Sparkles size={40} color={themeColors.primary} strokeWidth={1.5} />
+          </Animated.View>
+        </View>
       </SafeAreaView>
     );
   }
 
+  const features = [
+    {
+      icon: BookOpen,
+      title: 'Magical Stories',
+      description: 'Personalized tales just for you',
+      colors: ['rgba(184, 234, 224, 0.95)', 'rgba(127, 216, 190, 0.85)'],
+      emoji: '📚',
+    },
+    {
+      icon: Gamepad2,
+      title: 'Fun Quizzes',
+      description: 'Test your knowledge & earn rewards',
+      colors: ['rgba(212, 241, 232, 0.95)', 'rgba(168, 230, 207, 0.85)'],
+      emoji: '🎮',
+    },
+    {
+      icon: Globe,
+      title: 'Multi-Language',
+      description: 'Stories in your favorite language',
+      colors: ['rgba(196, 228, 243, 0.95)', 'rgba(133, 193, 226, 0.85)'],
+      emoji: '🌍',
+    },
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill}>
-        {/* Floating decorative icons - only show on larger devices */}
-        {!isSmallDevice && (
-          <View style={styles.floatingIconsContainer}>
-            <View style={[styles.floatingIcon, { top: '10%', left: '8%' }]}>
-              <FloatingIcon icon={Star} delay={0} />
-            </View>
-            <View style={[styles.floatingIcon, { top: '15%', right: '10%' }]}>
-              <FloatingIcon icon={Heart} delay={300} />
-            </View>
-            <View style={[styles.floatingIcon, { top: '25%', right: '15%' }]}>
-              <FloatingIcon icon={Wand2} delay={600} />
-            </View>
-            <View style={[styles.floatingIcon, { top: '35%', left: '12%' }]}>
-              <FloatingIcon icon={BookOpen} delay={900} />
-            </View>
-          </View>
-        )}
+      <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
 
       <View style={styles.content}>
-        {/* Hero Lottie animation */}
-        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.heroAnimationContainer}>
-          <LottieView
-            ref={successAnimation}
-            source={require('@/assets/lottie/success.json')}
-            autoPlay
-            loop
-            style={styles.lottieHero}
-          />
-          <View style={styles.heroIconOverlay}>
-            <Sparkles size={80} color={themeColors.primary} strokeWidth={2} />
+        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.heroContainer}>
+          <Animated.View style={[styles.heroGlow, glowStyle]}>
+            <LinearGradient
+              colors={[themeColors.primary + '30', themeColors.primary + '05']}
+              style={styles.heroGlowGradient}
+            />
+          </Animated.View>
+          <View style={styles.heroIconCircle}>
+            <LinearGradient
+              colors={[themeColors.primary, themeColors.primaryDark]}
+              style={styles.heroIconGradient}
+            >
+              <Sparkles size={isSmallDevice ? 44 : 52} color="#FFFFFF" strokeWidth={1.8} />
+            </LinearGradient>
           </View>
         </Animated.View>
 
-        {/* Title with animation */}
-        <Animated.Text
-          entering={FadeInUp.delay(400).springify()}
-          style={styles.title}
-        >
+        <Animated.Text entering={FadeInUp.delay(350).springify()} style={styles.title}>
           Jahera
         </Animated.Text>
 
-        <Animated.Text
-          entering={FadeInUp.delay(500).springify()}
-          style={styles.subtitle}
-        >
-          Where imagination comes to life! ✨
+        <Animated.Text entering={FadeInUp.delay(450).springify()} style={styles.subtitle}>
+          Where imagination comes to life
         </Animated.Text>
 
-        {/* Premium feature cards with enhanced design */}
         <View style={styles.features}>
-          <Animated.View entering={FadeInDown.delay(600).springify()}>
-            <LinearGradient
-              colors={['rgba(184, 234, 224, 0.95)', 'rgba(127, 216, 190, 0.85)']}
-              style={styles.featureItem}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+          {features.map((feature, index) => (
+            <Animated.View
+              key={feature.title}
+              entering={FadeInDown.delay(550 + index * 100).springify()}
             >
               <LinearGradient
-                colors={['#FFFFFF', 'rgba(184, 234, 224, 0.5)']}
-                style={styles.featureIconContainer}
+                colors={feature.colors}
+                style={styles.featureItem}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.featureIcon}>📚</Text>
+                <View style={styles.featureIconContainer}>
+                  <Text style={styles.featureEmoji}>{feature.emoji}</Text>
+                </View>
+                <View style={styles.featureTextContainer}>
+                  <Text style={styles.featureTitle}>{feature.title}</Text>
+                  <Text style={styles.featureDescription}>{feature.description}</Text>
+                </View>
               </LinearGradient>
-              <View style={styles.featureTextContainer}>
-                <Text style={styles.featureTitle}>Magical Stories</Text>
-                <Text style={styles.featureDescription}>Personalized tales just for you</Text>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(700).springify()}>
-            <LinearGradient
-              colors={['rgba(212, 241, 232, 0.95)', 'rgba(168, 230, 207, 0.85)']}
-              style={styles.featureItem}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <LinearGradient
-                colors={['#FFFFFF', 'rgba(212, 241, 232, 0.5)']}
-                style={styles.featureIconContainer}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.featureIcon}>🎮</Text>
-              </LinearGradient>
-              <View style={styles.featureTextContainer}>
-                <Text style={styles.featureTitle}>Fun Quizzes</Text>
-                <Text style={styles.featureDescription}>Test your knowledge & earn rewards</Text>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(800).springify()}>
-            <LinearGradient
-              colors={['rgba(196, 228, 243, 0.95)', 'rgba(133, 193, 226, 0.85)']}
-              style={styles.featureItem}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <LinearGradient
-                colors={['#FFFFFF', 'rgba(196, 228, 243, 0.5)']}
-                style={styles.featureIconContainer}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.featureIcon}>🌍</Text>
-              </LinearGradient>
-              <View style={styles.featureTextContainer}>
-                <Text style={styles.featureTitle}>Multi-Language</Text>
-                <Text style={styles.featureDescription}>Stories in your favorite language</Text>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(900).springify()}>
-            <LinearGradient
-              colors={['rgba(217, 255, 245, 0.95)', 'rgba(152, 255, 224, 0.85)']}
-              style={styles.featureItem}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <LinearGradient
-                colors={['#FFFFFF', 'rgba(217, 255, 245, 0.5)']}
-                style={styles.featureIconContainer}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.featureIcon}>🎨</Text>
-              </LinearGradient>
-              <View style={styles.featureTextContainer}>
-                <Text style={styles.featureTitle}>Beautiful Design</Text>
-                <Text style={styles.featureDescription}>Kid-friendly & delightful</Text>
-              </View>
-            </LinearGradient>
-          </Animated.View>
+            </Animated.View>
+          ))}
         </View>
       </View>
 
-      {/* Premium CTA button */}
-      <Animated.View
-        entering={FadeInUp.delay(1000).springify()}
-        style={styles.footer}
-      >
+      <Animated.View entering={FadeInUp.delay(900).springify()} style={styles.footer}>
         <Animated.View style={buttonAnimatedStyle}>
           <TouchableOpacity onPress={handleGetStarted} activeOpacity={0.9}>
             <LinearGradient
-              colors={['#7FD8BE', '#66C3A8']}
+              colors={[themeColors.primary, themeColors.primaryDark]}
               style={styles.startButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <Text style={styles.startButtonText}>Start Your Adventure</Text>
-              <Sparkles size={20} color="#FFFFFF" strokeWidth={2.5} style={styles.buttonIcon} />
+              <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} />
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
 
-        <Animated.Text
-          entering={FadeInUp.delay(1100).springify()}
-          style={styles.footerText}
-        >
-          No signup required • Free to start
+        <Animated.Text entering={FadeInUp.delay(1000).springify()} style={styles.footerText}>
+          No signup required
         </Animated.Text>
       </Animated.View>
-      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -292,59 +209,59 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.lg,
+  },
   container: {
     flex: 1,
   },
-  floatingIconsContainer: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    zIndex: 0,
-  },
-  floatingIcon: {
-    position: 'absolute',
-    opacity: 0.3,
-  },
   content: {
     flex: 1,
-    paddingTop: isSmallDevice ? SPACING.xl : SPACING.xxxl * 2,
+    paddingTop: isSmallDevice ? SPACING.xl : SPACING.xxxl * 1.5,
     paddingHorizontal: SPACING.xl,
     alignItems: 'center',
     zIndex: 1,
   },
-  heroAnimationContainer: {
-    width: isSmallDevice ? 120 : 160,
-    height: isSmallDevice ? 120 : 160,
+  heroContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: isSmallDevice ? SPACING.lg : SPACING.xxl,
     position: 'relative',
   },
-  lottieHero: {
-    width: isSmallDevice ? 200 : 260,
-    height: isSmallDevice ? 200 : 260,
+  heroGlow: {
     position: 'absolute',
+    width: isSmallDevice ? 180 : 220,
+    height: isSmallDevice ? 180 : 220,
+    borderRadius: isSmallDevice ? 90 : 110,
   },
-  lottieLoading: {
-    width: 150,
-    height: 150,
+  heroGlowGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 110,
   },
-  heroIconOverlay: {
-    width: isSmallDevice ? 120 : 160,
-    height: isSmallDevice ? 120 : 160,
-    borderRadius: isSmallDevice ? 60 : 80,
+  heroIconCircle: {
+    width: isSmallDevice ? 100 : 120,
+    height: isSmallDevice ? 100 : 120,
+    borderRadius: isSmallDevice ? 50 : 60,
+    overflow: 'hidden',
+    ...SHADOWS.xl,
+  },
+  heroIconGradient: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.98)',
-    ...SHADOWS.xxl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
   },
   title: {
-    fontSize: isSmallDevice ? 36 : 42,
+    fontSize: isSmallDevice ? 36 : 44,
     fontWeight: FONT_WEIGHTS.extrabold,
     color: '#1A1F36',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
     textAlign: 'center',
     letterSpacing: -0.5,
   },
@@ -364,23 +281,23 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.xl,
+    padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.lg,
+    ...SHADOWS.md,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.6)',
   },
   featureIconContainer: {
-    width: 60,
-    height: 60,
+    width: 52,
+    height: 52,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: SPACING.lg,
-    ...SHADOWS.sm,
+    backgroundColor: 'rgba(255,255,255,0.7)',
   },
-  featureIcon: {
-    fontSize: 28,
+  featureEmoji: {
+    fontSize: 26,
   },
   featureTextContainer: {
     flex: 1,
@@ -411,8 +328,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: SPACING.sm,
     ...SHADOWS.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
     minHeight: 56,
   },
   startButtonText: {
@@ -420,9 +335,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.lg,
     fontWeight: FONT_WEIGHTS.bold,
     letterSpacing: 0.3,
-  },
-  buttonIcon: {
-    marginLeft: SPACING.xs,
   },
   footerText: {
     marginTop: SPACING.lg,

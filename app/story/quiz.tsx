@@ -3,12 +3,17 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  Animated,
   Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import ReAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated';
 import { storyService, quizService } from '@/services/database';
 import { Story, QuizQuestionWithAnswers } from '@/types/database';
 import { CheckCircle2, XCircle, Trophy, Target, Home, ChevronRight } from 'lucide-react-native';
@@ -22,7 +27,6 @@ import { CelebrationOverlay } from '@/components/CelebrationOverlay';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
-import { useFadeIn, useSlideInUp } from '@/utils/animations';
 
 export default function QuizScreen() {
   const router = useRouter();
@@ -38,8 +42,16 @@ export default function QuizScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [showResult, setShowResult] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [questionFadeAnim] = useState(new Animated.Value(1));
-  const [questionSlideAnim] = useState(new Animated.Value(0));
+  const questionFadeAnim = useSharedValue(1);
+  const questionSlideAnim = useSharedValue(0);
+
+  const questionAnimStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      opacity: questionFadeAnim.value,
+      transform: [{ translateX: questionSlideAnim.value }],
+    };
+  });
 
   useEffect(() => {
     loadQuiz();
@@ -66,35 +78,16 @@ export default function QuizScreen() {
   };
 
   const animateQuestionTransition = useCallback(() => {
-    // Fade out and slide left
-    Animated.parallel([
-      Animated.timing(questionFadeAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(questionSlideAnim, {
-        toValue: -50,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Reset position and fade in
-      questionSlideAnim.setValue(50);
-      Animated.parallel([
-        Animated.timing(questionFadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(questionSlideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    });
-  }, [questionFadeAnim, questionSlideAnim]);
+    questionFadeAnim.value = withSequence(
+      withTiming(0, { duration: 200 }),
+      withTiming(1, { duration: 300 })
+    );
+    questionSlideAnim.value = withSequence(
+      withTiming(-50, { duration: 200 }),
+      withTiming(50, { duration: 0 }),
+      withTiming(0, { duration: 300 })
+    );
+  }, []);
 
   const handleAnswerSelect = useCallback(
     (answerOrder: string) => {
@@ -299,14 +292,8 @@ export default function QuizScreen() {
         </PremiumCard>
 
         {/* Question Card with Animation */}
-        <Animated.View
-          style={[
-            styles.questionCardContainer,
-            {
-              opacity: questionFadeAnim,
-              transform: [{ translateX: questionSlideAnim }],
-            },
-          ]}
+        <ReAnimated.View
+          style={[styles.questionCardContainer, questionAnimStyle]}
         >
           <PremiumCard shadow="lg" style={styles.questionCard}>
             <Typography variant="h3" align="center" style={styles.questionText}>
@@ -381,7 +368,7 @@ export default function QuizScreen() {
               })}
             </View>
           </PremiumCard>
-        </Animated.View>
+        </ReAnimated.View>
       </ScrollView>
 
       {/* Next Button Footer */}

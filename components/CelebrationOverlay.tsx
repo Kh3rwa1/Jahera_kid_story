@@ -1,76 +1,88 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useMemo } from 'react';
+import { View, StyleSheet, Dimensions } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  interpolate,
+  Easing,
+} from 'react-native-reanimated';
 import { COLORS } from '@/constants/theme';
 
 const { width, height } = Dimensions.get('window');
 
-interface ConfettiPiece {
-  id: number;
-  x: number;
-  color: string;
-  size: number;
-  delay: number;
-}
+const CONFETTI_COLORS = [
+  COLORS.primary,
+  COLORS.secondary,
+  COLORS.accent.gold,
+  COLORS.accent.rose,
+  COLORS.accent.mint,
+  COLORS.categoryColors.green,
+  COLORS.categoryColors.teal,
+];
 
 interface CelebrationOverlayProps {
-  visible: boolean;
+  visible?: boolean;
   onComplete?: () => void;
 }
 
+const ConfettiPiece = ({ x, color, size, delay }: { x: number; color: string; size: number; delay: number }) => {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = withDelay(
+      delay,
+      withTiming(1, { duration: 2000, easing: Easing.out(Easing.quad) })
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [
+        { translateY: interpolate(progress.value, [0, 1], [-50, height + 50]) },
+        { rotate: `${interpolate(progress.value, [0, 1], [0, 720])}deg` },
+      ],
+      opacity: interpolate(progress.value, [0, 0.1, 0.9, 1], [0, 1, 1, 0]),
+    };
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.confetti,
+        {
+          left: x,
+          width: size,
+          height: size,
+          backgroundColor: color,
+        },
+        animatedStyle,
+      ]}
+    />
+  );
+};
+
 export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
-  visible,
+  visible = true,
   onComplete,
 }) => {
-  const confettiPieces = useRef<ConfettiPiece[]>([]);
-  const animations = useRef<Animated.Value[]>([]);
-
-  // Generate confetti pieces
-  useEffect(() => {
-    const colors = [
-      COLORS.primary,
-      COLORS.secondary,
-      COLORS.accent.gold,
-      COLORS.accent.rose,
-      COLORS.accent.mint,
-      COLORS.accent.lavender,
-      COLORS.categoryColors.green,
-      COLORS.categoryColors.teal,
-      COLORS.categoryColors.purple,
-    ];
-
-    confettiPieces.current = Array.from({ length: 50 }, (_, i) => ({
+  const pieces = useMemo(() =>
+    Array.from({ length: 40 }, (_, i) => ({
       id: i,
       x: Math.random() * width,
-      color: colors[Math.floor(Math.random() * colors.length)],
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
       size: Math.random() * 10 + 5,
-      delay: Math.random() * 200,
-    }));
-
-    animations.current = confettiPieces.current.map(() => new Animated.Value(0));
-  }, []);
+      delay: Math.random() * 300,
+    })),
+    []
+  );
 
   useEffect(() => {
     if (visible) {
-      // Animate all confetti pieces
-      const animationPromises = animations.current.map((anim, index) => {
-        const piece = confettiPieces.current[index];
-        return new Promise<void>((resolve) => {
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 2000,
-            delay: piece.delay,
-            useNativeDriver: true,
-          }).start(() => resolve());
-        });
-      });
-
-      Promise.all(animationPromises).then(() => {
-        onComplete?.();
-      });
-    } else {
-      // Reset animations
-      animations.current.forEach((anim) => anim.setValue(0));
+      const timer = setTimeout(() => onComplete?.(), 2200);
+      return () => clearTimeout(timer);
     }
   }, [visible]);
 
@@ -78,39 +90,9 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
 
   return (
     <View style={styles.container} pointerEvents="none">
-      {confettiPieces.current.map((piece, index) => {
-        const translateY = animations.current[index].interpolate({
-          inputRange: [0, 1],
-          outputRange: [-50, height + 50],
-        });
-
-        const rotate = animations.current[index].interpolate({
-          inputRange: [0, 1],
-          outputRange: ['0deg', '720deg'],
-        });
-
-        const opacity = animations.current[index].interpolate({
-          inputRange: [0, 0.1, 0.9, 1],
-          outputRange: [0, 1, 1, 0],
-        });
-
-        return (
-          <Animated.View
-            key={piece.id}
-            style={[
-              styles.confetti,
-              {
-                left: piece.x,
-                width: piece.size,
-                height: piece.size,
-                backgroundColor: piece.color,
-                transform: [{ translateY }, { rotate }],
-                opacity,
-              },
-            ]}
-          />
-        );
-      })}
+      {pieces.map(piece => (
+        <ConfettiPiece key={piece.id} {...piece} />
+      ))}
     </View>
   );
 };

@@ -1,29 +1,28 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { profileService, storyService, quizService } from '@/services/database';
 import { ProfileWithRelations, QuizAttempt } from '@/types/database';
-import { Trophy, Target, BookOpen, Award, Settings } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
-import LottieView from 'lottie-react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { Trophy, Target, BookOpen, Award, Sparkles } from 'lucide-react-native';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [profile, setProfile] = useState<ProfileWithRelations | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [totalStories, setTotalStories] = useState(0);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
-  const loadingAnimation = useRef<LottieView>(null);
-  const trophyAnimation = useRef<LottieView>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -34,7 +33,6 @@ export default function ProfileScreen() {
   const loadData = async () => {
     try {
       const profileId = await AsyncStorage.getItem('profileId');
-
       if (!profileId) {
         router.replace('/');
         return;
@@ -61,29 +59,31 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleSettings = () => {
-    router.push('/onboarding/kid-name');
-  };
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await loadData();
+    setIsRefreshing(false);
+  }, []);
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <LottieView
-          ref={loadingAnimation}
-          source={require('@/assets/lottie/loading.json')}
-          autoPlay
-          loop
-          style={styles.loadingLottie}
-        />
-      </View>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+        <View style={styles.loadingContainer}>
+          <Sparkles size={32} color={COLORS.primary} strokeWidth={1.5} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!profile) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Failed to load profile</Text>
-      </View>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>Failed to load profile</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -92,68 +92,59 @@ export default function ProfileScreen() {
   const totalQuestions = quizAttempts.reduce((sum, attempt) => sum + attempt.total_questions, 0);
   const averageScore = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
   const perfectScores = quizAttempts.filter(a => a.score === a.total_questions).length;
-
   const recentAttempts = quizAttempts.slice(0, 5);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}>
-      <View style={styles.topBar}>
-        <View>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
+        <View style={styles.topBar}>
           <Text style={styles.pageTitle}>Progress</Text>
           <Text style={styles.pageSubtitle}>Track your learning journey</Text>
         </View>
-        <TouchableOpacity style={styles.settingsButton} onPress={handleSettings} activeOpacity={0.7}>
-          <Settings size={24} color={COLORS.text.primary} />
-        </TouchableOpacity>
-      </View>
-        <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
+
+        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.profileCard}>
+          <LinearGradient colors={COLORS.gradients.primary} style={styles.avatarContainer}>
             <Text style={styles.avatarText}>{profile.kid_name.charAt(0).toUpperCase()}</Text>
-          </View>
+          </LinearGradient>
           <Text style={styles.profileName}>{profile.kid_name}</Text>
           <Text style={styles.profileSubtext}>{profile.languages.length} languages</Text>
-        </View>
+        </Animated.View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Statistics</Text>
           <View style={styles.statsGrid}>
-            <Animated.View entering={FadeInDown.delay(100).springify()} style={[styles.statCard, { backgroundColor: '#FFE8DB' }]}>
-              <View style={styles.statIconContainer}>
-                <BookOpen size={24} color={COLORS.primary} strokeWidth={2} />
-              </View>
+            <Animated.View entering={FadeInDown.delay(150).springify()} style={[styles.statCard, { backgroundColor: '#E8F8F5' }]}>
+              <BookOpen size={22} color={COLORS.primary} strokeWidth={2} />
               <Text style={styles.statValue}>{totalStories}</Text>
               <Text style={styles.statLabel}>Stories</Text>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(200).springify()} style={[styles.statCard, { backgroundColor: '#E8F5E9' }]}>
-              <View style={styles.statIconContainer}>
-                <Target size={24} color="#4CAF50" strokeWidth={2} />
-              </View>
+              <Target size={22} color="#4CAF50" strokeWidth={2} />
               <Text style={styles.statValue}>{totalQuizzes}</Text>
               <Text style={styles.statLabel}>Quizzes</Text>
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.delay(300).springify()} style={[styles.statCard, { backgroundColor: '#FFF3CD' }]}>
-              <View style={styles.statIconContainer}>
-                <LottieView
-                  ref={trophyAnimation}
-                  source={require('@/assets/lottie/trophy.json')}
-                  autoPlay
-                  loop
-                  style={styles.trophyLottie}
-                />
-              </View>
+            <Animated.View entering={FadeInDown.delay(250).springify()} style={[styles.statCard, { backgroundColor: '#FFF3CD' }]}>
+              <Trophy size={22} color="#F59E0B" strokeWidth={2} />
               <Text style={styles.statValue}>{perfectScores}</Text>
-              <Text style={styles.statLabel}>Perfect Scores</Text>
+              <Text style={styles.statLabel}>Perfect</Text>
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.delay(400).springify()} style={[styles.statCard, { backgroundColor: '#E8E7FF' }]}>
-              <View style={styles.statIconContainer}>
-                <Award size={24} color="#7C6FDC" strokeWidth={2} />
-              </View>
+            <Animated.View entering={FadeInDown.delay(300).springify()} style={[styles.statCard, { backgroundColor: '#E8E7FF' }]}>
+              <Award size={22} color="#7C6FDC" strokeWidth={2} />
               <Text style={styles.statValue}>{averageScore}%</Text>
               <Text style={styles.statLabel}>Avg Score</Text>
             </Animated.View>
@@ -164,59 +155,56 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Recent Quiz Results</Text>
           {recentAttempts.length === 0 ? (
             <View style={styles.emptyState}>
-              <Trophy size={40} color={COLORS.text.light} strokeWidth={1.5} />
+              <Trophy size={36} color={COLORS.text.light} strokeWidth={1.5} />
               <Text style={styles.emptyText}>No quiz attempts yet</Text>
               <Text style={styles.emptySubtext}>Complete a story quiz to see results here</Text>
             </View>
           ) : (
             <View style={styles.quizList}>
-              {recentAttempts.map(attempt => {
+              {recentAttempts.map((attempt, index) => {
                 const percentage = Math.round((attempt.score / attempt.total_questions) * 100);
                 const isGood = percentage >= 66;
                 const isPerfect = percentage === 100;
 
                 return (
-                  <View key={attempt.id} style={styles.quizCard}>
-                    <View style={styles.quizCardLeft}>
+                  <Animated.View
+                    key={attempt.id}
+                    entering={FadeInDown.delay(350 + index * 60).springify()}
+                  >
+                    <View style={styles.quizCard}>
                       <View
                         style={[
                           styles.quizScoreCircle,
                           {
-                            backgroundColor: isPerfect
-                              ? '#FFF3CD'
-                              : isGood
-                              ? '#E8F5E9'
-                              : '#FFE5DB',
+                            backgroundColor: isPerfect ? '#FFF3CD' : isGood ? '#E8F5E9' : '#FFE5DB',
                           },
-                        ]}>
+                        ]}
+                      >
                         <Text
                           style={[
                             styles.quizScoreText,
-                            {
-                              color: isPerfect ? '#FFB74D' : isGood ? '#4CAF50' : COLORS.primary,
-                            },
-                          ]}>
+                            { color: isPerfect ? '#F59E0B' : isGood ? '#4CAF50' : COLORS.primary },
+                          ]}
+                        >
                           {percentage}%
                         </Text>
                       </View>
-                    </View>
-
-                    <View style={styles.quizCardRight}>
-                      <Text style={styles.quizCardTitle}>Quiz Result</Text>
-                      <Text style={styles.quizCardScore}>
-                        {attempt.score} out of {attempt.total_questions} correct
-                      </Text>
-                      <Text style={styles.quizCardDate}>
-                        {new Date(attempt.completed_at).toLocaleDateString()}
-                      </Text>
-                    </View>
-
-                    {isPerfect && (
-                      <View style={styles.perfectBadge}>
-                        <Trophy size={16} color="#FFB74D" strokeWidth={2} fill="#FFB74D" />
+                      <View style={styles.quizCardRight}>
+                        <Text style={styles.quizCardTitle}>Quiz Result</Text>
+                        <Text style={styles.quizCardScore}>
+                          {attempt.score} out of {attempt.total_questions} correct
+                        </Text>
+                        <Text style={styles.quizCardDate}>
+                          {new Date(attempt.completed_at).toLocaleDateString()}
+                        </Text>
                       </View>
-                    )}
-                  </View>
+                      {isPerfect && (
+                        <View style={styles.perfectBadge}>
+                          <Trophy size={16} color="#F59E0B" strokeWidth={2} fill="#F59E0B" />
+                        </View>
+                      )}
+                    </View>
+                  </Animated.View>
                 );
               })}
             </View>
@@ -264,50 +252,31 @@ export default function ProfileScreen() {
             )}
           </View>
         )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#E8F8F5',
-  },
-  loadingLottie: {
-    width: 150,
-    height: 150,
-  },
-  trophyLottie: {
-    width: 60,
-    height: 60,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#E8F8F5',
   },
   errorText: {
     fontSize: FONT_SIZES.md,
     color: COLORS.error,
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#E8F8F5',
-  },
   scrollContent: {
-    paddingBottom: SPACING.xxxl,
+    paddingBottom: SPACING.xxxl * 2,
   },
   topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: SPACING.lg,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
-    backgroundColor: '#E8F8F5',
   },
   pageTitle: {
     fontSize: FONT_SIZES.xxl,
@@ -316,16 +285,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   pageSubtitle: {
-    fontSize: FONT_SIZES.md,
+    fontSize: FONT_SIZES.sm,
     color: COLORS.text.secondary,
-  },
-  settingsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.cardBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   profileCard: {
     backgroundColor: COLORS.cardBackground,
@@ -334,18 +295,18 @@ const styles = StyleSheet.create({
     padding: SPACING.xxl,
     borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
+    ...SHADOWS.md,
   },
   avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.primary,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
   },
   avatarText: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: FONT_WEIGHTS.bold,
     color: '#FFFFFF',
   },
@@ -380,15 +341,12 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
-  },
-  statIconContainer: {
-    marginBottom: SPACING.sm,
+    gap: SPACING.sm,
   },
   statValue: {
     fontSize: FONT_SIZES.xxxl,
     fontWeight: FONT_WEIGHTS.bold,
     color: COLORS.text.primary,
-    marginBottom: SPACING.xs,
   },
   statLabel: {
     fontSize: FONT_SIZES.sm,
@@ -422,19 +380,18 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
     position: 'relative',
-  },
-  quizCardLeft: {
-    marginRight: SPACING.lg,
+    ...SHADOWS.xs,
+    gap: SPACING.lg,
   },
   quizScoreCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
   quizScoreText: {
-    fontSize: FONT_SIZES.lg,
+    fontSize: FONT_SIZES.md,
     fontWeight: FONT_WEIGHTS.bold,
   },
   quizCardRight: {
@@ -474,6 +431,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
     gap: SPACING.sm,
+    ...SHADOWS.xs,
   },
   languageFlag: {
     fontSize: FONT_SIZES.xl,
@@ -503,6 +461,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
+    ...SHADOWS.xs,
   },
   characterTagText: {
     fontSize: FONT_SIZES.sm,
