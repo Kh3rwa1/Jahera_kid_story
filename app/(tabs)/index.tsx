@@ -4,37 +4,24 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  TextInput,
-  Animated,
-  Pressable,
+  RefreshControl,
   Platform,
-  Image,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Search, Mic, Sparkles, BookOpen, Trophy, RefreshCw, MapPin, Star } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { Sparkles, BookOpen, RefreshCw, MapPin, Star, ChevronRight } from 'lucide-react-native';
 import { profileService, storyService } from '@/services/database';
 import { ProfileWithRelations, Story } from '@/types/database';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
-import { Container } from '@/components/Container';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
 import { Typography } from '@/components/Typography';
 import { PremiumCard } from '@/components/PremiumCard';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { EmptyState } from '@/components/EmptyState';
-import { ShimmerEffect } from '@/components/ShimmerEffect';
-import { FloatingParticles } from '@/components/FloatingParticles';
-import { AnimatedGradientBackground } from '@/components/AnimatedGradientBackground';
-import { GoldSparkles } from '@/components/GoldSparkles';
-import { useFadeIn, useSlideInUp } from '@/utils/animations';
-import { hapticFeedback } from '@/utils/haptics';
 import { useResponsive } from '@/hooks/useResponsive';
-import { analytics } from '@/services/analyticsService';
-import { achievementService, Achievement } from '@/services/achievementService';
-import { AchievementModal } from '@/components/AchievementModal';
-import { appRating } from '@/utils/appRating';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -42,18 +29,12 @@ export default function HomeScreen() {
   const [profile, setProfile] = useState<ProfileWithRelations | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
-  const [achievementStats, setAchievementStats] = useState({ total: 0, unlocked: 0, percentage: 0 });
-
-  const fadeIn = useFadeIn();
 
   useFocusEffect(
     useCallback(() => {
       loadData();
-      analytics.screen('Home');
-      checkForRating();
     }, [])
   );
 
@@ -69,10 +50,9 @@ export default function HomeScreen() {
         return;
       }
 
-      const [profileData, storiesData, stats] = await Promise.all([
+      const [profileData, storiesData] = await Promise.all([
         profileService.getWithRelations(profileId),
         storyService.getByProfileId(profileId),
-        achievementService.getAchievementStats(),
       ]);
 
       if (!profileData) {
@@ -86,32 +66,22 @@ export default function HomeScreen() {
 
       setProfile(profileData);
       setStories(storiesData || []);
-      setAchievementStats(stats);
       setIsLoading(false);
-
-      // Load achievements
-      await achievementService.loadAchievements();
-    } catch (error) {
-      console.error('Error loading data:', error);
-      analytics.trackError(error as Error, { screen: 'Home', action: 'loadData' });
+    } catch (err) {
+      console.error('Error loading data:', err);
       setError('Failed to load your data. Please try again.');
       setIsLoading(false);
     }
   };
 
-  const checkForRating = async () => {
-    await appRating.loadRatingData();
-    setTimeout(() => {
-      appRating.showRatingPrompt();
-    }, 2000);
-  };
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await loadData();
+    setIsRefreshing(false);
+  }, []);
 
-  const handleGenerateStory = async () => {
+  const handleGenerateStory = useCallback(() => {
     if (!profile) return;
-
-    await hapticFeedback.medium();
-    analytics.track('generate_story_initiated', { from: 'home_screen' });
-
     router.push({
       pathname: '/story/generate',
       params: {
@@ -119,68 +89,27 @@ export default function HomeScreen() {
         languageCode: profile.primary_language,
       },
     });
-  };
+  }, [profile, router]);
 
-  const handleStoryPress = async (storyId: string) => {
-    await hapticFeedback.light();
-    analytics.track('story_opened', { story_id: storyId, from: 'home_screen' });
-
-    router.push({
-      pathname: '/story/playback',
-      params: { storyId },
-    });
-  };
-
-  const handleAchievementsPress = () => {
-    hapticFeedback.light();
-    analytics.track('achievements_viewed');
-    // TODO: Navigate to achievements screen when created
-    // router.push('/achievements');
-  };
-
-  // Filter stories based on search query
-  const filteredStories = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return stories;
-    }
-
-    const query = searchQuery.toLowerCase().trim();
-    return stories.filter(
-      (story) =>
-        story.title.toLowerCase().includes(query) ||
-        story.season?.toLowerCase().includes(query) ||
-        story.time_of_day?.toLowerCase().includes(query)
-    );
-  }, [stories, searchQuery]);
-
-  const categories = useMemo(
-    () => [
-      { id: 1, name: 'Create Story', icon: '✨', color: COLORS.gradients.sunset, gradient: true },
-      { id: 2, name: 'Adventure', icon: '🚀', color: COLORS.categoryColors.tealGradient, gradient: true },
-      { id: 3, name: 'Animals', icon: '🦁', color: COLORS.categoryColors.peachGradient, gradient: true },
-      { id: 4, name: 'Friends', icon: '👫', color: COLORS.categoryColors.purpleGradient, gradient: true },
-      { id: 5, name: 'Fantasy', icon: '🧙', color: COLORS.gradients.magic, gradient: true },
-    ],
-    []
+  const handleStoryPress = useCallback(
+    (storyId: string) => {
+      router.push({
+        pathname: '/story/playback',
+        params: { storyId },
+      });
+    },
+    [router]
   );
 
-  const recentStories = useMemo(() => filteredStories.slice(0, 3), [filteredStories]);
+  const recentStories = useMemo(() => stories.slice(0, 4), [stories]);
+  const olderStories = useMemo(() => stories.slice(4), [stories]);
 
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <AnimatedGradientBackground
-          colorSets={[
-            COLORS.backgroundGradient,
-            ['#FFF9FC', '#FFF0F7', '#FFE8F5'],
-            ['#F9FCFF', '#F0F9FF', '#E5F4FF'],
-            ['#FFFBF5', '#FFF0E5', '#FFE8D8'],
-          ]}
-          duration={6000}
-        />
-        <FloatingParticles count={15} />
+        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
         <View style={styles.loadingContent}>
-          <LoadingSkeleton type="card" count={4} />
+          <LoadingSkeleton type="card" count={3} />
         </View>
       </SafeAreaView>
     );
@@ -189,16 +118,7 @@ export default function HomeScreen() {
   if (error || !profile) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <AnimatedGradientBackground
-          colorSets={[
-            COLORS.backgroundGradient,
-            ['#FFF9FC', '#FFF0F7', '#FFE8F5'],
-            ['#F9FCFF', '#F0F9FF', '#E5F4FF'],
-            ['#FFFBF5', '#FFF0E5', '#FFE8D8'],
-          ]}
-          duration={6000}
-        />
-        <FloatingParticles count={15} />
+        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
         <ErrorState
           type="general"
           title="Unable to Load Data"
@@ -216,64 +136,50 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AnimatedGradientBackground
-        colorSets={[
-          COLORS.backgroundGradient,
-          ['#FFF9FC', '#FFF0F7', '#FFE8F5'],
-          ['#F9FCFF', '#F0F9FF', '#E5F4FF'],
-          ['#FFFBF5', '#FFF0E5', '#FFE8D8'],
-        ]}
-        duration={6000}
-      />
-      <FloatingParticles count={20} />
+      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
-
-        {/* Header with Avatar */}
-        <Animated.View style={[styles.header, { opacity: fadeIn }]}>
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
+        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
           <View style={styles.userSection}>
             <View style={styles.avatarContainer}>
-              <LinearGradient
-                colors={COLORS.gradients.premium}
-                style={styles.avatarGradient}
-              >
-                <ShimmerEffect
-                  colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.7)', 'rgba(255, 255, 255, 0)']}
-                  duration={2500}
-                />
+              <LinearGradient colors={COLORS.gradients.primary} style={styles.avatarGradient}>
                 <Typography variant="h2" color="inverse">
-                  {profile?.kid_name?.charAt(0) || '😊'}
+                  {profile?.kid_name?.charAt(0) || '?'}
                 </Typography>
               </LinearGradient>
             </View>
             <View style={styles.greetingContainer}>
-              <Typography variant="caption" color="secondary" style={styles.welcomeText}>
-                Welcome back 👋
+              <Typography variant="caption" color="secondary">
+                Welcome back
               </Typography>
-              <Typography variant="h4" color="primary" style={styles.userName}>
+              <Typography variant="h4" color="primary">
                 {profile?.kid_name || 'Friend'}
               </Typography>
             </View>
           </View>
           <TouchableOpacity
             style={styles.refreshButton}
-            onPress={() => {
-              hapticFeedback.light();
-              loadData();
-            }}
+            onPress={handleRefresh}
             activeOpacity={0.7}
           >
             <RefreshCw size={20} color={COLORS.text.primary} strokeWidth={2} />
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Hero Feature Card */}
-        <View style={styles.heroSection}>
+        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.heroSection}>
           <PremiumCard
             style={styles.heroCard}
-            shadow="xxl"
+            shadow="xl"
             padding={0}
             onPress={handleGenerateStory}
           >
@@ -281,33 +187,21 @@ export default function HomeScreen() {
               colors={['#D5F2ED', '#B8EAE0']}
               style={styles.heroCardGradient}
             >
-              <ShimmerEffect
-                colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.8)', 'rgba(255, 255, 255, 0)']}
-                duration={3000}
-              />
-              <GoldSparkles count={10} width={400} height={200} />
               <View style={styles.heroContent}>
                 <View style={styles.heroIllustration}>
-                  <Typography style={styles.heroEmoji}>👧🏻</Typography>
-                  <View style={styles.decorativeElements}>
-                    <Typography style={styles.decorativeEmoji}>🌿</Typography>
-                    <Typography style={[styles.decorativeEmoji, styles.decorativeEmoji2]}>✨</Typography>
-                    <Typography style={[styles.decorativeEmoji, styles.decorativeEmoji3]}>🦋</Typography>
-                  </View>
+                  <Typography style={styles.heroEmoji}>✨</Typography>
                 </View>
-
                 <View style={styles.heroTextContainer}>
                   <Typography variant="h3" color="primary" style={styles.heroTitle}>
-                    Explore The Beauty
+                    Create a New Story
                   </Typography>
-                  <Typography variant="bodySmall" color="secondary" style={styles.heroSubtitle}>
-                    Get special stories & adventures
+                  <Typography variant="bodySmall" color="secondary">
+                    Generate a personalized adventure
                   </Typography>
                 </View>
-
                 <View style={styles.heroButton}>
                   <LinearGradient
-                    colors={COLORS.gradients.premium}
+                    colors={COLORS.gradients.primary}
                     style={styles.heroButtonGradient}
                   >
                     <Sparkles size={18} color={COLORS.text.inverse} strokeWidth={2.5} />
@@ -316,19 +210,56 @@ export default function HomeScreen() {
               </View>
             </LinearGradient>
           </PremiumCard>
-        </View>
+        </Animated.View>
 
-        {/* Popular Now Section */}
+        <Animated.View entering={FadeInUp.delay(300).springify()}>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <View style={[styles.statIcon, { backgroundColor: '#E8F8F5' }]}>
+                <BookOpen size={18} color={COLORS.primary} strokeWidth={2} />
+              </View>
+              <Typography variant="h4" color="primary">{stories.length}</Typography>
+              <Typography variant="caption" color="secondary">Stories</Typography>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <View style={[styles.statIcon, { backgroundColor: '#FFF3CD' }]}>
+                <Star size={18} color="#F59E0B" strokeWidth={2} />
+              </View>
+              <Typography variant="h4" color="primary">
+                {profile?.languages?.length || 0}
+              </Typography>
+              <Typography variant="caption" color="secondary">Languages</Typography>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <View style={[styles.statIcon, { backgroundColor: '#E8E7FF' }]}>
+                <Sparkles size={18} color="#7C6FDC" strokeWidth={2} />
+              </View>
+              <Typography variant="h4" color="primary">
+                {(profile?.family_members?.length || 0) + (profile?.friends?.length || 0)}
+              </Typography>
+              <Typography variant="caption" color="secondary">Characters</Typography>
+            </View>
+          </View>
+        </Animated.View>
+
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Typography variant="h3" color="primary" style={styles.sectionTitle}>
-              Popular Now
+            <Typography variant="h3" color="primary">
+              Your Stories
             </Typography>
-            <TouchableOpacity onPress={() => hapticFeedback.light()}>
-              <Typography variant="bodySmall" color="secondary" style={styles.viewAllText}>
-                View All
-              </Typography>
-            </TouchableOpacity>
+            {stories.length > 4 && (
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/history')}
+                style={styles.viewAllButton}
+              >
+                <Typography variant="bodySmall" color="secondary">
+                  View All
+                </Typography>
+                <ChevronRight size={16} color={COLORS.text.secondary} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {recentStories.length === 0 ? (
@@ -349,65 +280,54 @@ export default function HomeScreen() {
                 const gradients = [
                   COLORS.categoryColors.tealGradient,
                   COLORS.categoryColors.peachGradient,
-                  COLORS.categoryColors.purpleGradient,
+                  COLORS.categoryColors.blueGradient,
+                  COLORS.categoryColors.greenGradient,
                 ];
                 const gradient = gradients[index % gradients.length];
 
                 return (
-                  <PremiumCard
+                  <Animated.View
                     key={story.id}
-                    style={styles.storyCard}
-                    onPress={() => handleStoryPress(story.id)}
-                    shadow="xl"
-                    padding={0}
+                    entering={FadeInUp.delay(400 + index * 80).springify()}
+                    style={styles.storyCardWrap}
                   >
-                    <LinearGradient
-                      colors={gradient}
-                      style={styles.storyImage}
+                    <PremiumCard
+                      style={styles.storyCard}
+                      onPress={() => handleStoryPress(story.id)}
+                      shadow="lg"
+                      padding={0}
                     >
-                      <ShimmerEffect
-                        colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0)']}
-                        duration={2500}
-                      />
-                      <BookOpen size={40} color={COLORS.text.inverse} strokeWidth={1.5} />
-                    </LinearGradient>
-
-                    <View style={styles.storyCardContent}>
-                      <Typography variant="bodyMedium" numberOfLines={2} style={styles.storyTitle}>
-                        {story.title}
-                      </Typography>
-
-                      <View style={styles.storyMeta}>
-                        <View style={styles.storyLocation}>
-                          <MapPin size={14} color={COLORS.text.secondary} strokeWidth={2} />
-                          <Typography variant="caption" color="secondary" numberOfLines={1}>
-                            {story.season || 'Adventure'}
-                          </Typography>
-                        </View>
-
-                        <View style={styles.storyRating}>
-                          <Star size={14} color="#FFD700" fill="#FFD700" strokeWidth={0} />
-                          <Typography variant="caption" color="secondary">
-                            4.8
-                          </Typography>
+                      <LinearGradient colors={gradient} style={styles.storyImage}>
+                        <BookOpen size={36} color={COLORS.text.inverse} strokeWidth={1.5} />
+                      </LinearGradient>
+                      <View style={styles.storyCardContent}>
+                        <Typography variant="bodyMedium" numberOfLines={2} style={styles.storyTitle}>
+                          {story.title}
+                        </Typography>
+                        <View style={styles.storyMeta}>
+                          <View style={styles.storyLocation}>
+                            <MapPin size={12} color={COLORS.text.secondary} strokeWidth={2} />
+                            <Typography variant="caption" color="secondary" numberOfLines={1}>
+                              {story.season || 'Adventure'}
+                            </Typography>
+                          </View>
                         </View>
                       </View>
-                    </View>
-                  </PremiumCard>
+                    </PremiumCard>
+                  </Animated.View>
                 );
               })}
             </View>
           )}
         </View>
 
-        {/* All Stories */}
-        {filteredStories.length > 3 && (
+        {olderStories.length > 0 && (
           <View style={styles.section}>
-            <Typography variant="h3" color="primary" style={styles.sectionTitle}>
-              All Stories
+            <Typography variant="h3" color="primary" style={styles.sectionTitleInline}>
+              More Stories
             </Typography>
             <View style={styles.allStoriesContainer}>
-              {filteredStories.slice(3).map((story, index) => {
+              {olderStories.map((story, index) => {
                 const gradients = [
                   COLORS.categoryColors.blueGradient,
                   COLORS.categoryColors.greenGradient,
@@ -420,15 +340,11 @@ export default function HomeScreen() {
                     key={story.id}
                     style={styles.listStoryCard}
                     onPress={() => handleStoryPress(story.id)}
-                    shadow="lg"
+                    shadow="sm"
                     padding={0}
                   >
                     <LinearGradient colors={gradient} style={styles.listStoryImage}>
-                      <ShimmerEffect
-                        colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.5)', 'rgba(255, 255, 255, 0)']}
-                        duration={2000}
-                      />
-                      <BookOpen size={24} color={COLORS.text.inverse} strokeWidth={1.5} />
+                      <BookOpen size={22} color={COLORS.text.inverse} strokeWidth={1.5} />
                     </LinearGradient>
                     <View style={styles.listStoryInfo}>
                       <Typography variant="bodyMedium" numberOfLines={1}>
@@ -437,7 +353,7 @@ export default function HomeScreen() {
                       <View style={styles.listStoryMeta}>
                         <MapPin size={12} color={COLORS.text.secondary} strokeWidth={2} />
                         <Typography variant="caption" color="secondary">
-                          {story.season} • {story.time_of_day}
+                          {story.season} {story.time_of_day ? `\u00B7 ${story.time_of_day}` : ''}
                         </Typography>
                       </View>
                     </View>
@@ -448,12 +364,6 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
-
-      <AchievementModal
-        visible={!!unlockedAchievement}
-        achievement={unlockedAchievement}
-        onClose={() => setUnlockedAchievement(null)}
-      />
     </SafeAreaView>
   );
 }
@@ -472,8 +382,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: SPACING.xxxl * 2,
   },
-
-  // Header styles
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -488,9 +396,9 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   avatarContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     overflow: 'hidden',
     ...SHADOWS.md,
   },
@@ -502,12 +410,6 @@ const styles = StyleSheet.create({
   greetingContainer: {
     gap: 2,
   },
-  welcomeText: {
-    fontWeight: '500' as any,
-  },
-  userName: {
-    fontWeight: '700' as any,
-  },
   refreshButton: {
     width: 44,
     height: 44,
@@ -517,11 +419,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.sm,
   },
-
-  // Hero Card styles
   heroSection: {
     paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xxl,
+    marginBottom: SPACING.xl,
   },
   heroCard: {
     borderRadius: BORDER_RADIUS.xxl,
@@ -529,65 +429,63 @@ const styles = StyleSheet.create({
   },
   heroCardGradient: {
     padding: SPACING.xl,
-    minHeight: 200,
   },
   heroContent: {
-    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   heroIllustration: {
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-    position: 'relative',
+    marginRight: SPACING.lg,
   },
   heroEmoji: {
-    fontSize: 80,
-  },
-  decorativeElements: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  decorativeEmoji: {
-    fontSize: 24,
-    position: 'absolute',
-    top: 10,
-    left: 20,
-  },
-  decorativeEmoji2: {
-    top: 30,
-    right: 30,
-    left: 'auto' as any,
-  },
-  decorativeEmoji3: {
-    bottom: 10,
-    left: 40,
-    top: 'auto' as any,
+    fontSize: 48,
   },
   heroTextContainer: {
+    flex: 1,
     gap: SPACING.xs,
-    marginBottom: SPACING.md,
   },
   heroTitle: {
-    fontWeight: '800' as any,
-  },
-  heroSubtitle: {
-    fontWeight: '500' as any,
+    fontWeight: '700',
   },
   heroButton: {
-    alignSelf: 'flex-end',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     overflow: 'hidden',
-    ...SHADOWS.lg,
+    ...SHADOWS.md,
   },
   heroButtonGradient: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // Section styles
+  statsRow: {
+    flexDirection: 'row',
+    marginHorizontal: SPACING.xl,
+    marginBottom: SPACING.xxl,
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.lg,
+    ...SHADOWS.sm,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  statIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xs,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: SPACING.sm,
+  },
   section: {
     marginBottom: SPACING.xxl,
   },
@@ -598,28 +496,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     marginBottom: SPACING.lg,
   },
-  sectionTitle: {
-    fontWeight: '700' as any,
+  sectionTitleInline: {
+    paddingHorizontal: SPACING.xl,
+    marginBottom: SPACING.lg,
   },
-  viewAllText: {
-    fontWeight: '600' as any,
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
-
-  // Stories Container
   storiesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: SPACING.lg,
     gap: SPACING.md,
   },
-  storyCard: {
+  storyCardWrap: {
     width: '47%',
+  },
+  storyCard: {
     borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
   },
   storyImage: {
     width: '100%',
-    height: 140,
+    height: 120,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -628,7 +529,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cardBackground,
   },
   storyTitle: {
-    fontWeight: '600' as any,
+    fontWeight: '600',
     marginBottom: SPACING.xs,
   },
   storyMeta: {
@@ -642,18 +543,9 @@ const styles = StyleSheet.create({
     gap: 4,
     flex: 1,
   },
-  storyRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-
-  // Empty state
   emptyStateContainer: {
     paddingHorizontal: SPACING.xl,
   },
-
-  // All Stories
   allStoriesContainer: {
     paddingHorizontal: SPACING.xl,
     gap: SPACING.md,
@@ -662,11 +554,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     overflow: 'hidden',
     borderRadius: BORDER_RADIUS.xl,
-    marginBottom: SPACING.sm,
   },
   listStoryImage: {
-    width: 80,
-    height: 80,
+    width: 72,
+    height: 72,
     alignItems: 'center',
     justifyContent: 'center',
   },

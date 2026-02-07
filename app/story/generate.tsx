@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, Animated, Easing } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import ReAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withSequence,
+  Easing as ReEasing,
+} from 'react-native-reanimated';
 import { profileService, storyService, quizService } from '@/services/database';
 import { generateAdventureStory } from '@/services/aiService';
 import { generateAudio } from '@/services/audioService';
@@ -39,40 +47,35 @@ export default function GenerateStory() {
     { id: 'audio', label: 'Adding narration', icon: Volume2, completed: false },
   ]);
 
-  const [sparkleAnim] = useState(new Animated.Value(0));
-  const [pulseAnim] = useState(new Animated.Value(1));
+  const sparkleRotation = useSharedValue(0);
+  const pulseScale = useSharedValue(1);
 
   useEffect(() => {
-    // Sparkle rotation animation
-    Animated.loop(
-      Animated.timing(sparkleAnim, {
-        toValue: 1,
-        duration: 3000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
-
-    // Pulse animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
+    sparkleRotation.value = withRepeat(
+      withTiming(360, { duration: 3000, easing: ReEasing.linear }),
+      -1,
+      false
+    );
+    pulseScale.value = withRepeat(
+      withSequence(
+        withTiming(1.1, { duration: 1000, easing: ReEasing.inOut(ReEasing.ease) }),
+        withTiming(1, { duration: 1000, easing: ReEasing.inOut(ReEasing.ease) })
+      ),
+      -1,
+      true
+    );
     generateStory();
   }, []);
+
+  const sparkleAnimStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [
+        { rotate: `${sparkleRotation.value}deg` },
+        { scale: pulseScale.value },
+      ],
+    };
+  });
 
   const completeStep = (stepId: string) => {
     setSteps((prevSteps) =>
@@ -213,27 +216,16 @@ export default function GenerateStory() {
     );
   }
 
-  const sparkleRotation = sparkleAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
   return (
     <Container gradient gradientColors={themeColors.backgroundGradient} centered>
       <View style={styles.content}>
-        {/* Animated Icon */}
-        <Animated.View
-          style={[
-            styles.iconContainer,
-            {
-              transform: [{ rotate: sparkleRotation }, { scale: pulseAnim }],
-            },
-          ]}
+        <ReAnimated.View
+          style={[styles.iconContainer, sparkleAnimStyle]}
         >
           <PremiumCard gradient={themeColors.gradients.sunset} style={styles.iconCard} shadow="xl">
             <Sparkles size={80} color={themeColors.text.inverse} strokeWidth={2} />
           </PremiumCard>
-        </Animated.View>
+        </ReAnimated.View>
 
         {/* Title and Status */}
         <Typography variant="displayMedium" align="center" style={styles.title}>

@@ -59,8 +59,7 @@
         {
           "microphonePermission": "Allow Jahera to access your microphone for voice features."
         }
-      ],
-      "react-native-reanimated/plugin"
+      ]
     ],
     "experiments": {
       "typedRoutes": true

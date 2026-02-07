@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { AlertCircle, RefreshCw, Home, WifiOff, Server } from 'lucide-react-native';
 import { Typography } from './Typography';
 import { PremiumButton } from './PremiumButton';
 import { PremiumCard } from './PremiumCard';
 import { COLORS, SPACING, BORDER_RADIUS } from '@/constants/theme';
-import { useFadeIn, useSlideInUp } from '@/utils/animations';
-import { Animated } from 'react-native';
+import { useSlideInUp } from '@/utils/animations';
 
 type ErrorType = 'network' | 'server' | 'notFound' | 'general';
 
@@ -31,8 +31,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   showDetails = false,
   testID,
 }) => {
-  const fadeAnim = useFadeIn({ duration: 500 });
-  const slideAnim = useSlideInUp({ duration: 600, delay: 100 });
+  const enterStyle = useSlideInUp(600, 100);
 
   const getDefaultContent = () => {
     switch (type) {
@@ -68,7 +67,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
 
   return (
     <Animated.View
-      style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+      style={[styles.container, enterStyle]}
       testID={testID}
       accessibilityLabel={`Error: ${title || defaultContent.title}`}
     >
