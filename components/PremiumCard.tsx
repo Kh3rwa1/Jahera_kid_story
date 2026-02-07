@@ -32,6 +32,8 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
   shadow = 'md',
   padding = SPACING.lg,
   animated = true,
+  accessibilityLabel,
+  accessibilityRole,
 }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -80,6 +82,8 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
           onPress={handlePress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityRole={accessibilityRole}
           style={[animatedStyle, style]}
         >
           <LinearGradient
@@ -118,6 +122,8 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
         style={[baseCardStyle, animatedStyle, style]}
       >
         {children}

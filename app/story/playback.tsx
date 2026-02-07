@@ -13,7 +13,7 @@ import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storyService } from '@/services/database';
 import { Story } from '@/types/database';
-import { Play, Pause, RotateCcw, X, ChevronDown, Award, RefreshCw, Volume2 } from 'lucide-react-native';
+import { Play, Pause, RotateCcw, Award, RefreshCw, Volume2, AlertTriangle } from 'lucide-react-native';
 import { Container } from '@/components/Container';
 import { Typography } from '@/components/Typography';
 import { PremiumButton } from '@/components/PremiumButton';
@@ -39,6 +39,7 @@ export default function StoryPlayback() {
   const [isLoading, setIsLoading] = useState(true);
   const [showText, setShowText] = useState(false);
   const [audioError, setAudioError] = useState(false);
+  const [audioStoppedMessage, setAudioStoppedMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadStory();
@@ -110,6 +111,15 @@ export default function StoryPlayback() {
         setIsPlaying(false);
         setPosition(0);
       }
+      return;
+    }
+
+    if (status.error) {
+      console.error('Audio playback status error:', status.error);
+      setAudioError(true);
+      setIsPlaying(false);
+      setShowText(true);
+      setAudioStoppedMessage('Audio stopped — tap to read the story instead.');
     }
   };
 
@@ -125,6 +135,9 @@ export default function StoryPlayback() {
       }
     } catch (error) {
       console.error('Error playing/pausing audio:', error);
+      setAudioStoppedMessage('Audio stopped — tap to read the story instead.');
+      setAudioError(true);
+      setShowText(true);
     }
   }, [sound, isPlaying]);
 
@@ -218,10 +231,10 @@ export default function StoryPlayback() {
         <Pressable
           style={styles.closeButton}
           onPress={handleClose}
-          accessibilityLabel="Close playback"
+          accessibilityLabel="Done and go back"
           accessibilityRole="button"
         >
-          <ChevronDown size={28} color={themeColors.text.primary} strokeWidth={2.5} />
+          <Typography variant="label" style={{ color: themeColors.text.primary }}>Done</Typography>
         </Pressable>
       </View>
 
@@ -248,6 +261,16 @@ export default function StoryPlayback() {
             </PremiumCard>
           </View>
         </View>
+
+
+        {audioStoppedMessage ? (
+          <View style={[styles.inlineAudioBanner, { backgroundColor: themeColors.warning + '20', borderColor: themeColors.warning }]}>
+            <AlertTriangle size={18} color={themeColors.warning} />
+            <Typography variant="bodySmall" style={{ color: themeColors.text.primary, flex: 1 }}>
+              {audioStoppedMessage}
+            </Typography>
+          </View>
+        ) : null}
 
         {/* Waveform Visualization */}
         <PremiumCard gradient={themeColors.cardGradient} shadow="lg" style={styles.waveformCard}>
@@ -408,6 +431,16 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.xxxl + 20,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.md,
+  },
+  inlineAudioBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    borderWidth: 1,
+    borderRadius: BORDER_RADIUS.lg,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   closeButton: {
     width: 44,

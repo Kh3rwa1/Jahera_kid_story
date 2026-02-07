@@ -15,7 +15,7 @@ export const validateKidName = (name: string): string => {
     throw new ValidationError('Name must be less than 50 characters');
   }
 
-  if (!/^[a-zA-Z\s'-]+$/.test(trimmed)) {
+  if (!/^[\p{L}\s'-]+$/u.test(trimmed)) {
     throw new ValidationError('Name can only contain letters, spaces, hyphens, and apostrophes');
   }
 
