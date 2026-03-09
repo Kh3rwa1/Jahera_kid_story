@@ -10,7 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { Sparkles, BookOpen, Star, ChevronRight, Globe, Users, Volume2, Clock } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -19,6 +19,7 @@ import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import { getTimeOfDay } from '@/utils/contextUtils';
+import { AnimatedPressable } from '@/components/AnimatedPressable';
 
 function getGreeting(name: string): { greeting: string; subtitle: string } {
   const tod = getTimeOfDay(new Date());
@@ -129,11 +130,11 @@ export default function HomeScreen() {
       >
         <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.header}>
           <View style={styles.userSection}>
-            <View style={styles.avatarContainer}>
+            <Animated.View entering={ZoomIn.delay(150).springify()} style={styles.avatarContainer}>
               <LinearGradient colors={COLORS.gradients.primary} style={styles.avatarGradient}>
                 <Text style={styles.avatarText}>{profile.kid_name?.charAt(0)?.toUpperCase() || '?'}</Text>
               </LinearGradient>
-            </View>
+            </Animated.View>
             <View style={styles.greetingContainer}>
               <Text style={[styles.greetingText, { color: COLORS.text.primary }]}>{greeting}</Text>
               <Text style={[styles.subtitleText, { color: COLORS.text.secondary }]}>{subtitle}</Text>
@@ -142,7 +143,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(150).springify()} style={styles.heroSection}>
-          <TouchableOpacity onPress={handleGenerateStory} activeOpacity={0.9}>
+          <AnimatedPressable onPress={handleGenerateStory} scaleDown={0.97}>
             <LinearGradient
               colors={COLORS.gradients.sunset}
               start={{ x: 0, y: 0 }}
@@ -163,7 +164,7 @@ export default function HomeScreen() {
                 </View>
               </View>
             </LinearGradient>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(250).springify()}>
@@ -238,10 +239,10 @@ export default function HomeScreen() {
                     entering={FadeInUp.delay(350 + index * 80).springify()}
                     style={styles.storyCardWrap}
                   >
-                    <TouchableOpacity
+                    <AnimatedPressable
                       style={[styles.storyCard, { backgroundColor: COLORS.cardBackground }]}
                       onPress={() => handleStoryPress(story.id)}
-                      activeOpacity={0.85}
+                      scaleDown={0.95}
                     >
                       <LinearGradient colors={seasonGradient} style={styles.storyImage}>
                         <BookOpen size={28} color="rgba(0,0,0,0.25)" strokeWidth={1.5} />
@@ -265,7 +266,7 @@ export default function HomeScreen() {
                           </Text>
                         </View>
                       </View>
-                    </TouchableOpacity>
+                    </AnimatedPressable>
                   </Animated.View>
                 );
               })}
@@ -283,16 +284,18 @@ export default function HomeScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.languagesRow}
             >
-              {profile.languages.map((lang) => {
+              {profile.languages.map((lang, langIndex) => {
                 const langStoryCount = stories.filter(s => s.language_code === lang.language_code).length;
                 return (
-                  <View key={lang.id} style={[styles.langCard, { backgroundColor: COLORS.cardBackground }]}>
-                    <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
-                    <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
-                    <Text style={[styles.langCount, { color: COLORS.text.secondary }]}>
-                      {langStoryCount} {langStoryCount === 1 ? 'story' : 'stories'}
-                    </Text>
-                  </View>
+                  <Animated.View key={lang.id} entering={FadeInRight.delay(550 + langIndex * 80).springify()}>
+                    <View style={[styles.langCard, { backgroundColor: COLORS.cardBackground }]}>
+                      <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
+                      <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
+                      <Text style={[styles.langCount, { color: COLORS.text.secondary }]}>
+                        {langStoryCount} {langStoryCount === 1 ? 'story' : 'stories'}
+                      </Text>
+                    </View>
+                  </Animated.View>
                 );
               })}
             </ScrollView>
