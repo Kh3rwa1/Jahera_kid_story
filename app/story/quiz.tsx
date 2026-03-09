@@ -191,11 +191,29 @@ export default function QuizScreen() {
           No Quiz Available
         </Text>
         <Text style={[styles.errorMsg, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
-          There's no quiz for this story yet.
+          There's no quiz for this story yet. Generate a new story to get a quiz!
         </Text>
-        <TouchableOpacity onPress={handleGoHome} style={[styles.retryBtn, { backgroundColor: themeColors.primary }]}>
-          <Text style={[styles.retryText, { fontFamily: FONTS.semibold }]}>Go Home</Text>
-        </TouchableOpacity>
+        <View style={styles.errorActions}>
+          {story && (
+            <TouchableOpacity
+              onPress={() => {
+                hapticFeedback.medium();
+                router.push({
+                  pathname: '/story/generate',
+                  params: { profileId: story.profile_id, languageCode: story.language_code },
+                });
+              }}
+              style={[styles.retryBtn, { backgroundColor: themeColors.primary }]}
+            >
+              <Text style={[styles.retryText, { fontFamily: FONTS.semibold }]}>Generate New Story</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={handleGoHome}>
+            <Text style={[styles.goHomeLink, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
+              Go Home
+            </Text>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
     );
   }
