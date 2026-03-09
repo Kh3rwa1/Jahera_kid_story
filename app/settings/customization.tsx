@@ -6,16 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ArrowLeft, Check, Palette, AppWindow } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { COLOR_SCHEMES } from '@/constants/themeSchemes';
 import { APP_ICONS } from '@/contexts/ThemeContext';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
-import { triggerHaptic } from '@/utils/haptics';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
+import { hapticFeedback } from '@/utils/haptics';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.xl * 3) / 2;
@@ -25,35 +25,40 @@ export default function CustomizationScreen() {
   const { currentTheme, currentIcon, setTheme, setIcon } = useTheme();
   const [selectedThemeId, setSelectedThemeId] = useState(currentTheme.id);
   const [selectedIconId, setSelectedIconId] = useState(currentIcon.id);
-  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const showSuccess = (msg: string) => {
+    setErrorMsg(null);
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(null), 2000);
+  };
+
+  const showError = (msg: string) => {
+    setSuccessMsg(null);
+    setErrorMsg(msg);
+    setTimeout(() => setErrorMsg(null), 3000);
+  };
 
   const handleThemeSelect = async (themeId: string) => {
     try {
-      await triggerHaptic('impactLight');
+      hapticFeedback.light();
       setSelectedThemeId(themeId);
       await setTheme(themeId);
-      Alert.alert(
-        'Theme Updated!',
-        'Your theme has been changed successfully.',
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update theme. Please try again.');
+      showSuccess('Theme updated!');
+    } catch {
+      showError('Failed to update theme. Please try again.');
     }
   };
 
   const handleIconSelect = async (iconId: string) => {
     try {
-      await triggerHaptic('impactLight');
+      hapticFeedback.light();
       setSelectedIconId(iconId);
       await setIcon(iconId);
-      Alert.alert(
-        'Icon Updated!',
-        'Your app icon preference has been saved successfully.',
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update icon. Please try again.');
+      showSuccess('Icon updated!');
+    } catch {
+      showError('Failed to update icon. Please try again.');
     }
   };
 
@@ -61,7 +66,6 @@ export default function CustomizationScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: COLORS.background }]}>
-      {/* Header */}
       <View style={[styles.header, { backgroundColor: COLORS.background }]}>
         <TouchableOpacity
           style={[styles.backButton, { backgroundColor: COLORS.cardBackground }]}
@@ -78,11 +82,27 @@ export default function CustomizationScreen() {
         </View>
       </View>
 
+      {successMsg && (
+        <Animated.View entering={FadeInDown.springify()}>
+          <View style={[styles.toast, { backgroundColor: COLORS.success }]}>
+            <Check size={16} color="#FFFFFF" />
+            <Text style={styles.toastText}>{successMsg}</Text>
+          </View>
+        </Animated.View>
+      )}
+
+      {errorMsg && (
+        <Animated.View entering={FadeInDown.springify()}>
+          <View style={[styles.toast, { backgroundColor: COLORS.error }]}>
+            <Text style={styles.toastText}>{errorMsg}</Text>
+          </View>
+        </Animated.View>
+      )}
+
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        {/* Color Themes Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Palette size={24} color={COLORS.primary} />
@@ -110,7 +130,7 @@ export default function CustomizationScreen() {
                   onPress={() => handleThemeSelect(scheme.id)}
                   activeOpacity={0.8}>
                   <LinearGradient
-                    colors={scheme.colors.gradients.primary}
+                    colors={scheme.colors.gradients.primary as [string, string, ...string[]]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.themePreview}>
@@ -138,7 +158,6 @@ export default function CustomizationScreen() {
           </View>
         </View>
 
-        {/* App Icons Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <AppWindow size={24} color={COLORS.primary} />
@@ -193,7 +212,6 @@ export default function CustomizationScreen() {
           </View>
         </View>
 
-        {/* Info Box */}
         <View style={[styles.infoBox, { backgroundColor: COLORS.gradients.primary[0] + '20' }]}>
           <Text style={[styles.infoText, { color: COLORS.text.primary }]}>
             Changes are applied instantly! Your preferences are saved automatically.
@@ -222,17 +240,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: SPACING.lg,
+    ...SHADOWS.sm,
   },
   headerContent: {
     flex: 1,
   },
   headerTitle: {
     fontSize: FONT_SIZES.xxl,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
   },
   headerSubtitle: {
     fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.medium,
     marginTop: 2,
+  },
+  toast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginHorizontal: SPACING.xl,
+    marginBottom: SPACING.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+  },
+  toastText: {
+    color: '#FFFFFF',
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.semibold,
   },
   content: {
     flex: 1,
@@ -252,10 +287,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FONT_SIZES.xl,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
   },
   sectionDescription: {
     fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.medium,
     marginBottom: SPACING.lg,
   },
   themesGrid: {
@@ -268,11 +304,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
     borderWidth: 3,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    ...SHADOWS.md,
   },
   themePreview: {
     height: 100,
@@ -285,11 +317,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    ...SHADOWS.sm,
   },
   themeInfo: {
     padding: SPACING.md,
@@ -302,7 +330,7 @@ const styles = StyleSheet.create({
   },
   themeName: {
     fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.semibold,
+    fontFamily: FONTS.semibold,
     flex: 1,
   },
   iconsGrid: {
@@ -316,11 +344,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     padding: SPACING.lg,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    ...SHADOWS.md,
   },
   iconContainer: {
     position: 'relative',
@@ -343,12 +367,13 @@ const styles = StyleSheet.create({
   },
   iconName: {
     fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
     textAlign: 'center',
     marginBottom: SPACING.xs,
   },
   iconDescription: {
     fontSize: FONT_SIZES.xs,
+    fontFamily: FONTS.regular,
     textAlign: 'center',
   },
   infoBox: {
@@ -358,6 +383,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.medium,
     textAlign: 'center',
     lineHeight: 20,
   },
