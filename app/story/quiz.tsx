@@ -20,17 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { storyService, quizService } from '@/services/database';
 import { Story, QuizQuestionWithAnswers } from '@/types/database';
-import {
-  CheckCircle2,
-  XCircle,
-  Trophy,
-  Target,
-  Home,
-  ChevronRight,
-  ArrowLeft,
-  Sparkles,
-  Star,
-} from 'lucide-react-native';
+import { CircleCheck as CheckCircle2, Circle as XCircle, Trophy, Target, Hop as Home, ChevronRight, ArrowLeft, Sparkles, Star } from 'lucide-react-native';
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
