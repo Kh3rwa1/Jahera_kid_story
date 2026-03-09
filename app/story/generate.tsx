@@ -15,7 +15,7 @@ import { profileService, storyService, quizService } from '@/services/database';
 import { generateAdventureStory } from '@/services/aiService';
 import { generateAudio } from '@/services/audioService';
 import { getCurrentContext } from '@/utils/contextUtils';
-import { Sparkles, BookOpen, Volume2, HelpCircle, Check } from 'lucide-react-native';
+import { Sparkles, BookOpen, Volume2, Circle as HelpCircle, Check } from 'lucide-react-native';
 import { Container } from '@/components/Container';
 import { ErrorState } from '@/components/ErrorState';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
