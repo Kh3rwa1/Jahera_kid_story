@@ -15,7 +15,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag, getLanguageNativeName } from '@/utils/languageUtils';
-import { BookOpen, Play, Search, SortDesc, Volume2, Clock, Trash2 } from 'lucide-react-native';
+import { BookOpen, Play, Search, Dessert as SortDesc, Volume2, Clock, Trash2 } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { storyService } from '@/services/database';

@@ -14,7 +14,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag } from '@/utils/languageUtils';
-import { BookOpen, Award, Target, Star, Flame, Edit3 } from 'lucide-react-native';
+import { BookOpen, Award, Target, Star, Flame, CreditCard as Edit3 } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
