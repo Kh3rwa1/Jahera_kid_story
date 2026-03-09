@@ -143,9 +143,9 @@ export default function GenerateStory() {
         return;
       }
 
-      completeStep('quiz');
       setProgress(70);
 
+      let quizCreatedCount = 0;
       for (let i = 0; i < story.quiz.length; i++) {
         const quizQuestion = story.quiz[i];
         const question = await quizService.createQuestion(storyRecord.id, quizQuestion.question, i + 1);
@@ -153,8 +153,16 @@ export default function GenerateStory() {
           await quizService.createAnswer(question.id, quizQuestion.options.A, quizQuestion.correct_answer === 'A', 'A');
           await quizService.createAnswer(question.id, quizQuestion.options.B, quizQuestion.correct_answer === 'B', 'B');
           await quizService.createAnswer(question.id, quizQuestion.options.C, quizQuestion.correct_answer === 'C', 'C');
+          quizCreatedCount++;
         }
       }
+
+      if (quizCreatedCount === 0) {
+        setError('Failed to create quiz questions. Please try generating a new story.');
+        return;
+      }
+
+      completeStep('quiz');
 
       setStatus('Generating audio narration...');
       setProgress(85);

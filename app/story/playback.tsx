@@ -19,7 +19,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { storyService } from '@/services/database';
+import { storyService, quizService } from '@/services/database';
 import { Story } from '@/types/database';
 import {
   Play,
@@ -52,6 +52,7 @@ export default function StoryPlayback() {
   const [isLoading, setIsLoading] = useState(true);
   const [showText, setShowText] = useState(true);
   const [audioError, setAudioError] = useState(false);
+  const [hasQuiz, setHasQuiz] = useState(false);
 
   const playScale = useSharedValue(1);
 
@@ -73,6 +74,8 @@ export default function StoryPlayback() {
         return;
       }
       setStory(storyData);
+      const quizData = await quizService.getQuestionsByStoryId(storyId);
+      setHasQuiz(!!quizData && quizData.length > 0);
       if (storyData.audio_url) {
         await loadAudio(storyData.audio_url);
       } else {
@@ -357,24 +360,26 @@ export default function StoryPlayback() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => {
-              hapticFeedback.medium();
-              router.push({ pathname: '/story/quiz', params: { storyId: story.id } });
-            }}
-            activeOpacity={0.9}
-            style={{ flex: 1 }}
-          >
-            <LinearGradient
-              colors={themeColors.gradients.sunset}
-              style={styles.quizButton}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+          {hasQuiz && (
+            <TouchableOpacity
+              onPress={() => {
+                hapticFeedback.medium();
+                router.push({ pathname: '/story/quiz', params: { storyId: story.id } });
+              }}
+              activeOpacity={0.9}
+              style={{ flex: 1 }}
             >
-              <Award size={22} color="#FFFFFF" />
-              <Text style={[styles.quizButtonText, { fontFamily: FONTS.bold }]}>Start Quiz</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+              <LinearGradient
+                colors={themeColors.gradients.sunset}
+                style={styles.quizButton}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Award size={22} color="#FFFFFF" />
+                <Text style={[styles.quizButtonText, { fontFamily: FONTS.bold }]}>Start Quiz</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
         </Animated.View>
       </ScrollView>
 
