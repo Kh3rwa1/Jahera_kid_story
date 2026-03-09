@@ -61,6 +61,22 @@ export const profileService = {
     };
   },
 
+  async updateAvatarUrl(id: string, avatarUrl: string | null): Promise<Profile | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ avatar_url: avatarUrl })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating avatar:', error);
+      return null;
+    }
+
+    return data;
+  },
+
   async update(id: string, updates: Partial<Profile>): Promise<Profile | null> {
     const { data, error } = await supabase
       .from('profiles')

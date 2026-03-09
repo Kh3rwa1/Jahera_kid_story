@@ -49,6 +49,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      if (!data.avatar_url) {
+        const localAvatar = await storage.getItem('avatar_url');
+        if (localAvatar) {
+          data.avatar_url = localAvatar as string;
+        }
+      }
+
       setProfile(data);
 
       const [storiesData, attemptsData] = await Promise.all([

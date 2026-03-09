@@ -10,7 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp, FadeInRight, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, FadeInRight } from 'react-native-reanimated';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag } from '@/utils/languageUtils';
@@ -19,6 +19,7 @@ import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -105,15 +106,12 @@ export default function ProfileScreen() {
       >
         <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.profileHeader}>
           <View style={styles.avatarRow}>
-            <Animated.View entering={ZoomIn.delay(120).springify()} style={styles.avatarOuter}>
-              <LinearGradient colors={COLORS.gradients.sunset} style={styles.avatarRing}>
-                <View style={[styles.avatarInner, { backgroundColor: COLORS.cardBackground }]}>
-                  <LinearGradient colors={COLORS.gradients.primary} style={styles.avatarGradient}>
-                    <Text style={styles.avatarInitial}>{profile.kid_name?.charAt(0)?.toUpperCase() || '?'}</Text>
-                  </LinearGradient>
-                </View>
-              </LinearGradient>
-            </Animated.View>
+            <ProfileAvatar
+              avatarUrl={profile.avatar_url}
+              name={profile.kid_name}
+              size="medium"
+              onPress={() => router.push('/settings/edit-profile')}
+            />
             <View style={styles.profileInfo}>
               <Text style={[styles.profileName, { color: COLORS.text.primary }]}>{profile.kid_name}</Text>
               <View style={styles.profileMetaRow}>
@@ -252,20 +250,6 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
   profileHeader: { paddingHorizontal: SPACING.xl, paddingTop: SPACING.lg, marginBottom: SPACING.xl },
   avatarRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.lg },
-  avatarOuter: { width: 72, height: 72 },
-  avatarRing: {
-    width: 72, height: 72, borderRadius: 36,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  avatarInner: {
-    width: 64, height: 64, borderRadius: 32,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  avatarGradient: {
-    width: 58, height: 58, borderRadius: 29,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  avatarInitial: { fontSize: 26, fontFamily: FONTS.bold, color: '#FFFFFF' },
   profileInfo: { flex: 1, gap: 4 },
   profileName: { fontSize: 22, fontFamily: FONTS.bold },
   profileMetaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
