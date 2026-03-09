@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
   FadeInDown,
@@ -292,14 +292,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 34,
-    fontWeight: FONT_WEIGHTS.extrabold,
+    fontFamily: FONTS.extrabold,
     marginBottom: SPACING.sm,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: FONT_SIZES.lg,
     lineHeight: 26,
-    fontWeight: FONT_WEIGHTS.medium,
+    fontFamily: FONTS.medium,
   },
   content: {
     flex: 1,
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     borderRadius: BORDER_RADIUS.lg,
     fontSize: 26,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
     textAlign: 'center',
   },
   feedbackContainer: {
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   },
   feedbackText: {
     fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.semibold,
+    fontFamily: FONTS.semibold,
     textAlign: 'center',
   },
   progressContainer: {
@@ -342,11 +342,11 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: FONT_SIZES.sm,
-    fontWeight: FONT_WEIGHTS.semibold,
+    fontFamily: FONTS.semibold,
   },
   progressStep: {
     fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
   },
   progressBar: {
     height: 10,
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: FONT_SIZES.xl,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
     letterSpacing: 0.5,
   },
 });

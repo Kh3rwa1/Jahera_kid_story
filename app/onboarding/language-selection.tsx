@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SUPPORTED_LANGUAGES, MAX_LANGUAGES, Language } from '@/constants/languages';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
   FadeInDown,
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 34,
-    fontWeight: FONT_WEIGHTS.extrabold,
+    fontFamily: FONTS.extrabold,
     marginBottom: SPACING.sm,
     letterSpacing: -0.5,
   },
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.lg,
     marginBottom: SPACING.xl,
     lineHeight: 24,
-    fontWeight: FONT_WEIGHTS.medium,
+    fontFamily: FONTS.medium,
   },
   progressContainer: {
     gap: SPACING.sm,
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   },
   counter: {
     fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
   },
   emoji: {
     fontSize: 18,
@@ -368,12 +368,12 @@ const styles = StyleSheet.create({
   },
   languageName: {
     fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
     marginBottom: 4,
   },
   languageNative: {
     fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.medium,
+    fontFamily: FONTS.medium,
   },
   checkmark: {
     width: 32,
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   },
   checkmarkText: {
     fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
   },
   footer: {
     paddingHorizontal: SPACING.xxl,
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: FONT_SIZES.xl,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
     letterSpacing: 0.5,
   },
 });

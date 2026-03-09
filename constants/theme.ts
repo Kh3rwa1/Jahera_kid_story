@@ -64,6 +64,14 @@ export const FONT_WEIGHTS = {
   extrabold: '800' as const,
 };
 
+export const FONTS = {
+  regular: 'Nunito-Regular',
+  medium: 'Nunito-Medium',
+  semibold: 'Nunito-SemiBold',
+  bold: 'Nunito-Bold',
+  extrabold: 'Nunito-ExtraBold',
+};
+
 // Helper function to create dynamic shadows based on theme colors
 export function createShadows(primaryColor: string) {
   return {

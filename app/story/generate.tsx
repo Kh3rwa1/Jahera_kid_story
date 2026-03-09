@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import ReAnimated, {
@@ -9,21 +9,31 @@ import ReAnimated, {
   withTiming,
   withSequence,
   Easing as ReEasing,
+  FadeInUp,
 } from 'react-native-reanimated';
 import { profileService, storyService, quizService } from '@/services/database';
 import { generateAdventureStory } from '@/services/aiService';
 import { generateAudio } from '@/services/audioService';
 import { getCurrentContext } from '@/utils/contextUtils';
-import { ProfileWithRelations } from '@/types/database';
 import { Sparkles, BookOpen, Volume2, HelpCircle, Check } from 'lucide-react-native';
 import { Container } from '@/components/Container';
-import { Typography } from '@/components/Typography';
-import { PremiumButton } from '@/components/PremiumButton';
-import { PremiumCard } from '@/components/PremiumCard';
 import { ErrorState } from '@/components/ErrorState';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
+
+const FUN_FACTS = [
+  'Did you know? Dolphins sleep with one eye open!',
+  'Did you know? Octopuses have 3 hearts!',
+  'Did you know? Honey never spoils!',
+  'Did you know? Sloths can hold their breath for 40 minutes!',
+  'Did you know? The moon has moonquakes!',
+  'Did you know? Butterflies taste with their feet!',
+  'Did you know? Cats have over 20 vocalizations!',
+  'Did you know? Penguins propose with pebbles!',
+  'Did you know? Bananas glow blue under UV light!',
+  'Did you know? A group of flamingos is called a flamboyance!',
+];
 
 interface GenerationStep {
   id: string;
@@ -40,6 +50,10 @@ export default function GenerateStory() {
   const [status, setStatus] = useState('Preparing your adventure...');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [funFactIndex, setFunFactIndex] = useState(0);
+  const [longWait, setLongWait] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const longWaitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [steps, setSteps] = useState<GenerationStep[]>([
     { id: 'profile', label: 'Loading profile', icon: Sparkles, completed: false },
     { id: 'story', label: 'Creating story', icon: BookOpen, completed: false },
@@ -47,40 +61,39 @@ export default function GenerateStory() {
     { id: 'audio', label: 'Adding narration', icon: Volume2, completed: false },
   ]);
 
-  const sparkleRotation = useSharedValue(0);
   const pulseScale = useSharedValue(1);
 
   useEffect(() => {
-    sparkleRotation.value = withRepeat(
-      withTiming(360, { duration: 3000, easing: ReEasing.linear }),
-      -1,
-      false
-    );
     pulseScale.value = withRepeat(
       withSequence(
-        withTiming(1.1, { duration: 1000, easing: ReEasing.inOut(ReEasing.ease) }),
-        withTiming(1, { duration: 1000, easing: ReEasing.inOut(ReEasing.ease) })
+        withTiming(1.05, { duration: 1200, easing: ReEasing.inOut(ReEasing.ease) }),
+        withTiming(1, { duration: 1200, easing: ReEasing.inOut(ReEasing.ease) })
       ),
       -1,
       true
     );
+
+    timerRef.current = setInterval(() => {
+      setFunFactIndex(prev => (prev + 1) % FUN_FACTS.length);
+    }, 4000);
+
+    longWaitRef.current = setTimeout(() => setLongWait(true), 15000);
+
     generateStory();
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (longWaitRef.current) clearTimeout(longWaitRef.current);
+    };
   }, []);
 
-  const sparkleAnimStyle = useAnimatedStyle(() => {
+  const pulseAnimStyle = useAnimatedStyle(() => {
     'worklet';
-    return {
-      transform: [
-        { rotate: `${sparkleRotation.value}deg` },
-        { scale: pulseScale.value },
-      ],
-    };
+    return { transform: [{ scale: pulseScale.value }] };
   });
 
   const completeStep = (stepId: string) => {
-    setSteps((prevSteps) =>
-      prevSteps.map((step) => (step.id === stepId ? { ...step, completed: true } : step))
-    );
+    setSteps(prev => prev.map(s => s.id === stepId ? { ...s, completed: true } : s));
     hapticFeedback.light();
   };
 
@@ -106,7 +119,7 @@ export default function GenerateStory() {
       const story = await generateAdventureStory(profile, languageCode, context);
 
       if (!story) {
-        setError('Our story magic needs a little help — ask a grown-up to check the settings.');
+        setError('Our story magic needs a little help -- ask a grown-up to check the settings.');
         return;
       }
 
@@ -126,7 +139,7 @@ export default function GenerateStory() {
       });
 
       if (!storyRecord) {
-        setError('Failed to save story to database. Please check your internet connection and try again.');
+        setError('Failed to save story. Please check your internet connection and try again.');
         return;
       }
 
@@ -135,12 +148,7 @@ export default function GenerateStory() {
 
       for (let i = 0; i < story.quiz.length; i++) {
         const quizQuestion = story.quiz[i];
-        const question = await quizService.createQuestion(
-          storyRecord.id,
-          quizQuestion.question,
-          i + 1
-        );
-
+        const question = await quizService.createQuestion(storyRecord.id, quizQuestion.question, i + 1);
         if (question) {
           await quizService.createAnswer(question.id, quizQuestion.options.A, quizQuestion.correct_answer === 'A', 'A');
           await quizService.createAnswer(question.id, quizQuestion.options.B, quizQuestion.correct_answer === 'B', 'B');
@@ -153,37 +161,27 @@ export default function GenerateStory() {
 
       try {
         const audioPath = await generateAudio(story.content, languageCode, storyRecord.id);
-
         if (audioPath) {
           await storyService.update(storyRecord.id, { audio_url: audioPath });
           completeStep('audio');
           setStatus('Story ready with audio narration!');
         } else {
-          console.warn('Audio generation failed, continuing without audio');
-          setStatus('Your story is ready! Audio will be available next time.');
+          setStatus('Your story is ready!');
         }
-      } catch (audioError) {
-        console.error('Audio generation error:', audioError);
-        setStatus('Your story is ready! Audio will be available next time.');
+      } catch {
+        setStatus('Your story is ready!');
       }
 
       setProgress(100);
       hapticFeedback.success();
 
       setTimeout(() => {
-        router.replace({
-          pathname: '/story/playback',
-          params: {
-            storyId: storyRecord.id,
-          },
-        });
-      }, 500);
-    } catch (error) {
-      console.error('Error generating story:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to generate story';
-
+        router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.id } });
+      }, 800);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate story';
       if (errorMessage.includes('API key not configured')) {
-        setError('Our story magic needs a little help — ask a grown-up to check the settings.');
+        setError('Our story magic needs a little help -- ask a grown-up to check the settings.');
       } else {
         setError(errorMessage);
       }
@@ -193,12 +191,10 @@ export default function GenerateStory() {
   const handleRetry = () => {
     setError(null);
     setProgress(0);
+    setLongWait(false);
     setStatus('Preparing your adventure...');
+    setSteps(prev => prev.map(s => ({ ...s, completed: false })));
     generateStory();
-  };
-
-  const handleGoBack = () => {
-    router.back();
   };
 
   if (error) {
@@ -209,7 +205,7 @@ export default function GenerateStory() {
           title="Generation Failed"
           message={error}
           onRetry={handleRetry}
-          onGoHome={handleGoBack}
+          onGoHome={() => router.back()}
           showDetails={false}
         />
       </Container>
@@ -219,25 +215,17 @@ export default function GenerateStory() {
   return (
     <Container gradient gradientColors={themeColors.backgroundGradient} centered>
       <View style={styles.content}>
-        <ReAnimated.View
-          style={[styles.iconContainer, sparkleAnimStyle]}
-        >
-          <PremiumCard gradient={themeColors.gradients.sunset} style={styles.iconCard} shadow="xl">
-            <Sparkles size={80} color={themeColors.text.inverse} strokeWidth={2} />
-          </PremiumCard>
+        <ReAnimated.View style={[styles.iconContainer, pulseAnimStyle]}>
+          <LinearGradient colors={themeColors.gradients.sunset} style={styles.iconCircle}>
+            <Sparkles size={64} color="#FFFFFF" strokeWidth={1.5} />
+          </LinearGradient>
         </ReAnimated.View>
 
-        {/* Title and Status */}
-        <Typography variant="displayMedium" align="center" style={styles.title}>
-          Creating Your Story
-        </Typography>
-        <Typography variant="bodyLarge" color="secondary" align="center" style={styles.status}>
-          {status}
-        </Typography>
+        <Text style={[styles.title, { color: themeColors.text.primary }]}>Creating Your Story</Text>
+        <Text style={[styles.statusText, { color: themeColors.text.secondary }]}>{status}</Text>
 
-        {/* Progress Bar */}
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBar}>
+        <View style={styles.progressBarWrap}>
+          <View style={[styles.progressBar, { backgroundColor: themeColors.text.light + '25' }]}>
             <LinearGradient
               colors={themeColors.gradients.sunset}
               start={{ x: 0, y: 0 }}
@@ -245,118 +233,69 @@ export default function GenerateStory() {
               style={[styles.progressFill, { width: `${progress}%` }]}
             />
           </View>
-          <Typography variant="label" align="center" style={styles.progressText}>
-            {progress}% Complete
-          </Typography>
+          <Text style={[styles.progressText, { color: themeColors.text.light }]}>{progress}%</Text>
         </View>
 
-        {/* Step Indicators */}
-        <PremiumCard shadow="md" style={styles.stepsCard}>
-          {steps.map((step, index) => {
+        <View style={[styles.stepsCard, { backgroundColor: themeColors.cardBackground }]}>
+          {steps.map((step) => {
             const Icon = step.icon;
             return (
-              <View key={step.id} style={styles.stepItem}>
-                <View
-                  style={[
-                    styles.stepIcon,
-                    step.completed && styles.stepIconCompleted,
-                  ]}
-                >
+              <View key={step.id} style={styles.stepRow}>
+                <View style={[styles.stepDot, step.completed && { backgroundColor: themeColors.success }]}>
                   {step.completed ? (
-                    <Check size={20} color={themeColors.text.inverse} strokeWidth={3} />
+                    <Check size={14} color="#FFFFFF" strokeWidth={3} />
                   ) : (
-                    <Icon
-                      size={20}
-                      color={step.completed ? themeColors.text.inverse : themeColors.text.light}
-                      strokeWidth={2}
-                    />
+                    <Icon size={14} color={themeColors.text.light} strokeWidth={2} />
                   )}
                 </View>
-                <Typography
-                  variant="bodySmall"
-                  color={step.completed ? 'primary' : 'light'}
-                  style={[styles.stepLabel, step.completed && styles.stepLabelCompleted]}
-                >
+                <Text style={[styles.stepLabel, { color: step.completed ? themeColors.text.primary : themeColors.text.light }]}>
                   {step.label}
-                </Typography>
+                </Text>
               </View>
             );
           })}
-        </PremiumCard>
+        </View>
+
+        <View style={[styles.funFactWrap, { backgroundColor: themeColors.primary + '10' }]}>
+          <Text style={[styles.funFact, { color: themeColors.text.secondary }]}>{FUN_FACTS[funFactIndex]}</Text>
+        </View>
+
+        {longWait && (
+          <Text style={[styles.longWaitText, { color: themeColors.text.light }]}>
+            This story is going to be extra special -- hang tight!
+          </Text>
+        )}
       </View>
     </Container>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    width: '100%',
-    maxWidth: 400,
-    paddingHorizontal: SPACING.xl,
+  content: { width: '100%', maxWidth: 400, paddingHorizontal: SPACING.xl, alignItems: 'center' },
+  iconContainer: { marginBottom: SPACING.xxl },
+  iconCircle: {
+    width: 140, height: 140, borderRadius: 70,
+    alignItems: 'center', justifyContent: 'center', ...SHADOWS.lg,
   },
-  iconContainer: {
-    alignSelf: 'center',
-    marginBottom: SPACING.xxxl,
-  },
-  iconCard: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    marginBottom: SPACING.md,
-  },
-  status: {
-    marginBottom: SPACING.xxxl,
-  },
-  progressBarContainer: {
-    width: '100%',
-    marginBottom: SPACING.xxl,
-  },
-  progressBar: {
-    height: 12,
-    backgroundColor: COLORS.text.light + '30',
-    borderRadius: BORDER_RADIUS.md,
-    overflow: 'hidden',
-    marginBottom: SPACING.md,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: BORDER_RADIUS.md,
-  },
-  progressText: {
-    marginTop: SPACING.xs,
-  },
+  title: { fontSize: 26, fontFamily: FONTS.bold, textAlign: 'center', marginBottom: SPACING.sm },
+  statusText: { fontSize: 15, fontFamily: FONTS.medium, textAlign: 'center', marginBottom: SPACING.xxl },
+  progressBarWrap: { width: '100%', marginBottom: SPACING.xxl },
+  progressBar: { height: 10, borderRadius: 5, overflow: 'hidden', marginBottom: SPACING.sm },
+  progressFill: { height: '100%', borderRadius: 5 },
+  progressText: { fontSize: 13, fontFamily: FONTS.semibold, textAlign: 'center' },
   stepsCard: {
-    width: '100%',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
-    gap: SPACING.md,
+    width: '100%', padding: SPACING.lg, borderRadius: BORDER_RADIUS.xl,
+    gap: SPACING.md, marginBottom: SPACING.xl, ...SHADOWS.sm,
   },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    paddingVertical: SPACING.sm,
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  stepDot: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center',
   },
-  stepIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.text.light + '20',
-    alignItems: 'center',
-    justifyContent: 'center',
+  stepLabel: { fontSize: 14, fontFamily: FONTS.medium },
+  funFactWrap: {
+    width: '100%', padding: SPACING.lg, borderRadius: BORDER_RADIUS.lg, marginBottom: SPACING.md,
   },
-  stepIconCompleted: {
-    backgroundColor: COLORS.success,
-    ...SHADOWS.sm,
-  },
-  stepLabel: {
-    flex: 1,
-  },
-  stepLabelCompleted: {
-    textDecorationLine: 'line-through',
-  },
+  funFact: { fontSize: 13, fontFamily: FONTS.medium, textAlign: 'center', lineHeight: 20 },
+  longWaitText: { fontSize: 13, fontFamily: FONTS.medium, textAlign: 'center' },
 });

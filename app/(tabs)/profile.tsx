@@ -1,256 +1,240 @@
-import { useState, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { profileService, storyService, quizService } from '@/services/database';
-import { ProfileWithRelations, QuizAttempt } from '@/types/database';
-import { Trophy, Target, BookOpen, Award, Sparkles } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getLanguageFlag } from '@/utils/languageUtils';
+import { BookOpen, Award, Target, Star, Flame, Edit3 } from 'lucide-react-native';
+import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { ErrorState } from '@/components/ErrorState';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [profile, setProfile] = useState<ProfileWithRelations | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [totalStories, setTotalStories] = useState(0);
-  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
+  const { profile, stories, quizAttempts, isLoading, error, refreshAll } = useApp();
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [])
-  );
+  const stats = useMemo(() => {
+    const totalQuizzes = quizAttempts.length;
+    const perfectScores = quizAttempts.filter(a => a.score === a.total_questions).length;
+    const avgScore = totalQuizzes > 0
+      ? Math.round(quizAttempts.reduce((sum, a) => sum + (a.score / a.total_questions) * 100, 0) / totalQuizzes)
+      : 0;
+    return { totalQuizzes, perfectScores, avgScore };
+  }, [quizAttempts]);
 
-  const loadData = async () => {
-    try {
-      const profileId = await AsyncStorage.getItem('profileId');
-      if (!profileId) {
-        router.replace('/');
-        return;
+  const streak = useMemo(() => {
+    if (stories.length === 0) return 0;
+    const uniqueDays = new Set(
+      stories.map(s => new Date(s.generated_at || s.created_at).toDateString())
+    );
+    const sortedDays = Array.from(uniqueDays)
+      .map(d => new Date(d).getTime())
+      .sort((a, b) => b - a);
+
+    let count = 0;
+    const todayMs = new Date(new Date().toDateString()).getTime();
+    const dayMs = 86400000;
+
+    for (let i = 0; i < sortedDays.length; i++) {
+      const expected = todayMs - i * dayMs;
+      if (sortedDays[i] === expected) {
+        count++;
+      } else if (i === 0 && sortedDays[i] === todayMs - dayMs) {
+        count++;
+      } else {
+        break;
       }
-
-      const [profileData, stories, attempts] = await Promise.all([
-        profileService.getWithRelations(profileId),
-        storyService.getByProfileId(profileId),
-        quizService.getAttemptsByProfileId(profileId),
-      ]);
-
-      if (!profileData) {
-        router.replace('/');
-        return;
-      }
-
-      setProfile(profileData);
-      setTotalStories(stories?.length || 0);
-      setQuizAttempts(attempts || []);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setIsLoading(false);
     }
-  };
+    return count;
+  }, [stories]);
+
+  const recentQuizzes = useMemo(() => quizAttempts.slice(0, 5), [quizAttempts]);
 
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await loadData();
-    setIsRefreshing(false);
-  }, []);
+    await refreshAll();
+  }, [refreshAll]);
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
         <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
-        <View style={styles.loadingContainer}>
-          <Sparkles size={32} color={COLORS.primary} strokeWidth={1.5} />
+        <View style={styles.loadingContent}>
+          <LoadingSkeleton type="card" count={3} />
         </View>
       </SafeAreaView>
     );
   }
 
-  if (!profile) {
+  if (error || !profile) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
         <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
-        <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>Failed to load profile</Text>
-        </View>
+        <ErrorState
+          type="general"
+          title="Unable to Load Profile"
+          message={error || 'Failed to load your profile data.'}
+          onRetry={refreshAll}
+          onGoHome={() => router.replace('/')}
+        />
       </SafeAreaView>
     );
   }
-
-  const totalQuizzes = quizAttempts.length;
-  const correctAnswers = quizAttempts.reduce((sum, attempt) => sum + attempt.score, 0);
-  const totalQuestions = quizAttempts.reduce((sum, attempt) => sum + attempt.total_questions, 0);
-  const averageScore = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
-  const perfectScores = quizAttempts.filter(a => a.score === a.total_questions).length;
-  const recentAttempts = quizAttempts.slice(0, 5);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={COLORS.primary}
-          />
+          <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={COLORS.primary} />
         }
       >
-        <View style={styles.topBar}>
-          <Text style={styles.pageTitle}>Progress</Text>
-          <Text style={styles.pageSubtitle}>Track your learning journey</Text>
-        </View>
-
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.profileCard}>
-          <LinearGradient colors={COLORS.gradients.primary} style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>{profile.kid_name.charAt(0).toUpperCase()}</Text>
-          </LinearGradient>
-          <Text style={styles.profileName}>{profile.kid_name}</Text>
-          <Text style={styles.profileSubtext}>{profile.languages.length} languages</Text>
+        <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.profileHeader}>
+          <View style={styles.avatarRow}>
+            <View style={styles.avatarOuter}>
+              <LinearGradient colors={COLORS.gradients.sunset} style={styles.avatarRing}>
+                <View style={[styles.avatarInner, { backgroundColor: COLORS.cardBackground }]}>
+                  <LinearGradient colors={COLORS.gradients.primary} style={styles.avatarGradient}>
+                    <Text style={styles.avatarInitial}>{profile.kid_name?.charAt(0)?.toUpperCase() || '?'}</Text>
+                  </LinearGradient>
+                </View>
+              </LinearGradient>
+            </View>
+            <View style={styles.profileInfo}>
+              <Text style={[styles.profileName, { color: COLORS.text.primary }]}>{profile.kid_name}</Text>
+              <View style={styles.profileMetaRow}>
+                <View style={styles.streakBadge}>
+                  <Flame size={14} color="#F59E0B" />
+                  <Text style={[styles.streakText, { color: COLORS.text.secondary }]}>{streak} day streak</Text>
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={[styles.editButton, { backgroundColor: COLORS.primary + '15' }]}
+              onPress={() => router.push('/settings/edit-profile')}
+              activeOpacity={0.7}
+            >
+              <Edit3 size={18} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
         </Animated.View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Statistics</Text>
+        <Animated.View entering={FadeInUp.delay(180).springify()}>
           <View style={styles.statsGrid}>
-            <Animated.View entering={FadeInDown.delay(150).springify()} style={[styles.statCard, { backgroundColor: '#E8F8F5' }]}>
-              <BookOpen size={22} color={COLORS.primary} strokeWidth={2} />
-              <Text style={styles.statValue}>{totalStories}</Text>
-              <Text style={styles.statLabel}>Stories</Text>
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(200).springify()} style={[styles.statCard, { backgroundColor: '#E8F5E9' }]}>
-              <Target size={22} color="#4CAF50" strokeWidth={2} />
-              <Text style={styles.statValue}>{totalQuizzes}</Text>
-              <Text style={styles.statLabel}>Quizzes</Text>
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(250).springify()} style={[styles.statCard, { backgroundColor: '#FFF3CD' }]}>
-              <Trophy size={22} color="#F59E0B" strokeWidth={2} />
-              <Text style={styles.statValue}>{perfectScores}</Text>
-              <Text style={styles.statLabel}>Perfect</Text>
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(300).springify()} style={[styles.statCard, { backgroundColor: '#E8E7FF' }]}>
-              <Award size={22} color="#7C6FDC" strokeWidth={2} />
-              <Text style={styles.statValue}>{averageScore}%</Text>
-              <Text style={styles.statLabel}>Avg Score</Text>
-            </Animated.View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Quiz Results</Text>
-          {recentAttempts.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Trophy size={36} color={COLORS.text.light} strokeWidth={1.5} />
-              <Text style={styles.emptyText}>No quiz attempts yet</Text>
-              <Text style={styles.emptySubtext}>Complete a story quiz to see results here</Text>
+            <View style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
+              <View style={[styles.statIconWrap, { backgroundColor: COLORS.primary + '15' }]}>
+                <BookOpen size={20} color={COLORS.primary} />
+              </View>
+              <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stories.length}</Text>
+              <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Stories</Text>
             </View>
-          ) : (
-            <View style={styles.quizList}>
-              {recentAttempts.map((attempt, index) => {
-                const percentage = Math.round((attempt.score / attempt.total_questions) * 100);
-                const isGood = percentage >= 66;
-                const isPerfect = percentage === 100;
+            <View style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
+              <View style={[styles.statIconWrap, { backgroundColor: COLORS.success + '15' }]}>
+                <Award size={20} color={COLORS.success} />
+              </View>
+              <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stats.totalQuizzes}</Text>
+              <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Quizzes</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
+              <View style={[styles.statIconWrap, { backgroundColor: '#F59E0B15' }]}>
+                <Star size={20} color="#F59E0B" />
+              </View>
+              <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stats.perfectScores}</Text>
+              <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Perfect</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
+              <View style={[styles.statIconWrap, { backgroundColor: COLORS.info + '15' }]}>
+                <Target size={20} color={COLORS.info} />
+              </View>
+              <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stats.avgScore}%</Text>
+              <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Average</Text>
+            </View>
+          </View>
+        </Animated.View>
 
+        {recentQuizzes.length > 0 && (
+          <Animated.View entering={FadeInUp.delay(280).springify()} style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Recent Quiz Results</Text>
+            <View style={styles.quizList}>
+              {recentQuizzes.map((attempt) => {
+                const pct = Math.round((attempt.score / attempt.total_questions) * 100);
+                const isPerfect = pct === 100;
+                const matchingStory = stories.find(s => s.id === attempt.story_id);
+                const title = matchingStory?.title || 'Quiz';
                 return (
-                  <Animated.View
-                    key={attempt.id}
-                    entering={FadeInDown.delay(350 + index * 60).springify()}
-                  >
-                    <View style={styles.quizCard}>
-                      <View
-                        style={[
-                          styles.quizScoreCircle,
-                          {
-                            backgroundColor: isPerfect ? '#FFF3CD' : isGood ? '#E8F5E9' : '#FFE5DB',
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.quizScoreText,
-                            { color: isPerfect ? '#F59E0B' : isGood ? '#4CAF50' : COLORS.primary },
-                          ]}
-                        >
-                          {percentage}%
-                        </Text>
-                      </View>
-                      <View style={styles.quizCardRight}>
-                        <Text style={styles.quizCardTitle}>Quiz Result</Text>
-                        <Text style={styles.quizCardScore}>
-                          {attempt.score} out of {attempt.total_questions} correct
-                        </Text>
-                        <Text style={styles.quizCardDate}>
-                          {new Date(attempt.completed_at).toLocaleDateString()}
-                        </Text>
-                      </View>
-                      {isPerfect && (
-                        <View style={styles.perfectBadge}>
-                          <Trophy size={16} color="#F59E0B" strokeWidth={2} fill="#F59E0B" />
-                        </View>
-                      )}
+                  <View key={attempt.id} style={[styles.quizRow, { backgroundColor: COLORS.cardBackground }]}>
+                    <View style={[styles.quizScoreCircle, {
+                      backgroundColor: isPerfect ? COLORS.success + '15' : COLORS.primary + '15',
+                    }]}>
+                      <Text style={[styles.quizScoreText, {
+                        color: isPerfect ? COLORS.success : COLORS.primary,
+                      }]}>{pct}%</Text>
                     </View>
-                  </Animated.View>
+                    <View style={styles.quizDetails}>
+                      <Text style={[styles.quizTitle, { color: COLORS.text.primary }]} numberOfLines={1}>
+                        {title}
+                      </Text>
+                      <Text style={[styles.quizSubtitle, { color: COLORS.text.secondary }]}>
+                        {attempt.score}/{attempt.total_questions} correct
+                      </Text>
+                    </View>
+                    {isPerfect && <Star size={16} color="#F59E0B" fill="#F59E0B" />}
+                  </View>
                 );
               })}
             </View>
-          )}
-        </View>
+          </Animated.View>
+        )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Learning Languages</Text>
-          <View style={styles.languagesList}>
-            {profile.languages.map(lang => (
-              <View key={lang.id} style={styles.languageCard}>
-                <Text style={styles.languageFlag}>{lang.language_name.split(' ')[0]}</Text>
-                <Text style={styles.languageName}>{lang.language_name}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
+        {profile.languages && profile.languages.length > 0 && (
+          <Animated.View entering={FadeInUp.delay(380).springify()} style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Learning Languages</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langRow}>
+              {profile.languages.map(lang => {
+                const langCount = stories.filter(s => s.language_code === lang.language_code).length;
+                return (
+                  <View key={lang.id} style={[styles.langChip, { backgroundColor: COLORS.cardBackground }]}>
+                    <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
+                    <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
+                    <Text style={[styles.langStories, { color: COLORS.text.light }]}>{langCount} stories</Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </Animated.View>
+        )}
 
-        {(profile.family_members.length > 0 || profile.friends.length > 0) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Story Characters</Text>
-            {profile.family_members.length > 0 && (
-              <View style={styles.characterGroup}>
-                <Text style={styles.characterGroupTitle}>Family</Text>
-                <View style={styles.characterTags}>
-                  {profile.family_members.map(member => (
-                    <View key={member.id} style={styles.characterTag}>
-                      <Text style={styles.characterTagText}>{member.name}</Text>
-                    </View>
-                  ))}
+        {(profile.family_members?.length > 0 || profile.friends?.length > 0) && (
+          <Animated.View entering={FadeInUp.delay(480).springify()} style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Story Characters</Text>
+            <View style={styles.charactersGrid}>
+              {profile.family_members?.map(m => (
+                <View key={m.id} style={[styles.characterBadge, { backgroundColor: COLORS.primary + '12' }]}>
+                  <Text style={styles.characterEmoji}>👨‍👩‍👧</Text>
+                  <Text style={[styles.characterNameText, { color: COLORS.text.primary }]}>{m.name}</Text>
                 </View>
-              </View>
-            )}
-            {profile.friends.length > 0 && (
-              <View style={styles.characterGroup}>
-                <Text style={styles.characterGroupTitle}>Friends</Text>
-                <View style={styles.characterTags}>
-                  {profile.friends.map(friend => (
-                    <View key={friend.id} style={styles.characterTag}>
-                      <Text style={styles.characterTagText}>{friend.name}</Text>
-                    </View>
-                  ))}
+              ))}
+              {profile.friends?.map(f => (
+                <View key={f.id} style={[styles.characterBadge, { backgroundColor: COLORS.info + '12' }]}>
+                  <Text style={styles.characterEmoji}>🧑‍🤝‍🧑</Text>
+                  <Text style={[styles.characterNameText, { color: COLORS.text.primary }]}>{f.name}</Text>
                 </View>
-              </View>
-            )}
-          </View>
+              ))}
+            </View>
+          </Animated.View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -258,214 +242,84 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  loadingContent: { padding: SPACING.xl },
+  scrollContent: { paddingBottom: 100 },
+  profileHeader: { paddingHorizontal: SPACING.xl, paddingTop: SPACING.lg, marginBottom: SPACING.xl },
+  avatarRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.lg },
+  avatarOuter: { width: 72, height: 72 },
+  avatarRing: {
+    width: 72, height: 72, borderRadius: 36,
+    alignItems: 'center', justifyContent: 'center',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  avatarInner: {
+    width: 64, height: 64, borderRadius: 32,
+    alignItems: 'center', justifyContent: 'center',
   },
-  errorText: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.error,
+  avatarGradient: {
+    width: 58, height: 58, borderRadius: 29,
+    alignItems: 'center', justifyContent: 'center',
   },
-  scrollContent: {
-    paddingBottom: SPACING.xxxl * 2,
-  },
-  topBar: {
-    paddingTop: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.lg,
-  },
-  pageTitle: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
-    marginBottom: SPACING.xs,
-  },
-  pageSubtitle: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text.secondary,
-  },
-  profileCard: {
-    backgroundColor: COLORS.cardBackground,
-    marginHorizontal: SPACING.xl,
-    marginBottom: SPACING.xl,
-    padding: SPACING.xxl,
-    borderRadius: BORDER_RADIUS.xl,
-    alignItems: 'center',
-    ...SHADOWS.md,
-  },
-  avatarContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.lg,
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: '#FFFFFF',
-  },
-  profileName: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
-    marginBottom: SPACING.xs,
-  },
-  profileSubtext: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text.secondary,
-  },
-  section: {
-    marginBottom: SPACING.xxl,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
-    marginBottom: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
+  avatarInitial: { fontSize: 26, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  profileInfo: { flex: 1, gap: 4 },
+  profileName: { fontSize: 22, fontFamily: FONTS.bold },
+  profileMetaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  streakText: { fontSize: 13, fontFamily: FONTS.semibold },
+  editButton: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
   },
   statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: SPACING.lg,
-    gap: SPACING.md,
+    flexDirection: 'row', paddingHorizontal: SPACING.xl,
+    gap: SPACING.sm, marginBottom: SPACING.xxl,
   },
   statCard: {
-    width: '47%',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    alignItems: 'center',
-    gap: SPACING.sm,
+    flex: 1, alignItems: 'center', paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg, gap: 6, ...SHADOWS.xs,
   },
-  statValue: {
-    fontSize: FONT_SIZES.xxxl,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
+  statIconWrap: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
   },
-  statLabel: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text.secondary,
-    fontWeight: FONT_WEIGHTS.semibold,
+  statCardValue: { fontSize: 20, fontFamily: FONTS.bold },
+  statCardLabel: { fontSize: 11, fontFamily: FONTS.medium },
+  section: { marginBottom: SPACING.xxl },
+  sectionTitle: {
+    fontSize: 18, fontFamily: FONTS.bold,
+    paddingHorizontal: SPACING.xl, marginBottom: SPACING.md,
   },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: SPACING.xxxl,
-    paddingHorizontal: SPACING.xl,
-  },
-  emptyText: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.semibold,
-    color: COLORS.text.secondary,
-    marginTop: SPACING.md,
-  },
-  emptySubtext: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text.light,
-    marginTop: SPACING.xs,
-    textAlign: 'center',
-  },
-  quizList: {
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.md,
-  },
-  quizCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.cardBackground,
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    position: 'relative',
-    ...SHADOWS.xs,
-    gap: SPACING.lg,
+  quizList: { paddingHorizontal: SPACING.xl, gap: SPACING.sm },
+  quizRow: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: SPACING.md, borderRadius: BORDER_RADIUS.lg,
+    gap: SPACING.md, ...SHADOWS.xs,
   },
   quizScoreCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 48, height: 48, borderRadius: 24,
+    alignItems: 'center', justifyContent: 'center',
   },
-  quizScoreText: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.bold,
+  quizScoreText: { fontSize: 14, fontFamily: FONTS.bold },
+  quizDetails: { flex: 1, gap: 2 },
+  quizTitle: { fontSize: 14, fontFamily: FONTS.semibold },
+  quizSubtitle: { fontSize: 12, fontFamily: FONTS.regular },
+  langRow: { paddingHorizontal: SPACING.xl, gap: SPACING.sm },
+  langChip: {
+    alignItems: 'center', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg, gap: 4, minWidth: 90, ...SHADOWS.xs,
   },
-  quizCardRight: {
-    flex: 1,
+  langFlag: { fontSize: 22 },
+  langName: { fontSize: 12, fontFamily: FONTS.semibold },
+  langStories: { fontSize: 10, fontFamily: FONTS.regular },
+  charactersGrid: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    paddingHorizontal: SPACING.xl, gap: SPACING.sm,
   },
-  quizCardTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.semibold,
-    color: COLORS.text.primary,
-    marginBottom: SPACING.xs,
+  characterBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.pill,
   },
-  quizCardScore: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text.secondary,
-    marginBottom: SPACING.xs,
-  },
-  quizCardDate: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.text.light,
-  },
-  perfectBadge: {
-    position: 'absolute',
-    top: SPACING.md,
-    right: SPACING.md,
-  },
-  languagesList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.md,
-  },
-  languageCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.cardBackground,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    gap: SPACING.sm,
-    ...SHADOWS.xs,
-  },
-  languageFlag: {
-    fontSize: FONT_SIZES.xl,
-  },
-  languageName: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: FONT_WEIGHTS.semibold,
-    color: COLORS.text.primary,
-  },
-  characterGroup: {
-    marginBottom: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
-  },
-  characterGroupTitle: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: FONT_WEIGHTS.semibold,
-    color: COLORS.text.secondary,
-    marginBottom: SPACING.sm,
-  },
-  characterTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  characterTag: {
-    backgroundColor: COLORS.cardBackground,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    ...SHADOWS.xs,
-  },
-  characterTagText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text.primary,
-    fontWeight: FONT_WEIGHTS.medium,
-  },
+  characterEmoji: { fontSize: 16 },
+  characterNameText: { fontSize: 13, fontFamily: FONTS.semibold },
 });
