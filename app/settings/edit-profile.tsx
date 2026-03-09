@@ -6,18 +6,23 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Platform,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { ArrowLeft, Plus, X, Save, Globe, Users, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, Plus, X, Save, Globe, Users, UserPlus, Camera, Image as ImageIcon, Trash2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { profileService, languageService, familyMemberService, friendService } from '@/services/database';
+import { pickImage, uploadAvatar, deleteAvatar } from '@/services/imageService';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { storage } from '@/utils/storage';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -31,6 +36,58 @@ export default function EditProfileScreen() {
   const [friendInput, setFriendInput] = useState('');
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+
+  const handlePickImage = useCallback(async (source: 'camera' | 'library') => {
+    if (!profile) return;
+    setShowPhotoOptions(false);
+
+    const uri = await pickImage(source);
+    if (!uri) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const publicUrl = await uploadAvatar(profile.id, uri);
+      if (publicUrl) {
+        await profileService.updateAvatarUrl(profile.id, publicUrl);
+        updateProfile({ avatar_url: publicUrl });
+        await storage.setItem('avatar_url', publicUrl);
+        setSaveMessage('Photo updated!');
+        setTimeout(() => setSaveMessage(null), 2000);
+      } else {
+        await storage.setItem('avatar_url', uri);
+        updateProfile({ avatar_url: uri });
+        setSaveMessage('Photo saved locally');
+        setTimeout(() => setSaveMessage(null), 2000);
+      }
+    } catch {
+      setSaveMessage('Failed to upload photo');
+      setTimeout(() => setSaveMessage(null), 2000);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }, [profile, updateProfile]);
+
+  const handleRemoveAvatar = useCallback(async () => {
+    if (!profile) return;
+    setShowPhotoOptions(false);
+    setIsUploadingAvatar(true);
+
+    try {
+      await deleteAvatar(profile.id);
+      await profileService.updateAvatarUrl(profile.id, null);
+      await storage.removeItem('avatar_url');
+      updateProfile({ avatar_url: null });
+      setSaveMessage('Photo removed');
+      setTimeout(() => setSaveMessage(null), 2000);
+    } catch {
+      setSaveMessage('Failed to remove photo');
+      setTimeout(() => setSaveMessage(null), 2000);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }, [profile, updateProfile]);
 
   const handleSaveName = useCallback(async () => {
     if (!profile || kidName.trim().length < 2) return;
@@ -126,6 +183,30 @@ export default function EditProfileScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.delay(80).springify()}>
+          <View style={[styles.avatarSection, { backgroundColor: COLORS.cardBackground }]}>
+            <ProfileAvatar
+              avatarUrl={profile.avatar_url}
+              name={profile.kid_name}
+              size="large"
+              editable
+              isUploading={isUploadingAvatar}
+              onPress={() => setShowPhotoOptions(true)}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPhotoOptions(true)}
+              style={[styles.changePhotoBtn, { backgroundColor: COLORS.primary + '12' }]}
+            >
+              <Text style={[styles.changePhotoText, { color: COLORS.primary }]}>
+                {profile.avatar_url ? 'Change Photo' : 'Add Photo'}
+              </Text>
+            </TouchableOpacity>
+            {saveMessage && (
+              <Text style={[styles.saveMsg, { color: COLORS.success }]}>{saveMessage}</Text>
+            )}
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.delay(120).springify()}>
           <View style={[styles.sectionCard, { backgroundColor: COLORS.cardBackground }]}>
             <Text style={[styles.sectionLabel, { color: COLORS.text.secondary }]}>Child's Name</Text>
             <View style={styles.nameRow}>
@@ -147,13 +228,10 @@ export default function EditProfileScreen() {
                 <Save size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
-            {saveMessage && (
-              <Text style={[styles.saveMsg, { color: COLORS.success }]}>{saveMessage}</Text>
-            )}
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(150).springify()}>
+        <Animated.View entering={FadeInUp.delay(180).springify()}>
           <View style={[styles.sectionCard, { backgroundColor: COLORS.cardBackground }]}>
             <View style={styles.sectionHeaderRow}>
               <Globe size={18} color={COLORS.primary} />
@@ -198,7 +276,7 @@ export default function EditProfileScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(220).springify()}>
+        <Animated.View entering={FadeInUp.delay(240).springify()}>
           <View style={[styles.sectionCard, { backgroundColor: COLORS.cardBackground }]}>
             <View style={styles.sectionHeaderRow}>
               <Users size={18} color={COLORS.primary} />
@@ -234,7 +312,7 @@ export default function EditProfileScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(290).springify()}>
+        <Animated.View entering={FadeInUp.delay(300).springify()}>
           <View style={[styles.sectionCard, { backgroundColor: COLORS.cardBackground }]}>
             <View style={styles.sectionHeaderRow}>
               <UserPlus size={18} color={COLORS.primary} />
@@ -270,6 +348,58 @@ export default function EditProfileScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+
+      <Modal
+        visible={showPhotoOptions}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPhotoOptions(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPhotoOptions(false)}
+        >
+          <View style={[styles.modalContent, { backgroundColor: COLORS.cardBackground }]}>
+            <Text style={[styles.modalTitle, { color: COLORS.text.primary }]}>Profile Photo</Text>
+
+            {Platform.OS !== 'web' && (
+              <TouchableOpacity
+                style={[styles.modalOption, { borderBottomColor: COLORS.text.light + '20' }]}
+                onPress={() => handlePickImage('camera')}
+              >
+                <Camera size={22} color={COLORS.primary} />
+                <Text style={[styles.modalOptionText, { color: COLORS.text.primary }]}>Take Photo</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.modalOption, { borderBottomColor: COLORS.text.light + '20' }]}
+              onPress={() => handlePickImage('library')}
+            >
+              <ImageIcon size={22} color={COLORS.primary} />
+              <Text style={[styles.modalOptionText, { color: COLORS.text.primary }]}>Choose from Library</Text>
+            </TouchableOpacity>
+
+            {profile.avatar_url && (
+              <TouchableOpacity
+                style={[styles.modalOption, { borderBottomWidth: 0 }]}
+                onPress={handleRemoveAvatar}
+              >
+                <Trash2 size={22} color={COLORS.error} />
+                <Text style={[styles.modalOptionText, { color: COLORS.error }]}>Remove Photo</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.cancelButton, { backgroundColor: COLORS.text.light + '15' }]}
+              onPress={() => setShowPhotoOptions(false)}
+            >
+              <Text style={[styles.cancelText, { color: COLORS.text.secondary }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -288,6 +418,23 @@ const styles = StyleSheet.create({
   },
   topTitle: { fontSize: 18, fontFamily: FONTS.bold },
   scrollContent: { padding: SPACING.xl, paddingBottom: 100, gap: SPACING.lg },
+  avatarSection: {
+    alignItems: 'center',
+    padding: SPACING.xl,
+    borderRadius: BORDER_RADIUS.xl,
+    gap: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  changePhotoBtn: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.pill,
+  },
+  changePhotoText: {
+    fontSize: 14,
+    fontFamily: FONTS.semibold,
+  },
+  saveMsg: { fontSize: 13, fontFamily: FONTS.medium },
   sectionCard: {
     padding: SPACING.lg, borderRadius: BORDER_RADIUS.xl, ...SHADOWS.sm,
   },
@@ -302,7 +449,6 @@ const styles = StyleSheet.create({
     width: 48, height: 48, borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center', justifyContent: 'center',
   },
-  saveMsg: { fontSize: 13, fontFamily: FONTS.medium, marginTop: SPACING.sm },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.md },
   sectionTitle: { fontSize: 16, fontFamily: FONTS.bold },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.md },
@@ -342,5 +488,46 @@ const styles = StyleSheet.create({
   addCircle: {
     width: 44, height: 44, borderRadius: 22,
     alignItems: 'center', justifyContent: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    padding: SPACING.xl,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.xl,
+    ...SHADOWS.lg,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: FONTS.bold,
+    textAlign: 'center',
+    marginBottom: SPACING.lg,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingVertical: SPACING.lg,
+    borderBottomWidth: 1,
+  },
+  modalOptionText: {
+    fontSize: 16,
+    fontFamily: FONTS.medium,
+  },
+  cancelButton: {
+    marginTop: SPACING.lg,
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    alignItems: 'center',
+  },
+  cancelText: {
+    fontSize: 15,
+    fontFamily: FONTS.semibold,
   },
 });

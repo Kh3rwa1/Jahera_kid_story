@@ -2,6 +2,7 @@ export interface Profile {
   id: string;
   kid_name: string;
   primary_language: string;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 }
