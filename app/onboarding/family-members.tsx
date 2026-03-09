@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, Users, ArrowLeft, Plus } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, { FadeInDown, FadeInUp, FadeOutUp, ZoomIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -291,20 +291,20 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 34,
-    fontWeight: FONT_WEIGHTS.extrabold,
+    fontFamily: FONTS.extrabold,
     marginBottom: SPACING.sm,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: FONT_SIZES.lg,
     lineHeight: 26,
-    fontWeight: FONT_WEIGHTS.medium,
+    fontFamily: FONTS.medium,
   },
   inputHint: {
     marginTop: SPACING.sm,
     marginLeft: SPACING.sm,
     fontSize: FONT_SIZES.sm,
-    fontWeight: FONT_WEIGHTS.semibold,
+    fontFamily: FONTS.semibold,
   },
   inputSection: {
     paddingHorizontal: SPACING.xxl,
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.xl,
     fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.medium,
+    fontFamily: FONTS.medium,
   },
   addButton: {
     width: 56,
@@ -361,12 +361,12 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: FONT_SIZES.xl,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
     marginBottom: SPACING.sm,
   },
   emptyStateSubtext: {
     fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.medium,
+    fontFamily: FONTS.medium,
     textAlign: 'center',
   },
   memberCard: {
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FONT_SIZES.lg,
     color: '#FFFFFF',
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
   },
   removeButton: {
     width: 36,
@@ -416,11 +416,11 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: FONT_SIZES.sm,
-    fontWeight: FONT_WEIGHTS.semibold,
+    fontFamily: FONTS.semibold,
   },
   progressStep: {
     fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
   },
   progressBar: {
     height: 10,
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.semibold,
+    fontFamily: FONTS.semibold,
   },
   continueButton: {
     paddingVertical: SPACING.lg,
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: FONT_SIZES.xl,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
     letterSpacing: 0.5,
   },
 });

@@ -1,30 +1,38 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   ScrollView,
-  Pressable,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import ReAnimated, {
+import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSequence,
+  withSpring,
+  FadeInDown,
+  FadeInUp,
 } from 'react-native-reanimated';
 import { storyService, quizService } from '@/services/database';
 import { Story, QuizQuestionWithAnswers } from '@/types/database';
-import { CheckCircle2, XCircle, Trophy, Target, Home, ChevronRight } from 'lucide-react-native';
-import { Container } from '@/components/Container';
-import { Typography } from '@/components/Typography';
-import { PremiumButton } from '@/components/PremiumButton';
-import { PremiumCard } from '@/components/PremiumCard';
-import { LoadingSkeleton } from '@/components/LoadingSkeleton';
-import { ErrorState } from '@/components/ErrorState';
+import {
+  CheckCircle2,
+  XCircle,
+  Trophy,
+  Target,
+  Home,
+  ChevronRight,
+  ArrowLeft,
+  Sparkles,
+  Star,
+} from 'lucide-react-native';
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
 
@@ -43,15 +51,22 @@ export default function QuizScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const questionFadeAnim = useSharedValue(1);
-  const questionSlideAnim = useSharedValue(0);
+
+  const questionFade = useSharedValue(1);
+  const questionSlide = useSharedValue(0);
+  const scoreScale = useSharedValue(1);
 
   const questionAnimStyle = useAnimatedStyle(() => {
     'worklet';
     return {
-      opacity: questionFadeAnim.value,
-      transform: [{ translateX: questionSlideAnim.value }],
+      opacity: questionFade.value,
+      transform: [{ translateX: questionSlide.value }],
     };
+  });
+
+  const scoreAnimStyle = useAnimatedStyle(() => {
+    'worklet';
+    return { transform: [{ scale: scoreScale.value }] };
   });
 
   useEffect(() => {
@@ -65,28 +80,25 @@ export default function QuizScreen() {
       const storyId = params.storyId as string;
       const storyData = await storyService.getById(storyId);
       const quizData = await quizService.getQuestionsByStoryId(storyId);
-
       if (!storyData || quizData === null) {
         setLoadError("Oops, the quiz got lost! Let's try another story.");
         return;
       }
-
       setStory(storyData);
       setQuestions(quizData);
-    } catch (error) {
-      console.error('Error loading quiz:', error);
+    } catch {
       setLoadError("Oops, the quiz got lost! Let's try another story.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const animateQuestionTransition = useCallback(() => {
-    questionFadeAnim.value = withSequence(
+  const animateTransition = useCallback(() => {
+    questionFade.value = withSequence(
       withTiming(0, { duration: 200 }),
       withTiming(1, { duration: 300 })
     );
-    questionSlideAnim.value = withSequence(
+    questionSlide.value = withSequence(
       withTiming(-50, { duration: 200 }),
       withTiming(50, { duration: 0 }),
       withTiming(0, { duration: 300 })
@@ -96,17 +108,18 @@ export default function QuizScreen() {
   const handleAnswerSelect = useCallback(
     (answerOrder: string) => {
       if (selectedAnswer !== null) return;
-
       const currentQuestion = questions[currentQuestionIndex];
       const correctAnswer = currentQuestion.answers.find((a) => a.is_correct);
-
       setSelectedAnswer(answerOrder);
       const correct = answerOrder === correctAnswer?.answer_order;
       setIsCorrect(correct);
-
       if (correct) {
         hapticFeedback.success();
         setScore(score + 1);
+        scoreScale.value = withSequence(
+          withSpring(1.3, { damping: 8 }),
+          withSpring(1, { damping: 10 })
+        );
       } else {
         hapticFeedback.error();
       }
@@ -116,9 +129,8 @@ export default function QuizScreen() {
 
   const handleNextQuestion = useCallback(async () => {
     hapticFeedback.light();
-
     if (currentQuestionIndex < questions.length - 1) {
-      animateQuestionTransition();
+      animateTransition();
       setTimeout(() => {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
         setSelectedAnswer(null);
@@ -135,7 +147,7 @@ export default function QuizScreen() {
         setShowCelebration(false);
       }, 2000);
     }
-  }, [currentQuestionIndex, questions, story, score, isCorrect, animateQuestionTransition]);
+  }, [currentQuestionIndex, questions, story, score, isCorrect, animateTransition]);
 
   const handleFinish = useCallback(() => {
     hapticFeedback.medium();
@@ -149,41 +161,58 @@ export default function QuizScreen() {
 
   if (isLoading) {
     return (
-      <Container gradient gradientColors={themeColors.backgroundGradient} centered>
-        <LoadingSkeleton type="card" count={2} />
-      </Container>
+      <LinearGradient colors={themeColors.backgroundGradient} style={styles.centered}>
+        <Sparkles size={48} color={themeColors.primary} strokeWidth={1.5} />
+        <Text style={[styles.loadingText, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
+          Loading quiz...
+        </Text>
+      </LinearGradient>
     );
   }
 
   if (loadError) {
     return (
-      <Container gradient gradientColors={themeColors.backgroundGradient}>
-        <ErrorState
-          type="general"
-          title="Oops!"
-          message={loadError}
-          onRetry={loadQuiz}
-          onGoHome={handleGoHome}
-        />
-      </Container>
+      <LinearGradient colors={themeColors.backgroundGradient} style={styles.centered}>
+        <Text style={[styles.errorTitle, { color: themeColors.text.primary, fontFamily: FONTS.bold }]}>Oops!</Text>
+        <Text style={[styles.errorMsg, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
+          {loadError}
+        </Text>
+        <View style={styles.errorActions}>
+          <TouchableOpacity
+            onPress={loadQuiz}
+            style={[styles.retryBtn, { backgroundColor: themeColors.primary }]}
+          >
+            <Text style={[styles.retryText, { fontFamily: FONTS.semibold }]}>Try Again</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleGoHome}>
+            <Text style={[styles.goHomeLink, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
+              Go Home
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
     );
   }
 
   if (!story || questions.length === 0) {
     return (
-      <Container gradient gradientColors={themeColors.backgroundGradient}>
-        <ErrorState
-          type="notFound"
-          title="No Quiz Available"
-          message="There's no quiz for this story yet. Try another story!"
-          onGoHome={handleGoHome}
-        />
-      </Container>
+      <LinearGradient colors={themeColors.backgroundGradient} style={styles.centered}>
+        <Text style={[styles.errorTitle, { color: themeColors.text.primary, fontFamily: FONTS.bold }]}>
+          No Quiz Available
+        </Text>
+        <Text style={[styles.errorMsg, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
+          There's no quiz for this story yet.
+        </Text>
+        <TouchableOpacity onPress={handleGoHome} style={[styles.retryBtn, { backgroundColor: themeColors.primary }]}>
+          <Text style={[styles.retryText, { fontFamily: FONTS.semibold }]}>Go Home</Text>
+        </TouchableOpacity>
+      </LinearGradient>
     );
   }
 
   if (showResult) {
-    const percentage = Math.round((score / questions.length) * 100);
+    const finalScore = score;
+    const percentage = Math.round((finalScore / questions.length) * 100);
     const isPerfect = percentage === 100;
     const isGreat = percentage >= 66 && percentage < 100;
 
@@ -192,86 +221,70 @@ export default function QuizScreen() {
       if (isGreat) return { title: 'Great Work!', subtitle: 'Keep it up!' };
       return { title: 'Good Try!', subtitle: 'Practice makes perfect!' };
     };
-
     const message = getMessage();
 
     return (
-      <Container scroll gradient gradientColors={themeColors.backgroundGradient}>
-        <View style={styles.resultContainer}>
-          {/* Trophy Icon */}
-          <View style={styles.resultHeader}>
-            <PremiumCard
-              gradient={isPerfect ? themeColors.gradients.sunset : themeColors.gradients.primary}
-              style={styles.trophyContainer}
-              shadow="xl"
-            >
-              <Trophy size={80} color={themeColors.text.inverse} strokeWidth={2} />
-            </PremiumCard>
-
-            <Typography variant="displayMedium" align="center" style={styles.resultTitle}>
-              {message.title}
-            </Typography>
-            <Typography variant="bodyLarge" color="secondary" align="center">
-              You completed the quiz!
-            </Typography>
-          </View>
-
-          {/* Score Card */}
-          <PremiumCard shadow="lg" style={styles.scoreCard}>
-            <Typography variant="label" color="secondary" align="center">
-              Your Score
-            </Typography>
-            <Typography variant="displayLarge" align="center" style={styles.scoreValue}>
-              {score} / {questions.length}
-            </Typography>
-
-            {/* Percentage Circle */}
+      <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
+        <ScrollView contentContainerStyle={styles.resultScrollContent} showsVerticalScrollIndicator={false}>
+          <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.resultHeader}>
             <LinearGradient
-              colors={isPerfect ? themeColors.gradients.success : themeColors.gradients.primary}
-              style={styles.percentageCircle}
+              colors={isPerfect ? themeColors.gradients.sunset : themeColors.gradients.primary}
+              style={styles.trophyCircle}
             >
-              <Typography variant="displayMedium" color="inverse">
-                {percentage}%
-              </Typography>
+              <Trophy size={64} color="#FFFFFF" strokeWidth={1.8} />
             </LinearGradient>
-          </PremiumCard>
 
-          {/* Encouragement */}
-          <PremiumCard
-            gradient={themeColors.cardGradient}
-            style={styles.encouragementCard}
-            shadow="md"
-          >
-            <Typography variant="h2" align="center" color="primary">
+            <Text style={[styles.resultTitle, { color: themeColors.text.primary, fontFamily: FONTS.extrabold }]}>
               {message.title}
-            </Typography>
-            <Typography variant="bodyMedium" color="secondary" align="center" style={{ marginTop: SPACING.sm }}>
+            </Text>
+            <Text style={[styles.resultSubtitle, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
               {message.subtitle}
-            </Typography>
-          </PremiumCard>
+            </Text>
+          </Animated.View>
 
-          {/* Action Buttons */}
-          <View style={styles.resultActions}>
-            <PremiumButton
-              title="View Library"
-              onPress={handleFinish}
-              variant="primary"
-              size="large"
-              gradient={themeColors.gradients.sunset}
-              fullWidth
-              icon={<Target size={24} color={themeColors.text.inverse} />}
-            />
-            <PremiumButton
-              title="Go Home"
+          <Animated.View entering={FadeInUp.delay(400).springify()}>
+            <View style={[styles.scoreCard, { backgroundColor: themeColors.cardBackground }]}>
+              <Text style={[styles.scoreLabel, { color: themeColors.text.light, fontFamily: FONTS.semibold }]}>
+                Your Score
+              </Text>
+              <Text style={[styles.scoreValue, { color: themeColors.text.primary, fontFamily: FONTS.extrabold }]}>
+                {finalScore} / {questions.length}
+              </Text>
+              <LinearGradient
+                colors={isPerfect ? themeColors.gradients.success : themeColors.gradients.primary}
+                style={styles.percentCircle}
+              >
+                <Text style={[styles.percentText, { fontFamily: FONTS.bold }]}>{percentage}%</Text>
+              </LinearGradient>
+            </View>
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.resultActions}>
+            <TouchableOpacity onPress={handleFinish} activeOpacity={0.9}>
+              <LinearGradient
+                colors={themeColors.gradients.sunset}
+                style={styles.primaryResultBtn}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Target size={22} color="#FFFFFF" />
+                <Text style={[styles.primaryResultText, { fontFamily: FONTS.bold }]}>View Library</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               onPress={handleGoHome}
-              variant="outline"
-              size="medium"
-              fullWidth
-              icon={<Home size={20} color={themeColors.primary} />}
-            />
-          </View>
-        </View>
-      </Container>
+              style={[styles.secondaryResultBtn, { borderColor: themeColors.primary + '30' }]}
+              activeOpacity={0.7}
+            >
+              <Home size={20} color={themeColors.primary} />
+              <Text style={[styles.secondaryResultText, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
+                Go Home
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </LinearGradient>
     );
   }
 
@@ -279,282 +292,404 @@ export default function QuizScreen() {
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
-    <Container gradient gradientColors={themeColors.backgroundGradient} safeArea padding={false}>
+    <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
       {showCelebration && <CelebrationOverlay />}
 
-      {/* Progress Header */}
-      <View style={styles.header}>
-        <View style={styles.progressContainer}>
-          <Typography variant="h4" color="primary" align="center">
-            Question {currentQuestionIndex + 1} of {questions.length}
-          </Typography>
-          <View style={styles.progressBarContainer}>
-            <View style={styles.progressBar}>
-              <LinearGradient
-                colors={themeColors.gradients.sunset}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[styles.progressFill, { width: `${progress}%` }]}
-              />
-            </View>
+      <View style={styles.quizHeader}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: themeColors.cardBackground }]}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft size={20} color={themeColors.text.primary} />
+        </TouchableOpacity>
+
+        <View style={styles.headerCenter}>
+          <Text style={[styles.questionCounter, { color: themeColors.text.primary, fontFamily: FONTS.bold }]}>
+            {currentQuestionIndex + 1} / {questions.length}
+          </Text>
+          <View style={[styles.progressBar, { backgroundColor: themeColors.text.light + '20' }]}>
+            <LinearGradient
+              colors={themeColors.gradients.sunset}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.progressFill, { width: `${progress}%` }]}
+            />
           </View>
         </View>
+
+        <Animated.View style={[styles.scoreChip, scoreAnimStyle]}>
+          <LinearGradient
+            colors={themeColors.gradients.primary}
+            style={styles.scoreChipGradient}
+          >
+            <Star size={14} color="#FFFFFF" fill="#FFFFFF" />
+            <Text style={[styles.scoreChipText, { fontFamily: FONTS.bold }]}>{score}</Text>
+          </LinearGradient>
+        </Animated.View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.quizContainer} showsVerticalScrollIndicator={false}>
-        {/* Story Title Card */}
-        <PremiumCard gradient={themeColors.cardGradient} shadow="md" style={styles.storyPreview}>
-          <Typography variant="h4" align="center">
-            {story.title}
-          </Typography>
-        </PremiumCard>
-
-        {/* Question Card with Animation */}
-        <ReAnimated.View
-          style={[styles.questionCardContainer, questionAnimStyle]}
-        >
-          <PremiumCard shadow="lg" style={styles.questionCard}>
-            <Typography variant="h3" align="center" style={styles.questionText}>
+      <ScrollView contentContainerStyle={styles.quizContent} showsVerticalScrollIndicator={false}>
+        <Animated.View style={questionAnimStyle}>
+          <View style={[styles.questionCard, { backgroundColor: themeColors.cardBackground }]}>
+            <Text style={[styles.questionText, { color: themeColors.text.primary, fontFamily: FONTS.semibold }]}>
               {currentQuestion.question_text}
-            </Typography>
+            </Text>
+          </View>
 
-            {/* Answer Options */}
-            <View style={styles.answersContainer}>
-              {currentQuestion.answers.map((answer, index) => {
-                const isSelected = selectedAnswer === answer.answer_order;
-                const showCorrect = selectedAnswer !== null && answer.is_correct;
-                const showWrong = isSelected && !answer.is_correct;
+          <View style={styles.answersContainer}>
+            {currentQuestion.answers.map((answer) => {
+              const isSelected = selectedAnswer === answer.answer_order;
+              const showCorrect = selectedAnswer !== null && answer.is_correct;
+              const showWrong = isSelected && !answer.is_correct;
 
-                const getAnswerGradient = () => {
-                  if (showCorrect) return themeColors.gradients.success;
-                  if (showWrong) return [themeColors.errorLight, themeColors.error];
-                  if (isSelected) return themeColors.gradients.primary;
-                  return undefined;
-                };
+              let cardBg = themeColors.cardBackground;
+              let textColor = themeColors.text.primary;
+              let borderColor = 'transparent';
+              let showGradient = false;
+              let gradientColors = themeColors.gradients.success;
 
-                return (
-                  <Pressable
-                    key={answer.id}
+              if (showCorrect) {
+                showGradient = true;
+                gradientColors = themeColors.gradients.success;
+                textColor = '#FFFFFF';
+              } else if (showWrong) {
+                showGradient = true;
+                gradientColors = [themeColors.errorLight, themeColors.error];
+                textColor = '#FFFFFF';
+              } else if (selectedAnswer === null) {
+                borderColor = themeColors.text.light + '20';
+              }
+
+              return (
+                <Animated.View key={answer.id} entering={FadeInDown.delay(100).springify()}>
+                  <TouchableOpacity
                     onPress={() => handleAnswerSelect(answer.answer_order)}
                     disabled={selectedAnswer !== null}
-                    style={({ pressed }) => [
-                      styles.answerButton,
-                      pressed && styles.answerButtonPressed,
-                    ]}
-                    accessibilityLabel={`Answer ${answer.answer_order}: ${answer.answer_text}`}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected, disabled: selectedAnswer !== null }}
+                    activeOpacity={0.7}
+                    style={{ opacity: selectedAnswer !== null && !isSelected && !showCorrect ? 0.5 : 1 }}
                   >
-                    <PremiumCard
-                      gradient={getAnswerGradient()}
-                      shadow={isSelected || showCorrect ? 'md' : 'sm'}
-                      style={[
-                        styles.answerContent,
-                        !getAnswerGradient() && styles.answerContentDefault,
-                      ]}
-                    >
-                      <View style={styles.answerLetter}>
-                        <LinearGradient
-                          colors={
-                            showCorrect
-                              ? themeColors.gradients.success
-                              : showWrong
-                              ? [themeColors.error, themeColors.errorLight]
-                              : themeColors.gradients.primary
-                          }
-                          style={styles.answerLetterGradient}
-                        >
-                          <Typography variant="h3" color="inverse">
-                            {answer.answer_order}
-                          </Typography>
-                        </LinearGradient>
-                      </View>
-
-                      <Typography
-                        variant="bodyLarge"
-                        style={styles.answerText}
-                        color={showCorrect || showWrong || isSelected ? 'inverse' : 'primary'}
+                    {showGradient ? (
+                      <LinearGradient
+                        colors={gradientColors}
+                        style={styles.answerCard}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
                       >
-                        {answer.answer_text}
-                      </Typography>
-
-                      {showCorrect && <CheckCircle2 size={28} color={themeColors.text.inverse} />}
-                      {showWrong && <XCircle size={28} color={themeColors.text.inverse} />}
-                    </PremiumCard>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </PremiumCard>
-        </ReAnimated.View>
+                        <View style={styles.answerLetterCircle}>
+                          <Text style={[styles.answerLetter, { color: themeColors.primary, fontFamily: FONTS.bold }]}>
+                            {answer.answer_order}
+                          </Text>
+                        </View>
+                        <Text
+                          style={[styles.answerText, { color: textColor, fontFamily: FONTS.medium }]}
+                          numberOfLines={3}
+                        >
+                          {answer.answer_text}
+                        </Text>
+                        {showCorrect && <CheckCircle2 size={24} color="#FFFFFF" />}
+                        {showWrong && <XCircle size={24} color="#FFFFFF" />}
+                      </LinearGradient>
+                    ) : (
+                      <View style={[styles.answerCard, { backgroundColor: cardBg, borderColor, borderWidth: 1.5 }]}>
+                        <LinearGradient colors={themeColors.gradients.primary} style={styles.answerLetterCircle}>
+                          <Text style={[styles.answerLetter, { color: '#FFFFFF', fontFamily: FONTS.bold }]}>
+                            {answer.answer_order}
+                          </Text>
+                        </LinearGradient>
+                        <Text
+                          style={[styles.answerText, { color: textColor, fontFamily: FONTS.medium }]}
+                          numberOfLines={3}
+                        >
+                          {answer.answer_text}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
+          </View>
+        </Animated.View>
       </ScrollView>
 
-      {/* Next Button Footer */}
       {selectedAnswer !== null && (
-        <View style={styles.footer}>
-          <PremiumButton
-            title={currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'See Results'}
-            onPress={handleNextQuestion}
-            variant="primary"
-            size="large"
-            fullWidth
-            gradient={themeColors.gradients.sunset}
-            icon={<ChevronRight size={24} color={themeColors.text.inverse} />}
-            accessibilityLabel={
-              currentQuestionIndex < questions.length - 1
-                ? 'Continue to next question'
-                : 'View quiz results'
-            }
-          />
-        </View>
+        <Animated.View entering={FadeInUp.springify()} style={[styles.footer, { backgroundColor: themeColors.cardBackground }]}>
+          <View style={styles.feedbackRow}>
+            {isCorrect ? (
+              <Text style={[styles.feedbackText, { color: themeColors.success, fontFamily: FONTS.bold }]}>
+                Correct!
+              </Text>
+            ) : (
+              <Text style={[styles.feedbackText, { color: themeColors.error, fontFamily: FONTS.bold }]}>
+                Not quite!
+              </Text>
+            )}
+          </View>
+          <TouchableOpacity onPress={handleNextQuestion} activeOpacity={0.9}>
+            <LinearGradient
+              colors={themeColors.gradients.sunset}
+              style={styles.nextButton}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={[styles.nextButtonText, { fontFamily: FONTS.bold }]}>
+                {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'See Results'}
+              </Text>
+              <ChevronRight size={20} color="#FFFFFF" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
       )}
-    </Container>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  // Header
-  header: {
-    paddingTop: SPACING.xxxl + 20,
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.lg,
-    backgroundColor: COLORS.cardBackground,
-    ...SHADOWS.sm,
+  container: {
+    flex: 1,
   },
-  progressContainer: {
-    gap: SPACING.md,
-  },
-  progressBarContainer: {
-    marginTop: SPACING.sm,
-  },
-  progressBar: {
-    height: 10,
-    backgroundColor: COLORS.primaryLight + '40',
-    borderRadius: BORDER_RADIUS.sm,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: BORDER_RADIUS.sm,
-  },
-
-  // Quiz Content
-  quizContainer: {
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: SPACING.xl,
-    paddingBottom: 120,
-  },
-  storyPreview: {
-    marginBottom: SPACING.xxl,
-    borderRadius: BORDER_RADIUS.xl,
-  },
-  questionCardContainer: {
-    width: '100%',
-  },
-  questionCard: {
-    padding: SPACING.xxl,
-    borderRadius: BORDER_RADIUS.xl,
-  },
-  questionText: {
-    marginBottom: SPACING.xxxl,
-  },
-  answersContainer: {
     gap: SPACING.lg,
   },
-  answerButton: {
-    marginBottom: SPACING.xs,
+  loadingText: {
+    fontSize: FONT_SIZES.md,
   },
-  answerButtonPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
+  errorTitle: {
+    fontSize: FONT_SIZES.xxl,
   },
-  answerContent: {
+  errorMsg: {
+    fontSize: FONT_SIZES.md,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  errorActions: {
+    alignItems: 'center',
+    gap: SPACING.lg,
+    marginTop: SPACING.md,
+  },
+  retryBtn: {
+    paddingHorizontal: SPACING.xxl,
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.pill,
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontSize: FONT_SIZES.md,
+  },
+  goHomeLink: {
+    fontSize: FONT_SIZES.md,
+  },
+  quizHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingTop: 56,
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.lg,
     gap: SPACING.md,
-    padding: SPACING.md,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
     borderRadius: BORDER_RADIUS.lg,
-  },
-  answerContentDefault: {
-    backgroundColor: COLORS.cardBackground,
-  },
-  answerLetter: {
-    width: 52,
-    height: 52,
-  },
-  answerLetterGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.sm,
   },
+  headerCenter: {
+    flex: 1,
+    gap: SPACING.sm,
+  },
+  questionCounter: {
+    fontSize: FONT_SIZES.sm,
+    textAlign: 'center',
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  scoreChip: {
+    borderRadius: BORDER_RADIUS.pill,
+    overflow: 'hidden',
+  },
+  scoreChipGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
+    borderRadius: BORDER_RADIUS.pill,
+  },
+  scoreChipText: {
+    color: '#FFFFFF',
+    fontSize: FONT_SIZES.sm,
+  },
+  quizContent: {
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: 140,
+  },
+  questionCard: {
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.xl,
+    marginBottom: SPACING.xl,
+    ...SHADOWS.sm,
+  },
+  questionText: {
+    fontSize: FONT_SIZES.lg,
+    lineHeight: 28,
+    textAlign: 'center',
+  },
+  answersContainer: {
+    gap: SPACING.md,
+  },
+  answerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.sm,
+  },
+  answerLetterCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  answerLetter: {
+    fontSize: FONT_SIZES.lg,
+  },
   answerText: {
     flex: 1,
+    fontSize: FONT_SIZES.md,
+    lineHeight: 22,
   },
-
-  // Footer
   footer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: SPACING.xl,
-    paddingBottom: SPACING.xxxl,
-    backgroundColor: COLORS.cardBackground,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.lg,
+    paddingBottom: 40,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
     ...SHADOWS.lg,
   },
-
-  // Results Screen
-  resultContainer: {
+  feedbackRow: {
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  feedbackText: {
+    fontSize: FONT_SIZES.lg,
+  },
+  nextButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.lg,
+  },
+  nextButtonText: {
+    color: '#FFFFFF',
+    fontSize: FONT_SIZES.lg,
+  },
+  resultScrollContent: {
     padding: SPACING.xl,
+    paddingTop: 80,
     alignItems: 'center',
   },
   resultHeader: {
     alignItems: 'center',
-    marginTop: SPACING.xxxl,
     marginBottom: SPACING.xxxl,
   },
-  trophyContainer: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+  trophyCircle: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.xxl,
+    ...SHADOWS.lg,
   },
   resultTitle: {
-    marginBottom: SPACING.md,
+    fontSize: 32,
+    marginBottom: SPACING.sm,
+    textAlign: 'center',
+  },
+  resultSubtitle: {
+    fontSize: FONT_SIZES.lg,
+    textAlign: 'center',
   },
   scoreCard: {
-    padding: SPACING.xxxl,
     width: '100%',
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.xxl,
     alignItems: 'center',
     marginBottom: SPACING.xxl,
-    borderRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.md,
+  },
+  scoreLabel: {
+    fontSize: FONT_SIZES.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: SPACING.sm,
   },
   scoreValue: {
-    marginVertical: SPACING.lg,
+    fontSize: 48,
+    marginBottom: SPACING.lg,
   },
-  percentageCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  percentCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.lg,
-    ...SHADOWS.colored,
+    ...SHADOWS.lg,
   },
-  encouragementCard: {
-    width: '100%',
-    padding: SPACING.xxl,
-    borderRadius: BORDER_RADIUS.xl,
-    marginBottom: SPACING.xxxl,
+  percentText: {
+    color: '#FFFFFF',
+    fontSize: 28,
   },
   resultActions: {
     width: '100%',
     gap: SPACING.md,
+  },
+  primaryResultBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.lg,
+  },
+  primaryResultText: {
+    color: '#FFFFFF',
+    fontSize: FONT_SIZES.lg,
+  },
+  secondaryResultBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+    borderWidth: 1.5,
+  },
+  secondaryResultText: {
+    fontSize: FONT_SIZES.md,
   },
 });

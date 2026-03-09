@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from '
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Sparkles, BookOpen, Globe, Gamepad2, ArrowRight } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
   useAnimatedStyle,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: isSmallDevice ? 36 : 44,
-    fontWeight: FONT_WEIGHTS.extrabold,
+    fontFamily: FONTS.extrabold,
     color: '#1A1F36',
     marginBottom: SPACING.sm,
     textAlign: 'center',
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     lineHeight: isSmallDevice ? 22 : 26,
     marginBottom: isSmallDevice ? SPACING.xl : SPACING.xxxl,
     paddingHorizontal: SPACING.md,
-    fontWeight: FONT_WEIGHTS.medium,
+    fontFamily: FONTS.medium,
   },
   features: {
     width: '100%',
@@ -304,14 +304,14 @@ const styles = StyleSheet.create({
   },
   featureTitle: {
     fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
     color: '#1A1F36',
     marginBottom: 2,
   },
   featureDescription: {
     fontSize: FONT_SIZES.sm,
     color: '#6C7A89',
-    fontWeight: FONT_WEIGHTS.medium,
+    fontFamily: FONTS.medium,
   },
   footer: {
     padding: SPACING.xl,
@@ -333,13 +333,13 @@ const styles = StyleSheet.create({
   startButtonText: {
     color: '#FFFFFF',
     fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.bold,
     letterSpacing: 0.3,
   },
   footerText: {
     marginTop: SPACING.lg,
     fontSize: FONT_SIZES.sm,
     color: '#6C7A89',
-    fontWeight: FONT_WEIGHTS.medium,
+    fontFamily: FONTS.medium,
   },
 });

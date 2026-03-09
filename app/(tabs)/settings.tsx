@@ -17,9 +17,10 @@ import {
   ChevronRight,
   Sparkles,
   Heart,
+  UserCog,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 
 interface SettingItem {
   id: string;
@@ -36,6 +37,14 @@ export default function SettingsTab() {
   const COLORS = currentTheme.colors;
 
   const settingItems: SettingItem[] = [
+    {
+      id: 'edit-profile',
+      title: 'Edit Profile',
+      description: 'Update name, languages, and characters',
+      icon: <UserCog size={24} color="#FFFFFF" />,
+      route: '/settings/edit-profile',
+      gradient: COLORS.gradients.sunset,
+    },
     {
       id: 'customization',
       title: 'Customization',
@@ -59,9 +68,7 @@ export default function SettingsTab() {
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
 
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: COLORS.text.primary }]}>
-          Settings
-        </Text>
+        <Text style={[styles.headerTitle, { color: COLORS.text.primary }]}>Settings</Text>
         <Text style={[styles.headerSubtitle, { color: COLORS.text.secondary }]}>
           Customize your experience
         </Text>
@@ -124,7 +131,7 @@ export default function SettingsTab() {
           ))}
         </View>
 
-        <Animated.View entering={FadeInDown.delay(400).springify()}>
+        <Animated.View entering={FadeInDown.delay(500).springify()}>
           <View style={[styles.infoBox, { backgroundColor: COLORS.gradients.primary[0] + '15' }]}>
             <Info size={20} color={COLORS.primary} />
             <View style={styles.infoContent}>
@@ -132,17 +139,11 @@ export default function SettingsTab() {
                 Jahera - AI Story Adventures
               </Text>
               <View style={styles.infoRow}>
-                <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>
-                  Version 1.0.0
-                </Text>
+                <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>Version 1.0.0</Text>
                 <View style={styles.infoDot} />
-                <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>
-                  Made with
-                </Text>
+                <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>Made with</Text>
                 <Heart size={12} color={COLORS.error} fill={COLORS.error} />
-                <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>
-                  for kids
-                </Text>
+                <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>for kids</Text>
               </View>
             </View>
           </View>
@@ -153,120 +154,47 @@ export default function SettingsTab() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     paddingTop: SPACING.lg,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
   },
-  headerTitle: {
-    fontSize: FONT_SIZES.xxxl,
-    fontWeight: FONT_WEIGHTS.bold,
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: FONT_SIZES.sm,
-  },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: SPACING.xl,
-    paddingBottom: 120,
-  },
+  headerTitle: { fontSize: 24, fontFamily: FONTS.bold, marginBottom: 4 },
+  headerSubtitle: { fontSize: 14, fontFamily: FONTS.medium },
+  content: { flex: 1 },
+  scrollContent: { padding: SPACING.xl, paddingBottom: 120 },
   welcomeBanner: {
-    flexDirection: 'row',
-    padding: SPACING.xl,
-    borderRadius: BORDER_RADIUS.xl,
-    gap: SPACING.lg,
-    alignItems: 'center',
-    marginBottom: SPACING.xxl,
-    ...SHADOWS.lg,
+    flexDirection: 'row', padding: SPACING.xl, borderRadius: BORDER_RADIUS.xl,
+    gap: SPACING.lg, alignItems: 'center', marginBottom: SPACING.xxl, ...SHADOWS.lg,
   },
   bannerIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 48, height: 48, borderRadius: 24,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  bannerContent: {
-    flex: 1,
-  },
-  bannerTitle: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: '#FFFFFF',
-    marginBottom: SPACING.xs,
-  },
-  bannerText: {
-    fontSize: FONT_SIZES.sm,
-    color: '#FFFFFF',
-    opacity: 0.95,
-    lineHeight: 20,
-  },
-  settingsSection: {
-    gap: SPACING.md,
-    marginBottom: SPACING.xxl,
-  },
+  bannerContent: { flex: 1 },
+  bannerTitle: { fontSize: 20, fontFamily: FONTS.bold, color: '#FFFFFF', marginBottom: SPACING.xs },
+  bannerText: { fontSize: 14, fontFamily: FONTS.regular, color: '#FFFFFF', opacity: 0.95, lineHeight: 20 },
+  settingsSection: { gap: SPACING.md, marginBottom: SPACING.xxl },
   settingCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    gap: SPACING.lg,
-    ...SHADOWS.sm,
+    flexDirection: 'row', alignItems: 'center', padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg, gap: SPACING.lg, ...SHADOWS.sm,
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: BORDER_RADIUS.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.md,
+    width: 52, height: 52, borderRadius: BORDER_RADIUS.md,
+    justifyContent: 'center', alignItems: 'center', ...SHADOWS.md,
   },
-  settingInfo: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.bold,
-    marginBottom: SPACING.xs,
-  },
-  settingDescription: {
-    fontSize: FONT_SIZES.sm,
-    lineHeight: 18,
-  },
+  settingInfo: { flex: 1 },
+  settingTitle: { fontSize: 16, fontFamily: FONTS.bold, marginBottom: SPACING.xs },
+  settingDescription: { fontSize: 13, fontFamily: FONTS.regular, lineHeight: 18 },
   infoBox: {
-    flexDirection: 'row',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    gap: SPACING.md,
-    alignItems: 'center',
+    flexDirection: 'row', padding: SPACING.lg, borderRadius: BORDER_RADIUS.lg,
+    gap: SPACING.md, alignItems: 'center',
   },
-  infoContent: {
-    flex: 1,
-  },
-  infoTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.semibold,
-    marginBottom: SPACING.xs,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  infoDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#999',
-  },
-  infoText: {
-    fontSize: FONT_SIZES.sm,
-  },
+  infoContent: { flex: 1 },
+  infoTitle: { fontSize: 15, fontFamily: FONTS.semibold, marginBottom: SPACING.xs },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  infoDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#999' },
+  infoText: { fontSize: 13, fontFamily: FONTS.regular },
 });

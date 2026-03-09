@@ -1,84 +1,72 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
   RefreshControl,
-  Platform,
+  Text,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { Sparkles, BookOpen, RefreshCw, MapPin, Star, ChevronRight } from 'lucide-react-native';
-import { profileService, storyService } from '@/services/database';
-import { ProfileWithRelations, Story } from '@/types/database';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
-import { Typography } from '@/components/Typography';
-import { PremiumCard } from '@/components/PremiumCard';
+import { Sparkles, BookOpen, Star, ChevronRight, Globe, Users, Volume2, Clock } from 'lucide-react-native';
+import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
-import { EmptyState } from '@/components/EmptyState';
-import { useResponsive } from '@/hooks/useResponsive';
+import { getLanguageFlag } from '@/utils/languageUtils';
+import { getTimeOfDay } from '@/utils/contextUtils';
+
+function getGreeting(name: string): { greeting: string; subtitle: string } {
+  const tod = getTimeOfDay(new Date());
+  switch (tod) {
+    case 'morning':
+      return { greeting: `Good morning, ${name}!`, subtitle: 'Ready for a sunny adventure?' };
+    case 'afternoon':
+      return { greeting: `Good afternoon, ${name}!`, subtitle: 'Time for a new tale!' };
+    case 'evening':
+      return { greeting: `Good evening, ${name}!`, subtitle: 'How about a bedtime story?' };
+    case 'night':
+      return { greeting: `Hey there, ${name}!`, subtitle: 'A dreamy story awaits...' };
+    default:
+      return { greeting: `Welcome back, ${name}!`, subtitle: 'Your next story awaits' };
+  }
+}
+
+function getRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = now - then;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+const SEASON_GRADIENTS: Record<string, string[]> = {
+  spring: ['#C6F6D5', '#9AE6B4', '#68D391'],
+  summer: ['#FEFCBF', '#FAF089', '#F6E05E'],
+  fall: ['#FEEBC8', '#FBD38D', '#F6AD55'],
+  winter: ['#BEE3F8', '#90CDF4', '#63B3ED'],
+};
 
 export default function HomeScreen() {
   const router = useRouter();
-  const responsive = useResponsive();
-  const [profile, setProfile] = useState<ProfileWithRelations | null>(null);
-  const [stories, setStories] = useState<Story[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [])
-  );
-
-  const loadData = async () => {
-    try {
-      const profileId = await AsyncStorage.getItem('profileId');
-
-      if (!profileId) {
-        setIsLoading(false);
-        setTimeout(() => {
-          router.replace('/');
-        }, 100);
-        return;
-      }
-
-      const [profileData, storiesData] = await Promise.all([
-        profileService.getWithRelations(profileId),
-        storyService.getByProfileId(profileId),
-      ]);
-
-      if (!profileData) {
-        setIsLoading(false);
-        await AsyncStorage.removeItem('profileId');
-        setTimeout(() => {
-          router.replace('/');
-        }, 100);
-        return;
-      }
-
-      setProfile(profileData);
-      setStories(storiesData || []);
-      setIsLoading(false);
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Failed to load your data. Please try again.');
-      setIsLoading(false);
-    }
-  };
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
+  const { profile, stories, isLoading, error, refreshAll } = useApp();
 
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await loadData();
-    setIsRefreshing(false);
-  }, []);
+    await refreshAll();
+  }, [refreshAll]);
 
   const handleGenerateStory = useCallback(() => {
     if (!profile) return;
@@ -93,20 +81,16 @@ export default function HomeScreen() {
 
   const handleStoryPress = useCallback(
     (storyId: string) => {
-      router.push({
-        pathname: '/story/playback',
-        params: { storyId },
-      });
+      router.push({ pathname: '/story/playback', params: { storyId } });
     },
     [router]
   );
 
   const recentStories = useMemo(() => stories.slice(0, 4), [stories]);
-  const olderStories = useMemo(() => stories.slice(4), [stories]);
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
         <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
         <View style={styles.loadingContent}>
           <LoadingSkeleton type="card" count={3} />
@@ -117,203 +101,171 @@ export default function HomeScreen() {
 
   if (error || !profile) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
         <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
         <ErrorState
           type="general"
           title="Unable to Load Data"
-          message={error || 'Failed to load your profile. Please try again.'}
-          onRetry={() => {
-            setError(null);
-            setIsLoading(true);
-            loadData();
-          }}
+          message={error || 'Failed to load your profile.'}
+          onRetry={refreshAll}
           onGoHome={() => router.replace('/')}
         />
       </SafeAreaView>
     );
   }
 
+  const { greeting, subtitle } = getGreeting(profile.kid_name || 'Friend');
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={COLORS.primary}
-          />
+          <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={COLORS.primary} />
         }
       >
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
+        <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.header}>
           <View style={styles.userSection}>
             <View style={styles.avatarContainer}>
               <LinearGradient colors={COLORS.gradients.primary} style={styles.avatarGradient}>
-                <Typography variant="h2" color="inverse">
-                  {profile?.kid_name?.charAt(0) || '?'}
-                </Typography>
+                <Text style={styles.avatarText}>{profile.kid_name?.charAt(0)?.toUpperCase() || '?'}</Text>
               </LinearGradient>
             </View>
             <View style={styles.greetingContainer}>
-              <Typography variant="caption" color="secondary">
-                Welcome back
-              </Typography>
-              <Typography variant="h4" color="primary">
-                {profile?.kid_name || 'Friend'}
-              </Typography>
+              <Text style={[styles.greetingText, { color: COLORS.text.primary }]}>{greeting}</Text>
+              <Text style={[styles.subtitleText, { color: COLORS.text.secondary }]}>{subtitle}</Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={handleRefresh}
-            activeOpacity={0.7}
-          >
-            <RefreshCw size={20} color={COLORS.text.primary} strokeWidth={2} />
-          </TouchableOpacity>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.heroSection}>
-          <PremiumCard
-            style={styles.heroCard}
-            shadow="xl"
-            padding={0}
-            onPress={handleGenerateStory}
-          >
+        <Animated.View entering={FadeInUp.delay(150).springify()} style={styles.heroSection}>
+          <TouchableOpacity onPress={handleGenerateStory} activeOpacity={0.9}>
             <LinearGradient
-              colors={['#D5F2ED', '#B8EAE0']}
-              style={styles.heroCardGradient}
+              colors={COLORS.gradients.sunset}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroCard}
             >
               <View style={styles.heroContent}>
-                <View style={styles.heroIllustration}>
-                  <Typography style={styles.heroEmoji}>✨</Typography>
+                <View style={styles.heroLeft}>
+                  <Text style={styles.heroTitle}>Create a New Story</Text>
+                  <Text style={styles.heroSubtitle}>AI-powered, personalized just for {profile.kid_name}</Text>
+                  <View style={styles.heroBadge}>
+                    <Sparkles size={14} color="#FFFFFF" />
+                    <Text style={styles.heroBadgeText}>Generate</Text>
+                  </View>
                 </View>
-                <View style={styles.heroTextContainer}>
-                  <Typography variant="h3" color="primary" style={styles.heroTitle}>
-                    Create a New Story
-                  </Typography>
-                  <Typography variant="bodySmall" color="secondary">
-                    Generate a personalized adventure
-                  </Typography>
-                </View>
-                <View style={styles.heroButton}>
-                  <LinearGradient
-                    colors={COLORS.gradients.primary}
-                    style={styles.heroButtonGradient}
-                  >
-                    <Sparkles size={18} color={COLORS.text.inverse} strokeWidth={2.5} />
-                  </LinearGradient>
+                <View style={styles.heroIconWrap}>
+                  <Text style={styles.heroEmoji}>✨</Text>
                 </View>
               </View>
             </LinearGradient>
-          </PremiumCard>
+          </TouchableOpacity>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(300).springify()}>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: '#E8F8F5' }]}>
+        <Animated.View entering={FadeInUp.delay(250).springify()}>
+          <View style={[styles.statsRow, { backgroundColor: COLORS.cardBackground }]}>
+            <TouchableOpacity
+              style={styles.statItem}
+              onPress={() => router.push('/(tabs)/history')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.statIcon, { backgroundColor: COLORS.primary + '18' }]}>
                 <BookOpen size={18} color={COLORS.primary} strokeWidth={2} />
               </View>
-              <Typography variant="h4" color="primary">{stories.length}</Typography>
-              <Typography variant="caption" color="secondary">Stories</Typography>
-            </View>
-            <View style={styles.statDivider} />
+              <Text style={[styles.statValue, { color: COLORS.text.primary }]}>{stories.length}</Text>
+              <Text style={[styles.statLabel, { color: COLORS.text.secondary }]}>Stories</Text>
+            </TouchableOpacity>
+            <View style={[styles.statDivider, { backgroundColor: COLORS.text.light + '30' }]} />
             <View style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: '#FFF3CD' }]}>
-                <Star size={18} color="#F59E0B" strokeWidth={2} />
+              <View style={[styles.statIcon, { backgroundColor: COLORS.warning + '18' }]}>
+                <Globe size={18} color={COLORS.warning} strokeWidth={2} />
               </View>
-              <Typography variant="h4" color="primary">
-                {profile?.languages?.length || 0}
-              </Typography>
-              <Typography variant="caption" color="secondary">Languages</Typography>
+              <Text style={[styles.statValue, { color: COLORS.text.primary }]}>{profile.languages?.length || 0}</Text>
+              <Text style={[styles.statLabel, { color: COLORS.text.secondary }]}>Languages</Text>
             </View>
-            <View style={styles.statDivider} />
+            <View style={[styles.statDivider, { backgroundColor: COLORS.text.light + '30' }]} />
             <View style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: '#E8E7FF' }]}>
-                <Sparkles size={18} color="#7C6FDC" strokeWidth={2} />
+              <View style={[styles.statIcon, { backgroundColor: COLORS.info + '18' }]}>
+                <Users size={18} color={COLORS.info} strokeWidth={2} />
               </View>
-              <Typography variant="h4" color="primary">
-                {(profile?.family_members?.length || 0) + (profile?.friends?.length || 0)}
-              </Typography>
-              <Typography variant="caption" color="secondary">Characters</Typography>
+              <Text style={[styles.statValue, { color: COLORS.text.primary }]}>
+                {(profile.family_members?.length || 0) + (profile.friends?.length || 0)}
+              </Text>
+              <Text style={[styles.statLabel, { color: COLORS.text.secondary }]}>Characters</Text>
             </View>
           </View>
         </Animated.View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Typography variant="h3" color="primary">
-              Your Stories
-            </Typography>
+            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Recent Stories</Text>
             {stories.length > 4 && (
               <TouchableOpacity
                 onPress={() => router.push('/(tabs)/history')}
                 style={styles.viewAllButton}
               >
-                <Typography variant="bodySmall" color="secondary">
-                  View All
-                </Typography>
-                <ChevronRight size={16} color={COLORS.text.secondary} />
+                <Text style={[styles.viewAllText, { color: COLORS.primary }]}>View All</Text>
+                <ChevronRight size={16} color={COLORS.primary} />
               </TouchableOpacity>
             )}
           </View>
 
           {recentStories.length === 0 ? (
-            <View style={styles.emptyStateContainer}>
-              <EmptyState
-                type="stories"
-                title="No Stories Yet"
-                description="Start your journey by creating your first magical story!"
-                action={{
-                  label: 'Create Story',
-                  onPress: handleGenerateStory,
-                }}
-              />
-            </View>
+            <Animated.View entering={FadeInUp.delay(350).springify()} style={styles.emptyContainer}>
+              <View style={[styles.emptyCard, { backgroundColor: COLORS.cardBackground }]}>
+                <View style={[styles.emptyIconWrap, { backgroundColor: COLORS.primary + '12' }]}>
+                  <BookOpen size={40} color={COLORS.primary} strokeWidth={1.5} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: COLORS.text.primary }]}>No Stories Yet</Text>
+                <Text style={[styles.emptySubtitle, { color: COLORS.text.secondary }]}>
+                  Tap the button above to create your first magical story!
+                </Text>
+              </View>
+            </Animated.View>
           ) : (
-            <View style={styles.storiesContainer}>
+            <View style={styles.storiesGrid}>
               {recentStories.map((story, index) => {
-                const gradients = [
-                  COLORS.categoryColors.tealGradient,
-                  COLORS.categoryColors.peachGradient,
-                  COLORS.categoryColors.blueGradient,
-                  COLORS.categoryColors.greenGradient,
-                ];
-                const gradient = gradients[index % gradients.length];
+                const seasonGradient = SEASON_GRADIENTS[story.season] || SEASON_GRADIENTS.spring;
+                const flag = getLanguageFlag(story.language_code);
 
                 return (
                   <Animated.View
                     key={story.id}
-                    entering={FadeInUp.delay(400 + index * 80).springify()}
+                    entering={FadeInUp.delay(350 + index * 80).springify()}
                     style={styles.storyCardWrap}
                   >
-                    <PremiumCard
-                      style={styles.storyCard}
+                    <TouchableOpacity
+                      style={[styles.storyCard, { backgroundColor: COLORS.cardBackground }]}
                       onPress={() => handleStoryPress(story.id)}
-                      shadow="lg"
-                      padding={0}
+                      activeOpacity={0.85}
                     >
-                      <LinearGradient colors={gradient} style={styles.storyImage}>
-                        <BookOpen size={36} color={COLORS.text.inverse} strokeWidth={1.5} />
+                      <LinearGradient colors={seasonGradient} style={styles.storyImage}>
+                        <BookOpen size={28} color="rgba(0,0,0,0.25)" strokeWidth={1.5} />
+                        <View style={styles.flagBadge}>
+                          <Text style={styles.flagText}>{flag}</Text>
+                        </View>
+                        {story.audio_url && (
+                          <View style={styles.audioBadge}>
+                            <Volume2 size={10} color="#FFFFFF" />
+                          </View>
+                        )}
                       </LinearGradient>
                       <View style={styles.storyCardContent}>
-                        <Typography variant="bodyMedium" numberOfLines={2} style={styles.storyTitle}>
+                        <Text style={[styles.storyTitle, { color: COLORS.text.primary }]} numberOfLines={2}>
                           {story.title}
-                        </Typography>
+                        </Text>
                         <View style={styles.storyMeta}>
-                          <View style={styles.storyLocation}>
-                            <MapPin size={12} color={COLORS.text.secondary} strokeWidth={2} />
-                            <Typography variant="caption" color="secondary" numberOfLines={1}>
-                              {story.season || 'Adventure'}
-                            </Typography>
-                          </View>
+                          <Clock size={11} color={COLORS.text.light} />
+                          <Text style={[styles.storyMetaText, { color: COLORS.text.light }]}>
+                            {getRelativeTime(story.generated_at || story.created_at)}
+                          </Text>
                         </View>
                       </View>
-                    </PremiumCard>
+                    </TouchableOpacity>
                   </Animated.View>
                 );
               })}
@@ -321,47 +273,56 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {olderStories.length > 0 && (
-          <View style={styles.section}>
-            <Typography variant="h3" color="primary" style={styles.sectionTitleInline}>
-              More Stories
-            </Typography>
-            <View style={styles.allStoriesContainer}>
-              {olderStories.map((story, index) => {
-                const gradients = [
-                  COLORS.categoryColors.blueGradient,
-                  COLORS.categoryColors.greenGradient,
-                  COLORS.accent.lavenderGradient,
-                ];
-                const gradient = gradients[index % gradients.length];
-
+        {profile.languages?.length > 1 && (
+          <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: COLORS.text.primary, paddingHorizontal: SPACING.xl }]}>
+              Your Languages
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.languagesRow}
+            >
+              {profile.languages.map((lang) => {
+                const langStoryCount = stories.filter(s => s.language_code === lang.language_code).length;
                 return (
-                  <PremiumCard
-                    key={story.id}
-                    style={styles.listStoryCard}
-                    onPress={() => handleStoryPress(story.id)}
-                    shadow="sm"
-                    padding={0}
-                  >
-                    <LinearGradient colors={gradient} style={styles.listStoryImage}>
-                      <BookOpen size={22} color={COLORS.text.inverse} strokeWidth={1.5} />
-                    </LinearGradient>
-                    <View style={styles.listStoryInfo}>
-                      <Typography variant="bodyMedium" numberOfLines={1}>
-                        {story.title}
-                      </Typography>
-                      <View style={styles.listStoryMeta}>
-                        <MapPin size={12} color={COLORS.text.secondary} strokeWidth={2} />
-                        <Typography variant="caption" color="secondary">
-                          {story.season} {story.time_of_day ? `\u00B7 ${story.time_of_day}` : ''}
-                        </Typography>
-                      </View>
-                    </View>
-                  </PremiumCard>
+                  <View key={lang.id} style={[styles.langCard, { backgroundColor: COLORS.cardBackground }]}>
+                    <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
+                    <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
+                    <Text style={[styles.langCount, { color: COLORS.text.secondary }]}>
+                      {langStoryCount} {langStoryCount === 1 ? 'story' : 'stories'}
+                    </Text>
+                  </View>
                 );
               })}
-            </View>
-          </View>
+            </ScrollView>
+          </Animated.View>
+        )}
+
+        {(profile.family_members?.length > 0 || profile.friends?.length > 0) && (
+          <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: COLORS.text.primary, paddingHorizontal: SPACING.xl }]}>
+              Story Characters
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.charactersRow}
+            >
+              {profile.family_members?.map((m) => (
+                <View key={m.id} style={[styles.characterChip, { backgroundColor: COLORS.primary + '15' }]}>
+                  <Text style={styles.characterEmoji}>👨‍👩‍👧</Text>
+                  <Text style={[styles.characterName, { color: COLORS.text.primary }]}>{m.name}</Text>
+                </View>
+              ))}
+              {profile.friends?.map((f) => (
+                <View key={f.id} style={[styles.characterChip, { backgroundColor: COLORS.info + '15' }]}>
+                  <Text style={styles.characterEmoji}>🧑‍🤝‍🧑</Text>
+                  <Text style={[styles.characterName, { color: COLORS.text.primary }]}>{f.name}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </Animated.View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -369,208 +330,123 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  loadingContent: {
-    padding: SPACING.xl,
-    gap: SPACING.md,
-  },
-  container: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: SPACING.xxxl * 2,
-  },
+  container: { flex: 1 },
+  scrollContainer: { flex: 1 },
+  scrollContent: { paddingBottom: 100 },
+  loadingContent: { padding: SPACING.xl, gap: SPACING.md },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xl,
+    paddingBottom: SPACING.md,
   },
-  userSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
+  userSection: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   avatarContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    overflow: 'hidden',
+    width: 52, height: 52, borderRadius: 26, overflow: 'hidden',
     ...SHADOWS.md,
   },
-  avatarGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  greetingContainer: {
-    gap: 2,
-  },
-  refreshButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.cardBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.sm,
-  },
-  heroSection: {
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xl,
-  },
+  avatarGradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontSize: 22, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  greetingContainer: { flex: 1, gap: 2 },
+  greetingText: { fontSize: 20, fontFamily: FONTS.bold },
+  subtitleText: { fontSize: 14, fontFamily: FONTS.medium },
+  heroSection: { paddingHorizontal: SPACING.xl, marginBottom: SPACING.xl },
   heroCard: {
     borderRadius: BORDER_RADIUS.xxl,
-    overflow: 'hidden',
-  },
-  heroCardGradient: {
     padding: SPACING.xl,
+    ...SHADOWS.lg,
   },
-  heroContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  heroContent: { flexDirection: 'row', alignItems: 'center' },
+  heroLeft: { flex: 1, gap: SPACING.sm },
+  heroTitle: { fontSize: 22, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  heroSubtitle: { fontSize: 13, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.9)', lineHeight: 18 },
+  heroBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.25)', alignSelf: 'flex-start',
+    paddingHorizontal: SPACING.md, paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.pill, marginTop: SPACING.xs,
   },
-  heroIllustration: {
-    marginRight: SPACING.lg,
-  },
-  heroEmoji: {
-    fontSize: 48,
-  },
-  heroTextContainer: {
-    flex: 1,
-    gap: SPACING.xs,
-  },
-  heroTitle: {
-    fontWeight: '700',
-  },
-  heroButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-    ...SHADOWS.md,
-  },
-  heroButtonGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  heroBadgeText: { fontSize: 13, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  heroIconWrap: { marginLeft: SPACING.md },
+  heroEmoji: { fontSize: 56 },
   statsRow: {
     flexDirection: 'row',
     marginHorizontal: SPACING.xl,
     marginBottom: SPACING.xxl,
-    backgroundColor: COLORS.cardBackground,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
     ...SHADOWS.sm,
   },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
+  statItem: { flex: 1, alignItems: 'center', gap: 4 },
   statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xs,
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 2,
   },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#F0F0F0',
-    marginVertical: SPACING.sm,
-  },
-  section: {
-    marginBottom: SPACING.xxl,
-  },
+  statValue: { fontSize: 20, fontFamily: FONTS.bold },
+  statLabel: { fontSize: 12, fontFamily: FONTS.medium },
+  statDivider: { width: 1, marginVertical: SPACING.sm },
+  section: { marginBottom: SPACING.xxl },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.lg,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: SPACING.xl, marginBottom: SPACING.lg,
   },
-  sectionTitleInline: {
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.lg,
+  sectionTitle: { fontSize: 20, fontFamily: FONTS.bold },
+  viewAllButton: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  viewAllText: { fontSize: 14, fontFamily: FONTS.semibold },
+  emptyContainer: { paddingHorizontal: SPACING.xl },
+  emptyCard: {
+    borderRadius: BORDER_RADIUS.xl, padding: SPACING.xxxl,
+    alignItems: 'center', ...SHADOWS.sm,
   },
-  viewAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
+  emptyIconWrap: {
+    width: 80, height: 80, borderRadius: 40,
+    alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.lg,
   },
-  storiesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: SPACING.lg,
-    gap: SPACING.md,
+  emptyTitle: { fontSize: 18, fontFamily: FONTS.bold, marginBottom: SPACING.sm },
+  emptySubtitle: { fontSize: 14, fontFamily: FONTS.regular, textAlign: 'center', lineHeight: 20 },
+  storiesGrid: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    paddingHorizontal: SPACING.lg, gap: SPACING.md,
   },
-  storyCardWrap: {
-    width: '47%',
-  },
+  storyCardWrap: { width: '47%' },
   storyCard: {
-    borderRadius: BORDER_RADIUS.xl,
-    overflow: 'hidden',
+    borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', ...SHADOWS.sm,
   },
   storyImage: {
-    width: '100%',
-    height: 120,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: '100%', height: 110, alignItems: 'center', justifyContent: 'center',
+    position: 'relative',
   },
-  storyCardContent: {
-    padding: SPACING.md,
-    backgroundColor: COLORS.cardBackground,
+  flagBadge: {
+    position: 'absolute', top: SPACING.sm, left: SPACING.sm,
+    backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 12,
+    width: 28, height: 28, alignItems: 'center', justifyContent: 'center',
   },
-  storyTitle: {
-    fontWeight: '600',
-    marginBottom: SPACING.xs,
+  flagText: { fontSize: 14 },
+  audioBadge: {
+    position: 'absolute', top: SPACING.sm, right: SPACING.sm,
+    backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10,
+    width: 22, height: 22, alignItems: 'center', justifyContent: 'center',
   },
-  storyMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  storyCardContent: { padding: SPACING.md },
+  storyTitle: { fontSize: 14, fontFamily: FONTS.semibold, marginBottom: 6, lineHeight: 18, minHeight: 36 },
+  storyMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  storyMetaText: { fontSize: 11, fontFamily: FONTS.medium },
+  languagesRow: { paddingHorizontal: SPACING.xl, gap: SPACING.md, paddingTop: SPACING.sm },
+  langCard: {
+    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg, alignItems: 'center', gap: 4,
+    minWidth: 100, ...SHADOWS.xs,
   },
-  storyLocation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flex: 1,
+  langFlag: { fontSize: 24 },
+  langName: { fontSize: 13, fontFamily: FONTS.semibold },
+  langCount: { fontSize: 11, fontFamily: FONTS.regular },
+  charactersRow: { paddingHorizontal: SPACING.xl, gap: SPACING.sm, paddingTop: SPACING.sm },
+  characterChip: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.pill,
   },
-  emptyStateContainer: {
-    paddingHorizontal: SPACING.xl,
-  },
-  allStoriesContainer: {
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.md,
-  },
-  listStoryCard: {
-    flexDirection: 'row',
-    overflow: 'hidden',
-    borderRadius: BORDER_RADIUS.xl,
-  },
-  listStoryImage: {
-    width: 72,
-    height: 72,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listStoryInfo: {
-    flex: 1,
-    padding: SPACING.lg,
-    justifyContent: 'center',
-    gap: SPACING.xs,
-    backgroundColor: COLORS.cardBackground,
-  },
-  listStoryMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
+  characterEmoji: { fontSize: 16 },
+  characterName: { fontSize: 13, fontFamily: FONTS.semibold },
 });
