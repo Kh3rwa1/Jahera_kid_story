@@ -110,6 +110,7 @@ export default function ProfileScreen() {
               avatarUrl={profile.avatar_url}
               name={profile.kid_name}
               size="medium"
+              editable
               onPress={() => router.push('/settings/edit-profile')}
             />
             <View style={styles.profileInfo}>
