@@ -9,7 +9,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import {
   Key,
   Palette,
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
+import { AnimatedPressable } from '@/components/AnimatedPressable';
 
 interface SettingItem {
   id: string;
@@ -67,12 +68,12 @@ export default function SettingsTab() {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
 
-      <View style={styles.header}>
+      <Animated.View entering={FadeInDown.delay(50).springify()} style={styles.header}>
         <Text style={[styles.headerTitle, { color: COLORS.text.primary }]}>Settings</Text>
         <Text style={[styles.headerSubtitle, { color: COLORS.text.secondary }]}>
           Customize your experience
         </Text>
-      </View>
+      </Animated.View>
 
       <ScrollView
         style={styles.content}
@@ -104,10 +105,10 @@ export default function SettingsTab() {
               key={item.id}
               entering={FadeInDown.delay(200 + index * 80).springify()}
             >
-              <TouchableOpacity
+              <AnimatedPressable
                 style={[styles.settingCard, { backgroundColor: COLORS.cardBackground }]}
                 onPress={() => router.push(item.route as any)}
-                activeOpacity={0.7}
+                scaleDown={0.97}
               >
                 <LinearGradient
                   colors={item.gradient}
@@ -126,12 +127,12 @@ export default function SettingsTab() {
                   </Text>
                 </View>
                 <ChevronRight size={20} color={COLORS.text.light} />
-              </TouchableOpacity>
+              </AnimatedPressable>
             </Animated.View>
           ))}
         </View>
 
-        <Animated.View entering={FadeInDown.delay(500).springify()}>
+        <Animated.View entering={FadeIn.delay(500)}>
           <View style={[styles.infoBox, { backgroundColor: COLORS.gradients.primary[0] + '15' }]}>
             <Info size={20} color={COLORS.primary} />
             <View style={styles.infoContent}>

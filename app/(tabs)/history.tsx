@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag, getLanguageNativeName } from '@/utils/languageUtils';
@@ -19,6 +19,7 @@ import { BookOpen, Play, Search, Dessert as SortDesc, Volume2, Clock, Trash2 } f
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { storyService } from '@/services/database';
+import { AnimatedPressable } from '@/components/AnimatedPressable';
 
 function getRelativeTime(dateStr: string): string {
   const now = Date.now();
@@ -185,9 +186,9 @@ export default function HistoryScreen() {
       >
         {filteredStories.length === 0 ? (
           <View style={styles.emptyState}>
-            <View style={[styles.emptyIconWrap, { backgroundColor: COLORS.primary + '12' }]}>
+            <Animated.View entering={ZoomIn.delay(100).springify()} style={[styles.emptyIconWrap, { backgroundColor: COLORS.primary + '12' }]}>
               <BookOpen size={40} color={COLORS.primary} strokeWidth={1.5} />
-            </View>
+            </Animated.View>
             <Text style={[styles.emptyTitle, { color: COLORS.text.primary }]}>
               {searchQuery ? 'No matches found' : 'No stories yet'}
             </Text>
@@ -203,11 +204,11 @@ export default function HistoryScreen() {
                 entering={FadeInUp.delay(80 + index * 50).springify()}
                 style={styles.storyCardWrap}
               >
-                <TouchableOpacity
+                <AnimatedPressable
                   style={[styles.storyCard, { backgroundColor: COLORS.cardBackground }]}
                   onPress={() => handlePlayStory(story.id)}
                   onLongPress={() => setDeleteId(story.id)}
-                  activeOpacity={0.85}
+                  scaleDown={0.95}
                   delayLongPress={500}
                 >
                   <LinearGradient
@@ -238,7 +239,7 @@ export default function HistoryScreen() {
                       </Text>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </Animated.View>
             ))}
           </View>

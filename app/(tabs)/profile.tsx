@@ -10,7 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag } from '@/utils/languageUtils';
@@ -18,6 +18,7 @@ import { BookOpen, Award, Target, Star, Flame, CreditCard as Edit3 } from 'lucid
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
+import { AnimatedPressable } from '@/components/AnimatedPressable';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -104,7 +105,7 @@ export default function ProfileScreen() {
       >
         <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.profileHeader}>
           <View style={styles.avatarRow}>
-            <View style={styles.avatarOuter}>
+            <Animated.View entering={ZoomIn.delay(120).springify()} style={styles.avatarOuter}>
               <LinearGradient colors={COLORS.gradients.sunset} style={styles.avatarRing}>
                 <View style={[styles.avatarInner, { backgroundColor: COLORS.cardBackground }]}>
                   <LinearGradient colors={COLORS.gradients.primary} style={styles.avatarGradient}>
@@ -112,7 +113,7 @@ export default function ProfileScreen() {
                   </LinearGradient>
                 </View>
               </LinearGradient>
-            </View>
+            </Animated.View>
             <View style={styles.profileInfo}>
               <Text style={[styles.profileName, { color: COLORS.text.primary }]}>{profile.kid_name}</Text>
               <View style={styles.profileMetaRow}>
@@ -122,60 +123,62 @@ export default function ProfileScreen() {
                 </View>
               </View>
             </View>
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.editButton, { backgroundColor: COLORS.primary + '15' }]}
               onPress={() => router.push('/settings/edit-profile')}
-              activeOpacity={0.7}
+              scaleDown={0.85}
             >
               <Edit3 size={18} color={COLORS.primary} />
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(180).springify()}>
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
-              <View style={[styles.statIconWrap, { backgroundColor: COLORS.primary + '15' }]}>
-                <BookOpen size={20} color={COLORS.primary} />
-              </View>
-              <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stories.length}</Text>
-              <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Stories</Text>
+        <View style={styles.statsGrid}>
+          <Animated.View entering={FadeInUp.delay(160).springify()} style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={[styles.statIconWrap, { backgroundColor: COLORS.primary + '15' }]}>
+              <BookOpen size={20} color={COLORS.primary} />
             </View>
-            <View style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
-              <View style={[styles.statIconWrap, { backgroundColor: COLORS.success + '15' }]}>
-                <Award size={20} color={COLORS.success} />
-              </View>
-              <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stats.totalQuizzes}</Text>
-              <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Quizzes</Text>
+            <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stories.length}</Text>
+            <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Stories</Text>
+          </Animated.View>
+          <Animated.View entering={FadeInUp.delay(220).springify()} style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={[styles.statIconWrap, { backgroundColor: COLORS.success + '15' }]}>
+              <Award size={20} color={COLORS.success} />
             </View>
-            <View style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
-              <View style={[styles.statIconWrap, { backgroundColor: '#F59E0B15' }]}>
-                <Star size={20} color="#F59E0B" />
-              </View>
-              <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stats.perfectScores}</Text>
-              <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Perfect</Text>
+            <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stats.totalQuizzes}</Text>
+            <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Quizzes</Text>
+          </Animated.View>
+          <Animated.View entering={FadeInUp.delay(280).springify()} style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={[styles.statIconWrap, { backgroundColor: '#F59E0B15' }]}>
+              <Star size={20} color="#F59E0B" />
             </View>
-            <View style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
-              <View style={[styles.statIconWrap, { backgroundColor: COLORS.info + '15' }]}>
-                <Target size={20} color={COLORS.info} />
-              </View>
-              <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stats.avgScore}%</Text>
-              <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Average</Text>
+            <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stats.perfectScores}</Text>
+            <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Perfect</Text>
+          </Animated.View>
+          <Animated.View entering={FadeInUp.delay(340).springify()} style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={[styles.statIconWrap, { backgroundColor: COLORS.info + '15' }]}>
+              <Target size={20} color={COLORS.info} />
             </View>
-          </View>
-        </Animated.View>
+            <Text style={[styles.statCardValue, { color: COLORS.text.primary }]}>{stats.avgScore}%</Text>
+            <Text style={[styles.statCardLabel, { color: COLORS.text.secondary }]}>Average</Text>
+          </Animated.View>
+        </View>
 
         {recentQuizzes.length > 0 && (
           <Animated.View entering={FadeInUp.delay(280).springify()} style={styles.section}>
             <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Recent Quiz Results</Text>
             <View style={styles.quizList}>
-              {recentQuizzes.map((attempt) => {
+              {recentQuizzes.map((attempt, qIdx) => {
                 const pct = Math.round((attempt.score / attempt.total_questions) * 100);
                 const isPerfect = pct === 100;
                 const matchingStory = stories.find(s => s.id === attempt.story_id);
                 const title = matchingStory?.title || 'Quiz';
                 return (
-                  <View key={attempt.id} style={[styles.quizRow, { backgroundColor: COLORS.cardBackground }]}>
+                  <Animated.View
+                    key={attempt.id}
+                    entering={FadeInUp.delay(320 + qIdx * 60).springify()}
+                    style={[styles.quizRow, { backgroundColor: COLORS.cardBackground }]}
+                  >
                     <View style={[styles.quizScoreCircle, {
                       backgroundColor: isPerfect ? COLORS.success + '15' : COLORS.primary + '15',
                     }]}>
@@ -192,7 +195,7 @@ export default function ProfileScreen() {
                       </Text>
                     </View>
                     {isPerfect && <Star size={16} color="#F59E0B" fill="#F59E0B" />}
-                  </View>
+                  </Animated.View>
                 );
               })}
             </View>
@@ -203,14 +206,16 @@ export default function ProfileScreen() {
           <Animated.View entering={FadeInUp.delay(380).springify()} style={styles.section}>
             <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Learning Languages</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langRow}>
-              {profile.languages.map(lang => {
+              {profile.languages.map((lang, langIdx) => {
                 const langCount = stories.filter(s => s.language_code === lang.language_code).length;
                 return (
-                  <View key={lang.id} style={[styles.langChip, { backgroundColor: COLORS.cardBackground }]}>
-                    <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
-                    <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
-                    <Text style={[styles.langStories, { color: COLORS.text.light }]}>{langCount} stories</Text>
-                  </View>
+                  <Animated.View key={lang.id} entering={FadeInRight.delay(420 + langIdx * 70).springify()}>
+                    <View style={[styles.langChip, { backgroundColor: COLORS.cardBackground }]}>
+                      <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
+                      <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
+                      <Text style={[styles.langStories, { color: COLORS.text.light }]}>{langCount} stories</Text>
+                    </View>
+                  </Animated.View>
                 );
               })}
             </ScrollView>
