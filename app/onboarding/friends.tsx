@@ -14,7 +14,8 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, UserPlus, ArrowLeft, Plus, Sparkles } from 'lucide-react-native';
 import { profileService, languageService, familyMemberService, friendService } from '@/services/database';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/contexts/AuthContext';
+import { useApp } from '@/contexts/AppContext';
 import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, { FadeInDown, FadeInUp, FadeOutUp, ZoomIn } from 'react-native-reanimated';
@@ -30,6 +31,8 @@ export default function Friends() {
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
+  const { user } = useAuth();
+  const { loadProfile } = useApp();
   const themeColors = currentTheme.colors;
   const [friends, setFriends] = useState<string[]>([]);
   const [currentName, setCurrentName] = useState('');
@@ -56,6 +59,10 @@ export default function Friends() {
   };
 
   const handleComplete = async () => {
+    if (!user) {
+      setErrorMsg('You must be signed in to create a profile.');
+      return;
+    }
     setIsLoading(true);
     setErrorMsg(null);
     try {
@@ -64,7 +71,7 @@ export default function Friends() {
       const kidName = params.kidName as string;
       const familyMembers = JSON.parse((params.familyMembers as string) || '[]');
       const primaryLanguage = languages[0]?.code || 'en';
-      const profile = await profileService.create(kidName, primaryLanguage);
+      const profile = await profileService.create(user.$id, kidName, primaryLanguage);
       if (!profile) {
         setErrorMsg('Failed to create profile. Please try again.');
         setIsLoading(false);
@@ -72,12 +79,12 @@ export default function Friends() {
       }
       await Promise.all([
         ...languages.map((lang: { code: string; name: string }) =>
-          languageService.add(profile.id, lang.code, lang.name)
+          languageService.add(profile.$id, lang.code, lang.name)
         ),
-        ...familyMembers.map((name: string) => familyMemberService.add(profile.id, name)),
-        ...friends.map(name => friendService.add(profile.id, name)),
+        ...familyMembers.map((name: string) => familyMemberService.add(profile.$id, name)),
+        ...friends.map(name => friendService.add(profile.$id, name)),
       ]);
-      await AsyncStorage.setItem('profileId', profile.id);
+      await loadProfile();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(tabs)');
     } catch {

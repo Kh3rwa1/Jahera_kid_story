@@ -11,8 +11,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
+type GradientSet = readonly [string, string, ...string[]];
+
 interface AnimatedGradientBackgroundProps {
-  colorSets?: string[][];
+  colorSets?: GradientSet[];
   duration?: number;
 }
 
@@ -25,8 +27,8 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
   ],
   duration = 8000,
 }) => {
-  const [currentColorSet, setCurrentColorSet] = useState(colorSets[0]);
-  const [nextColorSet, setNextColorSet] = useState(colorSets[1]);
+  const [currentColorSet, setCurrentColorSet] = useState<GradientSet>(colorSets[0]);
+  const [nextColorSet, setNextColorSet] = useState<GradientSet>(colorSets[1]);
   const progress = useSharedValue(0);
   const opacity = useSharedValue(0);
 

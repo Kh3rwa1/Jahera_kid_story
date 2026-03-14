@@ -32,10 +32,12 @@ import {
   ArrowLeft,
   BookOpen,
   Clock,
+  Share2,
 } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
+import { shareStory } from '@/utils/sharing';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -161,6 +163,12 @@ export default function StoryPlayback() {
     router.back();
   }, [sound, router]);
 
+  const handleShare = useCallback(async () => {
+    if (!story) return;
+    hapticFeedback.medium();
+    await shareStory(story.title, story.content);
+  }, [story]);
+
   const handleRegenerate = useCallback(() => {
     if (!story) return;
     hapticFeedback.medium();
@@ -266,6 +274,13 @@ export default function StoryPlayback() {
               </Text>
             </View>
           )}
+          <TouchableOpacity
+            onPress={handleShare}
+            style={[styles.shareButton, { backgroundColor: themeColors.cardBackground }]}
+            activeOpacity={0.7}
+          >
+            <Share2 size={18} color={themeColors.primary} />
+          </TouchableOpacity>
         </View>
       </Animated.View>
 
@@ -364,7 +379,7 @@ export default function StoryPlayback() {
             <TouchableOpacity
               onPress={() => {
                 hapticFeedback.medium();
-                router.push({ pathname: '/story/quiz', params: { storyId: story.id } });
+                router.push({ pathname: '/story/quiz', params: { storyId: story.$id } });
               }}
               activeOpacity={0.9}
               style={{ flex: 1 }}
@@ -495,7 +510,16 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.sm,
+  },
+  shareButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.sm,
   },
   badge: {
     flexDirection: 'row',

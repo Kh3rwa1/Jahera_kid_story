@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Sparkles, BookOpen, Globe, Gamepad2, ArrowRight } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useApp } from '@/contexts/AppContext';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -26,8 +27,9 @@ export default function Welcome() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { currentTheme, isLoading: themeLoading } = useTheme();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { profile, isLoading: profileLoading } = useApp();
   const themeColors = currentTheme.colors;
-  const [isLoading, setIsLoading] = useState(true);
   const scaleButton = useSharedValue(1);
   const glowOpacity = useSharedValue(0.5);
   const float1 = useSharedValue(0);
@@ -61,21 +63,15 @@ export default function Welcome() {
   }, []);
 
   useEffect(() => {
-    checkProfile();
-  }, []);
-
-  const checkProfile = async () => {
-    try {
-      const profileId = await AsyncStorage.getItem('profileId');
-      if (profileId) {
+    if (authLoading || profileLoading || themeLoading) return;
+    if (isAuthenticated) {
+      if (profile) {
         router.replace('/(tabs)');
-        return;
+      } else {
+        router.replace('/onboarding/language-selection');
       }
-      setIsLoading(false);
-    } catch {
-      setIsLoading(false);
     }
-  };
+  }, [authLoading, profileLoading, isAuthenticated, profile, themeLoading]);
 
   const handleGetStarted = () => {
     scaleButton.value = withSequence(
@@ -83,7 +79,7 @@ export default function Welcome() {
       withSpring(1, { damping: 10 })
     );
     setTimeout(() => {
-      router.push('/onboarding/language-selection');
+      router.push('/auth/register');
     }, 100);
   };
 
@@ -110,7 +106,7 @@ export default function Welcome() {
     return { transform: [{ translateY: float3.value }] };
   });
 
-  if (isLoading || themeLoading) {
+  if (authLoading || profileLoading || themeLoading) {
     return (
       <View style={styles.loadingContainer}>
         <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
@@ -228,12 +224,14 @@ export default function Welcome() {
           </TouchableOpacity>
         </Animated.View>
 
-        <Animated.Text
-          entering={FadeInUp.delay(980).springify()}
-          style={[styles.noSignup, { color: themeColors.text.light }]}
-        >
-          No account required · Free to use
-        </Animated.Text>
+        <TouchableOpacity onPress={() => router.push('/auth/login')} activeOpacity={0.7}>
+          <Animated.Text
+            entering={FadeInUp.delay(980).springify()}
+            style={[styles.noSignup, { color: themeColors.primary }]}
+          >
+            Already have an account? Sign in
+          </Animated.Text>
+        </TouchableOpacity>
       </Animated.View>
     </View>
   );
@@ -405,6 +403,6 @@ const styles = StyleSheet.create({
   },
   noSignup: {
     fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.medium,
+    fontFamily: FONTS.semibold,
   },
 });

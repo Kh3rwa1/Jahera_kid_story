@@ -15,7 +15,7 @@ interface ContainerProps {
   paddingVertical?: boolean;
   style?: ViewStyle;
   gradient?: boolean;
-  gradientColors?: string[];
+  gradientColors?: readonly [string, string, ...string[]];
   maxWidth?: boolean; // Centers content with max width on large screens
   centered?: boolean; // Vertically and horizontally centers content
   accessibilityLabel?: string;

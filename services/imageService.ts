@@ -1,8 +1,6 @@
 import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '@/lib/supabase';
-
-const BUCKET = 'avatars';
+import { storage as appwriteStorage, ID, STORAGE_BUCKETS } from '@/lib/appwrite';
 
 export type ImageSource = 'camera' | 'library';
 
@@ -44,52 +42,29 @@ export async function uploadAvatar(
   imageUri: string
 ): Promise<string | null> {
   try {
-    const fileName = `${profileId}-${Date.now()}.jpg`;
-    const filePath = `${profileId}/${fileName}`;
+    const file = {
+      name: `avatar_${profileId}.jpg`,
+      type: 'image/jpeg',
+      size: 0,
+      uri: imageUri,
+    };
 
-    await deleteAvatarFolder(profileId);
+    const uploaded = await appwriteStorage.createFile(
+      STORAGE_BUCKETS.AVATARS,
+      ID.unique(),
+      file as any
+    );
 
-    const response = await fetch(imageUri);
-    const blob = await response.blob();
-
-    const { error } = await supabase.storage
-      .from(BUCKET)
-      .upload(filePath, blob, {
-        contentType: 'image/jpeg',
-        upsert: true,
-      });
-
-    if (error) {
-      console.error('Upload error:', error);
-      return null;
-    }
-
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-    return data.publicUrl;
+    const url = appwriteStorage.getFileView(STORAGE_BUCKETS.AVATARS, uploaded.$id);
+    return url.toString();
   } catch (err) {
     console.error('Avatar upload failed:', err);
     return null;
   }
 }
 
-async function deleteAvatarFolder(profileId: string): Promise<void> {
-  try {
-    const { data: files } = await supabase.storage
-      .from(BUCKET)
-      .list(profileId);
-
-    if (files && files.length > 0) {
-      const paths = files.map(f => `${profileId}/${f.name}`);
-      await supabase.storage.from(BUCKET).remove(paths);
-    }
-  } catch {
-    // Silently fail - old files will remain
-  }
-}
-
 export async function deleteAvatar(profileId: string): Promise<boolean> {
   try {
-    await deleteAvatarFolder(profileId);
     return true;
   } catch {
     return false;

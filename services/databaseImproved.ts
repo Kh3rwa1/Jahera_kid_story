@@ -70,6 +70,7 @@ export const profileServiceImproved = {
       languages: languages.status === 'fulfilled' ? languages.value : [],
       family_members: familyMembers.status === 'fulfilled' ? familyMembers.value : [],
       friends: friends.status === 'fulfilled' ? friends.value : [],
+      interests: [],
     };
   },
 

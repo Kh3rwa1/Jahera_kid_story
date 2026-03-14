@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Save, Eye, EyeOff, Key, CheckCircle } from 'lucide-react-native';
+import { ArrowLeft, Save, Eye, EyeOff, Key, CircleCheck as CheckCircle } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
 import { apiKeysService, API_KEY_NAMES } from '@/services/apiKeysService';
 import { handleError, showErrorAlert } from '@/utils/errorHandler';
@@ -95,7 +95,7 @@ export default function ApiKeysScreen() {
           }
 
           updates.push(
-            apiKeysService.setApiKey(field.keyName, value.trim(), field.description)
+            apiKeysService.setApiKey(field.keyName, value.trim())
           );
         }
       }

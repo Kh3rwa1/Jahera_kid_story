@@ -129,7 +129,7 @@ export default function QuizScreen() {
     } else {
       const profileId = await AsyncStorage.getItem('profileId');
       if (profileId && story) {
-        await quizService.createAttempt(profileId, story.id, score + (isCorrect ? 1 : 0), questions.length);
+        await quizService.createAttempt(profileId, story.$id, score + (isCorrect ? 1 : 0), questions.length);
       }
       setShowCelebration(true);
       setTimeout(() => {
@@ -370,7 +370,7 @@ export default function QuizScreen() {
               }
 
               return (
-                <Animated.View key={answer.id} entering={FadeInDown.delay(100).springify()}>
+                <Animated.View key={answer.$id} entering={FadeInDown.delay(100).springify()}>
                   <TouchableOpacity
                     onPress={() => handleAnswerSelect(answer.answer_order)}
                     disabled={selectedAnswer !== null}

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,8 +19,11 @@ import {
   Sparkles,
   Heart,
   UserCog,
+  LogOut,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useApp } from '@/contexts/AppContext';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 
@@ -29,13 +33,34 @@ interface SettingItem {
   description: string;
   icon: React.ReactNode;
   route: string;
-  gradient: string[];
+  gradient: readonly [string, string, ...string[]];
 }
 
 export default function SettingsTab() {
   const router = useRouter();
   const { currentTheme } = useTheme();
+  const { signOut } = useAuth();
+  const { clearProfile } = useApp();
   const COLORS = currentTheme.colors;
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            clearProfile();
+            await signOut();
+            router.replace('/');
+          },
+        },
+      ]
+    );
+  };
 
   const settingItems: SettingItem[] = [
     {
@@ -132,6 +157,17 @@ export default function SettingsTab() {
           ))}
         </View>
 
+        <Animated.View entering={FadeIn.delay(480)}>
+          <TouchableOpacity
+            style={[styles.signOutBtn, { backgroundColor: COLORS.error + '12' }]}
+            onPress={handleSignOut}
+            activeOpacity={0.7}
+          >
+            <LogOut size={20} color={COLORS.error} strokeWidth={2} />
+            <Text style={[styles.signOutText, { color: COLORS.error }]}>Sign Out</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
         <Animated.View entering={FadeIn.delay(500)}>
           <View style={[styles.infoBox, { backgroundColor: COLORS.gradients.primary[0] + '15' }]}>
             <Info size={20} color={COLORS.primary} />
@@ -198,4 +234,16 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   infoDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#999' },
   infoText: { fontSize: 13, fontFamily: FONTS.regular },
+  signOutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    marginBottom: SPACING.xl,
+  },
+  signOutText: {
+    fontSize: 16,
+    fontFamily: FONTS.semibold,
+  },
 });

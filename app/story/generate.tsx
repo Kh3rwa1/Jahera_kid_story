@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import ReAnimated, {
@@ -12,14 +12,15 @@ import ReAnimated, {
   FadeInUp,
 } from 'react-native-reanimated';
 import { profileService, storyService, quizService } from '@/services/database';
-import { generateAdventureStory } from '@/services/aiService';
+import { generateAdventureStory, QuotaExceededError, StoryOptions } from '@/services/aiService';
 import { generateAudio } from '@/services/audioService';
 import { getCurrentContext } from '@/utils/contextUtils';
-import { Sparkles, BookOpen, Volume2, Circle as HelpCircle, Check } from 'lucide-react-native';
+import { Sparkles, BookOpen, Volume2, Circle as HelpCircle, Check, Zap } from 'lucide-react-native';
 import { Container } from '@/components/Container';
 import { ErrorState } from '@/components/ErrorState';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useApp } from '@/contexts/AppContext';
 import { hapticFeedback } from '@/utils/haptics';
 
 const FUN_FACTS = [
@@ -35,6 +36,30 @@ const FUN_FACTS = [
   'Did you know? A group of flamingos is called a flamboyance!',
 ];
 
+const THEMES = [
+  { id: 'adventure', label: 'Adventure', emoji: '🗺️' },
+  { id: 'fantasy', label: 'Fantasy', emoji: '🐉' },
+  { id: 'space', label: 'Space', emoji: '🚀' },
+  { id: 'animals', label: 'Animals', emoji: '🦁' },
+  { id: 'ocean', label: 'Ocean', emoji: '🌊' },
+  { id: 'superheroes', label: 'Heroes', emoji: '🦸' },
+  { id: 'nature', label: 'Nature', emoji: '🌿' },
+  { id: 'science', label: 'Science', emoji: '🔬' },
+];
+
+const MOODS = [
+  { id: 'exciting', label: 'Exciting', emoji: '⚡' },
+  { id: 'funny', label: 'Funny', emoji: '😄' },
+  { id: 'calming', label: 'Calming', emoji: '🌙' },
+  { id: 'educational', label: 'Learn', emoji: '📚' },
+];
+
+const LENGTHS = [
+  { id: 'short', label: 'Quick', desc: '~50 words' },
+  { id: 'medium', label: 'Medium', desc: '~120 words' },
+  { id: 'long', label: 'Long', desc: '~250 words', pro: true },
+];
+
 interface GenerationStep {
   id: string;
   label: string;
@@ -42,14 +67,24 @@ interface GenerationStep {
   completed: boolean;
 }
 
+type Phase = 'options' | 'generating';
+
 export default function GenerateStory() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { currentTheme } = useTheme();
   const themeColors = currentTheme.colors;
+  const { subscription, refreshSubscription } = useApp();
+
+  const [phase, setPhase] = useState<Phase>('options');
+  const [selectedTheme, setSelectedTheme] = useState('adventure');
+  const [selectedMood, setSelectedMood] = useState('exciting');
+  const [selectedLength, setSelectedLength] = useState<'short' | 'medium' | 'long'>('short');
+
   const [status, setStatus] = useState('Preparing your adventure...');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [isQuotaError, setIsQuotaError] = useState(false);
   const [funFactIndex, setFunFactIndex] = useState(0);
   const [longWait, setLongWait] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -63,7 +98,11 @@ export default function GenerateStory() {
 
   const pulseScale = useSharedValue(1);
 
+  const isPro = subscription?.plan !== 'free';
+
   useEffect(() => {
+    if (phase !== 'generating') return;
+
     pulseScale.value = withRepeat(
       withSequence(
         withTiming(1.05, { duration: 1200, easing: ReEasing.inOut(ReEasing.ease) }),
@@ -79,13 +118,13 @@ export default function GenerateStory() {
 
     longWaitRef.current = setTimeout(() => setLongWait(true), 15000);
 
-    generateStory();
+    runGeneration();
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (longWaitRef.current) clearTimeout(longWaitRef.current);
     };
-  }, []);
+  }, [phase]);
 
   const pulseAnimStyle = useAnimatedStyle(() => {
     'worklet';
@@ -97,7 +136,15 @@ export default function GenerateStory() {
     hapticFeedback.light();
   };
 
-  const generateStory = async () => {
+  const handleStartGeneration = () => {
+    if (selectedLength === 'long' && !isPro) {
+      router.push('/paywall');
+      return;
+    }
+    setPhase('generating');
+  };
+
+  const runGeneration = async () => {
     try {
       const profileId = params.profileId as string;
       const languageCode = params.languageCode as string;
@@ -116,10 +163,16 @@ export default function GenerateStory() {
       setProgress(40);
 
       const context = getCurrentContext();
-      const story = await generateAdventureStory(profile, languageCode, context);
+      const options: StoryOptions = {
+        theme: selectedTheme,
+        mood: selectedMood,
+        length: selectedLength,
+      };
+
+      const story = await generateAdventureStory(profile, languageCode, context, options);
 
       if (!story) {
-        setError('Our story magic needs a little help -- ask a grown-up to check the settings.');
+        setError('Could not generate a story. Please try again.');
         return;
       }
 
@@ -135,6 +188,11 @@ export default function GenerateStory() {
         audio_url: null,
         season: context.season,
         time_of_day: context.timeOfDay,
+        theme: selectedTheme,
+        mood: selectedMood,
+        word_count: story.word_count || null,
+        share_token: null,
+        like_count: 0,
         generated_at: new Date().toISOString(),
       });
 
@@ -148,11 +206,11 @@ export default function GenerateStory() {
       let quizCreatedCount = 0;
       for (let i = 0; i < story.quiz.length; i++) {
         const quizQuestion = story.quiz[i];
-        const question = await quizService.createQuestion(storyRecord.id, quizQuestion.question, i + 1);
+        const question = await quizService.createQuestion(storyRecord.$id, quizQuestion.question, i + 1);
         if (question) {
-          await quizService.createAnswer(question.id, quizQuestion.options.A, quizQuestion.correct_answer === 'A', 'A');
-          await quizService.createAnswer(question.id, quizQuestion.options.B, quizQuestion.correct_answer === 'B', 'B');
-          await quizService.createAnswer(question.id, quizQuestion.options.C, quizQuestion.correct_answer === 'C', 'C');
+          await quizService.createAnswer(question.$id, quizQuestion.options.A, quizQuestion.correct_answer === 'A', 'A');
+          await quizService.createAnswer(question.$id, quizQuestion.options.B, quizQuestion.correct_answer === 'B', 'B');
+          await quizService.createAnswer(question.$id, quizQuestion.options.C, quizQuestion.correct_answer === 'C', 'C');
           quizCreatedCount++;
         }
       }
@@ -168,9 +226,9 @@ export default function GenerateStory() {
       setProgress(85);
 
       try {
-        const audioPath = await generateAudio(story.content, languageCode, storyRecord.id);
+        const audioPath = await generateAudio(story.content, languageCode, storyRecord.$id);
         if (audioPath) {
-          await storyService.update(storyRecord.id, { audio_url: audioPath });
+          await storyService.update(storyRecord.$id, { audio_url: audioPath });
           completeStep('audio');
           setStatus('Story ready with audio narration!');
         } else {
@@ -182,15 +240,17 @@ export default function GenerateStory() {
 
       setProgress(100);
       hapticFeedback.success();
+      await refreshSubscription();
 
       setTimeout(() => {
-        router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.id } });
+        router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.$id } });
       }, 800);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate story';
-      if (errorMessage.includes('API key not configured')) {
-        setError('Our story magic needs a little help -- ask a grown-up to check the settings.');
+      if (err instanceof QuotaExceededError) {
+        setIsQuotaError(true);
+        setError(err.message);
       } else {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to generate story';
         setError(errorMessage);
       }
     }
@@ -198,12 +258,53 @@ export default function GenerateStory() {
 
   const handleRetry = () => {
     setError(null);
+    setIsQuotaError(false);
     setProgress(0);
     setLongWait(false);
     setStatus('Preparing your adventure...');
     setSteps(prev => prev.map(s => ({ ...s, completed: false })));
-    generateStory();
+    runGeneration();
   };
+
+  if (isQuotaError) {
+    return (
+      <Container gradient gradientColors={themeColors.backgroundGradient} centered>
+        <View style={styles.quotaContainer}>
+          <View style={[styles.quotaIcon, { backgroundColor: themeColors.warning + '15' }]}>
+            <Zap size={40} color={themeColors.warning} strokeWidth={1.5} />
+          </View>
+          <Text style={[styles.quotaTitle, { color: themeColors.text.primary }]}>
+            Monthly Limit Reached
+          </Text>
+          <Text style={[styles.quotaSubtitle, { color: themeColors.text.secondary }]}>
+            You have used all your free stories this month. Upgrade to Pro for unlimited stories!
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/paywall')}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={themeColors.gradients.sunset}
+              style={styles.upgradeButton}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Sparkles size={18} color="#FFFFFF" />
+              <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.backLink]}
+          >
+            <Text style={[styles.backLinkText, { color: themeColors.text.secondary }]}>
+              Maybe later
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Container>
+    );
+  }
 
   if (error) {
     return (
@@ -216,6 +317,134 @@ export default function GenerateStory() {
           onGoHome={() => router.back()}
           showDetails={false}
         />
+      </Container>
+    );
+  }
+
+  if (phase === 'options') {
+    return (
+      <Container gradient gradientColors={themeColors.backgroundGradient}>
+        <ScrollView
+          contentContainerStyle={styles.optionsScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.optionsHeader}>
+            <Text style={[styles.optionsTitle, { color: themeColors.text.primary }]}>
+              Craft Your Story
+            </Text>
+            <Text style={[styles.optionsSubtitle, { color: themeColors.text.secondary }]}>
+              Pick a theme and mood for your adventure
+            </Text>
+          </View>
+
+          <View style={styles.optionSection}>
+            <Text style={[styles.optionLabel, { color: themeColors.text.primary }]}>Story Theme</Text>
+            <View style={styles.themeGrid}>
+              {THEMES.map(theme => (
+                <TouchableOpacity
+                  key={theme.id}
+                  onPress={() => setSelectedTheme(theme.id)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[
+                    styles.themeChip,
+                    { backgroundColor: themeColors.cardBackground, borderColor: themeColors.text.light + '30' },
+                    selectedTheme === theme.id && { borderColor: themeColors.primary, backgroundColor: themeColors.primary + '12' },
+                  ]}>
+                    <Text style={styles.themeEmoji}>{theme.emoji}</Text>
+                    <Text style={[
+                      styles.themeLabel,
+                      { color: selectedTheme === theme.id ? themeColors.primary : themeColors.text.secondary },
+                    ]}>
+                      {theme.label}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.optionSection}>
+            <Text style={[styles.optionLabel, { color: themeColors.text.primary }]}>Mood</Text>
+            <View style={styles.moodRow}>
+              {MOODS.map(mood => (
+                <TouchableOpacity
+                  key={mood.id}
+                  onPress={() => setSelectedMood(mood.id)}
+                  activeOpacity={0.8}
+                  style={{ flex: 1 }}
+                >
+                  <View style={[
+                    styles.moodChip,
+                    { backgroundColor: themeColors.cardBackground, borderColor: themeColors.text.light + '30' },
+                    selectedMood === mood.id && { borderColor: themeColors.primary, backgroundColor: themeColors.primary + '12' },
+                  ]}>
+                    <Text style={styles.moodEmoji}>{mood.emoji}</Text>
+                    <Text style={[
+                      styles.moodLabel,
+                      { color: selectedMood === mood.id ? themeColors.primary : themeColors.text.secondary },
+                    ]}>
+                      {mood.label}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.optionSection}>
+            <Text style={[styles.optionLabel, { color: themeColors.text.primary }]}>Story Length</Text>
+            <View style={styles.lengthRow}>
+              {LENGTHS.map(len => (
+                <TouchableOpacity
+                  key={len.id}
+                  onPress={() => setSelectedLength(len.id as 'short' | 'medium' | 'long')}
+                  activeOpacity={0.8}
+                  style={{ flex: 1 }}
+                >
+                  <View style={[
+                    styles.lengthChip,
+                    { backgroundColor: themeColors.cardBackground, borderColor: themeColors.text.light + '30' },
+                    selectedLength === len.id && { borderColor: themeColors.primary, backgroundColor: themeColors.primary + '12' },
+                  ]}>
+                    <Text style={[
+                      styles.lengthLabel,
+                      { color: selectedLength === len.id ? themeColors.primary : themeColors.text.primary },
+                    ]}>
+                      {len.label}
+                    </Text>
+                    <Text style={[styles.lengthDesc, { color: themeColors.text.light }]}>{len.desc}</Text>
+                    {len.pro && !isPro && (
+                      <View style={[styles.proBadge, { backgroundColor: themeColors.warning }]}>
+                        <Text style={styles.proBadgeText}>PRO</Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.generateButtonWrap}>
+            <TouchableOpacity onPress={handleStartGeneration} activeOpacity={0.9}>
+              <LinearGradient
+                colors={themeColors.gradients.sunset}
+                style={styles.generateButton}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Sparkles size={20} color="#FFFFFF" />
+                <Text style={styles.generateButtonText}>Create Story</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {subscription && subscription.plan === 'free' && (
+              <Text style={[styles.quotaHint, { color: themeColors.text.light }]}>
+                {subscription.stories_remaining} free {subscription.stories_remaining === 1 ? 'story' : 'stories'} remaining this month
+              </Text>
+            )}
+          </View>
+        </ScrollView>
       </Container>
     );
   }
@@ -279,6 +508,70 @@ export default function GenerateStory() {
 }
 
 const styles = StyleSheet.create({
+  optionsScroll: { paddingBottom: 60 },
+  optionsHeader: {
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.xxxl + SPACING.lg,
+    paddingBottom: SPACING.xxl,
+    gap: SPACING.sm,
+  },
+  optionsTitle: { fontSize: 28, fontFamily: FONTS.extrabold, letterSpacing: -0.5 },
+  optionsSubtitle: { fontSize: 15, fontFamily: FONTS.medium, lineHeight: 22 },
+  optionSection: { paddingHorizontal: SPACING.xl, marginBottom: SPACING.xxl },
+  optionLabel: { fontSize: 16, fontFamily: FONTS.bold, marginBottom: SPACING.md },
+  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  themeChip: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.pill, borderWidth: 1.5, ...SHADOWS.xs,
+  },
+  themeEmoji: { fontSize: 16 },
+  themeLabel: { fontSize: 13, fontFamily: FONTS.semibold },
+  moodRow: { flexDirection: 'row', gap: SPACING.sm },
+  moodChip: {
+    alignItems: 'center', paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg, borderWidth: 1.5, gap: 4, ...SHADOWS.xs,
+  },
+  moodEmoji: { fontSize: 20 },
+  moodLabel: { fontSize: 12, fontFamily: FONTS.semibold },
+  lengthRow: { flexDirection: 'row', gap: SPACING.sm },
+  lengthChip: {
+    alignItems: 'center', paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg, borderWidth: 1.5, gap: 2,
+    position: 'relative', ...SHADOWS.xs,
+  },
+  lengthLabel: { fontSize: 14, fontFamily: FONTS.bold },
+  lengthDesc: { fontSize: 11, fontFamily: FONTS.regular },
+  proBadge: {
+    position: 'absolute', top: -8, right: -8,
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: BORDER_RADIUS.pill,
+  },
+  proBadgeText: { fontSize: 9, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  generateButtonWrap: {
+    paddingHorizontal: SPACING.xl, gap: SPACING.md, alignItems: 'center',
+  },
+  generateButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: SPACING.sm, paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.xxxl + SPACING.xl,
+    borderRadius: BORDER_RADIUS.pill, ...SHADOWS.lg,
+  },
+  generateButtonText: { fontSize: 17, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  quotaHint: { fontSize: 13, fontFamily: FONTS.medium },
+  quotaContainer: { width: '100%', maxWidth: 360, paddingHorizontal: SPACING.xl, alignItems: 'center', gap: SPACING.lg },
+  quotaIcon: {
+    width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.sm,
+  },
+  quotaTitle: { fontSize: 24, fontFamily: FONTS.bold, textAlign: 'center' },
+  quotaSubtitle: { fontSize: 15, fontFamily: FONTS.medium, textAlign: 'center', lineHeight: 22 },
+  upgradeButton: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+    paddingVertical: SPACING.xl, paddingHorizontal: SPACING.xxxl + SPACING.lg,
+    borderRadius: BORDER_RADIUS.pill, ...SHADOWS.lg,
+  },
+  upgradeButtonText: { fontSize: 16, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  backLink: { paddingVertical: SPACING.md },
+  backLinkText: { fontSize: 14, fontFamily: FONTS.medium },
   content: { width: '100%', maxWidth: 400, paddingHorizontal: SPACING.xl, alignItems: 'center' },
   iconContainer: { marginBottom: SPACING.xxl },
   iconCircle: {
