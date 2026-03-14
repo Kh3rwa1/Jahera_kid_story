@@ -1,6 +1,5 @@
 import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { storage as appwriteStorage, ID, STORAGE_BUCKETS } from '@/lib/appwrite';
 
 export type ImageSource = 'camera' | 'library';
 
@@ -38,29 +37,10 @@ export async function pickImage(source: ImageSource): Promise<string | null> {
 }
 
 export async function uploadAvatar(
-  profileId: string,
+  _profileId: string,
   imageUri: string
 ): Promise<string | null> {
-  try {
-    const file = {
-      name: `avatar_${profileId}.jpg`,
-      type: 'image/jpeg',
-      size: 0,
-      uri: imageUri,
-    };
-
-    const uploaded = await appwriteStorage.createFile(
-      STORAGE_BUCKETS.AVATARS,
-      ID.unique(),
-      file as any
-    );
-
-    const url = appwriteStorage.getFileView(STORAGE_BUCKETS.AVATARS, uploaded.$id);
-    return url.toString();
-  } catch (err) {
-    console.error('Avatar upload failed:', err);
-    return null;
-  }
+  return imageUri;
 }
 
 export async function deleteAvatar(profileId: string): Promise<boolean> {
