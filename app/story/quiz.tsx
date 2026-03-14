@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -19,6 +19,7 @@ import Animated, {
   FadeInUp,
 } from 'react-native-reanimated';
 import { storyService, quizService } from '@/services/database';
+import { useApp } from '@/contexts/AppContext';
 import { Story, QuizQuestionWithAnswers } from '@/types/database';
 import { CircleCheck as CheckCircle2, Circle as XCircle, Trophy, Target, Hop as Home, ChevronRight, ArrowLeft, Sparkles, Star } from 'lucide-react-native';
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
@@ -30,6 +31,7 @@ export default function QuizScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { currentTheme } = useTheme();
+  const { profile, refreshQuizAttempts } = useApp();
   const themeColors = currentTheme.colors;
   const [story, setStory] = useState<Story | null>(null);
   const [questions, setQuestions] = useState<QuizQuestionWithAnswers[]>([]);
@@ -127,9 +129,9 @@ export default function QuizScreen() {
         setIsCorrect(null);
       }, 200);
     } else {
-      const profileId = await AsyncStorage.getItem('profileId');
-      if (profileId && story) {
-        await quizService.createAttempt(profileId, story.$id, score, questions.length);
+      if (profile && story) {
+        await quizService.createAttempt(profile.$id, story.$id, score, questions.length);
+        await refreshQuizAttempts();
       }
       setShowCelebration(true);
       setTimeout(() => {
@@ -152,10 +154,12 @@ export default function QuizScreen() {
   if (isLoading) {
     return (
       <LinearGradient colors={themeColors.backgroundGradient} style={styles.centered}>
-        <Sparkles size={48} color={themeColors.primary} strokeWidth={1.5} />
-        <Text style={[styles.loadingText, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
-          Loading quiz...
-        </Text>
+        <SafeAreaView style={styles.centeredInner}>
+          <Sparkles size={48} color={themeColors.primary} strokeWidth={1.5} />
+          <Text style={[styles.loadingText, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
+            Loading quiz...
+          </Text>
+        </SafeAreaView>
       </LinearGradient>
     );
   }
@@ -163,23 +167,25 @@ export default function QuizScreen() {
   if (loadError) {
     return (
       <LinearGradient colors={themeColors.backgroundGradient} style={styles.centered}>
-        <Text style={[styles.errorTitle, { color: themeColors.text.primary, fontFamily: FONTS.bold }]}>Oops!</Text>
-        <Text style={[styles.errorMsg, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
-          {loadError}
-        </Text>
-        <View style={styles.errorActions}>
-          <TouchableOpacity
-            onPress={loadQuiz}
-            style={[styles.retryBtn, { backgroundColor: themeColors.primary }]}
-          >
-            <Text style={[styles.retryText, { fontFamily: FONTS.semibold }]}>Try Again</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleGoHome}>
-            <Text style={[styles.goHomeLink, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
-              Go Home
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <SafeAreaView style={styles.centeredInner}>
+          <Text style={[styles.errorTitle, { color: themeColors.text.primary, fontFamily: FONTS.bold }]}>Oops!</Text>
+          <Text style={[styles.errorMsg, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
+            {loadError}
+          </Text>
+          <View style={styles.errorActions}>
+            <TouchableOpacity
+              onPress={loadQuiz}
+              style={[styles.retryBtn, { backgroundColor: themeColors.primary }]}
+            >
+              <Text style={[styles.retryText, { fontFamily: FONTS.semibold }]}>Try Again</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleGoHome}>
+              <Text style={[styles.goHomeLink, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
+                Go Home
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       </LinearGradient>
     );
   }
@@ -187,33 +193,35 @@ export default function QuizScreen() {
   if (!story || questions.length === 0) {
     return (
       <LinearGradient colors={themeColors.backgroundGradient} style={styles.centered}>
-        <Text style={[styles.errorTitle, { color: themeColors.text.primary, fontFamily: FONTS.bold }]}>
-          No Quiz Available
-        </Text>
-        <Text style={[styles.errorMsg, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
-          There's no quiz for this story yet. Generate a new story to get a quiz!
-        </Text>
-        <View style={styles.errorActions}>
-          {story && (
-            <TouchableOpacity
-              onPress={() => {
-                hapticFeedback.medium();
-                router.push({
-                  pathname: '/story/generate',
-                  params: { profileId: story.profile_id, languageCode: story.language_code },
-                });
-              }}
-              style={[styles.retryBtn, { backgroundColor: themeColors.primary }]}
-            >
-              <Text style={[styles.retryText, { fontFamily: FONTS.semibold }]}>Generate New Story</Text>
+        <SafeAreaView style={styles.centeredInner}>
+          <Text style={[styles.errorTitle, { color: themeColors.text.primary, fontFamily: FONTS.bold }]}>
+            No Quiz Available
+          </Text>
+          <Text style={[styles.errorMsg, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
+            There's no quiz for this story yet. Generate a new story to get a quiz!
+          </Text>
+          <View style={styles.errorActions}>
+            {story && (
+              <TouchableOpacity
+                onPress={() => {
+                  hapticFeedback.medium();
+                  router.push({
+                    pathname: '/story/generate',
+                    params: { profileId: story.profile_id, languageCode: story.language_code },
+                  });
+                }}
+                style={[styles.retryBtn, { backgroundColor: themeColors.primary }]}
+              >
+                <Text style={[styles.retryText, { fontFamily: FONTS.semibold }]}>Generate New Story</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={handleGoHome}>
+              <Text style={[styles.goHomeLink, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
+                Go Home
+              </Text>
             </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={handleGoHome}>
-            <Text style={[styles.goHomeLink, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
-              Go Home
-            </Text>
-          </TouchableOpacity>
-        </View>
+          </View>
+        </SafeAreaView>
       </LinearGradient>
     );
   }
@@ -233,6 +241,7 @@ export default function QuizScreen() {
 
     return (
       <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <ScrollView contentContainerStyle={styles.resultScrollContent} showsVerticalScrollIndicator={false}>
           <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.resultHeader}>
             <LinearGradient
@@ -292,6 +301,7 @@ export default function QuizScreen() {
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
+        </SafeAreaView>
       </LinearGradient>
     );
   }
@@ -301,6 +311,7 @@ export default function QuizScreen() {
 
   return (
     <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       {showCelebration && <CelebrationOverlay />}
 
       <View style={styles.quizHeader}>
@@ -449,6 +460,7 @@ export default function QuizScreen() {
           </TouchableOpacity>
         </Animated.View>
       )}
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -456,6 +468,16 @@ export default function QuizScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  centeredInner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: SPACING.lg,
+    padding: SPACING.xl,
   },
   centered: {
     flex: 1,
@@ -495,7 +517,7 @@ const styles = StyleSheet.create({
   quizHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 56,
+    paddingTop: SPACING.md,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
     gap: SPACING.md,
@@ -616,7 +638,7 @@ const styles = StyleSheet.create({
   },
   resultScrollContent: {
     padding: SPACING.xl,
-    paddingTop: 80,
+    paddingTop: SPACING.xxl,
     alignItems: 'center',
   },
   resultHeader: {

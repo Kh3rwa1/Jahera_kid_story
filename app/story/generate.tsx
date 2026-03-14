@@ -182,7 +182,7 @@ export default function GenerateStory() {
   const params = useLocalSearchParams();
   const { currentTheme } = useTheme();
   const themeColors = currentTheme.colors;
-  const { subscription, refreshSubscription } = useApp();
+  const { subscription, refreshSubscription, refreshStories } = useApp();
 
   const [phase, setPhase] = useState<Phase>('options');
   const [selectedTheme, setSelectedTheme] = useState('adventure');
@@ -283,6 +283,7 @@ export default function GenerateStory() {
         return;
       }
 
+      if (!isMountedRef.current) return;
       completeStep('profile');
       setStatus('Creating your adventure story...');
       setProgress(40);
@@ -301,6 +302,7 @@ export default function GenerateStory() {
         return;
       }
 
+      if (!isMountedRef.current) return;
       completeStep('story');
       setStatus('Creating quiz questions...');
       setProgress(60);
@@ -345,6 +347,7 @@ export default function GenerateStory() {
         return;
       }
 
+      if (!isMountedRef.current) return;
       completeStep('quiz');
 
       setStatus('Generating audio narration...');
@@ -365,10 +368,13 @@ export default function GenerateStory() {
 
       setProgress(100);
       hapticFeedback.success();
-      await refreshSubscription();
+      await Promise.all([refreshSubscription(), refreshStories()]);
 
+      if (!isMountedRef.current) return;
       setTimeout(() => {
-        router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.$id } });
+        if (isMountedRef.current) {
+          router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.$id } });
+        }
       }, 800);
     } catch (err) {
       if (err instanceof QuotaExceededError) {
@@ -388,7 +394,8 @@ export default function GenerateStory() {
     setLongWait(false);
     setStatus('Preparing your adventure...');
     setSteps(prev => prev.map(s => ({ ...s, completed: false })));
-    runGeneration();
+    setPhase('options');
+    setTimeout(() => setPhase('generating'), 50);
   };
 
   if (isQuotaError) {
