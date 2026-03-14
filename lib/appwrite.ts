@@ -24,6 +24,9 @@ export const COLLECTIONS = {
   QUIZ_ANSWERS: 'quiz_answers',
   QUIZ_ATTEMPTS: 'quiz_attempts',
   API_KEYS: 'api_keys',
+  SUBSCRIPTIONS: 'subscriptions',
+  STREAKS: 'streaks',
+  PROFILE_INTERESTS: 'profile_interests',
 } as const;
 
 export const STORAGE_BUCKETS = {
