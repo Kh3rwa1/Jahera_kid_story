@@ -71,7 +71,7 @@ class AnalyticsService {
   /**
    * Track user engagement
    */
-  trackEngagement(action: 'audio_played' | 'story_shared' | 'achievement_unlocked', properties?: Record<string, any>) {
+  trackEngagement(action: 'audio_played' | 'story_shared' | 'achievement_unlocked' | 'achievement_shared' | 'app_shared', properties?: Record<string, any>) {
     this.track('user_engagement', {
       action,
       ...properties,

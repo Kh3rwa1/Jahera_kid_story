@@ -4,7 +4,7 @@ import { handleError, AppError } from '@/utils/errorHandler';
 interface UseAsyncDataOptions<T> {
   fetchFn: () => Promise<T>;
   dependencies?: unknown[];
-  initialData?: T;
+  initialData?: T | null;
   onSuccess?: (data: T) => void;
   onError?: (error: AppError) => void;
 }

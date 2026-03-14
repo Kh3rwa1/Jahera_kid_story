@@ -197,6 +197,12 @@ export default function GenerateStory() {
   const [longWait, setLongWait] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const longWaitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
   const [steps, setSteps] = useState<GenerationStep[]>([
     { id: 'profile', label: 'Loading profile', icon: Sparkles, completed: false },
     { id: 'story', label: 'Creating story', icon: BookOpen, completed: false },
@@ -267,6 +273,7 @@ export default function GenerateStory() {
       const profileId = params.profileId as string;
       const languageCode = params.languageCode as string;
 
+      if (!isMountedRef.current) return;
       setStatus('Loading your profile...');
       setProgress(20);
 
