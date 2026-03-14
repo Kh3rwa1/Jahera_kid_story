@@ -61,11 +61,11 @@ const FloatingBubble: React.FC<{ bubble: Bubble }> = ({ bubble }) => {
   useEffect(() => {
     opacity.value = withDelay(
       bubble.delay,
-      withTiming(1, { duration: 1200, easing: Easing.out(Easing.ease) })
+      withTiming(1, { duration: 1200, easing: Easing.out(Easing.quad) })
     );
     scale.value = withDelay(
       bubble.delay,
-      withTiming(1, { duration: 1000, easing: Easing.out(Easing.back(1.4)) })
+      withTiming(1, { duration: 1000, easing: Easing.out(Easing.quad) })
     );
     translateY.value = withDelay(
       bubble.delay,
@@ -82,9 +82,9 @@ const FloatingBubble: React.FC<{ bubble: Bubble }> = ({ bubble }) => {
       bubble.delay,
       withRepeat(
         withSequence(
-          withTiming(bubble.swayAmount, { duration: bubble.duration / 3, easing: Easing.inOut(Easing.sine) }),
-          withTiming(-bubble.swayAmount, { duration: bubble.duration / 3 * 2, easing: Easing.inOut(Easing.sine) }),
-          withTiming(0, { duration: bubble.duration / 3, easing: Easing.inOut(Easing.sine) })
+          withTiming(bubble.swayAmount, { duration: bubble.duration / 3, easing: Easing.inOut(Easing.quad) }),
+          withTiming(-bubble.swayAmount, { duration: (bubble.duration / 3) * 2, easing: Easing.inOut(Easing.quad) }),
+          withTiming(0, { duration: bubble.duration / 3, easing: Easing.inOut(Easing.quad) })
         ),
         -1,
         false
@@ -124,13 +124,15 @@ const DriftingCloud: React.FC<{ cloud: Cloud }> = ({ cloud }) => {
   const opacity = useSharedValue(0);
 
   useEffect(() => {
+    const fadeDuration = Math.min(3000, cloud.duration * 0.15);
+    const holdDuration = Math.max(100, cloud.duration - fadeDuration * 2);
     opacity.value = withDelay(
       cloud.delay,
       withRepeat(
         withSequence(
-          withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1, { duration: cloud.duration - 6000 }),
-          withTiming(0, { duration: 3000, easing: Easing.inOut(Easing.ease) })
+          withTiming(1, { duration: fadeDuration, easing: Easing.inOut(Easing.quad) }),
+          withTiming(1, { duration: holdDuration }),
+          withTiming(0, { duration: fadeDuration, easing: Easing.inOut(Easing.quad) })
         ),
         -1,
         false

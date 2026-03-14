@@ -21,7 +21,6 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
-  withSpring,
 } from 'react-native-reanimated';
 import {
   Sparkles,
@@ -156,28 +155,25 @@ function StarSparkle({ delay, x, y }: { delay: number; x: number; y: number }) {
   const rotate = useSharedValue(0);
 
   useEffect(() => {
-    const loop = () => {
-      scale.value = withDelay(delay, withRepeat(
-        withSequence(
-          withSpring(1, { damping: 6, stiffness: 300 }),
-          withTiming(0, { duration: 600 }),
-          withTiming(0, { duration: 1200 })
-        ),
-        -1,
-        false
-      ));
-      opacity.value = withDelay(delay, withRepeat(
-        withSequence(
-          withTiming(1, { duration: 300 }),
-          withTiming(0, { duration: 600 }),
-          withTiming(0, { duration: 1200 })
-        ),
-        -1,
-        false
-      ));
-      rotate.value = withRepeat(withTiming(360, { duration: 3000 }), -1, false);
-    };
-    loop();
+    scale.value = withDelay(delay, withRepeat(
+      withSequence(
+        withTiming(1, { duration: 300 }),
+        withTiming(0, { duration: 600 }),
+        withTiming(0, { duration: 1200 })
+      ),
+      -1,
+      false
+    ));
+    opacity.value = withDelay(delay, withRepeat(
+      withSequence(
+        withTiming(1, { duration: 300 }),
+        withTiming(0, { duration: 600 }),
+        withTiming(0, { duration: 1200 })
+      ),
+      -1,
+      false
+    ));
+    rotate.value = withRepeat(withTiming(360, { duration: 3000 }), -1, false);
   }, []);
 
   const style = useAnimatedStyle(() => ({
@@ -337,7 +333,7 @@ export default function HomeScreen() {
           <HeroBobAnimation>
             <AnimatedPressable onPress={handleGenerateStory} scaleDown={0.96}>
               <LinearGradient
-                colors={COLORS.gradients.sunset}
+                colors={[...COLORS.gradients.sunset]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroCard}
@@ -857,7 +853,6 @@ const styles = StyleSheet.create({
     height: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 'auto' as any,
   },
   storyCardContent: { padding: SPACING.md, paddingTop: SPACING.sm },
   storyTitle: {

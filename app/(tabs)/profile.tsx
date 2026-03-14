@@ -135,7 +135,7 @@ export default function ProfileScreen() {
         {/* ── Hero banner ── */}
         <Animated.View entering={FadeInDown.delay(60).springify()}>
           <LinearGradient
-            colors={COLORS.gradients.primary}
+            colors={[...COLORS.gradients.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroBanner}
@@ -371,7 +371,7 @@ export default function ProfileScreen() {
         {/* ── Streak / XP card ── */}
         <Animated.View entering={FadeInUp.delay(420).springify()} style={styles.section}>
           <LinearGradient
-            colors={COLORS.gradients.sunset}
+            colors={[...COLORS.gradients.sunset]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.xpCard}

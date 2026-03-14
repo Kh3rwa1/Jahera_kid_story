@@ -222,7 +222,7 @@ export default function SettingsTab() {
         {/* ── Profile hero ── */}
         <Animated.View entering={FadeInDown.delay(60).springify()}>
           <LinearGradient
-            colors={COLORS.gradients.primary}
+            colors={[...COLORS.gradients.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroCard}
