@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 import { apiKeysService } from './apiKeysService';
 
 const ELEVENLABS_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
@@ -108,24 +108,28 @@ export async function generateAudio(
       return resp;
     });
 
+    const arrayBuffer = await response.arrayBuffer();
+
+    if (Platform.OS === 'web') {
+      const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+      const blobUrl = URL.createObjectURL(blob);
+      return blobUrl;
+    }
+
+    const FileSystem = require('expo-file-system');
     const audioDir = `${FileSystem.documentDirectory}audio/`;
     const audioPath = `${audioDir}${storyId}.mp3`;
 
-    // Ensure directory exists
     const dirInfo = await FileSystem.getInfoAsync(audioDir);
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(audioDir, { intermediates: true });
     }
 
-    // Convert audio to base64 and save
-    const arrayBuffer = await response.arrayBuffer();
     const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-
     await FileSystem.writeAsStringAsync(audioPath, base64Audio, {
       encoding: FileSystem.EncodingType.Base64,
     });
 
-    console.log(`Audio generated successfully: ${audioPath}`);
     return audioPath;
   } catch (error) {
     console.error('Error generating audio:', error);
@@ -137,6 +141,12 @@ export async function generateAudio(
 
 export async function deleteAudio(audioPath: string): Promise<boolean> {
   try {
+    if (Platform.OS === 'web') {
+      URL.revokeObjectURL(audioPath);
+      return true;
+    }
+
+    const FileSystem = require('expo-file-system');
     const fileInfo = await FileSystem.getInfoAsync(audioPath);
     if (fileInfo.exists) {
       await FileSystem.deleteAsync(audioPath);
