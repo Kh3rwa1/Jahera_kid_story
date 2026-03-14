@@ -21,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { storyService, quizService } from '@/services/database';
 import { Story } from '@/types/database';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Play,
   Pause,
@@ -33,6 +34,7 @@ import {
   BookOpen,
   Clock,
   Share2,
+  Library,
 } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -223,12 +225,12 @@ export default function StoryPlayback() {
   if (isLoading) {
     return (
       <LinearGradient colors={themeColors.backgroundGradient} style={styles.loadingContainer}>
-        <View style={styles.loadingContent}>
+        <SafeAreaView style={styles.loadingContent}>
           <BookOpen size={48} color={themeColors.primary} strokeWidth={1.5} />
           <Text style={[styles.loadingText, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
             Loading story...
           </Text>
-        </View>
+        </SafeAreaView>
       </LinearGradient>
     );
   }
@@ -236,7 +238,7 @@ export default function StoryPlayback() {
   if (!story) {
     return (
       <LinearGradient colors={themeColors.backgroundGradient} style={styles.loadingContainer}>
-        <View style={styles.loadingContent}>
+        <SafeAreaView style={styles.loadingContent}>
           <Text style={[styles.errorTitle, { color: themeColors.text.primary, fontFamily: FONTS.bold }]}>
             Story Not Found
           </Text>
@@ -249,7 +251,7 @@ export default function StoryPlayback() {
           >
             <Text style={[styles.errorButtonText, { fontFamily: FONTS.semibold }]}>Go Home</Text>
           </TouchableOpacity>
-        </View>
+        </SafeAreaView>
       </LinearGradient>
     );
   }
@@ -258,6 +260,7 @@ export default function StoryPlayback() {
 
   return (
     <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
         <TouchableOpacity
           onPress={handleBack}
@@ -283,6 +286,13 @@ export default function StoryPlayback() {
               </Text>
             </View>
           )}
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/history')}
+            style={[styles.shareButton, { backgroundColor: themeColors.cardBackground }]}
+            activeOpacity={0.7}
+          >
+            <Library size={18} color={themeColors.primary} />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={handleShare}
             style={[styles.shareButton, { backgroundColor: themeColors.cardBackground }]}
@@ -464,12 +474,16 @@ export default function StoryPlayback() {
           </View>
         </View>
       )}
+      </SafeAreaView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  safeArea: {
     flex: 1,
   },
   loadingContainer: {
@@ -505,7 +519,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 56,
+    paddingTop: SPACING.md,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.md,
   },
