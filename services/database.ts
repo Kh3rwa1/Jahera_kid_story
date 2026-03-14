@@ -1,4 +1,4 @@
-import { databases, storage, ID, Query, DATABASE_ID, COLLECTIONS, STORAGE_BUCKETS } from '@/lib/appwrite';
+import { supabase } from '@/lib/supabase';
 import {
   Profile,
   UserLanguage,
@@ -13,112 +13,112 @@ import {
   ProfileInterest,
 } from '@/types/database';
 
-function docToProfile(doc: any): Profile {
+function rowToProfile(row: any): Profile {
   return {
-    $id: doc.$id,
-    userId: doc.userId,
-    kid_name: doc.kid_name,
-    primary_language: doc.primary_language,
-    age: doc.age ?? null,
-    parent_pin: doc.parent_pin ?? null,
-    share_token: doc.share_token ?? null,
-    avatar_url: doc.avatar_url ?? null,
-    $createdAt: doc.$createdAt,
-    $updatedAt: doc.$updatedAt,
+    $id: row.id,
+    userId: row.user_id,
+    kid_name: row.kid_name,
+    primary_language: row.primary_language,
+    age: row.age ?? null,
+    parent_pin: row.parent_pin ?? null,
+    share_token: row.share_token ?? null,
+    avatar_url: row.avatar_url ?? null,
+    $createdAt: row.created_at,
+    $updatedAt: row.updated_at,
   };
 }
 
-function docToUserLanguage(doc: any): UserLanguage {
+function rowToUserLanguage(row: any): UserLanguage {
   return {
-    $id: doc.$id,
-    profile_id: doc.profile_id,
-    language_code: doc.language_code,
-    language_name: doc.language_name,
-    $createdAt: doc.$createdAt,
+    $id: row.id,
+    profile_id: row.profile_id,
+    language_code: row.language_code,
+    language_name: row.language_name,
+    $createdAt: row.created_at,
   };
 }
 
-function docToFamilyMember(doc: any): FamilyMember {
+function rowToFamilyMember(row: any): FamilyMember {
   return {
-    $id: doc.$id,
-    profile_id: doc.profile_id,
-    name: doc.name,
-    $createdAt: doc.$createdAt,
+    $id: row.id,
+    profile_id: row.profile_id,
+    name: row.name,
+    $createdAt: row.created_at,
   };
 }
 
-function docToFriend(doc: any): Friend {
+function rowToFriend(row: any): Friend {
   return {
-    $id: doc.$id,
-    profile_id: doc.profile_id,
-    name: doc.name,
-    $createdAt: doc.$createdAt,
+    $id: row.id,
+    profile_id: row.profile_id,
+    name: row.name,
+    $createdAt: row.created_at,
   };
 }
 
-function docToStory(doc: any): Story {
+function rowToStory(row: any): Story {
   return {
-    $id: doc.$id,
-    profile_id: doc.profile_id,
-    language_code: doc.language_code,
-    title: doc.title,
-    content: doc.content,
-    audio_url: doc.audio_url ?? null,
-    season: doc.season,
-    theme: doc.theme ?? null,
-    mood: doc.mood ?? null,
-    word_count: doc.word_count ?? null,
-    share_token: doc.share_token ?? null,
-    like_count: doc.like_count ?? 0,
-    time_of_day: doc.time_of_day,
-    generated_at: doc.generated_at,
-    $createdAt: doc.$createdAt,
+    $id: row.id,
+    profile_id: row.profile_id,
+    language_code: row.language_code,
+    title: row.title,
+    content: row.content,
+    audio_url: row.audio_url ?? null,
+    season: row.season,
+    theme: row.theme ?? null,
+    mood: row.mood ?? null,
+    word_count: row.word_count ?? null,
+    share_token: row.share_token ?? null,
+    like_count: row.like_count ?? 0,
+    time_of_day: row.time_of_day,
+    generated_at: row.generated_at,
+    $createdAt: row.created_at,
   };
 }
 
-function docToQuizQuestion(doc: any): QuizQuestion {
+function rowToQuizQuestion(row: any): QuizQuestion {
   return {
-    $id: doc.$id,
-    story_id: doc.story_id,
-    question_text: doc.question_text,
-    question_order: doc.question_order,
-    $createdAt: doc.$createdAt,
+    $id: row.id,
+    story_id: row.story_id,
+    question_text: row.question_text,
+    question_order: row.question_order,
+    $createdAt: row.created_at,
   };
 }
 
-function docToQuizAnswer(doc: any): QuizAnswer {
+function rowToQuizAnswer(row: any): QuizAnswer {
   return {
-    $id: doc.$id,
-    question_id: doc.question_id,
-    answer_text: doc.answer_text,
-    is_correct: doc.is_correct,
-    answer_order: doc.answer_order,
-    $createdAt: doc.$createdAt,
+    $id: row.id,
+    question_id: row.question_id,
+    answer_text: row.answer_text,
+    is_correct: row.is_correct,
+    answer_order: row.answer_order,
+    $createdAt: row.created_at,
   };
 }
 
-function docToQuizAttempt(doc: any): QuizAttempt {
+function rowToQuizAttempt(row: any): QuizAttempt {
   return {
-    $id: doc.$id,
-    profile_id: doc.profile_id,
-    story_id: doc.story_id,
-    score: doc.score,
-    total_questions: doc.total_questions,
-    completed_at: doc.completed_at,
-    $createdAt: doc.$createdAt,
+    $id: row.id,
+    profile_id: row.profile_id,
+    story_id: row.story_id,
+    score: row.score,
+    total_questions: row.total_questions,
+    completed_at: row.completed_at,
+    $createdAt: row.created_at,
   };
 }
 
 export const profileService = {
   async create(userId: string, kidName: string, primaryLanguage: string): Promise<Profile | null> {
     try {
-      const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.PROFILES, ID.unique(), {
-        userId,
-        kid_name: kidName,
-        primary_language: primaryLanguage,
-        avatar_url: null,
-      });
-      return docToProfile(doc);
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({ user_id: userId, kid_name: kidName, primary_language: primaryLanguage })
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToProfile(data);
     } catch (error) {
       console.error('Error creating profile:', error);
       return null;
@@ -127,8 +127,14 @@ export const profileService = {
 
   async getById(id: string): Promise<Profile | null> {
     try {
-      const doc = await databases.getDocument(DATABASE_ID, COLLECTIONS.PROFILES, id);
-      return docToProfile(doc);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      return rowToProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
       return null;
@@ -137,12 +143,14 @@ export const profileService = {
 
   async getByUserId(userId: string): Promise<Profile | null> {
     try {
-      const res = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-        Query.equal('userId', userId),
-        Query.limit(1),
-      ]);
-      if (res.documents.length === 0) return null;
-      return docToProfile(res.documents[0]);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      return rowToProfile(data);
     } catch (error) {
       console.error('Error fetching profile by userId:', error);
       return null;
@@ -176,10 +184,14 @@ export const profileService = {
 
   async updateAvatarUrl(id: string, avatarUrl: string | null): Promise<Profile | null> {
     try {
-      const doc = await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, id, {
-        avatar_url: avatarUrl,
-      });
-      return docToProfile(doc);
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToProfile(data);
     } catch (error) {
       console.error('Error updating avatar:', error);
       return null;
@@ -188,8 +200,21 @@ export const profileService = {
 
   async update(id: string, updates: Partial<Pick<Profile, 'kid_name' | 'primary_language' | 'avatar_url' | 'parent_pin' | 'age'>>): Promise<Profile | null> {
     try {
-      const doc = await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, id, updates);
-      return docToProfile(doc);
+      const dbUpdates: any = { updated_at: new Date().toISOString() };
+      if (updates.kid_name !== undefined) dbUpdates.kid_name = updates.kid_name;
+      if (updates.primary_language !== undefined) dbUpdates.primary_language = updates.primary_language;
+      if (updates.avatar_url !== undefined) dbUpdates.avatar_url = updates.avatar_url;
+      if (updates.parent_pin !== undefined) dbUpdates.parent_pin = updates.parent_pin;
+      if (updates.age !== undefined) dbUpdates.age = updates.age;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(dbUpdates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToProfile(data);
     } catch (error) {
       console.error('Error updating profile:', error);
       return null;
@@ -198,7 +223,8 @@ export const profileService = {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROFILES, id);
+      const { error } = await supabase.from('profiles').delete().eq('id', id);
+      if (error) throw error;
       return true;
     } catch (error) {
       console.error('Error deleting profile:', error);
@@ -206,35 +232,21 @@ export const profileService = {
     }
   },
 
-  async uploadAvatar(profileId: string, fileUri: string, mimeType: string): Promise<string | null> {
-    try {
-      const fileName = `avatar_${profileId}.jpg`;
-      const file = {
-        name: fileName,
-        type: mimeType,
-        size: 0,
-        uri: fileUri,
-      };
-      const uploaded = await storage.createFile(STORAGE_BUCKETS.AVATARS, ID.unique(), file as any);
-      const url = storage.getFileView(STORAGE_BUCKETS.AVATARS, uploaded.$id);
-      await this.updateAvatarUrl(profileId, url.toString());
-      return url.toString();
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
-      return null;
-    }
+  async uploadAvatar(_profileId: string, _fileUri: string, _mimeType: string): Promise<string | null> {
+    return null;
   },
 };
 
 export const languageService = {
   async add(profileId: string, languageCode: string, languageName: string): Promise<UserLanguage | null> {
     try {
-      const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, ID.unique(), {
-        profile_id: profileId,
-        language_code: languageCode,
-        language_name: languageName,
-      });
-      return docToUserLanguage(doc);
+      const { data, error } = await supabase
+        .from('user_languages')
+        .insert({ profile_id: profileId, language_code: languageCode, language_name: languageName })
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToUserLanguage(data);
     } catch (error) {
       console.error('Error adding language:', error);
       return null;
@@ -243,11 +255,12 @@ export const languageService = {
 
   async getByProfileId(profileId: string): Promise<UserLanguage[] | null> {
     try {
-      const res = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, [
-        Query.equal('profile_id', profileId),
-        Query.limit(100),
-      ]);
-      return res.documents.map(docToUserLanguage);
+      const { data, error } = await supabase
+        .from('user_languages')
+        .select('*')
+        .eq('profile_id', profileId);
+      if (error) throw error;
+      return (data || []).map(rowToUserLanguage);
     } catch (error) {
       console.error('Error fetching languages:', error);
       return null;
@@ -256,7 +269,8 @@ export const languageService = {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, id);
+      const { error } = await supabase.from('user_languages').delete().eq('id', id);
+      if (error) throw error;
       return true;
     } catch (error) {
       console.error('Error deleting language:', error);
@@ -266,14 +280,12 @@ export const languageService = {
 
   async deleteByProfileAndCode(profileId: string, languageCode: string): Promise<boolean> {
     try {
-      const res = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, [
-        Query.equal('profile_id', profileId),
-        Query.equal('language_code', languageCode),
-        Query.limit(10),
-      ]);
-      await Promise.all(res.documents.map(doc =>
-        databases.deleteDocument(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, doc.$id)
-      ));
+      const { error } = await supabase
+        .from('user_languages')
+        .delete()
+        .eq('profile_id', profileId)
+        .eq('language_code', languageCode);
+      if (error) throw error;
       return true;
     } catch (error) {
       console.error('Error deleting language by code:', error);
@@ -285,11 +297,13 @@ export const languageService = {
 export const familyMemberService = {
   async add(profileId: string, name: string): Promise<FamilyMember | null> {
     try {
-      const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.FAMILY_MEMBERS, ID.unique(), {
-        profile_id: profileId,
-        name,
-      });
-      return docToFamilyMember(doc);
+      const { data, error } = await supabase
+        .from('family_members')
+        .insert({ profile_id: profileId, name })
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToFamilyMember(data);
     } catch (error) {
       console.error('Error adding family member:', error);
       return null;
@@ -298,11 +312,12 @@ export const familyMemberService = {
 
   async getByProfileId(profileId: string): Promise<FamilyMember[] | null> {
     try {
-      const res = await databases.listDocuments(DATABASE_ID, COLLECTIONS.FAMILY_MEMBERS, [
-        Query.equal('profile_id', profileId),
-        Query.limit(100),
-      ]);
-      return res.documents.map(docToFamilyMember);
+      const { data, error } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('profile_id', profileId);
+      if (error) throw error;
+      return (data || []).map(rowToFamilyMember);
     } catch (error) {
       console.error('Error fetching family members:', error);
       return null;
@@ -311,7 +326,8 @@ export const familyMemberService = {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await databases.deleteDocument(DATABASE_ID, COLLECTIONS.FAMILY_MEMBERS, id);
+      const { error } = await supabase.from('family_members').delete().eq('id', id);
+      if (error) throw error;
       return true;
     } catch (error) {
       console.error('Error deleting family member:', error);
@@ -323,11 +339,13 @@ export const familyMemberService = {
 export const friendService = {
   async add(profileId: string, name: string): Promise<Friend | null> {
     try {
-      const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.FRIENDS, ID.unique(), {
-        profile_id: profileId,
-        name,
-      });
-      return docToFriend(doc);
+      const { data, error } = await supabase
+        .from('friends')
+        .insert({ profile_id: profileId, name })
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToFriend(data);
     } catch (error) {
       console.error('Error adding friend:', error);
       return null;
@@ -336,11 +354,12 @@ export const friendService = {
 
   async getByProfileId(profileId: string): Promise<Friend[] | null> {
     try {
-      const res = await databases.listDocuments(DATABASE_ID, COLLECTIONS.FRIENDS, [
-        Query.equal('profile_id', profileId),
-        Query.limit(100),
-      ]);
-      return res.documents.map(docToFriend);
+      const { data, error } = await supabase
+        .from('friends')
+        .select('*')
+        .eq('profile_id', profileId);
+      if (error) throw error;
+      return (data || []).map(rowToFriend);
     } catch (error) {
       console.error('Error fetching friends:', error);
       return null;
@@ -349,7 +368,8 @@ export const friendService = {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await databases.deleteDocument(DATABASE_ID, COLLECTIONS.FRIENDS, id);
+      const { error } = await supabase.from('friends').delete().eq('id', id);
+      if (error) throw error;
       return true;
     } catch (error) {
       console.error('Error deleting friend:', error);
@@ -361,9 +381,27 @@ export const friendService = {
 export const storyService = {
   async create(story: Omit<Story, '$id' | '$createdAt'>): Promise<Story | null> {
     try {
-      const { $id, $createdAt, ...data } = story as any;
-      const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.STORIES, ID.unique(), data);
-      return docToStory(doc);
+      const { data, error } = await supabase
+        .from('stories')
+        .insert({
+          profile_id: story.profile_id,
+          language_code: story.language_code,
+          title: story.title,
+          content: story.content,
+          audio_url: story.audio_url,
+          season: story.season,
+          theme: story.theme,
+          mood: story.mood,
+          word_count: story.word_count,
+          share_token: story.share_token,
+          like_count: story.like_count,
+          time_of_day: story.time_of_day,
+          generated_at: story.generated_at,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToStory(data);
     } catch (error) {
       console.error('Error creating story:', error);
       return null;
@@ -372,8 +410,14 @@ export const storyService = {
 
   async getById(id: string): Promise<Story | null> {
     try {
-      const doc = await databases.getDocument(DATABASE_ID, COLLECTIONS.STORIES, id);
-      return docToStory(doc);
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      return rowToStory(data);
     } catch (error) {
       console.error('Error fetching story:', error);
       return null;
@@ -382,12 +426,13 @@ export const storyService = {
 
   async getByProfileId(profileId: string): Promise<Story[] | null> {
     try {
-      const res = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORIES, [
-        Query.equal('profile_id', profileId),
-        Query.orderDesc('generated_at'),
-        Query.limit(100),
-      ]);
-      return res.documents.map(docToStory);
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*')
+        .eq('profile_id', profileId)
+        .order('generated_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(rowToStory);
     } catch (error) {
       console.error('Error fetching stories:', error);
       return null;
@@ -396,13 +441,14 @@ export const storyService = {
 
   async getByProfileAndLanguage(profileId: string, languageCode: string): Promise<Story[] | null> {
     try {
-      const res = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORIES, [
-        Query.equal('profile_id', profileId),
-        Query.equal('language_code', languageCode),
-        Query.orderDesc('generated_at'),
-        Query.limit(100),
-      ]);
-      return res.documents.map(docToStory);
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*')
+        .eq('profile_id', profileId)
+        .eq('language_code', languageCode)
+        .order('generated_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(rowToStory);
     } catch (error) {
       console.error('Error fetching stories by language:', error);
       return null;
@@ -411,8 +457,14 @@ export const storyService = {
 
   async update(id: string, updates: Partial<Pick<Story, 'audio_url' | 'title' | 'content'>>): Promise<Story | null> {
     try {
-      const doc = await databases.updateDocument(DATABASE_ID, COLLECTIONS.STORIES, id, updates);
-      return docToStory(doc);
+      const { data, error } = await supabase
+        .from('stories')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToStory(data);
     } catch (error) {
       console.error('Error updating story:', error);
       return null;
@@ -421,7 +473,8 @@ export const storyService = {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await databases.deleteDocument(DATABASE_ID, COLLECTIONS.STORIES, id);
+      const { error } = await supabase.from('stories').delete().eq('id', id);
+      if (error) throw error;
       return true;
     } catch (error) {
       console.error('Error deleting story:', error);
@@ -433,12 +486,13 @@ export const storyService = {
 export const quizService = {
   async createQuestion(storyId: string, questionText: string, questionOrder: number): Promise<QuizQuestion | null> {
     try {
-      const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.QUIZ_QUESTIONS, ID.unique(), {
-        story_id: storyId,
-        question_text: questionText,
-        question_order: questionOrder,
-      });
-      return docToQuizQuestion(doc);
+      const { data, error } = await supabase
+        .from('quiz_questions')
+        .insert({ story_id: storyId, question_text: questionText, question_order: questionOrder })
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToQuizQuestion(data);
     } catch (error) {
       console.error('Error creating quiz question:', error);
       return null;
@@ -447,13 +501,13 @@ export const quizService = {
 
   async createAnswer(questionId: string, answerText: string, isCorrect: boolean, answerOrder: string): Promise<QuizAnswer | null> {
     try {
-      const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.QUIZ_ANSWERS, ID.unique(), {
-        question_id: questionId,
-        answer_text: answerText,
-        is_correct: isCorrect,
-        answer_order: answerOrder,
-      });
-      return docToQuizAnswer(doc);
+      const { data, error } = await supabase
+        .from('quiz_answers')
+        .insert({ question_id: questionId, answer_text: answerText, is_correct: isCorrect, answer_order: answerOrder })
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToQuizAnswer(data);
     } catch (error) {
       console.error('Error creating quiz answer:', error);
       return null;
@@ -462,24 +516,23 @@ export const quizService = {
 
   async getQuestionsByStoryId(storyId: string): Promise<QuizQuestionWithAnswers[] | null> {
     try {
-      const questionsRes = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUIZ_QUESTIONS, [
-        Query.equal('story_id', storyId),
-        Query.orderAsc('question_order'),
-        Query.limit(50),
-      ]);
-
-      const questions = questionsRes.documents.map(docToQuizQuestion);
+      const { data: questions, error: qErr } = await supabase
+        .from('quiz_questions')
+        .select('*')
+        .eq('story_id', storyId)
+        .order('question_order', { ascending: true });
+      if (qErr) throw qErr;
 
       const questionsWithAnswers = await Promise.all(
-        questions.map(async (q) => {
-          const answersRes = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUIZ_ANSWERS, [
-            Query.equal('question_id', q.$id),
-            Query.orderAsc('answer_order'),
-            Query.limit(10),
-          ]);
+        (questions || []).map(async (q) => {
+          const { data: answers } = await supabase
+            .from('quiz_answers')
+            .select('*')
+            .eq('question_id', q.id)
+            .order('answer_order', { ascending: true });
           return {
-            ...q,
-            answers: answersRes.documents.map(docToQuizAnswer),
+            ...rowToQuizQuestion(q),
+            answers: (answers || []).map(rowToQuizAnswer),
           } as QuizQuestionWithAnswers;
         })
       );
@@ -493,14 +546,19 @@ export const quizService = {
 
   async createAttempt(profileId: string, storyId: string, score: number, totalQuestions: number): Promise<QuizAttempt | null> {
     try {
-      const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.QUIZ_ATTEMPTS, ID.unique(), {
-        profile_id: profileId,
-        story_id: storyId,
-        score,
-        total_questions: totalQuestions,
-        completed_at: new Date().toISOString(),
-      });
-      return docToQuizAttempt(doc);
+      const { data, error } = await supabase
+        .from('quiz_attempts')
+        .insert({
+          profile_id: profileId,
+          story_id: storyId,
+          score,
+          total_questions: totalQuestions,
+          completed_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToQuizAttempt(data);
     } catch (error) {
       console.error('Error creating quiz attempt:', error);
       return null;
@@ -509,12 +567,13 @@ export const quizService = {
 
   async getAttemptsByProfileId(profileId: string): Promise<QuizAttempt[] | null> {
     try {
-      const res = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUIZ_ATTEMPTS, [
-        Query.equal('profile_id', profileId),
-        Query.orderDesc('completed_at'),
-        Query.limit(100),
-      ]);
-      return res.documents.map(docToQuizAttempt);
+      const { data, error } = await supabase
+        .from('quiz_attempts')
+        .select('*')
+        .eq('profile_id', profileId)
+        .order('completed_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(rowToQuizAttempt);
     } catch (error) {
       console.error('Error fetching quiz attempts:', error);
       return null;

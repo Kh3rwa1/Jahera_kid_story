@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { account, ID } from '@/lib/appwrite';
-import { Models } from 'react-native-appwrite';
+import { supabase } from '@/lib/supabase';
+import { Session, User } from '@supabase/supabase-js';
 
 interface AuthContextType {
-  user: Models.User<Models.Preferences> | null;
+  user: User | null;
+  session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   signUp: (email: string, password: string, name?: string) => Promise<void>;
@@ -15,55 +16,57 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    try {
-      const currentUser = await account.get();
-      setUser(currentUser);
-    } catch {
-      setUser(null);
-    }
+    const { data } = await supabase.auth.getUser();
+    setUser(data.user ?? null);
   }, []);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const currentUser = await account.get();
-        setUser(currentUser);
-      } catch {
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    })();
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, name?: string) => {
-    await account.create(ID.unique(), email, password, name);
-    await account.createEmailPasswordSession(email, password);
-    const currentUser = await account.get();
-    setUser(currentUser);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: name ? { data: { full_name: name } } : undefined,
+    });
+    if (error) throw error;
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    await account.createEmailPasswordSession(email, password);
-    const currentUser = await account.get();
-    setUser(currentUser);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   }, []);
 
   const signOut = useCallback(async () => {
-    try {
-      await account.deleteSession('current');
-    } catch {}
+    await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
   }, []);
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        session,
         isLoading,
         isAuthenticated: !!user,
         signUp,
