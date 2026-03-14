@@ -36,13 +36,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { KidsBubbleBackground } from '@/components/KidsBubbleBackground';
 
 interface SettingRow {
   id: string;
   label: string;
   sublabel?: string;
   icon: React.ReactNode;
-  iconBg: string;
+  iconGradient: readonly [string, string];
   route?: string;
   onPress?: () => void;
   badge?: string;
@@ -52,6 +53,7 @@ interface SettingRow {
 
 interface SettingGroup {
   title: string;
+  emoji: string;
   rows: SettingRow[];
 }
 
@@ -68,9 +70,14 @@ function RowItem({ row, COLORS, onPress }: { row: SettingRow; COLORS: any; onPre
         activeOpacity={1}
         style={styles.row}
       >
-        <View style={[styles.rowIcon, { backgroundColor: row.iconBg }]}>
+        <LinearGradient
+          colors={row.destructive ? [COLORS.error + '30', COLORS.error + '15'] : row.iconGradient}
+          style={styles.rowIcon}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
           {row.icon}
-        </View>
+        </LinearGradient>
         <View style={styles.rowBody}>
           <Text style={[styles.rowLabel, { color: row.destructive ? COLORS.error : COLORS.text.primary }]}>
             {row.label}
@@ -131,13 +138,14 @@ export default function SettingsTab() {
   const groups: SettingGroup[] = [
     {
       title: 'Profile',
+      emoji: '🧒',
       rows: [
         {
           id: 'edit-profile',
           label: 'Edit Profile',
           sublabel: profile?.kid_name ? `${profile.kid_name}'s profile` : 'Update name & avatar',
           icon: <UserCog size={17} color="#FFFFFF" strokeWidth={2} />,
-          iconBg: '#3B82F6',
+          iconGradient: ['#3B82F6', '#2563EB'],
           route: '/settings/edit-profile',
         },
         {
@@ -147,45 +155,48 @@ export default function SettingsTab() {
             ? `${profile.languages.length} language${profile.languages.length !== 1 ? 's' : ''} active`
             : 'Add learning languages',
           icon: <Globe size={17} color="#FFFFFF" strokeWidth={2} />,
-          iconBg: '#10B981',
+          iconGradient: ['#10B981', '#059669'],
           route: '/settings/edit-profile',
         },
       ],
     },
     {
       title: 'Appearance',
+      emoji: '🎨',
       rows: [
         {
           id: 'customization',
           label: 'Themes & Colors',
           sublabel: 'Personalize your experience',
           icon: <Palette size={17} color="#FFFFFF" strokeWidth={2} />,
-          iconBg: '#F59E0B',
+          iconGradient: ['#F59E0B', '#D97706'],
           route: '/settings/customization',
         },
       ],
     },
     {
       title: 'Developer',
+      emoji: '🔧',
       rows: [
         {
           id: 'api-keys',
           label: 'API Keys',
           sublabel: 'OpenAI & ElevenLabs',
           icon: <Key size={17} color="#FFFFFF" strokeWidth={2} />,
-          iconBg: '#6366F1',
+          iconGradient: ['#8B5CF6', '#7C3AED'],
           route: '/settings/api-keys',
         },
       ],
     },
     {
       title: 'Account',
+      emoji: '🔐',
       rows: [
         {
           id: 'signout',
           label: signingOut ? 'Signing out…' : 'Sign Out',
           icon: <LogOut size={17} color={COLORS.error} strokeWidth={2} />,
-          iconBg: COLORS.error + '20',
+          iconGradient: [COLORS.error + '30', COLORS.error + '15'],
           destructive: true,
           onPress: handleSignOut,
         },
@@ -196,12 +207,16 @@ export default function SettingsTab() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <KidsBubbleBackground bubbleCount={6} cloudCount={2} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* Page header */}
         <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.pageHeader}>
-          <Text style={[styles.pageTitle, { color: COLORS.text.primary }]}>Settings</Text>
+          <View style={styles.pageTitleRow}>
+            <Text style={styles.pageTitleEmoji}>⚙️</Text>
+            <Text style={[styles.pageTitle, { color: COLORS.text.primary }]}>Settings</Text>
+          </View>
         </Animated.View>
 
         {/* ── Profile hero ── */}
@@ -212,7 +227,6 @@ export default function SettingsTab() {
             end={{ x: 1, y: 1 }}
             style={styles.heroCard}
           >
-            {/* Top row */}
             <View style={styles.heroTop}>
               <View style={styles.heroAvatarWrap}>
                 <ProfileAvatar
@@ -248,7 +262,6 @@ export default function SettingsTab() {
               </TouchableOpacity>
             </View>
 
-            {/* Stats row */}
             <View style={styles.heroStats}>
               {[
                 { icon: <BookOpen size={13} color="rgba(255,255,255,0.9)" />, value: String(stories.length), label: 'Stories' },
@@ -278,10 +291,10 @@ export default function SettingsTab() {
               style={styles.upgradeBanner}
             >
               <View style={styles.upgradeIconBox}>
-                <Crown size={19} color="#F59E0B" fill="#F59E0B" />
+                <Crown size={22} color="#F59E0B" fill="#F59E0B" />
               </View>
               <View style={styles.upgradeBody}>
-                <Text style={styles.upgradeTitle}>Unlock Premium</Text>
+                <Text style={styles.upgradeTitle}>Unlock Premium ✨</Text>
                 <Text style={styles.upgradeSub}>Unlimited stories · More voices</Text>
               </View>
               <View style={styles.upgradeArrow}>
@@ -298,9 +311,12 @@ export default function SettingsTab() {
             entering={FadeInDown.delay(200 + gIdx * 65).springify()}
             style={styles.group}
           >
-            <Text style={[styles.groupLabel, { color: COLORS.text.secondary }]}>
-              {group.title.toUpperCase()}
-            </Text>
+            <View style={styles.groupLabelRow}>
+              <Text style={styles.groupEmoji}>{group.emoji}</Text>
+              <Text style={[styles.groupLabel, { color: COLORS.text.secondary }]}>
+                {group.title.toUpperCase()}
+              </Text>
+            </View>
             <View style={[styles.groupCard, { backgroundColor: COLORS.cardBackground }]}>
               {group.rows.map((row, rIdx) => (
                 <View key={row.id}>
@@ -341,16 +357,17 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
 
-  pageHeader: { paddingTop: SPACING.sm, paddingBottom: SPACING.xs },
+  pageHeader: { paddingTop: SPACING.xs, paddingBottom: SPACING.xs },
+  pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pageTitleEmoji: { fontSize: 22 },
   pageTitle: {
-    fontSize: 30,
+    fontSize: 28,
     fontFamily: FONTS.extrabold,
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
   },
 
-  /* Hero */
   heroCard: {
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.xxl,
     overflow: 'hidden',
     ...SHADOWS.lg,
   },
@@ -366,9 +383,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -1,
     right: -1,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#F59E0B',
     alignItems: 'center',
     justifyContent: 'center',
@@ -378,7 +395,7 @@ const styles = StyleSheet.create({
   heroInfo: { flex: 1, gap: 3 },
   heroName: {
     fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.bold,
+    fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
     letterSpacing: -0.3,
   },
@@ -414,7 +431,7 @@ const styles = StyleSheet.create({
   },
   heroEditText: {
     fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.semibold,
+    fontFamily: FONTS.bold,
     color: '#FFFFFF',
   },
   heroStats: {
@@ -426,9 +443,9 @@ const styles = StyleSheet.create({
   },
   heroStat: { flex: 1, alignItems: 'center', gap: 2 },
   heroStatIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -436,12 +453,12 @@ const styles = StyleSheet.create({
   },
   heroStatVal: {
     fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
+    fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
   },
   heroStatLbl: {
     fontSize: 10,
-    fontFamily: FONTS.medium,
+    fontFamily: FONTS.semibold,
     color: 'rgba(255,255,255,0.55)',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
@@ -452,54 +469,53 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
 
-  /* Upgrade */
   upgradeBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.xxl,
     gap: SPACING.md,
     ...SHADOWS.md,
   },
   upgradeIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   upgradeBody: { flex: 1 },
   upgradeTitle: {
     fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
+    fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
     letterSpacing: -0.2,
   },
   upgradeSub: {
     fontSize: 12,
-    fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.78)',
+    fontFamily: FONTS.semibold,
+    color: 'rgba(255,255,255,0.82)',
   },
   upgradeArrow: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  /* Groups */
   group: { gap: 6 },
+  groupLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: SPACING.sm },
+  groupEmoji: { fontSize: 14 },
   groupLabel: {
     fontSize: 11,
-    fontFamily: FONTS.semibold,
+    fontFamily: FONTS.extrabold,
     letterSpacing: 1.1,
-    paddingLeft: SPACING.sm,
   },
   groupCard: {
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.xxl,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -508,26 +524,25 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  /* Rows */
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingVertical: 13,
+    paddingVertical: 14,
     gap: SPACING.md,
-    minHeight: 54,
+    minHeight: 60,
   },
   rowIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 38,
+    height: 38,
+    borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rowBody: { flex: 1, gap: 1 },
   rowLabel: {
     fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.semibold,
+    fontFamily: FONTS.bold,
     letterSpacing: -0.1,
   },
   rowSub: {
@@ -541,7 +556,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    marginLeft: 34 + SPACING.md + SPACING.lg,
+    marginLeft: 38 + SPACING.md + SPACING.lg,
   },
   badge: {
     paddingHorizontal: 8,
@@ -550,12 +565,11 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    fontFamily: FONTS.bold,
+    fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },
 
-  /* Footer */
   footer: { alignItems: 'center', paddingTop: SPACING.md },
   footerPill: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Hop as Home, Library, Award, Settings } from 'lucide-react-native';
 import Animated, {
@@ -13,48 +13,57 @@ import Animated, {
 import { useTheme } from '@/contexts/ThemeContext';
 import { FONTS } from '@/constants/theme';
 
-function TabIcon({ icon: Icon, color, focused, size }: {
+function TabIcon({
+  icon: Icon,
+  color,
+  focused,
+  size,
+  label,
+}: {
   icon: typeof Home;
   color: string;
   focused: boolean;
   size: number;
+  label: string;
 }) {
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
-  const dotScale = useSharedValue(0);
+  const pillScale = useSharedValue(0);
+  const pillOpacity = useSharedValue(0);
 
   useEffect(() => {
     if (focused) {
       scale.value = withSequence(
-        withSpring(1.3, { damping: 6, stiffness: 400 }),
-        withSpring(1.15, { damping: 10, stiffness: 200 })
+        withSpring(1.35, { damping: 5, stiffness: 500 }),
+        withSpring(1.15, { damping: 12, stiffness: 200 })
       );
-      translateY.value = withSpring(-2, { damping: 10, stiffness: 250 });
-      dotScale.value = withDelay(80, withSpring(1, { damping: 8, stiffness: 300 }));
+      translateY.value = withSpring(-3, { damping: 10, stiffness: 280 });
+      pillScale.value = withDelay(40, withSpring(1, { damping: 10, stiffness: 300 }));
+      pillOpacity.value = withDelay(40, withTiming(1, { duration: 180 }));
     } else {
-      scale.value = withSpring(1, { damping: 12, stiffness: 200 });
-      translateY.value = withSpring(0, { damping: 12, stiffness: 200 });
-      dotScale.value = withTiming(0, { duration: 150 });
+      scale.value = withSpring(1, { damping: 14, stiffness: 200 });
+      translateY.value = withSpring(0, { damping: 14, stiffness: 200 });
+      pillScale.value = withTiming(0, { duration: 160 });
+      pillOpacity.value = withTiming(0, { duration: 160 });
     }
   }, [focused]);
 
   const iconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { translateY: translateY.value },
-    ],
+    transform: [{ scale: scale.value }, { translateY: translateY.value }],
   }));
 
-  const dotStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: dotScale.value }],
-    opacity: dotScale.value,
+  const pillStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: pillScale.value }],
+    opacity: pillOpacity.value,
   }));
 
   return (
-    <Animated.View style={[styles.iconWrap, iconStyle]}>
-      <Icon size={size} color={color} strokeWidth={focused ? 2.5 : 2} />
-      <Animated.View style={[styles.activeDot, { backgroundColor: color }, dotStyle]} />
-    </Animated.View>
+    <View style={styles.iconContainer}>
+      <Animated.View style={[styles.activePill, { backgroundColor: color + '22' }, pillStyle]} />
+      <Animated.View style={[styles.iconWrap, iconStyle]}>
+        <Icon size={size} color={color} strokeWidth={focused ? 2.5 : 1.8} />
+      </Animated.View>
+    </View>
   );
 }
 
@@ -71,19 +80,22 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: COLORS.cardBackground,
           borderTopWidth: 0,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
-          paddingTop: 10,
-          height: Platform.OS === 'ios' ? 88 : 68,
-          elevation: 12,
+          paddingBottom: Platform.OS === 'ios' ? 26 : 10,
+          paddingTop: 8,
+          height: Platform.OS === 'ios' ? 92 : 70,
+          elevation: 0,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 16,
+          shadowOffset: { width: 0, height: -6 },
+          shadowOpacity: 0.07,
+          shadowRadius: 20,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
         },
         tabBarLabelStyle: {
-          fontFamily: FONTS.semibold,
-          fontSize: 11,
-          marginTop: 2,
+          fontFamily: FONTS.bold,
+          fontSize: 10,
+          marginTop: 1,
+          letterSpacing: 0.2,
         },
       }}>
       <Tabs.Screen
@@ -91,7 +103,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ size, color, focused }) => (
-            <TabIcon icon={Home} size={size} color={color} focused={focused} />
+            <TabIcon icon={Home} size={size} color={color} focused={focused} label="Home" />
           ),
         }}
       />
@@ -100,7 +112,7 @@ export default function TabLayout() {
         options={{
           title: 'Library',
           tabBarIcon: ({ size, color, focused }) => (
-            <TabIcon icon={Library} size={size} color={color} focused={focused} />
+            <TabIcon icon={Library} size={size} color={color} focused={focused} label="Library" />
           ),
         }}
       />
@@ -109,7 +121,7 @@ export default function TabLayout() {
         options={{
           title: 'Progress',
           tabBarIcon: ({ size, color, focused }) => (
-            <TabIcon icon={Award} size={size} color={color} focused={focused} />
+            <TabIcon icon={Award} size={size} color={color} focused={focused} label="Progress" />
           ),
         }}
       />
@@ -118,7 +130,7 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ size, color, focused }) => (
-            <TabIcon icon={Settings} size={size} color={color} focused={focused} />
+            <TabIcon icon={Settings} size={size} color={color} focused={focused} label="Settings" />
           ),
         }}
       />
@@ -127,14 +139,20 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 52,
+    height: 36,
+  },
+  activePill: {
+    position: 'absolute',
+    width: 48,
+    height: 32,
+    borderRadius: 16,
+  },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
-  },
-  activeDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
   },
 });
