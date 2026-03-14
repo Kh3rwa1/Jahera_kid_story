@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,46 +7,82 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Save, Eye, EyeOff, Key, CircleCheck as CheckCircle } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Key,
+  CircleCheck as CheckCircle,
+  CircleAlert as AlertCircle,
+  Save,
+  ExternalLink,
+} from 'lucide-react-native';
+import { SPACING, BORDER_RADIUS, FONTS, FONT_SIZES, SHADOWS } from '@/constants/theme';
 import { apiKeysService, API_KEY_NAMES } from '@/services/apiKeysService';
-import { handleError, showErrorAlert } from '@/utils/errorHandler';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ApiKeyField {
-  name: string;
+  id: string;
   label: string;
+  provider: string;
   description: string;
   placeholder: string;
   keyName: string;
+  helpText: string;
+  helpUrl: string;
+  badge?: string;
 }
 
 const API_KEY_FIELDS: ApiKeyField[] = [
   {
-    name: 'openai',
-    label: 'OpenAI API Key',
-    description: 'Required for story generation using OpenRouter',
-    placeholder: 'sk-...',
-    keyName: API_KEY_NAMES.OPENAI,
+    id: 'openrouter',
+    label: 'OpenRouter API Key',
+    provider: 'OpenRouter',
+    description: 'Recommended — access to hundreds of AI models at lower cost',
+    placeholder: 'sk-or-v1-...',
+    keyName: API_KEY_NAMES.OPENROUTER,
+    helpText: 'Get your free key at openrouter.ai',
+    helpUrl: 'https://openrouter.ai/keys',
+    badge: 'Recommended',
   },
   {
-    name: 'elevenlabs',
+    id: 'openai',
+    label: 'OpenAI API Key',
+    provider: 'OpenAI',
+    description: 'Direct access to GPT-4o-mini for story generation',
+    placeholder: 'sk-...',
+    keyName: API_KEY_NAMES.OPENAI,
+    helpText: 'Get your key at platform.openai.com',
+    helpUrl: 'https://platform.openai.com/api-keys',
+  },
+  {
+    id: 'elevenlabs',
     label: 'ElevenLabs API Key',
-    description: 'Required for text-to-speech audio generation',
+    provider: 'ElevenLabs',
+    description: 'Optional — enables audio narration in any language',
     placeholder: 'Enter your ElevenLabs API key',
     keyName: API_KEY_NAMES.ELEVENLABS,
+    helpText: 'Get your key at elevenlabs.io',
+    helpUrl: 'https://elevenlabs.io',
   },
 ];
 
 export default function ApiKeysScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
+
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
-  const [validKeys, setValidKeys] = useState<Record<string, boolean>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadApiKeys();
@@ -56,318 +92,384 @@ export default function ApiKeysScreen() {
     try {
       setLoading(true);
       const keys: Record<string, string> = {};
-      const valid: Record<string, boolean> = {};
-
       for (const field of API_KEY_FIELDS) {
         const key = await apiKeysService.getApiKey(field.keyName);
-        if (key && key !== 'your-api-key-here') {
-          keys[field.name] = key;
-          valid[field.name] = apiKeysService.validateApiKey(field.keyName, key);
-        }
+        if (key) keys[field.id] = key;
       }
-
       setApiKeys(keys);
-      setValidKeys(valid);
-    } catch (error) {
-      const appError = handleError(error, 'loadApiKeys');
-      showErrorAlert(appError, 'Failed to Load API Keys');
+    } catch {
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async () => {
-    try {
-      setSaving(true);
+    const newErrors: Record<string, string> = {};
 
-      const updates: Promise<void>[] = [];
-
-      for (const field of API_KEY_FIELDS) {
-        const value = apiKeys[field.name];
-        if (value && value.trim() && value !== 'your-api-key-here') {
-          if (!apiKeysService.validateApiKey(field.keyName, value)) {
-            Alert.alert(
-              'Invalid API Key',
-              `The ${field.label} appears to be invalid. Please check and try again.`,
-              [{ text: 'OK' }]
-            );
-            return;
-          }
-
-          updates.push(
-            apiKeysService.setApiKey(field.keyName, value.trim())
-          );
+    for (const field of API_KEY_FIELDS) {
+      const value = apiKeys[field.id];
+      if (value && value.trim()) {
+        if (!apiKeysService.validateApiKey(field.keyName, value.trim())) {
+          newErrors[field.id] = `Invalid ${field.provider} key format`;
         }
       }
+    }
 
-      await Promise.all(updates);
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
-      Alert.alert('Success', 'API keys saved successfully!', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
-    } catch (error) {
-      const appError = handleError(error, 'saveApiKeys');
-      showErrorAlert(appError, 'Failed to Save API Keys');
+    const hasOpenRouter = !!apiKeys.openrouter?.trim();
+    const hasOpenAI = !!apiKeys.openai?.trim();
+    if (!hasOpenRouter && !hasOpenAI) {
+      setErrors({ openrouter: 'At least one AI key (OpenRouter or OpenAI) is required' });
+      return;
+    }
+
+    setErrors({});
+    setSaving(true);
+    try {
+      for (const field of API_KEY_FIELDS) {
+        const value = apiKeys[field.id];
+        if (value && value.trim()) {
+          await apiKeysService.setApiKey(field.keyName, value.trim());
+        }
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setErrors({ general: 'Failed to save keys. Please try again.' });
     } finally {
       setSaving(false);
     }
   };
 
-  const toggleShowKey = (name: string) => {
-    setShowKeys(prev => ({ ...prev, [name]: !prev[name] }));
+  const handleKeyChange = (id: string, value: string) => {
+    setApiKeys(prev => ({ ...prev, [id]: value }));
+    if (errors[id]) setErrors(prev => ({ ...prev, [id]: '' }));
   };
 
-  const handleKeyChange = (name: string, value: string) => {
-    setApiKeys(prev => ({ ...prev, [name]: value }));
-
-    const field = API_KEY_FIELDS.find(f => f.name === name);
-    if (field && value) {
-      setValidKeys(prev => ({
-        ...prev,
-        [name]: apiKeysService.validateApiKey(field.keyName, value),
-      }));
-    }
+  const isKeyValid = (field: ApiKeyField) => {
+    const val = apiKeys[field.id];
+    return !!val && apiKeysService.validateApiKey(field.keyName, val);
   };
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </View>
+      <SafeAreaView style={[styles.root, { backgroundColor: COLORS.background }]}>
+        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+        <View style={styles.centerWrap}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={24} color={COLORS.text.primary} />
+    <SafeAreaView style={[styles.root, { backgroundColor: COLORS.background }]}>
+      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+
+      <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.topBar}>
+        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: COLORS.cardBackground }]} activeOpacity={0.7}>
+          <ArrowLeft size={20} color={COLORS.text.primary} />
         </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>API Keys</Text>
-          <Text style={styles.headerSubtitle}>Manage your API keys</Text>
+        <View style={styles.topBarContent}>
+          <Text style={[styles.topBarTitle, { color: COLORS.text.primary }]}>API Keys</Text>
+          <Text style={[styles.topBarSub, { color: COLORS.text.secondary }]}>Power your stories</Text>
         </View>
-      </View>
+      </Animated.View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.infoBox}>
-          <Key size={24} color={COLORS.primary} />
-          <Text style={styles.infoText}>
-            API keys are stored securely in the database and are never exposed to the client.
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Animated.View entering={FadeInUp.delay(60).springify()} style={[styles.infoBanner, { backgroundColor: COLORS.primary + '12', borderColor: COLORS.primary + '30' }]}>
+          <Key size={18} color={COLORS.primary} strokeWidth={2} />
+          <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>
+            Keys are stored locally on your device. Add <Text style={{ color: COLORS.primary, fontFamily: FONTS.bold }}>OpenRouter</Text> or <Text style={{ color: COLORS.primary, fontFamily: FONTS.bold }}>OpenAI</Text> to generate stories.
           </Text>
-        </View>
+        </Animated.View>
 
-        {API_KEY_FIELDS.map(field => (
-          <View key={field.name} style={styles.fieldContainer}>
-            <View style={styles.fieldHeader}>
-              <Text style={styles.fieldLabel}>{field.label}</Text>
-              {validKeys[field.name] && (
-                <CheckCircle size={16} color={COLORS.success} />
-              )}
-            </View>
-            <Text style={styles.fieldDescription}>{field.description}</Text>
+        {API_KEY_FIELDS.map((field, i) => {
+          const valid = isKeyValid(field);
+          const hasError = !!errors[field.id];
+          const hasValue = !!apiKeys[field.id];
 
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={
-                  showKeys[field.name]
-                    ? apiKeys[field.name] || ''
-                    : apiKeysService.maskApiKey(apiKeys[field.name] || '')
-                }
-                onChangeText={value => handleKeyChange(field.name, value)}
-                placeholder={field.placeholder}
-                placeholderTextColor={COLORS.text.light}
-                secureTextEntry={!showKeys[field.name]}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => toggleShowKey(field.name)}>
-                {showKeys[field.name] ? (
-                  <EyeOff size={20} color={COLORS.text.secondary} />
-                ) : (
-                  <Eye size={20} color={COLORS.text.secondary} />
+          return (
+            <Animated.View key={field.id} entering={FadeInUp.delay(100 + i * 60).springify()}>
+              <View style={[
+                styles.keyCard,
+                { backgroundColor: COLORS.cardBackground, borderColor: valid ? COLORS.success + '50' : hasError ? COLORS.error + '50' : 'transparent' },
+              ]}>
+                <View style={styles.keyCardHeader}>
+                  <View style={styles.keyCardTitle}>
+                    <Text style={[styles.keyLabel, { color: COLORS.text.primary }]}>{field.label}</Text>
+                    {field.badge && (
+                      <View style={[styles.badge, { backgroundColor: COLORS.primary + '18' }]}>
+                        <Text style={[styles.badgeText, { color: COLORS.primary }]}>{field.badge}</Text>
+                      </View>
+                    )}
+                  </View>
+                  {valid && <CheckCircle size={18} color={COLORS.success} />}
+                  {hasError && <AlertCircle size={18} color={COLORS.error} />}
+                </View>
+
+                <Text style={[styles.keyDesc, { color: COLORS.text.secondary }]}>{field.description}</Text>
+
+                <View style={[
+                  styles.inputWrap,
+                  { backgroundColor: COLORS.background, borderColor: valid ? COLORS.success + '40' : hasError ? COLORS.error + '50' : COLORS.text.light + '20' },
+                ]}>
+                  <TextInput
+                    style={[styles.input, { color: COLORS.text.primary }]}
+                    value={showKeys[field.id] ? (apiKeys[field.id] || '') : apiKeysService.maskApiKey(apiKeys[field.id] || '')}
+                    onChangeText={v => handleKeyChange(field.id, v)}
+                    placeholder={field.placeholder}
+                    placeholderTextColor={COLORS.text.light}
+                    secureTextEntry={!showKeys[field.id]}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onFocus={() => {
+                      if (!showKeys[field.id]) setShowKeys(prev => ({ ...prev, [field.id]: true }));
+                    }}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowKeys(prev => ({ ...prev, [field.id]: !prev[field.id] }))}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.eyeBtn}
+                  >
+                    {showKeys[field.id]
+                      ? <EyeOff size={18} color={COLORS.text.light} />
+                      : <Eye size={18} color={COLORS.text.light} />
+                    }
+                  </TouchableOpacity>
+                </View>
+
+                {hasError && (
+                  <Text style={[styles.errorMsg, { color: COLORS.error }]}>{errors[field.id]}</Text>
                 )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
 
-        <View style={styles.helpBox}>
-          <Text style={styles.helpTitle}>Where to get API keys?</Text>
-          <Text style={styles.helpText}>
-            • OpenAI/OpenRouter: Visit openrouter.ai to get your API key
-          </Text>
-          <Text style={styles.helpText}>
-            • ElevenLabs: Visit elevenlabs.io to get your API key
-          </Text>
-        </View>
+                {!hasValue && (
+                  <View style={styles.helpRow}>
+                    <ExternalLink size={12} color={COLORS.primary} />
+                    <Text style={[styles.helpText, { color: COLORS.primary }]}>{field.helpText}</Text>
+                  </View>
+                )}
+              </View>
+            </Animated.View>
+          );
+        })}
+
+        {errors.general && (
+          <Animated.View entering={FadeInDown.springify()} style={[styles.generalError, { backgroundColor: COLORS.error + '12' }]}>
+            <AlertCircle size={16} color={COLORS.error} />
+            <Text style={[styles.generalErrorText, { color: COLORS.error }]}>{errors.general}</Text>
+          </Animated.View>
+        )}
+
+        <Animated.View entering={FadeInUp.delay(340).springify()} style={styles.bottomPadding} />
       </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={saving}>
-          {saving ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <>
-              <Save size={20} color="#FFFFFF" />
-              <Text style={styles.saveButtonText}>Save API Keys</Text>
-            </>
-          )}
+      <View style={[styles.footer, { backgroundColor: COLORS.background, borderTopColor: COLORS.text.primary + '08' }]}>
+        {saved && (
+          <Animated.View entering={FadeInDown.springify()} style={[styles.savedBanner, { backgroundColor: COLORS.success + '15' }]}>
+            <CheckCircle size={16} color={COLORS.success} />
+            <Text style={[styles.savedText, { color: COLORS.success }]}>Keys saved successfully</Text>
+          </Animated.View>
+        )}
+        <TouchableOpacity onPress={handleSave} disabled={saving} activeOpacity={0.88}>
+          <LinearGradient
+            colors={saving ? [COLORS.text.light, COLORS.text.light] : [COLORS.primary, COLORS.primaryDark]}
+            style={styles.saveBtn}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            {saving
+              ? <ActivityIndicator color="#FFF" size="small" />
+              : (
+                <>
+                  <Save size={18} color="#FFF" strokeWidth={2.5} />
+                  <Text style={styles.saveBtnText}>Save Keys</Text>
+                </>
+              )
+            }
+          </LinearGradient>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-  },
-  header: {
+  root: { flex: 1 },
+  centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 60,
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.lg,
-    backgroundColor: COLORS.background,
+    paddingVertical: SPACING.md,
+    gap: SPACING.md,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.cardBackground,
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.lg,
+    ...SHADOWS.xs,
   },
-  headerContent: {
-    flex: 1,
-  },
-  headerTitle: {
+  topBarContent: { flex: 1 },
+  topBarTitle: {
     fontSize: FONT_SIZES.xxl,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
+    fontFamily: FONTS.extrabold,
+    letterSpacing: -0.4,
   },
-  headerSubtitle: {
+  topBarSub: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.text.secondary,
+    fontFamily: FONTS.medium,
+    marginTop: 1,
   },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: SPACING.xl,
+
+  scroll: {
+    paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxxl,
+    gap: SPACING.lg,
   },
-  infoBox: {
+
+  infoBanner: {
     flexDirection: 'row',
-    backgroundColor: '#E8F5E9',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
     padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    marginBottom: SPACING.xxl,
-    gap: SPACING.md,
+    borderRadius: BORDER_RADIUS.xl,
+    borderWidth: 1,
   },
   infoText: {
     flex: 1,
     fontSize: FONT_SIZES.sm,
-    color: COLORS.text.primary,
+    fontFamily: FONTS.medium,
     lineHeight: 20,
   },
-  fieldContainer: {
-    marginBottom: SPACING.xxl,
+
+  keyCard: {
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xxl,
+    borderWidth: 1.5,
+    gap: SPACING.sm,
+    ...SHADOWS.sm,
   },
-  fieldHeader: {
+  keyCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  keyCardTitle: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-    marginBottom: SPACING.xs,
+    flex: 1,
   },
-  fieldLabel: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
+  keyLabel: {
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONTS.bold,
   },
-  fieldDescription: {
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: BORDER_RADIUS.pill,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontFamily: FONTS.extrabold,
+    letterSpacing: 0.3,
+  },
+  keyDesc: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.text.secondary,
-    marginBottom: SPACING.md,
+    fontFamily: FONTS.medium,
+    lineHeight: 19,
   },
-  inputContainer: {
+
+  inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 2,
-    borderColor: COLORS.cardBackground,
+    borderRadius: BORDER_RADIUS.xl,
+    borderWidth: 1.5,
+    paddingHorizontal: SPACING.lg,
+    minHeight: 52,
   },
   input: {
     flex: 1,
-    padding: SPACING.lg,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text.primary,
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.semibold,
+    paddingVertical: SPACING.md,
   },
-  eyeButton: {
-    padding: SPACING.lg,
+  eyeBtn: {
+    paddingLeft: SPACING.sm,
   },
-  helpBox: {
-    backgroundColor: '#FFF3CD',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    marginTop: SPACING.lg,
+
+  errorMsg: {
+    fontSize: FONT_SIZES.xs,
+    fontFamily: FONTS.semibold,
+    marginTop: 2,
   },
-  helpTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text.primary,
-    marginBottom: SPACING.sm,
+
+  helpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   helpText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text.primary,
-    marginBottom: SPACING.xs,
+    fontSize: FONT_SIZES.xs,
+    fontFamily: FONTS.semibold,
   },
+
+  generalError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+  },
+  generalErrorText: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.semibold,
+    flex: 1,
+  },
+
+  bottomPadding: { height: SPACING.xxl },
+
   footer: {
     padding: SPACING.xl,
-    backgroundColor: COLORS.background,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    gap: SPACING.sm,
   },
-  saveButton: {
+  savedBanner: {
     flexDirection: 'row',
-    backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.lg,
+    alignItems: 'center',
+    gap: SPACING.sm,
+    padding: SPACING.md,
     borderRadius: BORDER_RADIUS.xl,
+  },
+  savedText: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.bold,
+  },
+  saveBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    paddingVertical: 17,
+    borderRadius: BORDER_RADIUS.pill,
+    ...SHADOWS.lg,
   },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
+  saveBtnText: {
+    color: '#FFF',
     fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.bold,
+    fontFamily: FONTS.extrabold,
+    letterSpacing: 0.2,
   },
 });

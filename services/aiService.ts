@@ -1,6 +1,6 @@
 import { ProfileWithRelations } from '@/types/database';
 import { StoryContext } from '@/utils/contextUtils';
-import { apiKeysService } from '@/services/apiKeysService';
+import { apiKeysService, ApiProvider } from '@/services/apiKeysService';
 
 export class QuotaExceededError extends Error {
   constructor(message: string) {
@@ -33,28 +33,195 @@ export interface GeneratedStory {
 }
 
 const THEME_PROMPTS: Record<string, string> = {
-  adventure: 'an exciting adventure',
+  adventure: 'an exciting adventure with exploration and discovery',
+  fantasy: 'a magical fantasy world with spells, dragons, and wonder',
   magic: 'a magical world with spells and wonder',
-  animals: 'animals as the main characters',
-  space: 'outer space and stars',
-  ocean: 'the ocean and sea creatures',
-  forest: 'an enchanted forest',
+  animals: 'friendly animals as the main characters',
+  space: 'outer space, stars, and planets',
+  ocean: 'the deep ocean and colourful sea creatures',
+  forest: 'an enchanted forest full of secrets',
   dinosaurs: 'dinosaurs and prehistoric times',
-  superheroes: 'superheroes and special powers',
+  superheroes: 'superheroes with special powers',
+  heroes: 'brave heroes overcoming challenges',
+  nature: 'the beauty of nature, plants, and wildlife',
+  science: 'science, invention, and curious discoveries',
 };
 
 const MOOD_PROMPTS: Record<string, string> = {
-  funny: 'funny and full of humor',
-  exciting: 'exciting and full of action',
-  calm: 'calm and soothing',
+  funny: 'funny, playful, and full of silly humour',
+  exciting: 'exciting, fast-paced, and full of action',
+  calming: 'calm, peaceful, and soothing',
+  calm: 'calm, peaceful, and soothing',
   mysterious: 'mysterious and intriguing',
+  educational: 'educational and informative — teaching a fun fact',
 };
 
 const LENGTH_CONFIGS: Record<string, { words: string; tokens: number }> = {
-  short: { words: '100-150 words', tokens: 600 },
-  medium: { words: '200-300 words', tokens: 1000 },
-  long: { words: '400-500 words', tokens: 1600 },
+  short: { words: '80-120 words', tokens: 700 },
+  medium: { words: '180-250 words', tokens: 1100 },
+  long: { words: '350-450 words', tokens: 1800 },
 };
+
+const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
+const OPENAI_BASE = 'https://api.openai.com/v1';
+const OPENROUTER_MODEL = 'openai/gpt-4o-mini';
+const OPENAI_MODEL = 'gpt-4o-mini';
+
+async function callChatCompletion(
+  apiKey: string,
+  provider: ApiProvider,
+  messages: Array<{ role: string; content: string }>,
+  maxTokens: number,
+  signal: AbortSignal
+): Promise<string> {
+  const isOpenRouter = provider === 'openrouter';
+  const baseUrl = isOpenRouter ? OPENROUTER_BASE : OPENAI_BASE;
+  const model = isOpenRouter ? OPENROUTER_MODEL : OPENAI_MODEL;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`,
+  };
+
+  if (isOpenRouter) {
+    headers['HTTP-Referer'] = 'https://jahera.app';
+    headers['X-Title'] = 'Jahera Kids Stories';
+  }
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.85,
+      max_tokens: maxTokens,
+      response_format: { type: 'json_object' },
+    }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
+    const errorMsg = errorData?.error?.message || `API error: ${response.status}`;
+
+    if (response.status === 429) {
+      throw new QuotaExceededError('You have reached your API usage limit. Please check your plan or try again later.');
+    }
+    if (response.status === 401) {
+      throw new Error(`Invalid API key. Please check your ${isOpenRouter ? 'OpenRouter' : 'OpenAI'} key in Settings → API Keys.`);
+    }
+    throw new Error(errorMsg);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error('Empty response from AI provider');
+  return content;
+}
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 2,
+  baseDelay = 1500
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (err instanceof QuotaExceededError) throw err;
+      if (err instanceof Error && (err.message.includes('401') || err.message.includes('Invalid API key'))) throw err;
+      if (attempt < maxRetries) {
+        await new Promise(res => setTimeout(res, baseDelay * Math.pow(2, attempt)));
+      }
+    }
+  }
+  throw lastError;
+}
+
+function buildPrompt(
+  profile: ProfileWithRelations,
+  languageCode: string,
+  context: StoryContext,
+  options?: StoryOptions
+): { systemMessage: string; userMessage: string; lengthTokens: number } {
+  const characterNames = [
+    ...profile.family_members.map(m => m.name),
+    ...profile.friends.map(f => f.name),
+  ];
+  const characterContext = characterNames.length > 0
+    ? `Include these characters: ${characterNames.join(', ')}.`
+    : '';
+
+  const themeDesc = options?.theme ? THEME_PROMPTS[options.theme] || options.theme : 'an adventure';
+  const moodDesc = options?.mood ? MOOD_PROMPTS[options.mood] || options.mood : 'engaging and fun';
+  const lengthConfig = LENGTH_CONFIGS[options?.length || 'medium'];
+
+  const systemMessage = `You are a creative children's story writer. You write engaging, age-appropriate stories for children aged 4-10. Always respond with valid JSON only — no markdown, no code fences, no extra text.`;
+
+  const userMessage = `Write a children's story for a child named ${profile.kid_name}.
+
+Requirements:
+- Language: ${languageCode}
+- Setting: ${context.season} season, ${context.timeOfDay}
+- Theme: ${themeDesc}
+- Tone: ${moodDesc}
+- Length: ${lengthConfig.words}
+- Age group: 4-10 years old
+- Must be educational and positive
+${characterContext}
+
+Return ONLY this JSON structure (no markdown, no extra keys):
+{
+  "title": "Story title here",
+  "content": "Full story text here",
+  "quiz": [
+    {
+      "question": "A question about the story?",
+      "options": { "A": "First option", "B": "Second option", "C": "Third option" },
+      "correct_answer": "A"
+    },
+    {
+      "question": "Another question?",
+      "options": { "A": "First option", "B": "Second option", "C": "Third option" },
+      "correct_answer": "B"
+    },
+    {
+      "question": "Third question?",
+      "options": { "A": "First option", "B": "Second option", "C": "Third option" },
+      "correct_answer": "C"
+    }
+  ]
+}`;
+
+  return { systemMessage, userMessage, lengthTokens: lengthConfig.tokens };
+}
+
+function parseStoryJson(raw: string): GeneratedStory {
+  let cleaned = raw.trim();
+  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) cleaned = fenceMatch[1].trim();
+
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+
+  const story = JSON.parse(cleaned);
+  if (!story.title || typeof story.title !== 'string') throw new Error('Missing story title');
+  if (!story.content || typeof story.content !== 'string') throw new Error('Missing story content');
+  if (!Array.isArray(story.quiz) || story.quiz.length < 2) throw new Error('Missing or incomplete quiz');
+
+  const validQuiz = story.quiz.slice(0, 3).filter((q: any) =>
+    q.question && q.options?.A && q.options?.B && q.options?.C && q.correct_answer
+  );
+  if (validQuiz.length < 2) throw new Error('Quiz questions are malformed');
+
+  return { ...story, quiz: validQuiz } as GeneratedStory;
+}
 
 export async function generateAdventureStory(
   profile: ProfileWithRelations,
@@ -63,108 +230,39 @@ export async function generateAdventureStory(
   options?: StoryOptions
 ): Promise<GeneratedStory | null> {
   try {
-    const openaiKey = await apiKeysService.getOpenAIKey();
-    if (!openaiKey) {
-      throw new Error('OpenAI API key not configured. Please add your API key in Settings → API Keys.');
+    const activeKey = await apiKeysService.getActiveAIKey();
+    if (!activeKey) {
+      throw new Error('No AI API key configured. Please add your OpenRouter or OpenAI key in Settings → API Keys.');
     }
 
-    const characterNames = [
-      ...profile.family_members.map(m => m.name),
-      ...profile.friends.map(f => f.name),
+    const { systemMessage, userMessage, lengthTokens } = buildPrompt(profile, languageCode, context, options);
+    const messages = [
+      { role: 'system', content: systemMessage },
+      { role: 'user', content: userMessage },
     ];
 
-    const characterContext = characterNames.length > 0
-      ? `The story should include these characters: ${characterNames.join(', ')}.`
-      : '';
-
-    const themeDesc = options?.theme ? THEME_PROMPTS[options.theme] || options.theme : 'an adventure';
-    const moodDesc = options?.mood ? MOOD_PROMPTS[options.mood] || options.mood : 'engaging';
-    const lengthConfig = LENGTH_CONFIGS[options?.length || 'medium'];
-
-    const prompt = `Create a children's story for a child named ${profile.kid_name}.
-The story should be in ${languageCode} language.
-The story is set during ${context.season} and it is ${context.timeOfDay}.
-Theme: ${themeDesc}. Tone: ${moodDesc}.
-${characterContext}
-The story should be ${lengthConfig.words} long, educational, and appropriate for children aged 4-10.
-
-Return ONLY a JSON object with this exact structure:
-{
-  "title": "Story Title",
-  "content": "The full story text (150-250 words)",
-  "quiz": [
-    {
-      "question": "Question text?",
-      "options": { "A": "Option A", "B": "Option B", "C": "Option C" },
-      "correct_answer": "A"
-    },
-    {
-      "question": "Question text?",
-      "options": { "A": "Option A", "B": "Option B", "C": "Option C" },
-      "correct_answer": "B"
-    },
-    {
-      "question": "Question text?",
-      "options": { "A": "Option A", "B": "Option B", "C": "Option C" },
-      "correct_answer": "C"
-    }
-  ]
-}`;
-
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a creative children\'s story writer. Always respond with valid JSON only, no markdown, no extra text.',
-          },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.8,
-        max_tokens: lengthConfig.tokens,
-        response_format: { type: 'json_object' },
-      }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-      throw new Error(errorData?.error?.message || `OpenAI API error: ${response.status}`);
+    try {
+      const rawContent = await withRetry(() =>
+        callChatCompletion(activeKey.key, activeKey.provider, messages, lengthTokens, controller.signal)
+      );
+      clearTimeout(timeoutId);
+      const story = parseStoryJson(rawContent);
+      const wordCount = story.content.split(/\s+/).filter(Boolean).length;
+      return { ...story, word_count: wordCount };
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      throw new Error('Empty response from OpenAI');
-    }
-
-    const story = JSON.parse(content);
-
-    if (!story.title || !story.content || !Array.isArray(story.quiz) || story.quiz.length !== 3) {
-      throw new Error('Invalid story format received from OpenAI');
-    }
-
-    const wordCount = story.content.split(/\s+/).filter(Boolean).length;
-    return { ...story, word_count: wordCount } as GeneratedStory;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Story generation timed out. Please try again.');
+      throw new Error('Story generation timed out. Please check your connection and try again.');
     }
-    if (error instanceof Error) {
+    if (error instanceof QuotaExceededError || error instanceof Error) {
       throw error;
     }
     return null;
   }
 }
+

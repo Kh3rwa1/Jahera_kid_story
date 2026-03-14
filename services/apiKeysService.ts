@@ -4,8 +4,11 @@ const STORAGE_PREFIX = 'jahera_api_key_';
 
 export const API_KEY_NAMES = {
   OPENAI: 'openai_api_key',
+  OPENROUTER: 'openrouter_api_key',
   ELEVENLABS: 'elevenlabs_api_key',
 } as const;
+
+export type ApiProvider = 'openai' | 'openrouter';
 
 export const apiKeysService = {
   async getApiKey(keyName: string): Promise<string | null> {
@@ -39,6 +42,10 @@ export const apiKeysService = {
     return this.getApiKey(API_KEY_NAMES.OPENAI);
   },
 
+  async getOpenRouterKey(): Promise<string | null> {
+    return this.getApiKey(API_KEY_NAMES.OPENROUTER);
+  },
+
   async getElevenLabsKey(): Promise<string | null> {
     return this.getApiKey(API_KEY_NAMES.ELEVENLABS);
   },
@@ -47,8 +54,24 @@ export const apiKeysService = {
     return this.setApiKey(API_KEY_NAMES.OPENAI, apiKey);
   },
 
+  async setOpenRouterKey(apiKey: string): Promise<void> {
+    return this.setApiKey(API_KEY_NAMES.OPENROUTER, apiKey);
+  },
+
   async setElevenLabsKey(apiKey: string): Promise<void> {
     return this.setApiKey(API_KEY_NAMES.ELEVENLABS, apiKey);
+  },
+
+  async getActiveAIKey(): Promise<{ key: string; provider: ApiProvider } | null> {
+    const openrouterKey = await this.getOpenRouterKey();
+    if (openrouterKey && this.validateApiKey(API_KEY_NAMES.OPENROUTER, openrouterKey)) {
+      return { key: openrouterKey, provider: 'openrouter' };
+    }
+    const openaiKey = await this.getOpenAIKey();
+    if (openaiKey && this.validateApiKey(API_KEY_NAMES.OPENAI, openaiKey)) {
+      return { key: openaiKey, provider: 'openai' };
+    }
+    return null;
   },
 
   validateApiKey(keyName: string, keyValue: string): boolean {
@@ -58,6 +81,8 @@ export const apiKeysService = {
     switch (keyName) {
       case API_KEY_NAMES.OPENAI:
         return keyValue.startsWith('sk-') && keyValue.length > 20;
+      case API_KEY_NAMES.OPENROUTER:
+        return keyValue.startsWith('sk-or-') && keyValue.length > 20;
       case API_KEY_NAMES.ELEVENLABS:
         return keyValue.length > 20;
       default:
@@ -67,7 +92,7 @@ export const apiKeysService = {
 
   maskApiKey(apiKey: string): string {
     if (!apiKey || apiKey.length < 8) return '••••••••';
-    const visibleStart = apiKey.substring(0, 4);
+    const visibleStart = apiKey.substring(0, 8);
     const visibleEnd = apiKey.substring(apiKey.length - 4);
     return `${visibleStart}••••••••${visibleEnd}`;
   },
