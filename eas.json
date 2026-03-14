@@ -28,7 +28,7 @@
       "autoIncrement": true,
       "ios": {
         "resourceClass": "default",
-        "bundleIdentifier": "com.jahera.kids"
+        "bundleIdentifier": "com.hindi.harp"
       },
       "android": {
         "buildType": "apk",
