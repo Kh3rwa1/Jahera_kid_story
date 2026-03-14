@@ -6,7 +6,7 @@ const appwriteProjectId = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || '';
 export const client = new Client()
   .setEndpoint(appwriteEndpoint)
   .setProject(appwriteProjectId)
-  .setPlatform(process.env.EXPO_PUBLIC_APPWRITE_PLATFORM || 'com.jahera.app');
+  .setPlatform(process.env.EXPO_PUBLIC_APPWRITE_PLATFORM || 'com.hindi.harp');
 
 export const account = new Account(client);
 export const databases = new Databases(client);
