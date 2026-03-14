@@ -61,14 +61,14 @@ export default function ProfileScreen() {
     const sortedDays = Array.from(uniqueDays)
       .map(d => new Date(d).getTime())
       .sort((a, b) => b - a);
-    let count = 0;
     const todayMs = new Date(new Date().toDateString()).getTime();
     const dayMs = 86400000;
+    const startMs = sortedDays[0] === todayMs ? todayMs : (sortedDays[0] === todayMs - dayMs ? todayMs - dayMs : null);
+    if (startMs === null) return 0;
+    let count = 0;
     for (let i = 0; i < sortedDays.length; i++) {
-      const expected = todayMs - i * dayMs;
+      const expected = startMs - i * dayMs;
       if (sortedDays[i] === expected) {
-        count++;
-      } else if (i === 0 && sortedDays[i] === todayMs - dayMs) {
         count++;
       } else {
         break;

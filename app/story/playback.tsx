@@ -60,16 +60,23 @@ export default function StoryPlayback() {
 
   useEffect(() => {
     loadStory();
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (sound) {
-        sound.unloadAsync();
+        sound.unloadAsync().catch(() => {});
       }
     };
-  }, []);
+  }, [sound]);
 
   const loadStory = async () => {
     try {
       const storyId = params.storyId as string;
+      if (!storyId) {
+        setIsLoading(false);
+        return;
+      }
       const storyData = await storyService.getById(storyId);
       if (!storyData) {
         setIsLoading(false);
@@ -158,7 +165,7 @@ export default function StoryPlayback() {
   const handleBack = useCallback(() => {
     hapticFeedback.light();
     if (sound) {
-      sound.stopAsync();
+      sound.stopAsync().catch(() => {});
     }
     router.back();
   }, [sound, router]);
@@ -166,14 +173,16 @@ export default function StoryPlayback() {
   const handleShare = useCallback(async () => {
     if (!story) return;
     hapticFeedback.medium();
-    await shareStory(story.title, story.content);
+    try {
+      await shareStory(story.title, story.content);
+    } catch {}
   }, [story]);
 
   const handleRegenerate = useCallback(() => {
     if (!story) return;
     hapticFeedback.medium();
     if (sound) {
-      sound.stopAsync();
+      sound.stopAsync().catch(() => {});
     }
     router.push({
       pathname: '/story/generate',

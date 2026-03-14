@@ -129,7 +129,7 @@ export default function QuizScreen() {
     } else {
       const profileId = await AsyncStorage.getItem('profileId');
       if (profileId && story) {
-        await quizService.createAttempt(profileId, story.$id, score + (isCorrect ? 1 : 0), questions.length);
+        await quizService.createAttempt(profileId, story.$id, score, questions.length);
       }
       setShowCelebration(true);
       setTimeout(() => {
@@ -355,7 +355,7 @@ export default function QuizScreen() {
               let textColor = themeColors.text.primary;
               let borderColor = 'transparent';
               let showGradient = false;
-              let gradientColors = themeColors.gradients.success;
+              let gradientColors: readonly [string, string, ...string[]] = themeColors.gradients.success;
 
               if (showCorrect) {
                 showGradient = true;
@@ -363,7 +363,7 @@ export default function QuizScreen() {
                 textColor = '#FFFFFF';
               } else if (showWrong) {
                 showGradient = true;
-                gradientColors = [themeColors.errorLight, themeColors.error];
+                gradientColors = [themeColors.errorLight, themeColors.error] as [string, string];
                 textColor = '#FFFFFF';
               } else if (selectedAnswer === null) {
                 borderColor = themeColors.text.light + '20';
