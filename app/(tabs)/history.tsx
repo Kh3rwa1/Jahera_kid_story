@@ -23,7 +23,6 @@ import {
   SlidersHorizontal,
   Volume2,
   Clock,
-  Trash2,
   Sparkles,
   ChevronRight,
   Grid2x2,
@@ -33,6 +32,7 @@ import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { storyService } from '@/services/database';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
+import { KidsBubbleBackground } from '@/components/KidsBubbleBackground';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = (SCREEN_WIDTH - SPACING.xl * 2 - SPACING.md) / 2;
@@ -52,22 +52,15 @@ function getRelativeTime(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function getSeasonPalette(season: string): { colors: readonly [string, string, string]; accent: string } {
+function getSeasonPalette(season: string): { colors: readonly [string, string, string]; accent: string; emoji: string } {
   switch (season) {
-    case 'spring': return { colors: ['#D4F5D4', '#A8E6CF', '#7ED3B2'], accent: '#38A169' };
-    case 'summer': return { colors: ['#FFF3C4', '#FBBF24', '#F59E0B'], accent: '#D97706' };
-    case 'fall':   return { colors: ['#FDEBD0', '#F9A825', '#E65100'], accent: '#C0392B' };
-    case 'winter': return { colors: ['#DBEAFE', '#93C5FD', '#60A5FA'], accent: '#2563EB' };
-    default:       return { colors: ['#D4F5D4', '#A8E6CF', '#7ED3B2'], accent: '#38A169' };
+    case 'spring': return { colors: ['#D4F5D4', '#A8E6CF', '#7ED3B2'], accent: '#38A169', emoji: '🌸' };
+    case 'summer': return { colors: ['#FFF3C4', '#FBBF24', '#F59E0B'], accent: '#D97706', emoji: '☀️' };
+    case 'fall':   return { colors: ['#FDEBD0', '#F9A825', '#E65100'], accent: '#C0392B', emoji: '🍂' };
+    case 'winter': return { colors: ['#DBEAFE', '#93C5FD', '#60A5FA'], accent: '#2563EB', emoji: '❄️' };
+    default:       return { colors: ['#D4F5D4', '#A8E6CF', '#7ED3B2'], accent: '#38A169', emoji: '📖' };
   }
 }
-
-const SEASON_ICONS: Record<string, string> = {
-  spring: '🌸',
-  summer: '☀️',
-  fall: '🍂',
-  winter: '❄️',
-};
 
 type SortOption = 'newest' | 'oldest' | 'language';
 type ViewMode = 'grid' | 'list';
@@ -129,12 +122,12 @@ export default function HistoryScreen() {
   }, [stories, selectedLanguage, searchQuery, sortBy]);
 
   const sortLabel = sortBy === 'newest' ? 'Newest first' : sortBy === 'oldest' ? 'Oldest first' : 'By language';
-
   const featuredStory = useMemo(() => (stories.length > 0 ? stories[0] : null), [stories]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <KidsBubbleBackground bubbleCount={8} cloudCount={2} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -146,7 +139,10 @@ export default function HistoryScreen() {
         {/* ── Page header ── */}
         <Animated.View entering={FadeInDown.delay(40).springify()} style={styles.header}>
           <View>
-            <Text style={[styles.pageTitle, { color: COLORS.text.primary }]}>My Library</Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.titleEmoji}>📚</Text>
+              <Text style={[styles.pageTitle, { color: COLORS.text.primary }]}>My Library</Text>
+            </View>
             <Text style={[styles.pageSubtitle, { color: COLORS.text.secondary }]}>
               {stories.length} {stories.length === 1 ? 'story' : 'stories'} collected
             </Text>
@@ -180,35 +176,38 @@ export default function HistoryScreen() {
                     end={{ x: 1, y: 1 }}
                     style={styles.featuredCard}
                   >
-                    <View style={styles.featuredBadge}>
-                      <Sparkles size={11} color={palette.accent} />
-                      <Text style={[styles.featuredBadgeText, { color: palette.accent }]}>Latest Story</Text>
+                    <View style={styles.featuredTop}>
+                      <View style={styles.featuredBadge}>
+                        <Sparkles size={11} color={palette.accent} />
+                        <Text style={[styles.featuredBadgeText, { color: palette.accent }]}>Latest Story</Text>
+                      </View>
+                      {featuredStory.audio_url && (
+                        <View style={[styles.audioPill, { backgroundColor: 'rgba(0,0,0,0.12)' }]}>
+                          <Volume2 size={11} color="rgba(26,26,46,0.7)" />
+                          <Text style={[styles.audioPillText, { color: 'rgba(26,26,46,0.7)' }]}>Audio</Text>
+                        </View>
+                      )}
                     </View>
 
-                    <Text style={[styles.featuredTitle, { color: '#1A1A2E' }]} numberOfLines={2}>
-                      {featuredStory.title}
-                    </Text>
+                    <View style={styles.featuredCenter}>
+                      <Text style={styles.featuredSeasonIcon}>{palette.emoji}</Text>
+                      <Text style={[styles.featuredTitle, { color: '#1A1A2E' }]} numberOfLines={2}>
+                        {featuredStory.title}
+                      </Text>
+                    </View>
 
                     <View style={styles.featuredMeta}>
                       <View style={styles.featuredMetaLeft}>
-                        <Text style={styles.featuredSeasonIcon}>{SEASON_ICONS[featuredStory.season] ?? '📖'}</Text>
-                        <Text style={[styles.featuredMetaText, { color: 'rgba(26,26,46,0.65)' }]}>
+                        <Text style={styles.featuredLangFlag}>{getLanguageFlag(featuredStory.language_code)}</Text>
+                        <Text style={[styles.featuredMetaText, { color: 'rgba(26,26,46,0.6)' }]}>
                           {getRelativeTime(featuredStory.generated_at || featuredStory.$createdAt)}
                         </Text>
-                        <Text style={styles.featuredLangFlag}>{getLanguageFlag(featuredStory.language_code)}</Text>
                       </View>
                       <View style={[styles.featuredPlayBtn, { backgroundColor: palette.accent }]}>
                         <Play size={14} color="#FFFFFF" fill="#FFFFFF" />
-                        <Text style={styles.featuredPlayText}>Play</Text>
+                        <Text style={styles.featuredPlayText}>Play Story</Text>
                       </View>
                     </View>
-
-                    {featuredStory.audio_url && (
-                      <View style={[styles.featuredAudioChip, { backgroundColor: 'rgba(26,26,46,0.1)' }]}>
-                        <Volume2 size={11} color="rgba(26,26,46,0.6)" />
-                        <Text style={[styles.featuredAudioText, { color: 'rgba(26,26,46,0.6)' }]}>Audio</Text>
-                      </View>
-                    )}
                   </LinearGradient>
                 );
               })()}
@@ -229,11 +228,14 @@ export default function HistoryScreen() {
             />
           </View>
           <TouchableOpacity
-            style={[styles.sortBtn, { backgroundColor: COLORS.cardBackground }, showSortMenu && { backgroundColor: COLORS.primary + '18' }]}
+            style={[
+              styles.sortBtn,
+              { backgroundColor: showSortMenu ? COLORS.primary : COLORS.cardBackground },
+            ]}
             onPress={() => setShowSortMenu(v => !v)}
             activeOpacity={0.8}
           >
-            <SlidersHorizontal size={16} color={COLORS.primary} strokeWidth={2} />
+            <SlidersHorizontal size={16} color={showSortMenu ? '#FFF' : COLORS.primary} strokeWidth={2} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -246,7 +248,7 @@ export default function HistoryScreen() {
               return (
                 <TouchableOpacity
                   key={opt}
-                  style={[styles.sortMenuItem, active && { backgroundColor: COLORS.primary + '12' }]}
+                  style={[styles.sortMenuItem, active && { backgroundColor: COLORS.primary + '14' }]}
                   onPress={() => { setSortBy(opt); setShowSortMenu(false); }}
                   activeOpacity={0.75}
                 >
@@ -268,7 +270,7 @@ export default function HistoryScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filterScroll}
             >
-              {[null, ...languages].map((lang, i) => {
+              {[null, ...languages].map((lang) => {
                 const active = lang === null ? !selectedLanguage : selectedLanguage === lang;
                 return (
                   <TouchableOpacity
@@ -303,44 +305,41 @@ export default function HistoryScreen() {
         {/* ── Stories ── */}
         {filteredStories.length === 0 ? (
           <Animated.View entering={ZoomIn.delay(100).springify()} style={styles.emptyWrap}>
-            <View style={[styles.emptyIcon, { backgroundColor: COLORS.primary + '12' }]}>
-              <BookOpen size={36} color={COLORS.primary} strokeWidth={1.5} />
-            </View>
+            <Text style={styles.emptyEmoji}>{searchQuery ? '🔍' : '📖'}</Text>
             <Text style={[styles.emptyTitle, { color: COLORS.text.primary }]}>
-              {searchQuery ? 'No matches found' : 'No stories yet'}
+              {searchQuery ? 'No matches found' : 'No stories yet!'}
             </Text>
             <Text style={[styles.emptyBody, { color: COLORS.text.secondary }]}>
               {searchQuery
                 ? 'Try a different search term or clear the filter'
-                : 'Head to the Home tab and generate your first story'}
+                : 'Head to the Home tab and create your first magical story!'}
             </Text>
           </Animated.View>
         ) : viewMode === 'grid' ? (
-          /* GRID */
           <View style={styles.grid}>
             {filteredStories.map((story, idx) => {
               const palette = getSeasonPalette(story.season);
               return (
                 <Animated.View
                   key={story.$id}
-                  entering={FadeInUp.delay(80 + idx * 40).springify()}
+                  entering={FadeInUp.delay(80 + idx * 35).springify()}
                   style={styles.gridItem}
                 >
                   <AnimatedPressable
                     style={[styles.gridCard, { backgroundColor: COLORS.cardBackground }]}
                     onPress={() => handlePlayStory(story.$id)}
                     onLongPress={() => setDeleteId(story.$id)}
-                    scaleDown={0.94}
+                    scaleDown={0.93}
                     delayLongPress={500}
                   >
-                    {/* Thumbnail */}
                     <LinearGradient
                       colors={palette.colors}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={styles.gridThumb}
                     >
-                      <View style={[styles.gridPlayCircle, { backgroundColor: 'rgba(255,255,255,0.35)' }]}>
+                      <Text style={styles.gridSeasonEmoji}>{palette.emoji}</Text>
+                      <View style={[styles.gridPlayCircle, { backgroundColor: 'rgba(255,255,255,0.72)' }]}>
                         <Play size={16} color={palette.accent} fill={palette.accent} strokeWidth={0} />
                       </View>
                       <View style={styles.gridBadgeRow}>
@@ -353,10 +352,8 @@ export default function HistoryScreen() {
                           </View>
                         )}
                       </View>
-                      <Text style={styles.gridSeasonIcon}>{SEASON_ICONS[story.season] ?? '📖'}</Text>
                     </LinearGradient>
 
-                    {/* Info */}
                     <View style={styles.gridInfo}>
                       <Text
                         style={[styles.gridTitle, { color: COLORS.text.primary }]}
@@ -377,14 +374,13 @@ export default function HistoryScreen() {
             })}
           </View>
         ) : (
-          /* LIST */
-          <View style={styles.list}>
+          <View style={[styles.list, { backgroundColor: COLORS.cardBackground }]}>
             {filteredStories.map((story, idx) => {
               const palette = getSeasonPalette(story.season);
               return (
-                <Animated.View key={story.$id} entering={FadeInUp.delay(60 + idx * 35).springify()}>
+                <Animated.View key={story.$id} entering={FadeInUp.delay(60 + idx * 30).springify()}>
                   <AnimatedPressable
-                    style={[styles.listCard, { backgroundColor: COLORS.cardBackground }]}
+                    style={styles.listCard}
                     onPress={() => handlePlayStory(story.$id)}
                     onLongPress={() => setDeleteId(story.$id)}
                     scaleDown={0.97}
@@ -396,7 +392,7 @@ export default function HistoryScreen() {
                       end={{ x: 1, y: 1 }}
                       style={styles.listThumb}
                     >
-                      <Play size={18} color={palette.accent} fill={palette.accent} strokeWidth={0} />
+                      <Text style={styles.listThumbEmoji}>{palette.emoji}</Text>
                     </LinearGradient>
 
                     <View style={styles.listInfo}>
@@ -458,12 +454,13 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
 
-  /* Header */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  titleEmoji: { fontSize: 22 },
   pageTitle: {
     fontSize: 28,
     fontFamily: FONTS.extrabold,
@@ -475,31 +472,33 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   viewToggle: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     borderRadius: BORDER_RADIUS.sm,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.xs,
   },
 
-  /* Featured card */
-  featuredWrap: { borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', ...SHADOWS.lg },
+  featuredWrap: { borderRadius: BORDER_RADIUS.xxl, overflow: 'hidden', ...SHADOWS.lg },
   featuredCard: {
     padding: SPACING.xl,
-    paddingTop: SPACING.lg,
-    gap: SPACING.sm,
-    minHeight: 160,
+    gap: SPACING.md,
+    minHeight: 170,
     justifyContent: 'space-between',
+  },
+  featuredTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   featuredBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: BORDER_RADIUS.pill,
   },
   featuredBadgeText: {
@@ -507,73 +506,76 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     letterSpacing: 0.2,
   },
-  featuredTitle: {
-    fontSize: 20,
-    fontFamily: FONTS.extrabold,
-    letterSpacing: -0.4,
-    lineHeight: 26,
+  audioPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.pill,
+  },
+  audioPillText: { fontSize: 10, fontFamily: FONTS.semibold },
+
+  featuredCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
     flex: 1,
   },
+  featuredSeasonIcon: { fontSize: 36 },
+  featuredTitle: {
+    fontSize: 22,
+    fontFamily: FONTS.extrabold,
+    letterSpacing: -0.5,
+    lineHeight: 27,
+    flex: 1,
+  },
+
   featuredMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   featuredMetaLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  featuredSeasonIcon: { fontSize: 16 },
-  featuredMetaText: { fontSize: 12, fontFamily: FONTS.medium },
-  featuredLangFlag: { fontSize: 16 },
+  featuredLangFlag: { fontSize: 18 },
+  featuredMetaText: { fontSize: 12, fontFamily: FONTS.semibold },
   featuredPlayBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: SPACING.lg,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderRadius: BORDER_RADIUS.pill,
   },
   featuredPlayText: {
     fontSize: 13,
-    fontFamily: FONTS.bold,
+    fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
   },
-  featuredAudioChip: {
-    position: 'absolute',
-    top: SPACING.lg,
-    right: SPACING.xl,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  featuredAudioText: { fontSize: 10, fontFamily: FONTS.semibold },
 
-  /* Controls */
   controlsRow: { flexDirection: 'row', gap: SPACING.sm },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 46,
+    height: 48,
     paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     gap: SPACING.sm,
     ...SHADOWS.xs,
   },
-  searchInput: { flex: 1, fontSize: 14, fontFamily: FONTS.medium },
+  searchInput: { flex: 1, fontSize: 14, fontFamily: FONTS.semibold },
   sortBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 48,
+    height: 48,
+    borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.xs,
   },
 
-  /* Sort menu */
   sortMenu: {
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
     ...SHADOWS.md,
     marginTop: -SPACING.sm,
@@ -583,36 +585,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingVertical: 13,
+    paddingVertical: 14,
   },
-  sortMenuLabel: {
-    fontSize: 14,
-    fontFamily: FONTS.semibold,
-  },
+  sortMenuLabel: { fontSize: 14, fontFamily: FONTS.bold },
 
-  /* Filters */
   filterScroll: { gap: SPACING.sm, paddingRight: SPACING.xs },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderRadius: BORDER_RADIUS.pill,
     ...SHADOWS.xs,
   },
   filterChipFlag: { fontSize: 15 },
-  filterChipText: { fontSize: 13, fontFamily: FONTS.semibold },
+  filterChipText: { fontSize: 13, fontFamily: FONTS.bold },
 
-  /* Section row */
   sectionRow: { marginBottom: -SPACING.sm },
-  sectionLabel: {
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-    letterSpacing: 0.1,
-  },
+  sectionLabel: { fontSize: 12, fontFamily: FONTS.medium },
 
-  /* Grid */
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -620,21 +612,28 @@ const styles = StyleSheet.create({
   },
   gridItem: { width: CARD_WIDTH },
   gridCard: {
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.xxl,
     overflow: 'hidden',
-    ...SHADOWS.sm,
+    ...SHADOWS.md,
   },
   gridThumb: {
     width: '100%',
-    height: 130,
+    height: 148,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
+  gridSeasonEmoji: {
+    fontSize: 46,
+    marginBottom: 4,
+  },
   gridPlayCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    position: 'absolute',
+    bottom: SPACING.sm,
+    right: SPACING.sm,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -646,10 +645,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   gridLangBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.82)',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -659,12 +658,6 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  gridSeasonIcon: {
-    position: 'absolute',
-    bottom: SPACING.sm,
-    right: SPACING.sm,
-    fontSize: 18,
   },
   gridInfo: {
     padding: SPACING.md,
@@ -680,11 +673,10 @@ const styles = StyleSheet.create({
   gridMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   gridMetaText: { fontSize: 11, fontFamily: FONTS.medium },
 
-  /* List */
   list: {
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.xxl,
     overflow: 'hidden',
-    ...SHADOWS.xs,
+    ...SHADOWS.sm,
   },
   listCard: {
     flexDirection: 'row',
@@ -694,13 +686,14 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   listThumb: {
-    width: 52,
-    height: 52,
-    borderRadius: BORDER_RADIUS.md,
+    width: 56,
+    height: 56,
+    borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
+  listThumbEmoji: { fontSize: 24 },
   listInfo: { flex: 1, gap: 4 },
   listTitle: {
     fontSize: 14,
@@ -711,29 +704,22 @@ const styles = StyleSheet.create({
   listLangFlag: { fontSize: 13 },
   listMetaText: { fontSize: 11, fontFamily: FONTS.medium },
   listDot: { width: 3, height: 3, borderRadius: 2 },
-  listDivider: { height: 1, marginLeft: 52 + SPACING.md + SPACING.lg },
+  listDivider: { height: 1, marginLeft: 56 + SPACING.md + SPACING.lg },
 
-  /* Empty */
   emptyWrap: {
     alignItems: 'center',
-    paddingVertical: 80,
+    paddingVertical: 70,
     gap: SPACING.md,
   },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  emptyEmoji: { fontSize: 60, marginBottom: 4 },
   emptyTitle: {
     fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.bold,
-    letterSpacing: -0.2,
+    fontFamily: FONTS.extrabold,
+    letterSpacing: -0.3,
   },
   emptyBody: {
     fontSize: 14,
-    fontFamily: FONTS.regular,
+    fontFamily: FONTS.medium,
     textAlign: 'center',
     lineHeight: 21,
     maxWidth: 260,

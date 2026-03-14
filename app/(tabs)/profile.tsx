@@ -32,6 +32,7 @@ import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { KidsBubbleBackground } from '@/components/KidsBubbleBackground';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -114,6 +115,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <KidsBubbleBackground bubbleCount={8} cloudCount={2} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -122,15 +124,22 @@ export default function ProfileScreen() {
           <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={COLORS.primary} />
         }
       >
+        {/* ── Page title ── */}
+        <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.pageHeader}>
+          <View style={styles.pageTitleRow}>
+            <Text style={styles.pageTitleEmoji}>🏆</Text>
+            <Text style={[styles.pageTitle, { color: COLORS.text.primary }]}>My Progress</Text>
+          </View>
+        </Animated.View>
+
         {/* ── Hero banner ── */}
-        <Animated.View entering={FadeInDown.delay(40).springify()}>
+        <Animated.View entering={FadeInDown.delay(60).springify()}>
           <LinearGradient
             colors={COLORS.gradients.primary}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroBanner}
           >
-            {/* Avatar + name */}
             <View style={styles.heroTop}>
               <View style={styles.heroAvatarWrap}>
                 <ProfileAvatar
@@ -142,7 +151,7 @@ export default function ProfileScreen() {
                 />
                 {streak > 0 && (
                   <View style={styles.streakPin}>
-                    <Flame size={11} color="#FFFFFF" fill="#FFFFFF" />
+                    <Flame size={10} color="#FFFFFF" fill="#FFFFFF" />
                     <Text style={styles.streakPinText}>{streak}</Text>
                   </View>
                 )}
@@ -167,12 +176,11 @@ export default function ProfileScreen() {
                   activeOpacity={0.75}
                 >
                   <Text style={styles.editBtnText}>Edit Profile</Text>
-                  <ChevronRight size={13} color="rgba(255,255,255,0.85)" strokeWidth={2.5} />
+                  <ChevronRight size={12} color="rgba(255,255,255,0.85)" strokeWidth={2.5} />
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Quick stats */}
             <View style={styles.heroStats}>
               {[
                 { label: 'Stories', value: String(stories.length), icon: <BookOpen size={13} color="rgba(255,255,255,0.85)" /> },
@@ -192,51 +200,63 @@ export default function ProfileScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {/* ── Achievement cards row ── */}
-        <Animated.View entering={FadeInUp.delay(120).springify()} style={styles.achieveRow}>
-          {[
-            {
-              label: 'Avg Score',
-              value: `${stats.avgScore}%`,
-              sub: 'quiz accuracy',
-              color: COLORS.primary,
-              bg: COLORS.primary + '12',
-              icon: <Target size={18} color={COLORS.primary} />,
-            },
-            {
-              label: 'Perfect',
-              value: String(stats.perfectScores),
-              sub: 'flawless runs',
-              color: '#F59E0B',
-              bg: '#F59E0B12',
-              icon: <Star size={18} color="#F59E0B" />,
-            },
-            {
-              label: 'Words',
-              value: totalWords > 999 ? `${(totalWords / 1000).toFixed(1)}k` : String(totalWords),
-              sub: 'words read',
-              color: COLORS.success,
-              bg: COLORS.success + '12',
-              icon: <TrendingUp size={18} color={COLORS.success} />,
-            },
-          ].map(card => (
-            <View key={card.label} style={[styles.achieveCard, { backgroundColor: COLORS.cardBackground }]}>
-              <View style={[styles.achieveIconBox, { backgroundColor: card.bg }]}>
-                {card.icon}
+        {/* ── Section: Achievements ── */}
+        <Animated.View entering={FadeInUp.delay(120).springify()}>
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionEmoji}>🎖️</Text>
+            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Achievements</Text>
+          </View>
+          <View style={styles.achieveRow}>
+            {[
+              {
+                label: 'Avg Score',
+                value: `${stats.avgScore}%`,
+                sub: 'quiz accuracy',
+                gradient: [COLORS.primary + 'DD', COLORS.primaryDark + 'DD'] as [string, string],
+                icon: <Target size={22} color="#FFFFFF" />,
+                emoji: '🎯',
+              },
+              {
+                label: 'Perfect',
+                value: String(stats.perfectScores),
+                sub: 'flawless runs',
+                gradient: ['#F59E0BDD', '#D97706DD'] as [string, string],
+                icon: <Star size={22} color="#FFFFFF" />,
+                emoji: '⭐',
+              },
+              {
+                label: 'Words',
+                value: totalWords > 999 ? `${(totalWords / 1000).toFixed(1)}k` : String(totalWords),
+                sub: 'words read',
+                gradient: [COLORS.success + 'DD', '#16A34ADD'] as [string, string],
+                icon: <TrendingUp size={22} color="#FFFFFF" />,
+                emoji: '📝',
+              },
+            ].map(card => (
+              <View key={card.label} style={styles.achieveCard}>
+                <LinearGradient
+                  colors={card.gradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.achieveCardInner}
+                >
+                  <Text style={styles.achieveEmoji}>{card.emoji}</Text>
+                  <Text style={styles.achieveValue}>{card.value}</Text>
+                  <Text style={styles.achieveLabel}>{card.label}</Text>
+                  <Text style={styles.achieveSub}>{card.sub}</Text>
+                </LinearGradient>
               </View>
-              <Text style={[styles.achieveValue, { color: COLORS.text.primary }]}>{card.value}</Text>
-              <Text style={[styles.achieveLabel, { color: card.color }]}>{card.label}</Text>
-              <Text style={[styles.achieveSub, { color: COLORS.text.secondary }]}>{card.sub}</Text>
-            </View>
-          ))}
+            ))}
+          </View>
         </Animated.View>
 
         {/* ── Quiz history ── */}
         {recentQuizzes.length > 0 && (
           <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.section}>
             <View style={styles.sectionHead}>
+              <Text style={styles.sectionEmoji}>📝</Text>
               <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Quiz Results</Text>
-              <View style={[styles.sectionBadge, { backgroundColor: COLORS.primary + '15' }]}>
+              <View style={[styles.sectionBadge, { backgroundColor: COLORS.primary + '18' }]}>
                 <Text style={[styles.sectionBadgeText, { color: COLORS.primary }]}>
                   {recentQuizzes.length} recent
                 </Text>
@@ -259,9 +279,12 @@ export default function ProfileScreen() {
                       entering={FadeInUp.delay(240 + idx * 50).springify()}
                       style={styles.quizRow}
                     >
-                      <View style={[styles.scorePill, { backgroundColor: scoreColor + '18' }]}>
+                      <LinearGradient
+                        colors={[scoreColor + '25', scoreColor + '10']}
+                        style={styles.scorePill}
+                      >
                         <Text style={[styles.scorePillText, { color: scoreColor }]}>{pct}%</Text>
-                      </View>
+                      </LinearGradient>
                       <View style={styles.quizInfo}>
                         <Text style={[styles.quizTitle, { color: COLORS.text.primary }]} numberOfLines={1}>
                           {title}
@@ -270,7 +293,7 @@ export default function ProfileScreen() {
                           {attempt.score} / {attempt.total_questions} correct
                         </Text>
                       </View>
-                      {isPerfect && <Star size={15} color="#F59E0B" fill="#F59E0B" />}
+                      {isPerfect && <Text style={styles.quizPerfectEmoji}>⭐</Text>}
                     </Animated.View>
                     {!isLast && (
                       <View style={[styles.rowDivider, { backgroundColor: COLORS.text.primary + '08' }]} />
@@ -286,6 +309,7 @@ export default function ProfileScreen() {
         {profile.languages && profile.languages.length > 0 && (
           <Animated.View entering={FadeInUp.delay(280).springify()} style={styles.section}>
             <View style={styles.sectionHead}>
+              <Text style={styles.sectionEmoji}>🌍</Text>
               <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Languages</Text>
             </View>
             <ScrollView
@@ -304,12 +328,11 @@ export default function ProfileScreen() {
                       <Text style={[styles.langCount, { color: COLORS.text.secondary }]}>
                         {langCount} {langCount === 1 ? 'story' : 'stories'}
                       </Text>
-                      {/* Mini progress bar */}
-                      <View style={[styles.langBar, { backgroundColor: COLORS.text.primary + '10' }]}>
+                      <View style={[styles.langBar, { backgroundColor: COLORS.text.primary + '12' }]}>
                         <View
                           style={[
                             styles.langBarFill,
-                            { backgroundColor: COLORS.primary, width: `${Math.max(pct, 8)}%` },
+                            { backgroundColor: COLORS.primary, width: `${Math.max(pct, 10)}%` },
                           ]}
                         />
                       </View>
@@ -325,17 +348,18 @@ export default function ProfileScreen() {
         {(profile.family_members?.length > 0 || profile.friends?.length > 0) && (
           <Animated.View entering={FadeInUp.delay(360).springify()} style={styles.section}>
             <View style={styles.sectionHead}>
+              <Text style={styles.sectionEmoji}>🧑‍🤝‍🧑</Text>
               <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Story Characters</Text>
             </View>
             <View style={styles.charsWrap}>
               {profile.family_members?.map(m => (
-                <View key={m.$id} style={[styles.charChip, { backgroundColor: COLORS.primary + '12' }]}>
+                <View key={m.$id} style={[styles.charChip, { backgroundColor: COLORS.primary + '14' }]}>
                   <Text style={styles.charEmoji}>👨‍👩‍👧</Text>
                   <Text style={[styles.charName, { color: COLORS.text.primary }]}>{m.name}</Text>
                 </View>
               ))}
               {profile.friends?.map(f => (
-                <View key={f.$id} style={[styles.charChip, { backgroundColor: COLORS.info + '12' }]}>
+                <View key={f.$id} style={[styles.charChip, { backgroundColor: COLORS.info + '14' }]}>
                   <Text style={styles.charEmoji}>🧑‍🤝‍🧑</Text>
                   <Text style={[styles.charName, { color: COLORS.text.primary }]}>{f.name}</Text>
                 </View>
@@ -344,26 +368,24 @@ export default function ProfileScreen() {
           </Animated.View>
         )}
 
-        {/* ── Level / XP card ── */}
+        {/* ── Streak / XP card ── */}
         <Animated.View entering={FadeInUp.delay(420).springify()} style={styles.section}>
           <LinearGradient
-            colors={[COLORS.gradients.sunset[0] + 'EE', COLORS.gradients.sunset[1] + 'EE']}
+            colors={COLORS.gradients.sunset}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.xpCard}
           >
-            <View style={styles.xpLeft}>
-              <View style={styles.xpIconBox}>
-                <Zap size={20} color="#F59E0B" fill="#F59E0B" />
-              </View>
-              <View>
-                <Text style={styles.xpTitle}>Keep the streak going!</Text>
-                <Text style={styles.xpSub}>
-                  {streak > 0
-                    ? `You're on a ${streak}-day streak — amazing!`
-                    : 'Read a story today to start your streak.'}
-                </Text>
-              </View>
+            <Text style={styles.xpEmoji}>{streak > 0 ? '🔥' : '✨'}</Text>
+            <View style={styles.xpText}>
+              <Text style={styles.xpTitle}>
+                {streak > 0 ? `${streak}-day streak!` : 'Start your streak!'}
+              </Text>
+              <Text style={styles.xpSub}>
+                {streak > 0
+                  ? `Amazing! Keep reading every day to grow your streak.`
+                  : 'Read a story today to start your daily streak.'}
+              </Text>
             </View>
             <TouchableOpacity
               style={styles.xpCta}
@@ -384,14 +406,22 @@ const styles = StyleSheet.create({
   loadingWrap: { padding: SPACING.xl },
   scroll: {
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.md,
+    paddingTop: SPACING.sm,
     paddingBottom: 120,
     gap: SPACING.lg,
   },
 
-  /* Hero */
+  pageHeader: { paddingTop: SPACING.xs },
+  pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pageTitleEmoji: { fontSize: 22 },
+  pageTitle: {
+    fontSize: 28,
+    fontFamily: FONTS.extrabold,
+    letterSpacing: -0.6,
+  },
+
   heroBanner: {
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.xxl,
     overflow: 'hidden',
     ...SHADOWS.lg,
   },
@@ -417,139 +447,74 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#FFFFFF',
   },
-  streakPinText: {
-    fontSize: 9,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-  },
+  streakPinText: { fontSize: 9, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
   heroMeta: { flex: 1, gap: SPACING.sm, paddingTop: 4 },
   heroName: {
-    fontSize: 24,
+    fontSize: 26,
     fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
   },
   langPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: SPACING.md,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.pill,
   },
   langPillFlag: { fontSize: 14 },
-  langPillName: {
-    fontSize: 12,
-    fontFamily: FONTS.semibold,
-    color: '#FFFFFF',
-  },
+  langPillName: { fontSize: 12, fontFamily: FONTS.bold, color: '#FFFFFF' },
   langPillMore: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.28)',
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: BORDER_RADIUS.pill,
   },
-  langPillMoreText: {
-    fontSize: 10,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-  },
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    alignSelf: 'flex-start',
-  },
-  editBtnText: {
-    fontSize: 13,
-    fontFamily: FONTS.semibold,
-    color: 'rgba(255,255,255,0.85)',
-  },
+  langPillMoreText: { fontSize: 10, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 2, alignSelf: 'flex-start' },
+  editBtnText: { fontSize: 13, fontFamily: FONTS.semibold, color: 'rgba(255,255,255,0.85)' },
+
   heroStats: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.12)',
+    borderTopColor: 'rgba(255,255,255,0.15)',
     marginHorizontal: SPACING.xl,
     paddingVertical: SPACING.lg,
   },
   heroStat: { flex: 1, alignItems: 'center', gap: 2 },
   heroStatIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
   },
-  heroStatVal: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-  },
+  heroStatVal: { fontSize: FONT_SIZES.md, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
   heroStatLbl: {
     fontSize: 10,
-    fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.55)',
+    fontFamily: FONTS.semibold,
+    color: 'rgba(255,255,255,0.6)',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
-  heroStatDiv: {
-    width: 1,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    marginVertical: 4,
-  },
+  heroStatDiv: { width: 1, backgroundColor: 'rgba(255,255,255,0.14)', marginVertical: 4 },
 
-  /* Achievement cards */
-  achieveRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  achieveCard: {
-    flex: 1,
-    alignItems: 'center',
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.xl,
-    gap: 3,
-    ...SHADOWS.xs,
-  },
-  achieveIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: BORDER_RADIUS.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-  },
-  achieveValue: {
-    fontSize: 20,
-    fontFamily: FONTS.extrabold,
-    letterSpacing: -0.5,
-  },
-  achieveLabel: {
-    fontSize: 12,
-    fontFamily: FONTS.bold,
-    letterSpacing: 0.1,
-  },
-  achieveSub: {
-    fontSize: 10,
-    fontFamily: FONTS.medium,
-    textAlign: 'center',
-  },
-
-  /* Sections */
-  section: { gap: SPACING.sm },
   sectionHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: 6,
+    marginBottom: SPACING.md,
   },
+  sectionEmoji: { fontSize: 20 },
   sectionTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.bold,
-    letterSpacing: -0.2,
+    fontSize: 20,
+    fontFamily: FONTS.extrabold,
+    letterSpacing: -0.4,
     flex: 1,
   },
   sectionBadge: {
@@ -557,16 +522,37 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: BORDER_RADIUS.pill,
   },
-  sectionBadgeText: {
-    fontSize: 11,
-    fontFamily: FONTS.semibold,
-  },
+  sectionBadgeText: { fontSize: 11, fontFamily: FONTS.bold },
 
-  /* Quiz list */
-  listCard: {
-    borderRadius: BORDER_RADIUS.xl,
+  achieveRow: { flexDirection: 'row', gap: SPACING.sm },
+  achieveCard: {
+    flex: 1,
+    borderRadius: BORDER_RADIUS.xxl,
     overflow: 'hidden',
-    ...SHADOWS.xs,
+    ...SHADOWS.md,
+  },
+  achieveCardInner: {
+    alignItems: 'center',
+    padding: SPACING.md,
+    paddingVertical: SPACING.lg,
+    gap: 3,
+  },
+  achieveEmoji: { fontSize: 28, marginBottom: 2 },
+  achieveValue: {
+    fontSize: 22,
+    fontFamily: FONTS.extrabold,
+    color: '#FFFFFF',
+    letterSpacing: -0.6,
+  },
+  achieveLabel: { fontSize: 12, fontFamily: FONTS.extrabold, color: 'rgba(255,255,255,0.92)', letterSpacing: 0.1 },
+  achieveSub: { fontSize: 10, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
+
+  section: { gap: SPACING.sm },
+
+  listCard: {
+    borderRadius: BORDER_RADIUS.xxl,
+    overflow: 'hidden',
+    ...SHADOWS.sm,
   },
   quizRow: {
     flexDirection: 'row',
@@ -575,61 +561,42 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     gap: SPACING.md,
   },
-  rowDivider: {
-    height: 1,
-    marginLeft: 52 + SPACING.md + SPACING.lg,
-  },
+  rowDivider: { height: 1, marginLeft: 56 + SPACING.md + SPACING.lg },
   scorePill: {
-    width: 52,
-    height: 36,
-    borderRadius: BORDER_RADIUS.sm,
+    width: 56,
+    height: 38,
+    borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scorePillText: {
-    fontSize: 13,
-    fontFamily: FONTS.bold,
-  },
+  scorePillText: { fontSize: 13, fontFamily: FONTS.extrabold },
   quizInfo: { flex: 1, gap: 2 },
-  quizTitle: {
-    fontSize: 14,
-    fontFamily: FONTS.semibold,
-    letterSpacing: -0.1,
-  },
-  quizSub: { fontSize: 12, fontFamily: FONTS.regular },
+  quizTitle: { fontSize: 14, fontFamily: FONTS.bold, letterSpacing: -0.1 },
+  quizSub: { fontSize: 12, fontFamily: FONTS.medium },
+  quizPerfectEmoji: { fontSize: 18 },
 
-  /* Languages */
   langScroll: { gap: SPACING.md, paddingRight: SPACING.xs },
   langCard: {
-    width: 110,
+    width: 115,
     padding: SPACING.md,
     borderRadius: BORDER_RADIUS.xl,
-    gap: 3,
+    gap: 4,
     alignItems: 'flex-start',
-    ...SHADOWS.xs,
+    ...SHADOWS.sm,
   },
-  langFlag: { fontSize: 24, marginBottom: 2 },
-  langName: {
-    fontSize: 13,
-    fontFamily: FONTS.bold,
-    letterSpacing: -0.1,
-  },
-  langCount: { fontSize: 11, fontFamily: FONTS.regular },
+  langFlag: { fontSize: 28, marginBottom: 2 },
+  langName: { fontSize: 13, fontFamily: FONTS.extrabold, letterSpacing: -0.1 },
+  langCount: { fontSize: 11, fontFamily: FONTS.medium },
   langBar: {
     width: '100%',
-    height: 3,
+    height: 4,
     borderRadius: 2,
     marginTop: 4,
     overflow: 'hidden',
   },
   langBarFill: { height: '100%', borderRadius: 2 },
 
-  /* Characters */
-  charsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
+  charsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   charChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -639,55 +606,27 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.pill,
   },
   charEmoji: { fontSize: 16 },
-  charName: { fontSize: 13, fontFamily: FONTS.semibold },
+  charName: { fontSize: 13, fontFamily: FONTS.bold },
 
-  /* XP / streak nudge */
   xpCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.xl,
+    borderRadius: BORDER_RADIUS.xxl,
     gap: SPACING.md,
-    ...SHADOWS.md,
+    ...SHADOWS.lg,
   },
-  xpLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
-  xpIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  xpTitle: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-    letterSpacing: -0.1,
-  },
-  xpSub: {
-    fontSize: 11,
-    fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 1,
-    maxWidth: 180,
-  },
+  xpEmoji: { fontSize: 40 },
+  xpText: { flex: 1, gap: 3 },
+  xpTitle: { fontSize: FONT_SIZES.md, fontFamily: FONTS.extrabold, color: '#FFFFFF', letterSpacing: -0.2 },
+  xpSub: { fontSize: 12, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.78)', lineHeight: 17 },
   xpCta: {
-    backgroundColor: 'rgba(255,255,255,0.22)',
+    backgroundColor: 'rgba(255,255,255,0.25)',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.pill,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: 'rgba(255,255,255,0.35)',
   },
-  xpCtaText: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-  },
+  xpCtaText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
 });
