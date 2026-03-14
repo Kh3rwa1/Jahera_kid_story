@@ -20,7 +20,7 @@ interface GlassCardProps {
   intensity?: number; // Blur intensity (0-100)
   tint?: 'light' | 'dark' | 'default';
   gradient?: boolean;
-  gradientColors?: string[];
+  gradientColors?: readonly [string, string, ...string[]];
   shadow?: keyof typeof SHADOWS;
   borderWidth?: number;
   borderColor?: string;

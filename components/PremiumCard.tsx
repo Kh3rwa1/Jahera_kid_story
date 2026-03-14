@@ -14,7 +14,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PremiumCardProps {
   children: React.ReactNode;
-  gradient?: string[];
+  gradient?: readonly [string, string, ...string[]];
   onPress?: () => void;
   style?: ViewStyle;
   shadow?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'colored' | 'coloredLight' | 'purple' | 'blue' | 'green';

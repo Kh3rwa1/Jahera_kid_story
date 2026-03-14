@@ -33,6 +33,9 @@ import {
   Play,
   Shuffle,
   Settings,
+  Flame,
+  Zap,
+  Crown,
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -78,7 +81,7 @@ function getRelativeTime(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-const SEASON_GRADIENTS: Record<string, string[]> = {
+const SEASON_GRADIENTS: Record<string, readonly [string, string, string]> = {
   spring: ['#C6F6D5', '#9AE6B4', '#68D391'],
   summer: ['#FEFCBF', '#FAF089', '#F6E05E'],
   fall: ['#FEEBC8', '#FBD38D', '#F6AD55'],
@@ -113,7 +116,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
-  const { profile, stories, isLoading, error, refreshAll } = useApp();
+  const { profile, stories, isLoading, error, refreshAll, subscription, streak } = useApp();
 
   const handleRefresh = useCallback(async () => {
     await refreshAll();
@@ -124,7 +127,7 @@ export default function HomeScreen() {
     router.push({
       pathname: '/story/generate',
       params: {
-        profileId: profile.id,
+        profileId: profile.$id,
         languageCode: profile.primary_language,
       },
     });
@@ -139,14 +142,14 @@ export default function HomeScreen() {
 
   const handleLastStory = useCallback(() => {
     if (stories.length > 0) {
-      handleStoryPress(stories[0].id);
+      handleStoryPress(stories[0].$id);
     }
   }, [stories, handleStoryPress]);
 
   const handleRandomStory = useCallback(() => {
     if (stories.length > 0) {
       const idx = Math.floor(Math.random() * stories.length);
-      handleStoryPress(stories[idx].id);
+      handleStoryPress(stories[idx].$id);
     }
   }, [stories, handleStoryPress]);
 
@@ -204,7 +207,33 @@ export default function HomeScreen() {
             />
             <View style={styles.greetingContainer}>
               <Text style={[styles.greetingText, { color: COLORS.text.primary }]}>{greeting}</Text>
-              <Text style={[styles.subtitleText, { color: COLORS.text.secondary }]}>{subtitle}</Text>
+              <View style={styles.metaBadgesRow}>
+                {streak && streak.current_streak > 0 && (
+                  <View style={styles.streakBadgeInline}>
+                    <Flame size={12} color="#F59E0B" />
+                    <Text style={[styles.streakBadgeText, { color: COLORS.text.secondary }]}>
+                      {streak.current_streak}d streak
+                    </Text>
+                  </View>
+                )}
+                {subscription?.plan !== 'free' && (
+                  <View style={[styles.proBadgeInline, { backgroundColor: COLORS.warning + '20' }]}>
+                    <Crown size={11} color={COLORS.warning} />
+                    <Text style={[styles.proBadgeInlineText, { color: COLORS.warning }]}>PRO</Text>
+                  </View>
+                )}
+                {subscription?.plan === 'free' && subscription.stories_remaining <= 1 && (
+                  <TouchableOpacity
+                    onPress={() => router.push('/paywall')}
+                    style={[styles.upgradeNudge, { backgroundColor: COLORS.primary + '15' }]}
+                  >
+                    <Zap size={11} color={COLORS.primary} />
+                    <Text style={[styles.upgradeNudgeText, { color: COLORS.primary }]}>
+                      {subscription.stories_remaining === 0 ? 'Upgrade' : `${subscription.stories_remaining} left`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -366,7 +395,7 @@ export default function HomeScreen() {
 
                 return (
                   <Animated.View
-                    key={story.id}
+                    key={story.$id}
                     entering={FadeInRight.delay(300 + index * 60).springify()}
                   >
                     <AnimatedPressable
@@ -374,7 +403,7 @@ export default function HomeScreen() {
                         styles.storyCard,
                         { backgroundColor: COLORS.cardBackground, width: STORY_CARD_WIDTH },
                       ]}
-                      onPress={() => handleStoryPress(story.id)}
+                      onPress={() => handleStoryPress(story.$id)}
                       scaleDown={0.95}
                     >
                       <LinearGradient colors={seasonGradient} style={styles.storyImage}>
@@ -400,7 +429,7 @@ export default function HomeScreen() {
                         <View style={styles.storyMeta}>
                           <Clock size={11} color={COLORS.text.light} />
                           <Text style={[styles.storyMetaText, { color: COLORS.text.light }]}>
-                            {getRelativeTime(story.generated_at || story.created_at)}
+                            {getRelativeTime(story.generated_at || story.$createdAt)}
                           </Text>
                         </View>
                       </View>
@@ -441,7 +470,7 @@ export default function HomeScreen() {
 
                 return (
                   <Animated.View
-                    key={lang.id}
+                    key={lang.$id}
                     entering={FadeInRight.delay(500 + langIndex * 80).springify()}
                   >
                     <View style={[styles.langCard, { backgroundColor: COLORS.cardBackground }]}>
@@ -492,7 +521,7 @@ export default function HomeScreen() {
                 const initial = m.name.charAt(0).toUpperCase();
                 return (
                   <View
-                    key={m.id}
+                    key={m.$id}
                     style={[styles.characterCard, { backgroundColor: COLORS.cardBackground }]}
                   >
                     <View style={[styles.characterAvatar, { backgroundColor: COLORS.primary + '18' }]}>
@@ -514,7 +543,7 @@ export default function HomeScreen() {
                 const initial = f.name.charAt(0).toUpperCase();
                 return (
                   <View
-                    key={f.id}
+                    key={f.$id}
                     style={[styles.characterCard, { backgroundColor: COLORS.cardBackground }]}
                   >
                     <View style={[styles.characterAvatar, { backgroundColor: COLORS.info + '18' }]}>
@@ -554,9 +583,22 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.md,
   },
   userSection: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, flex: 1 },
-  greetingContainer: { flex: 1, gap: 2 },
+  greetingContainer: { flex: 1, gap: 4 },
   greetingText: { fontSize: 20, fontFamily: FONTS.bold },
   subtitleText: { fontSize: 13, fontFamily: FONTS.medium },
+  metaBadgesRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, flexWrap: 'wrap' },
+  streakBadgeInline: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  streakBadgeText: { fontSize: 12, fontFamily: FONTS.semibold },
+  proBadgeInline: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: BORDER_RADIUS.pill,
+  },
+  proBadgeInlineText: { fontSize: 10, fontFamily: FONTS.bold },
+  upgradeNudge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: BORDER_RADIUS.pill,
+  },
+  upgradeNudgeText: { fontSize: 10, fontFamily: FONTS.bold },
   settingsButton: {
     width: 40,
     height: 40,

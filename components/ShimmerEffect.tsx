@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 interface ShimmerEffectProps {
   width?: number | string;
   height?: number | string;
-  colors?: string[];
+  colors?: readonly [string, string, ...string[]];
   duration?: number;
 }
 
@@ -49,10 +49,6 @@ export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
     <Animated.View
       style={[
         styles.shimmer,
-        {
-          width: typeof width === 'number' ? width : width,
-          height: typeof height === 'number' ? height : height,
-        },
         shimmerStyle,
       ]}
       pointerEvents="none"

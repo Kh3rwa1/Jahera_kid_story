@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -14,10 +13,13 @@ import {
   Palette,
   Info,
   ChevronRight,
-  Sparkles,
+  Shield,
+  Crown,
+  Zap,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
+import { useApp } from '@/contexts/AppContext';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, FONTS, SHADOWS } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface SettingItem {
@@ -26,13 +28,16 @@ interface SettingItem {
   description: string;
   icon: React.ReactNode;
   route: string;
-  gradient: string[];
+  gradient: readonly [string, string, ...string[]];
 }
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
+  const { subscription } = useApp();
+
+  const isPro = subscription?.plan !== 'free';
 
   const settingItems: SettingItem[] = [
     {
@@ -44,9 +49,17 @@ export default function SettingsScreen() {
       gradient: COLORS.gradients.primary,
     },
     {
+      id: 'parent-dashboard',
+      title: 'Parent Dashboard',
+      description: "View your child's learning progress & stats",
+      icon: <Shield size={24} color="#FFFFFF" />,
+      route: '/parent-dashboard',
+      gradient: COLORS.gradients.ocean || ['#0EA5E9', '#0369A1'],
+    },
+    {
       id: 'api-keys',
       title: 'API Keys',
-      description: 'Manage your OpenAI and ElevenLabs keys',
+      description: 'Advanced: use your own OpenAI key',
       icon: <Key size={24} color="#FFFFFF" />,
       route: '/settings/api-keys',
       gradient: COLORS.gradients.royal,
@@ -55,7 +68,6 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: COLORS.background }]}>
-      {/* Header */}
       <View style={[styles.header, { backgroundColor: COLORS.background }]}>
         <TouchableOpacity
           style={[styles.backButton, { backgroundColor: COLORS.cardBackground }]}
@@ -63,7 +75,7 @@ export default function SettingsScreen() {
           <ArrowLeft size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: COLORS.text.primary }]}>
+          <Text style={[styles.headerTitle, { color: COLORS.text.primary, fontFamily: FONTS.bold }]}>
             Settings
           </Text>
           <Text style={[styles.headerSubtitle, { color: COLORS.text.secondary }]}>
@@ -76,22 +88,44 @@ export default function SettingsScreen() {
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        {/* Welcome Banner */}
-        <LinearGradient
-          colors={COLORS.gradients.sunset}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.welcomeBanner}>
-          <Sparkles size={32} color="#FFFFFF" />
-          <View style={styles.bannerContent}>
-            <Text style={styles.bannerTitle}>Make Jahera Yours!</Text>
-            <Text style={styles.bannerText}>
-              Customize every aspect of your storytelling experience
-            </Text>
-          </View>
-        </LinearGradient>
 
-        {/* Settings Items */}
+        {!isPro && (
+          <TouchableOpacity onPress={() => router.push('/paywall')} activeOpacity={0.9}>
+            <LinearGradient
+              colors={COLORS.gradients.sunset}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.upgradeBanner}>
+              <View style={styles.upgradeBannerLeft}>
+                <Crown size={28} color="#FFFFFF" />
+                <View>
+                  <Text style={styles.upgradeBannerTitle}>Upgrade to Pro</Text>
+                  <Text style={styles.upgradeBannerSub}>Unlimited stories + audio narration</Text>
+                </View>
+              </View>
+              <View style={[styles.upgradeBannerArrow]}>
+                <Zap size={18} color="#FFFFFF" />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+
+        {isPro && (
+          <LinearGradient
+            colors={COLORS.gradients.sunset}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.proBanner}>
+            <Crown size={24} color="#FFFFFF" />
+            <View>
+              <Text style={styles.proBannerTitle}>
+                {subscription?.plan === 'family' ? 'Family Plan Active' : 'Pro Plan Active'}
+              </Text>
+              <Text style={styles.proBannerSub}>Enjoying unlimited stories</Text>
+            </View>
+          </LinearGradient>
+        )}
+
         <View style={styles.settingsSection}>
           {settingItems.map(item => (
             <TouchableOpacity
@@ -119,15 +153,14 @@ export default function SettingsScreen() {
           ))}
         </View>
 
-        {/* App Info */}
         <View style={[styles.infoBox, { backgroundColor: COLORS.gradients.primary[0] + '15' }]}>
           <Info size={20} color={COLORS.primary} />
           <View style={styles.infoContent}>
-            <Text style={[styles.infoTitle, { color: COLORS.text.primary }]}>
+            <Text style={[styles.infoTitle, { color: COLORS.text.primary, fontFamily: FONTS.semibold }]}>
               Jahera - AI Story Adventures
             </Text>
             <Text style={[styles.infoText, { color: COLORS.text.secondary }]}>
-              Version 1.0.0 • Made with love for kids
+              Version 1.1.0 · Made with love for kids
             </Text>
           </View>
         </View>
@@ -137,9 +170,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -148,115 +179,52 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.lg,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.lg,
+    width: 44, height: 44, borderRadius: 22,
+    alignItems: 'center', justifyContent: 'center',
+    marginRight: SPACING.lg, ...SHADOWS.xs,
   },
-  headerContent: {
-    flex: 1,
+  headerContent: { flex: 1 },
+  headerTitle: { fontSize: FONT_SIZES.xxl, fontWeight: FONT_WEIGHTS.bold },
+  headerSubtitle: { fontSize: FONT_SIZES.sm, marginTop: 2 },
+  content: { flex: 1 },
+  scrollContent: { padding: SPACING.xl, paddingBottom: SPACING.xxxl * 2 },
+  upgradeBanner: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: SPACING.xl, borderRadius: BORDER_RADIUS.xl,
+    marginBottom: SPACING.xxl, ...SHADOWS.lg,
   },
-  headerTitle: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: FONT_WEIGHTS.bold,
+  upgradeBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, flex: 1 },
+  upgradeBannerTitle: { fontSize: 16, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  upgradeBannerSub: { fontSize: 12, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.85)' },
+  upgradeBannerArrow: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  headerSubtitle: {
-    fontSize: FONT_SIZES.sm,
-    marginTop: 2,
+  proBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    padding: SPACING.xl, borderRadius: BORDER_RADIUS.xl,
+    marginBottom: SPACING.xxl, ...SHADOWS.md,
   },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: SPACING.xl,
-    paddingBottom: SPACING.xxxl * 2,
-  },
-  welcomeBanner: {
-    flexDirection: 'row',
-    padding: SPACING.xl,
-    borderRadius: BORDER_RADIUS.xl,
-    gap: SPACING.lg,
-    alignItems: 'center',
-    marginBottom: SPACING.xxl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  bannerContent: {
-    flex: 1,
-  },
-  bannerTitle: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: '#FFFFFF',
-    marginBottom: SPACING.xs,
-  },
-  bannerText: {
-    fontSize: FONT_SIZES.sm,
-    color: '#FFFFFF',
-    opacity: 0.95,
-    lineHeight: 20,
-  },
-  settingsSection: {
-    gap: SPACING.md,
-    marginBottom: SPACING.xxl,
-  },
+  proBannerTitle: { fontSize: 15, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  proBannerSub: { fontSize: 12, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.85)' },
+  settingsSection: { gap: SPACING.md, marginBottom: SPACING.xxl },
   settingCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    gap: SPACING.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    flexDirection: 'row', alignItems: 'center',
+    padding: SPACING.lg, borderRadius: BORDER_RADIUS.lg, gap: SPACING.lg, ...SHADOWS.sm,
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: BORDER_RADIUS.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    width: 52, height: 52, borderRadius: BORDER_RADIUS.md,
+    justifyContent: 'center', alignItems: 'center', ...SHADOWS.sm,
   },
-  settingInfo: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.bold,
-    marginBottom: SPACING.xs,
-  },
-  settingDescription: {
-    fontSize: FONT_SIZES.sm,
-    lineHeight: 18,
-  },
+  settingInfo: { flex: 1 },
+  settingTitle: { fontSize: FONT_SIZES.lg, fontWeight: FONT_WEIGHTS.bold, marginBottom: SPACING.xs },
+  settingDescription: { fontSize: FONT_SIZES.sm, lineHeight: 18 },
   infoBox: {
-    flexDirection: 'row',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    gap: SPACING.md,
-    alignItems: 'center',
+    flexDirection: 'row', padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg, gap: SPACING.md, alignItems: 'center',
   },
-  infoContent: {
-    flex: 1,
-  },
-  infoTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: FONT_WEIGHTS.semibold,
-    marginBottom: SPACING.xs,
-  },
-  infoText: {
-    fontSize: FONT_SIZES.sm,
-  },
+  infoContent: { flex: 1 },
+  infoTitle: { fontSize: FONT_SIZES.md, marginBottom: SPACING.xs },
+  infoText: { fontSize: FONT_SIZES.sm },
 });

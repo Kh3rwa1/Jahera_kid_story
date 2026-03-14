@@ -59,7 +59,7 @@ export default function HistoryScreen() {
     if (!deleteId) return;
     const success = await storyService.delete(deleteId);
     if (success) {
-      setStories(prev => prev.filter(s => s.id !== deleteId));
+      setStories(prev => prev.filter(s => s.$id !== deleteId));
     }
     setDeleteId(null);
   }, [deleteId, setStories]);
@@ -200,14 +200,14 @@ export default function HistoryScreen() {
           <View style={styles.storiesGrid}>
             {filteredStories.map((story, index) => (
               <Animated.View
-                key={story.id}
+                key={story.$id}
                 entering={FadeInUp.delay(80 + index * 50).springify()}
                 style={styles.storyCardWrap}
               >
                 <AnimatedPressable
                   style={[styles.storyCard, { backgroundColor: COLORS.cardBackground }]}
-                  onPress={() => handlePlayStory(story.id)}
-                  onLongPress={() => setDeleteId(story.id)}
+                  onPress={() => handlePlayStory(story.$id)}
+                  onLongPress={() => setDeleteId(story.$id)}
                   scaleDown={0.95}
                   delayLongPress={500}
                 >
@@ -235,7 +235,7 @@ export default function HistoryScreen() {
                     <View style={styles.storyMetaRow}>
                       <Clock size={11} color={COLORS.text.light} />
                       <Text style={[styles.storyMetaText, { color: COLORS.text.light }]}>
-                        {getRelativeTime(story.generated_at || story.created_at)}
+                        {getRelativeTime(story.generated_at || story.$createdAt)}
                       </Text>
                     </View>
                   </View>
@@ -260,7 +260,7 @@ export default function HistoryScreen() {
   );
 }
 
-function getSeasonColors(season: string): string[] {
+function getSeasonColors(season: string): readonly [string, string] {
   switch (season) {
     case 'spring': return ['#C6F6D5', '#9AE6B4'];
     case 'summer': return ['#FEFCBF', '#F6E05E'];

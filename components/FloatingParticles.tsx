@@ -20,7 +20,7 @@ interface Particle {
   startY: number;
   delay: number;
   duration: number;
-  colors: string[];
+  colors: readonly [string, string, ...string[]];
 }
 
 const FloatingParticle: React.FC<{ particle: Particle }> = ({ particle }) => {
@@ -105,7 +105,7 @@ const FloatingParticle: React.FC<{ particle: Particle }> = ({ particle }) => {
 
 interface FloatingParticlesProps {
   count?: number;
-  colors?: string[][];
+  colors?: ReadonlyArray<readonly [string, string, ...string[]]>;
 }
 
 export const FloatingParticles: React.FC<FloatingParticlesProps> = ({

@@ -39,7 +39,7 @@ export default function ProfileScreen() {
   const streak = useMemo(() => {
     if (stories.length === 0) return 0;
     const uniqueDays = new Set(
-      stories.map(s => new Date(s.generated_at || s.created_at).toDateString())
+      stories.map(s => new Date(s.generated_at || s.$createdAt).toDateString())
     );
     const sortedDays = Array.from(uniqueDays)
       .map(d => new Date(d).getTime())
@@ -170,11 +170,11 @@ export default function ProfileScreen() {
               {recentQuizzes.map((attempt, qIdx) => {
                 const pct = Math.round((attempt.score / attempt.total_questions) * 100);
                 const isPerfect = pct === 100;
-                const matchingStory = stories.find(s => s.id === attempt.story_id);
+                const matchingStory = stories.find(s => s.$id === attempt.story_id);
                 const title = matchingStory?.title || 'Quiz';
                 return (
                   <Animated.View
-                    key={attempt.id}
+                    key={attempt.$id}
                     entering={FadeInUp.delay(320 + qIdx * 60).springify()}
                     style={[styles.quizRow, { backgroundColor: COLORS.cardBackground }]}
                   >
@@ -208,7 +208,7 @@ export default function ProfileScreen() {
               {profile.languages.map((lang, langIdx) => {
                 const langCount = stories.filter(s => s.language_code === lang.language_code).length;
                 return (
-                  <Animated.View key={lang.id} entering={FadeInRight.delay(420 + langIdx * 70).springify()}>
+                  <Animated.View key={lang.$id} entering={FadeInRight.delay(420 + langIdx * 70).springify()}>
                     <View style={[styles.langChip, { backgroundColor: COLORS.cardBackground }]}>
                       <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
                       <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
@@ -226,13 +226,13 @@ export default function ProfileScreen() {
             <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Story Characters</Text>
             <View style={styles.charactersGrid}>
               {profile.family_members?.map(m => (
-                <View key={m.id} style={[styles.characterBadge, { backgroundColor: COLORS.primary + '12' }]}>
+                <View key={m.$id} style={[styles.characterBadge, { backgroundColor: COLORS.primary + '12' }]}>
                   <Text style={styles.characterEmoji}>👨‍👩‍👧</Text>
                   <Text style={[styles.characterNameText, { color: COLORS.text.primary }]}>{m.name}</Text>
                 </View>
               ))}
               {profile.friends?.map(f => (
-                <View key={f.id} style={[styles.characterBadge, { backgroundColor: COLORS.info + '12' }]}>
+                <View key={f.$id} style={[styles.characterBadge, { backgroundColor: COLORS.info + '12' }]}>
                   <Text style={styles.characterEmoji}>🧑‍🤝‍🧑</Text>
                   <Text style={[styles.characterNameText, { color: COLORS.text.primary }]}>{f.name}</Text>
                 </View>

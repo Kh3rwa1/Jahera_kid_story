@@ -1,70 +1,78 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { ProfileWithRelations, Story, QuizAttempt } from '@/types/database';
+import { ProfileWithRelations, Story, QuizAttempt, SubscriptionStatus, Streak } from '@/types/database';
 import { profileService, storyService, quizService } from '@/services/database';
-import { storage } from '@/utils/storage';
+import { subscriptionService, streakService } from '@/services/subscriptionService';
 import { handleError } from '@/utils/errorHandler';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AppContextType {
   profile: ProfileWithRelations | null;
   stories: Story[];
   quizAttempts: QuizAttempt[];
+  subscription: SubscriptionStatus | null;
+  streak: Streak | null;
   isLoading: boolean;
   error: string | null;
   loadProfile: () => Promise<void>;
   updateProfile: (updates: Partial<ProfileWithRelations>) => void;
-  clearProfile: () => Promise<void>;
+  clearProfile: () => void;
   refreshAll: () => Promise<void>;
   refreshStories: () => Promise<void>;
   refreshQuizAttempts: () => Promise<void>;
+  refreshSubscription: () => Promise<void>;
   setStories: React.Dispatch<React.SetStateAction<Story[]>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [profile, setProfile] = useState<ProfileWithRelations | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  const [streak, setStreak] = useState<Streak | null>(null);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null);
+      setStories([]);
+      setQuizAttempts([]);
+      setSubscription(null);
+      setStreak(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
 
-      const profileId = await storage.getProfileId();
-      if (!profileId) {
-        setProfile(null);
-        setStories([]);
-        setQuizAttempts([]);
-        return;
-      }
-
-      const data = await profileService.getWithRelations(profileId);
+      const data = await profileService.getWithRelationsByUserId(user.$id);
       if (!data) {
         setProfile(null);
         setStories([]);
+        setSubscription(null);
+        setStreak(null);
         setQuizAttempts([]);
         return;
-      }
-
-      if (!data.avatar_url) {
-        const localAvatar = await storage.getItem('avatar_url');
-        if (localAvatar) {
-          data.avatar_url = localAvatar as string;
-        }
       }
 
       setProfile(data);
 
-      const [storiesData, attemptsData] = await Promise.all([
-        storyService.getByProfileId(profileId),
-        quizService.getAttemptsByProfileId(profileId),
+      const [storiesData, attemptsData, subData, streakData] = await Promise.all([
+        storyService.getByProfileId(data.$id),
+        quizService.getAttemptsByProfileId(data.$id),
+        subscriptionService.getStatus(data.$id),
+        streakService.getStreak(data.$id),
       ]);
 
       setStories(storiesData || []);
       setQuizAttempts(attemptsData || []);
+      setSubscription(subData);
+      setStreak(streakData);
     } catch (err) {
       const appError = handleError(err, 'AppContext.loadProfile');
       setError(appError.message);
@@ -72,28 +80,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const updateProfile = useCallback((updates: Partial<ProfileWithRelations>) => {
     setProfile(prev => prev ? { ...prev, ...updates } : null);
   }, []);
 
-  const clearProfile = useCallback(async () => {
-    try {
-      await storage.removeProfileId();
-      setProfile(null);
-      setStories([]);
-      setQuizAttempts([]);
-      setError(null);
-    } catch (err) {
-      handleError(err, 'AppContext.clearProfile');
-    }
+  const clearProfile = useCallback(() => {
+    setProfile(null);
+    setStories([]);
+    setQuizAttempts([]);
+    setSubscription(null);
+    setStreak(null);
+    setError(null);
   }, []);
 
   const refreshStories = useCallback(async () => {
     if (!profile) return;
     try {
-      const data = await storyService.getByProfileId(profile.id);
+      const data = await storyService.getByProfileId(profile.$id);
       setStories(data || []);
     } catch (err) {
       handleError(err, 'AppContext.refreshStories');
@@ -103,10 +108,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const refreshQuizAttempts = useCallback(async () => {
     if (!profile) return;
     try {
-      const data = await quizService.getAttemptsByProfileId(profile.id);
+      const data = await quizService.getAttemptsByProfileId(profile.$id);
       setQuizAttempts(data || []);
     } catch (err) {
       handleError(err, 'AppContext.refreshQuizAttempts');
+    }
+  }, [profile]);
+
+  const refreshSubscription = useCallback(async () => {
+    if (!profile) return;
+    try {
+      const [subData, streakData] = await Promise.all([
+        subscriptionService.getStatus(profile.$id),
+        streakService.getStreak(profile.$id),
+      ]);
+      setSubscription(subData);
+      setStreak(streakData);
+    } catch (err) {
+      handleError(err, 'AppContext.refreshSubscription');
     }
   }, [profile]);
 
@@ -115,17 +134,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [loadProfile]);
 
   useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+    if (!authLoading) {
+      if (isAuthenticated) {
+        loadProfile();
+      } else {
+        setProfile(null);
+        setStories([]);
+        setQuizAttempts([]);
+        setIsLoading(false);
+      }
+    }
+  }, [authLoading, isAuthenticated, loadProfile]);
 
   const value: AppContextType = {
     profile,
     stories,
     quizAttempts,
+    subscription,
+    streak,
     isLoading,
     error,
     loadProfile,
     updateProfile,
+    refreshSubscription,
     clearProfile,
     refreshAll,
     refreshStories,

@@ -21,7 +21,7 @@ interface PremiumButtonProps {
   disabled?: boolean;
   loading?: boolean;
   icon?: React.ReactNode;
-  gradient?: string[];
+  gradient?: readonly [string, string, ...string[]];
   fullWidth?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -144,7 +144,7 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
       case 'secondary':
         return COLORS.gradients.secondary;
       default:
-        return ['transparent', 'transparent'];
+        return ['transparent', 'transparent'] as const;
     }
   };
 

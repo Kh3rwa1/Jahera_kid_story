@@ -3,6 +3,8 @@
  * Each scheme contains all color definitions needed throughout the app
  */
 
+type GradientColors = readonly [string, string, ...string[]];
+
 export interface ColorScheme {
   id: string;
   name: string;
@@ -15,37 +17,37 @@ export interface ColorScheme {
     secondaryDark: string;
     secondaryLight: string;
     background: string;
-    backgroundGradient: string[];
+    backgroundGradient: GradientColors;
     cardBackground: string;
-    cardGradient: string[];
+    cardGradient: GradientColors;
     text: {
       primary: string;
       secondary: string;
       light: string;
       inverse: string;
-      gradient: string[];
+      gradient: GradientColors;
     };
     categoryColors: {
       green: string;
-      greenGradient: string[];
+      greenGradient: GradientColors;
       teal: string;
-      tealGradient: string[];
+      tealGradient: GradientColors;
       peach: string;
-      peachGradient: string[];
+      peachGradient: GradientColors;
       purple: string;
-      purpleGradient: string[];
+      purpleGradient: GradientColors;
       blue: string;
-      blueGradient: string[];
+      blueGradient: GradientColors;
     };
     accent: {
       gold: string;
-      goldGradient: string[];
+      goldGradient: GradientColors;
       rose: string;
-      roseGradient: string[];
+      roseGradient: GradientColors;
       mint: string;
-      mintGradient: string[];
+      mintGradient: GradientColors;
       lavender: string;
-      lavenderGradient: string[];
+      lavenderGradient: GradientColors;
     };
     success: string;
     successLight: string;
@@ -56,18 +58,18 @@ export interface ColorScheme {
     info: string;
     infoLight: string;
     gradients: {
-      primary: string[];
-      secondary: string[];
-      sunset: string[];
-      sunrise: string[];
-      ocean: string[];
-      forest: string[];
-      magic: string[];
-      royal: string[];
-      success: string[];
-      premium: string[];
-      glassMorphism: string[];
-      glassMorphismDark: string[];
+      primary: GradientColors;
+      secondary: GradientColors;
+      sunset: GradientColors;
+      sunrise: GradientColors;
+      ocean: GradientColors;
+      forest: GradientColors;
+      magic: GradientColors;
+      royal: GradientColors;
+      success: GradientColors;
+      premium: GradientColors;
+      glassMorphism: GradientColors;
+      glassMorphismDark: GradientColors;
     };
     shadow: {
       light: string;
