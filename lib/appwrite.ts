@@ -1,12 +1,9 @@
 import { Client, Account, Databases, Storage, ID, Query } from 'react-native-appwrite';
 import { Platform } from 'react-native';
 
-const appwriteEndpoint = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
-const appwriteProjectId = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || '';
-
 const clientBuilder = new Client()
-  .setEndpoint(appwriteEndpoint)
-  .setProject(appwriteProjectId);
+  .setEndpoint('https://sfo.cloud.appwrite.io/v1')
+  .setProject('69b5657c000d2c28a436');
 
 if (Platform.OS !== 'web') {
   clientBuilder.setPlatform(process.env.EXPO_PUBLIC_APPWRITE_PLATFORM || 'com.hindi.harp');
