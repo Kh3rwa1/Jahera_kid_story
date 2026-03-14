@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Sparkles, BookOpen, Globe, Gamepad2, ArrowRight } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS, FONTS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
   useAnimatedStyle,
   withSpring,
   withRepeat,
   withSequence,
-  withDelay,
   useSharedValue,
   FadeInDown,
   FadeInUp,
@@ -18,25 +17,44 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 const isSmallDevice = width < 375 || height < 667;
 
 export default function Welcome() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { currentTheme, isLoading: themeLoading } = useTheme();
   const themeColors = currentTheme.colors;
   const [isLoading, setIsLoading] = useState(true);
   const scaleButton = useSharedValue(1);
-  const glowOpacity = useSharedValue(0.4);
+  const glowOpacity = useSharedValue(0.5);
+  const float1 = useSharedValue(0);
+  const float2 = useSharedValue(0);
+  const float3 = useSharedValue(0);
 
   useEffect(() => {
     glowOpacity.value = withRepeat(
       withSequence(
-        withTiming(0.8, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.4, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+        withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.5, { duration: 2200, easing: Easing.inOut(Easing.ease) })
       ),
+      -1,
+      true
+    );
+    float1.value = withRepeat(
+      withSequence(withTiming(-14, { duration: 2800 }), withTiming(0, { duration: 2800 })),
+      -1,
+      true
+    );
+    float2.value = withRepeat(
+      withSequence(withTiming(-20, { duration: 3400 }), withTiming(0, { duration: 3400 })),
+      -1,
+      true
+    );
+    float3.value = withRepeat(
+      withSequence(withTiming(-10, { duration: 2000 }), withTiming(0, { duration: 2000 })),
       -1,
       true
     );
@@ -54,8 +72,7 @@ export default function Welcome() {
         return;
       }
       setIsLoading(false);
-    } catch (error) {
-      console.error('Error checking profile:', error);
+    } catch {
       setIsLoading(false);
     }
   };
@@ -70,11 +87,9 @@ export default function Welcome() {
     }, 100);
   };
 
-  const buttonAnimatedStyle = useAnimatedStyle(() => {
+  const buttonAnimStyle = useAnimatedStyle(() => {
     'worklet';
-    return {
-      transform: [{ scale: scaleButton.value }],
-    };
+    return { transform: [{ scale: scaleButton.value }] };
   });
 
   const glowStyle = useAnimatedStyle(() => {
@@ -82,129 +97,153 @@ export default function Welcome() {
     return { opacity: glowOpacity.value };
   });
 
+  const float1Style = useAnimatedStyle(() => {
+    'worklet';
+    return { transform: [{ translateY: float1.value }] };
+  });
+  const float2Style = useAnimatedStyle(() => {
+    'worklet';
+    return { transform: [{ translateY: float2.value }] };
+  });
+  const float3Style = useAnimatedStyle(() => {
+    'worklet';
+    return { transform: [{ translateY: float3.value }] };
+  });
+
   if (isLoading || themeLoading) {
     return (
-      <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
+      <View style={styles.loadingContainer}>
         <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
-        <View style={styles.loadingContent}>
-          <Animated.View
-            entering={FadeInUp.delay(100).springify()}
-            style={styles.loadingIconWrap}
-          >
-            <Sparkles size={40} color={themeColors.primary} strokeWidth={1.5} />
-          </Animated.View>
-        </View>
-      </SafeAreaView>
+        <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.loadingIconWrap}>
+          <Sparkles size={40} color={themeColors.primary} strokeWidth={1.5} />
+        </Animated.View>
+      </View>
     );
   }
 
   const features = [
-    {
-      icon: BookOpen,
-      title: 'Magical Stories',
-      description: 'Personalized tales just for you',
-      colors: ['rgba(184, 234, 224, 0.95)', 'rgba(127, 216, 190, 0.85)'],
-      emoji: '📚',
-    },
-    {
-      icon: Gamepad2,
-      title: 'Fun Quizzes',
-      description: 'Test your knowledge & earn rewards',
-      colors: ['rgba(212, 241, 232, 0.95)', 'rgba(168, 230, 207, 0.85)'],
-      emoji: '🎮',
-    },
-    {
-      icon: Globe,
-      title: 'Multi-Language',
-      description: 'Stories in your favorite language',
-      colors: ['rgba(196, 228, 243, 0.95)', 'rgba(133, 193, 226, 0.85)'],
-      emoji: '🌍',
-    },
+    { emoji: '📚', title: 'Magical Stories', description: 'Personalized tales starring your child' },
+    { emoji: '🎮', title: 'Fun Quizzes', description: 'Test knowledge & earn rewards' },
+    { emoji: '🌍', title: 'Multi-Language', description: 'Stories in any language' },
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <View style={styles.root}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
 
-      <View style={styles.content}>
-        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.heroContainer}>
-          <Animated.View style={[styles.heroGlow, glowStyle]}>
+      {/* Ambient floating orbs */}
+      <Animated.View style={[styles.orb, styles.orb1, float1Style]}>
+        <LinearGradient
+          colors={[themeColors.primary + '30', themeColors.primary + '00']}
+          style={styles.orbGradient}
+        />
+      </Animated.View>
+      <Animated.View style={[styles.orb, styles.orb2, float2Style]}>
+        <LinearGradient
+          colors={[themeColors.primaryLight + '25', themeColors.primaryLight + '00']}
+          style={styles.orbGradient}
+        />
+      </Animated.View>
+      <Animated.View style={[styles.orb, styles.orb3, float3Style]}>
+        <LinearGradient
+          colors={[themeColors.primary + '18', themeColors.primary + '00']}
+          style={styles.orbGradient}
+        />
+      </Animated.View>
+
+      {/* Hero section */}
+      <View style={[styles.hero, { paddingTop: insets.top + (isSmallDevice ? 32 : 56) }]}>
+        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.iconWrap}>
+          <Animated.View style={[styles.glowRing, glowStyle]}>
             <LinearGradient
-              colors={[themeColors.primary + '30', themeColors.primary + '05']}
-              style={styles.heroGlowGradient}
+              colors={[themeColors.primary + '40', themeColors.primary + '00']}
+              style={styles.glowRingGradient}
             />
           </Animated.View>
-          <View style={styles.heroIconCircle}>
+          <View style={[styles.iconCircle, { shadowColor: themeColors.primary }]}>
             <LinearGradient
               colors={[themeColors.primary, themeColors.primaryDark]}
-              style={styles.heroIconGradient}
+              style={styles.iconGradient}
             >
-              <Sparkles size={isSmallDevice ? 44 : 52} color="#FFFFFF" strokeWidth={1.8} />
+              <Sparkles size={isSmallDevice ? 42 : 52} color="#FFFFFF" strokeWidth={1.8} />
             </LinearGradient>
           </View>
         </Animated.View>
 
-        <Animated.Text entering={FadeInUp.delay(350).springify()} style={styles.title}>
+        <Animated.Text
+          entering={FadeInUp.delay(320).springify()}
+          style={[styles.appName, { color: themeColors.text.primary }]}
+        >
           Jahera
         </Animated.Text>
 
-        <Animated.Text entering={FadeInUp.delay(450).springify()} style={styles.subtitle}>
+        <Animated.Text
+          entering={FadeInUp.delay(420).springify()}
+          style={[styles.tagline, { color: themeColors.text.secondary }]}
+        >
           Where imagination comes to life
         </Animated.Text>
-
-        <View style={styles.features}>
-          {features.map((feature, index) => (
-            <Animated.View
-              key={feature.title}
-              entering={FadeInDown.delay(550 + index * 100).springify()}
-            >
-              <LinearGradient
-                colors={feature.colors}
-                style={styles.featureItem}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.featureIconContainer}>
-                  <Text style={styles.featureEmoji}>{feature.emoji}</Text>
-                </View>
-                <View style={styles.featureTextContainer}>
-                  <Text style={styles.featureTitle}>{feature.title}</Text>
-                  <Text style={styles.featureDescription}>{feature.description}</Text>
-                </View>
-              </LinearGradient>
-            </Animated.View>
-          ))}
-        </View>
       </View>
 
-      <Animated.View entering={FadeInUp.delay(900).springify()} style={styles.footer}>
-        <Animated.View style={buttonAnimatedStyle}>
+      {/* Feature cards */}
+      <View style={styles.featuresWrap}>
+        {features.map((f, i) => (
+          <Animated.View key={f.title} entering={FadeInDown.delay(540 + i * 90).springify()}>
+            <LinearGradient
+              colors={[themeColors.cardBackground, themeColors.cardBackground]}
+              style={[styles.featureCard, { shadowColor: themeColors.primary }]}
+            >
+              <View style={[styles.featureEmojiBadge, { backgroundColor: themeColors.primary + '15' }]}>
+                <Text style={styles.featureEmoji}>{f.emoji}</Text>
+              </View>
+              <View style={styles.featureText}>
+                <Text style={[styles.featureTitle, { color: themeColors.text.primary }]}>{f.title}</Text>
+                <Text style={[styles.featureDesc, { color: themeColors.text.secondary }]}>{f.description}</Text>
+              </View>
+              <View style={[styles.featureArrow, { backgroundColor: themeColors.primary + '15' }]}>
+                <ArrowRight size={14} color={themeColors.primary} strokeWidth={2.5} />
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        ))}
+      </View>
+
+      {/* CTA footer */}
+      <Animated.View
+        entering={FadeInUp.delay(860).springify()}
+        style={[styles.footer, { paddingBottom: insets.bottom + SPACING.xl }]}
+      >
+        <Animated.View style={buttonAnimStyle}>
           <TouchableOpacity onPress={handleGetStarted} activeOpacity={0.9}>
             <LinearGradient
               colors={[themeColors.primary, themeColors.primaryDark]}
-              style={styles.startButton}
+              style={styles.ctaButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.startButtonText}>Start Your Adventure</Text>
+              <Text style={styles.ctaText}>Start Your Adventure</Text>
               <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} />
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
 
-        <Animated.Text entering={FadeInUp.delay(1000).springify()} style={styles.footerText}>
-          No signup required
+        <Animated.Text
+          entering={FadeInUp.delay(980).springify()}
+          style={[styles.noSignup, { color: themeColors.text.light }]}
+        >
+          No account required · Free to use
         </Animated.Text>
       </Animated.View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
+  root: {
     flex: 1,
   },
-  loadingContent: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -218,128 +257,154 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.lg,
   },
-  container: {
+  orb: {
+    position: 'absolute',
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  orb1: {
+    width: 280,
+    height: 280,
+    top: -60,
+    right: -80,
+  },
+  orb2: {
+    width: 220,
+    height: 220,
+    top: height * 0.35,
+    left: -90,
+  },
+  orb3: {
+    width: 180,
+    height: 180,
+    bottom: height * 0.2,
+    right: -50,
+  },
+  orbGradient: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    paddingTop: isSmallDevice ? SPACING.xl : SPACING.xxxl * 1.5,
-    paddingHorizontal: SPACING.xl,
+  hero: {
     alignItems: 'center',
-    zIndex: 1,
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.xl,
   },
-  heroContainer: {
+  iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: isSmallDevice ? SPACING.lg : SPACING.xxl,
     position: 'relative',
   },
-  heroGlow: {
+  glowRing: {
     position: 'absolute',
     width: isSmallDevice ? 180 : 220,
     height: isSmallDevice ? 180 : 220,
-    borderRadius: isSmallDevice ? 90 : 110,
+    borderRadius: 110,
   },
-  heroGlowGradient: {
+  glowRingGradient: {
     width: '100%',
     height: '100%',
     borderRadius: 110,
   },
-  heroIconCircle: {
-    width: isSmallDevice ? 100 : 120,
-    height: isSmallDevice ? 100 : 120,
-    borderRadius: isSmallDevice ? 50 : 60,
+  iconCircle: {
+    width: isSmallDevice ? 96 : 116,
+    height: isSmallDevice ? 96 : 116,
+    borderRadius: isSmallDevice ? 48 : 58,
     overflow: 'hidden',
-    ...SHADOWS.xl,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 16,
   },
-  heroIconGradient: {
+  iconGradient: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: isSmallDevice ? 36 : 44,
+  appName: {
+    fontSize: isSmallDevice ? 40 : 52,
     fontFamily: FONTS.extrabold,
-    color: '#1A1F36',
+    letterSpacing: -1,
     marginBottom: SPACING.sm,
     textAlign: 'center',
-    letterSpacing: -0.5,
   },
-  subtitle: {
+  tagline: {
     fontSize: isSmallDevice ? FONT_SIZES.md : FONT_SIZES.lg,
-    color: '#6C7A89',
-    textAlign: 'center',
-    lineHeight: isSmallDevice ? 22 : 26,
-    marginBottom: isSmallDevice ? SPACING.xl : SPACING.xxxl,
-    paddingHorizontal: SPACING.md,
     fontFamily: FONTS.medium,
+    textAlign: 'center',
+    lineHeight: 26,
   },
-  features: {
-    width: '100%',
+  featuresWrap: {
+    flex: 1,
+    paddingHorizontal: SPACING.xl,
+    justifyContent: 'center',
     gap: SPACING.md,
   },
-  featureItem: {
+  featureCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
+    gap: SPACING.lg,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  featureIconContainer: {
-    width: 52,
-    height: 52,
+  featureEmojiBadge: {
+    width: 50,
+    height: 50,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.lg,
-    backgroundColor: 'rgba(255,255,255,0.7)',
   },
   featureEmoji: {
     fontSize: 26,
   },
-  featureTextContainer: {
+  featureText: {
     flex: 1,
   },
   featureTitle: {
     fontSize: FONT_SIZES.md,
     fontFamily: FONTS.bold,
-    color: '#1A1F36',
     marginBottom: 2,
   },
-  featureDescription: {
+  featureDesc: {
     fontSize: FONT_SIZES.sm,
-    color: '#6C7A89',
     fontFamily: FONTS.medium,
+    lineHeight: 19,
+  },
+  featureArrow: {
+    width: 28,
+    height: 28,
+    borderRadius: BORDER_RADIUS.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   footer: {
-    padding: SPACING.xl,
-    paddingBottom: isSmallDevice ? SPACING.lg : SPACING.xxl,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.lg,
     alignItems: 'center',
-    zIndex: 1,
+    gap: SPACING.md,
   },
-  startButton: {
-    paddingVertical: isSmallDevice ? SPACING.lg : SPACING.xl,
-    paddingHorizontal: isSmallDevice ? SPACING.xxl + SPACING.sm : SPACING.xxxl + SPACING.xl,
-    borderRadius: BORDER_RADIUS.pill,
+  ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.xxxl + SPACING.xl,
+    borderRadius: BORDER_RADIUS.pill,
     ...SHADOWS.xl,
-    minHeight: 56,
+    minHeight: 58,
   },
-  startButtonText: {
+  ctaText: {
     color: '#FFFFFF',
     fontSize: FONT_SIZES.lg,
     fontFamily: FONTS.bold,
     letterSpacing: 0.3,
   },
-  footerText: {
-    marginTop: SPACING.lg,
+  noSignup: {
     fontSize: FONT_SIZES.sm,
-    color: '#6C7A89',
     fontFamily: FONTS.medium,
   },
 });

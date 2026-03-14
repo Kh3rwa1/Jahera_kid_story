@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SUPPORTED_LANGUAGES, MAX_LANGUAGES, Language } from '@/constants/languages';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS, FONTS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
   FadeInDown,
@@ -12,90 +12,51 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withSequence,
-  interpolate
+  withTiming,
+  ZoomIn,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Globe as Globe2, Sparkles, Star } from 'lucide-react-native';
+import { Globe as Globe2, ChevronRight, Check } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
+const STEP_DOTS = [true, false, false, false];
+
 export default function LanguageSelection() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
   const themeColors = currentTheme.colors;
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
 
-  // Floating sparkle animations
-  const sparkle1 = useSharedValue(0);
-  const sparkle2 = useSharedValue(0);
-  const sparkle3 = useSharedValue(0);
+  const pulse = useSharedValue(1);
 
   useEffect(() => {
-    sparkle1.value = withRepeat(
+    pulse.value = withRepeat(
       withSequence(
-        withSpring(1, { damping: 2 }),
-        withSpring(0, { damping: 2 })
+        withTiming(1.06, { duration: 1600 }),
+        withTiming(1, { duration: 1600 })
       ),
       -1,
-      false
-    );
-    sparkle2.value = withRepeat(
-      withSequence(
-        withSpring(1, { damping: 2 }),
-        withSpring(0, { damping: 2 })
-      ),
-      -1,
-      false
-    );
-    sparkle3.value = withRepeat(
-      withSequence(
-        withSpring(1, { damping: 2 }),
-        withSpring(0, { damping: 2 })
-      ),
-      -1,
-      false
+      true
     );
   }, []);
 
-  const sparkle1Style = useAnimatedStyle(() => {
+  const iconPulseStyle = useAnimatedStyle(() => {
     'worklet';
-    return {
-      opacity: interpolate(sparkle1.value, [0, 1], [0.3, 1]),
-      transform: [{ scale: interpolate(sparkle1.value, [0, 1], [0.8, 1.2]) }],
-    };
-  });
-
-  const sparkle2Style = useAnimatedStyle(() => {
-    'worklet';
-    return {
-      opacity: interpolate(sparkle2.value, [0, 1], [0.3, 1]),
-      transform: [{ scale: interpolate(sparkle2.value, [0, 1], [0.8, 1.2]) }],
-    };
-  });
-
-  const sparkle3Style = useAnimatedStyle(() => {
-    'worklet';
-    return {
-      opacity: interpolate(sparkle3.value, [0, 1], [0.3, 1]),
-      transform: [{ scale: interpolate(sparkle3.value, [0, 1], [0.8, 1.2]) }],
-    };
+    return { transform: [{ scale: pulse.value }] };
   });
 
   const toggleLanguage = async (language: Language) => {
     const isSelected = selectedLanguages.some(l => l.code === language.code);
-
     if (isSelected) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setSelectedLanguages(selectedLanguages.filter(l => l.code !== language.code));
     } else {
       if (selectedLanguages.length >= MAX_LANGUAGES) {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Alert.alert(
-          '🌈 Maximum Reached',
-          `You can select up to ${MAX_LANGUAGES} languages.`,
-          [{ text: 'OK' }]
-        );
         return;
       }
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -106,276 +67,279 @@ export default function LanguageSelection() {
   const handleContinue = async () => {
     if (selectedLanguages.length === 0) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('🌍 Select Language', 'Please select at least one language to continue.', [
-        { text: 'OK' },
-      ]);
       return;
     }
-
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     router.push({
       pathname: '/onboarding/kid-name',
-      params: {
-        languages: JSON.stringify(selectedLanguages.map(l => ({ code: l.code, name: l.name }))),
-      },
+      params: { languages: JSON.stringify(selectedLanguages.map(l => ({ code: l.code, name: l.name }))) },
     });
   };
 
-  return (
-    <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
-      {/* Floating decorative elements */}
-      <Animated.View style={[styles.floatingSparkle, { top: '8%', left: '10%' }, sparkle1Style]}>
-        <Sparkles size={24} color={themeColors.primary} />
-      </Animated.View>
-      <Animated.View style={[styles.floatingSparkle, { top: '12%', right: '15%' }, sparkle2Style]}>
-        <Star size={20} color={themeColors.primary} />
-      </Animated.View>
-      <Animated.View style={[styles.floatingSparkle, { top: '20%', right: '8%' }, sparkle3Style]}>
-        <Sparkles size={18} color={themeColors.primary} />
-      </Animated.View>
+  const canContinue = selectedLanguages.length > 0;
 
-      {/* Header with enhanced design */}
-      <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
-        <View style={[styles.iconBadge, { backgroundColor: themeColors.primary + '20' }]}>
-          <Globe2 size={40} color={themeColors.primary} strokeWidth={2.5} />
-        </View>
+  return (
+    <View style={styles.root}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
+
+      {/* Header */}
+      <Animated.View
+        entering={FadeInDown.delay(80).springify()}
+        style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}
+      >
+        <Animated.View style={iconPulseStyle}>
+          <View style={[styles.iconCircle, { shadowColor: themeColors.primary }]}>
+            <LinearGradient
+              colors={[themeColors.primary, themeColors.primaryDark]}
+              style={styles.iconGradient}
+            >
+              <Globe2 size={32} color="#FFFFFF" strokeWidth={2} />
+            </LinearGradient>
+          </View>
+        </Animated.View>
+
         <Text style={[styles.title, { color: themeColors.text.primary }]}>
-          Choose Your Languages! 🌍
+          Choose Language
         </Text>
         <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
           Pick up to {MAX_LANGUAGES} languages for magical stories
         </Text>
 
-        {/* Enhanced progress indicator */}
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { backgroundColor: themeColors.primary + '20' }]}>
-            <LinearGradient
-              colors={themeColors.gradients.primary}
+        {/* Step indicator */}
+        <View style={styles.stepRow}>
+          {STEP_DOTS.map((active, i) => (
+            <View
+              key={i}
               style={[
-                styles.progressFill,
-                { width: `${(selectedLanguages.length / MAX_LANGUAGES) * 100}%` }
+                styles.stepDot,
+                active
+                  ? [styles.stepDotActive, { backgroundColor: themeColors.primary }]
+                  : { backgroundColor: themeColors.primary + '25' },
               ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
             />
-          </View>
-          <View style={styles.counterRow}>
-            <Text style={[styles.counter, { color: themeColors.primary }]}>
-              {selectedLanguages.length} of {MAX_LANGUAGES} selected
-            </Text>
-            {selectedLanguages.length > 0 && (
-              <Animated.View entering={FadeInDown.springify()}>
-                <Text style={styles.emoji}>🎉</Text>
-              </Animated.View>
-            )}
-          </View>
+          ))}
+        </View>
+
+        {/* Selection count */}
+        <View style={[styles.countBadge, { backgroundColor: themeColors.primary + '15' }]}>
+          <Text style={[styles.countText, { color: themeColors.primary }]}>
+            {selectedLanguages.length} of {MAX_LANGUAGES} selected
+          </Text>
+          {selectedLanguages.length > 0 && (
+            <Animated.Text entering={ZoomIn.springify()} style={styles.countEmoji}>
+              ✓
+            </Animated.Text>
+          )}
         </View>
       </Animated.View>
 
+      {/* Language list */}
       <ScrollView
-        style={styles.languageList}
-        contentContainerStyle={styles.languageListContent}
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       >
         {SUPPORTED_LANGUAGES.map((language, index) => {
           const isSelected = selectedLanguages.some(l => l.code === language.code);
-
           return (
             <Animated.View
               key={language.code}
-              entering={FadeInDown.delay(200 + index * 50).springify()}
+              entering={FadeInDown.delay(160 + index * 45).springify()}
             >
               <TouchableOpacity
-                style={[
-                  styles.languageCard,
-                  {
-                    backgroundColor: themeColors.cardBackground,
-                    borderColor: isSelected ? themeColors.primary : 'transparent'
-                  }
-                ]}
                 onPress={() => toggleLanguage(language)}
-                activeOpacity={0.7}
+                activeOpacity={0.75}
+                style={styles.cardTouchable}
               >
-                {isSelected && (
+                {isSelected ? (
                   <LinearGradient
-                    colors={themeColors.gradients.primary}
-                    style={StyleSheet.absoluteFill}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  />
-                )}
-                <View style={styles.languageContent}>
-                  <LinearGradient
-                    colors={isSelected
-                      ? ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.85)']
-                      : [themeColors.primary + '15', themeColors.primary + '10']
-                    }
-                    style={styles.flagContainer}
+                    colors={[themeColors.primary, themeColors.primaryDark]}
+                    style={styles.card}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                   >
-                    <Text style={styles.flag}>{language.flag}</Text>
+                    <View style={styles.flagBadgeSelected}>
+                      <Text style={styles.flagText}>{language.flag}</Text>
+                    </View>
+                    <View style={styles.langInfo}>
+                      <Text style={styles.langNameSelected}>{language.name}</Text>
+                      <Text style={styles.langNativeSelected}>{language.nativeName}</Text>
+                    </View>
+                    <View style={styles.checkCircle}>
+                      <Check size={16} color={themeColors.primary} strokeWidth={3} />
+                    </View>
                   </LinearGradient>
-                  <View style={styles.languageInfo}>
-                    <Text style={[
-                      styles.languageName,
-                      { color: isSelected ? '#FFFFFF' : themeColors.text.primary }
-                    ]}>
-                      {language.name}
-                    </Text>
-                    <Text style={[
-                      styles.languageNative,
-                      { color: isSelected ? 'rgba(255, 255, 255, 0.9)' : themeColors.text.secondary }
-                    ]}>
-                      {language.nativeName}
-                    </Text>
+                ) : (
+                  <View style={[styles.card, { backgroundColor: themeColors.cardBackground, shadowColor: themeColors.primary }]}>
+                    <View style={[styles.flagBadge, { backgroundColor: themeColors.primary + '12' }]}>
+                      <Text style={styles.flagText}>{language.flag}</Text>
+                    </View>
+                    <View style={styles.langInfo}>
+                      <Text style={[styles.langName, { color: themeColors.text.primary }]}>{language.name}</Text>
+                      <Text style={[styles.langNative, { color: themeColors.text.secondary }]}>{language.nativeName}</Text>
+                    </View>
+                    <View style={[styles.chevronBadge, { backgroundColor: themeColors.primary + '10' }]}>
+                      <ChevronRight size={16} color={themeColors.primary} strokeWidth={2.5} />
+                    </View>
                   </View>
-                  {isSelected && (
-                    <Animated.View
-                      entering={FadeInDown.springify()}
-                      style={styles.checkmark}
-                    >
-                      <Text style={styles.checkmarkText}>✓</Text>
-                    </Animated.View>
-                  )}
-                </View>
+                )}
               </TouchableOpacity>
             </Animated.View>
           );
         })}
       </ScrollView>
 
-      {/* Enhanced Footer with CTA */}
-      <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.footer}>
-        <TouchableOpacity
-          onPress={handleContinue}
-          disabled={selectedLanguages.length === 0}
-          activeOpacity={0.9}
-        >
+      {/* Footer CTA */}
+      <Animated.View
+        entering={FadeInUp.delay(300).springify()}
+        style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
+      >
+        <TouchableOpacity onPress={handleContinue} disabled={!canContinue} activeOpacity={0.88}>
           <LinearGradient
-            colors={selectedLanguages.length === 0
-              ? [themeColors.text.light, themeColors.text.light]
-              : themeColors.gradients.primary
-            }
-            style={styles.continueButton}
+            colors={canContinue ? [themeColors.primary, themeColors.primaryDark] : [themeColors.text.light + 'AA', themeColors.text.light + 'AA']}
+            style={styles.ctaButton}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Text style={styles.continueButtonText}>
-              {selectedLanguages.length === 0 ? 'Select a language 🌟' : 'Continue Adventure →'}
+            <Text style={styles.ctaText}>
+              {canContinue ? 'Continue' : 'Select a language'}
             </Text>
+            {canContinue && <ChevronRight size={22} color="#FFFFFF" strokeWidth={2.5} />}
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  floatingSparkle: {
-    position: 'absolute',
-    zIndex: 0,
-  },
+  root: { flex: 1 },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: SPACING.xxl,
-    paddingBottom: SPACING.md,
-    zIndex: 1,
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.lg,
+    alignItems: 'flex-start',
   },
-  iconBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: BORDER_RADIUS.xl,
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: SPACING.lg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  iconGradient: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.lg,
-    ...SHADOWS.md,
   },
   title: {
-    fontSize: 34,
+    fontSize: 30,
     fontFamily: FONTS.extrabold,
-    marginBottom: SPACING.sm,
     letterSpacing: -0.5,
+    marginBottom: SPACING.xs,
   },
   subtitle: {
-    fontSize: FONT_SIZES.lg,
-    marginBottom: SPACING.xl,
-    lineHeight: 24,
+    fontSize: FONT_SIZES.md,
     fontFamily: FONTS.medium,
+    lineHeight: 22,
+    marginBottom: SPACING.lg,
   },
-  progressContainer: {
+  stepRow: {
+    flexDirection: 'row',
     gap: SPACING.sm,
+    marginBottom: SPACING.lg,
   },
-  progressBar: {
-    height: 8,
-    borderRadius: BORDER_RADIUS.md,
-    overflow: 'hidden',
+  stepDot: {
+    height: 6,
+    borderRadius: 3,
   },
-  progressFill: {
-    height: '100%',
-    borderRadius: BORDER_RADIUS.md,
+  stepDotActive: {
+    width: 24,
   },
-  counterRow: {
+  countBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.pill,
   },
-  counter: {
-    fontSize: FONT_SIZES.md,
+  countText: {
+    fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.bold,
   },
-  emoji: {
-    fontSize: 18,
+  countEmoji: {
+    fontSize: 13,
+    fontFamily: FONTS.bold,
   },
-  languageList: {
-    flex: 1,
-    zIndex: 1,
-  },
-  languageListContent: {
+  list: { flex: 1 },
+  listContent: {
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.lg,
+    paddingTop: SPACING.sm,
     paddingBottom: SPACING.xl,
     gap: SPACING.md,
   },
-  languageCard: {
-    borderRadius: BORDER_RADIUS.xl,
-    overflow: 'hidden',
-    borderWidth: 3,
-    ...SHADOWS.lg,
-  },
-  languageContent: {
+  cardTouchable: {},
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+    gap: SPACING.lg,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  flagContainer: {
-    width: 60,
-    height: 60,
+  flagBadge: {
+    width: 52,
+    height: 52,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.lg,
-    ...SHADOWS.sm,
   },
-  flag: {
-    fontSize: 36,
+  flagBadgeSelected: {
+    width: 52,
+    height: 52,
+    borderRadius: BORDER_RADIUS.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  languageInfo: {
-    flex: 1,
-  },
-  languageName: {
-    fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.bold,
-    marginBottom: 4,
-  },
-  languageNative: {
+  flagText: { fontSize: 30 },
+  langInfo: { flex: 1 },
+  langName: {
     fontSize: FONT_SIZES.md,
+    fontFamily: FONTS.bold,
+    marginBottom: 2,
+  },
+  langNative: {
+    fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.medium,
   },
-  checkmark: {
+  langNameSelected: {
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONTS.bold,
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  langNativeSelected: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.medium,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  chevronBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: BORDER_RADIUS.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -384,26 +348,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.sm,
   },
-  checkmarkText: {
-    fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.bold,
-  },
   footer: {
-    paddingHorizontal: SPACING.xxl,
+    paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
-    paddingBottom: SPACING.xxl + 10,
-    zIndex: 1,
   },
-  continueButton: {
-    paddingVertical: SPACING.xl,
-    borderRadius: BORDER_RADIUS.pill,
+  ctaButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.xl - 2,
+    borderRadius: BORDER_RADIUS.pill,
     ...SHADOWS.xl,
   },
-  continueButtonText: {
+  ctaText: {
     color: '#FFFFFF',
-    fontSize: FONT_SIZES.xl,
+    fontSize: FONT_SIZES.lg,
     fontFamily: FONTS.bold,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 });
