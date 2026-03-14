@@ -52,8 +52,14 @@ export default function Register() {
       router.replace('/onboarding/language-selection');
     } catch (err: any) {
       const msg = err?.message || '';
-      if (msg.includes('already exists') || msg.includes('already registered')) {
+      if (msg.includes('already exists') || msg.includes('already registered') || msg.includes('user_already_exists')) {
         setError('An account with this email already exists. Try signing in.');
+      } else if (msg.includes('Invalid `password`') || msg.includes('password')) {
+        setError('Password must be at least 8 characters.');
+      } else if (msg.includes('Invalid `email`') || msg.includes('email')) {
+        setError('Please enter a valid email address.');
+      } else if (msg) {
+        setError(msg);
       } else {
         setError('Something went wrong. Please try again.');
       }

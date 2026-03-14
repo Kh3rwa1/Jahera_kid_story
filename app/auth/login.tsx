@@ -46,9 +46,14 @@ export default function Login() {
       await signIn(email.trim(), password);
       router.replace('/(tabs)');
     } catch (err: any) {
-      setError(err?.message?.includes('Invalid credentials')
-        ? 'Incorrect email or password. Please try again.'
-        : 'Something went wrong. Please try again.');
+      const msg = err?.message || '';
+      if (msg.includes('Invalid credentials') || msg.includes('user_invalid_credentials') || msg.includes('401')) {
+        setError('Incorrect email or password. Please try again.');
+      } else if (msg) {
+        setError(msg);
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
