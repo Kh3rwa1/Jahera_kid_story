@@ -1,12 +1,18 @@
 import { Client, Account, Databases, Storage, ID, Query } from 'react-native-appwrite';
+import { Platform } from 'react-native';
 
 const appwriteEndpoint = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
 const appwriteProjectId = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || '';
 
-export const client = new Client()
+const clientBuilder = new Client()
   .setEndpoint(appwriteEndpoint)
-  .setProject(appwriteProjectId)
-  .setPlatform(process.env.EXPO_PUBLIC_APPWRITE_PLATFORM || 'com.hindi.harp');
+  .setProject(appwriteProjectId);
+
+if (Platform.OS !== 'web') {
+  clientBuilder.setPlatform(process.env.EXPO_PUBLIC_APPWRITE_PLATFORM || 'com.hindi.harp');
+}
+
+export const client = clientBuilder;
 
 export const account = new Account(client);
 export const databases = new Databases(client);
