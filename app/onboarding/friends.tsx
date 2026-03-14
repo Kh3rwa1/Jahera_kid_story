@@ -9,42 +9,45 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
+  StatusBar,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { X, UserPlus, ArrowLeft, Plus, Sparkles, PartyPopper } from 'lucide-react-native';
+import { X, UserPlus, ArrowLeft, Plus, Sparkles } from 'lucide-react-native';
 import { profileService, languageService, familyMemberService, friendService } from '@/services/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS, FONTS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, { FadeInDown, FadeInUp, FadeOutUp, ZoomIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const STEP_DOTS = [false, false, false, true];
+const FRIEND_EMOJIS = ['🧒', '👦', '👧', '🧑', '👶', '🧓'];
 
 export default function Friends() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
   const themeColors = currentTheme.colors;
   const [friends, setFriends] = useState<string[]>([]);
   const [currentName, setCurrentName] = useState('');
-  const [emptyNameHint, setEmptyNameHint] = useState(false);
+  const [shake, setShake] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const addFriend = async () => {
-    const trimmedName = currentName.trim();
-
-    if (!trimmedName.length) {
-      setEmptyNameHint(true);
+    const trimmed = currentName.trim();
+    if (!trimmed.length) {
+      setShake(true);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      setTimeout(() => setEmptyNameHint(false), 1200);
+      setTimeout(() => setShake(false), 600);
       return;
     }
-
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setFriends([...friends, trimmedName]);
+    setFriends([...friends, trimmed]);
     setCurrentName('');
-    setEmptyNameHint(false);
   };
 
   const removeFriend = async (index: number) => {
@@ -54,23 +57,19 @@ export default function Friends() {
 
   const handleComplete = async () => {
     setIsLoading(true);
-
+    setErrorMsg(null);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-
       const languages = JSON.parse(params.languages as string);
       const kidName = params.kidName as string;
       const familyMembers = JSON.parse((params.familyMembers as string) || '[]');
-
       const primaryLanguage = languages[0]?.code || 'en';
       const profile = await profileService.create(kidName, primaryLanguage);
-
       if (!profile) {
-        Alert.alert('❌ Error', 'Failed to create profile. Please try again.');
+        setErrorMsg('Failed to create profile. Please try again.');
         setIsLoading(false);
         return;
       }
-
       await Promise.all([
         ...languages.map((lang: { code: string; name: string }) =>
           languageService.add(profile.id, lang.code, lang.name)
@@ -78,23 +77,14 @@ export default function Friends() {
         ...familyMembers.map((name: string) => familyMemberService.add(profile.id, name)),
         ...friends.map(name => friendService.add(profile.id, name)),
       ]);
-
       await AsyncStorage.setItem('profileId', profile.id);
-
-      // Success haptic feedback
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
       router.replace('/(tabs)');
-    } catch (error) {
-      console.error('Error completing onboarding:', error);
+    } catch {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('❌ Error', 'Something went wrong. Please try again.');
+      setErrorMsg('Something went wrong. Please try again.');
       setIsLoading(false);
     }
-  };
-
-  const handleSkip = () => {
-    handleComplete();
   };
 
   const handleBack = async () => {
@@ -103,403 +93,351 @@ export default function Friends() {
   };
 
   return (
-    <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}>
+    <View style={styles.root}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
+
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
         {/* Header */}
-        <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
+        <Animated.View
+          entering={FadeInDown.delay(80).springify()}
+          style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}
+        >
           <TouchableOpacity
             onPress={handleBack}
-            style={[styles.backButton, { backgroundColor: themeColors.cardBackground }]}
+            style={[styles.backBtn, { backgroundColor: themeColors.cardBackground }]}
             activeOpacity={0.7}
             disabled={isLoading}
           >
-            <ArrowLeft size={24} color={themeColors.text.primary} strokeWidth={2} />
+            <ArrowLeft size={20} color={themeColors.text.primary} strokeWidth={2.5} />
           </TouchableOpacity>
 
-          <LinearGradient
-            colors={[themeColors.primary + '25', themeColors.primary + '15']}
-            style={styles.iconBadge}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <UserPlus size={40} color={themeColors.primary} strokeWidth={2.5} />
-          </LinearGradient>
+          <View style={[styles.iconCircle, { shadowColor: themeColors.success }]}>
+            <LinearGradient
+              colors={[themeColors.success, themeColors.successLight]}
+              style={styles.iconGradient}
+            >
+              <UserPlus size={32} color="#FFFFFF" strokeWidth={2} />
+            </LinearGradient>
+          </View>
 
           <Text style={[styles.title, { color: themeColors.text.primary }]}>
-            Add Friends! 👫
+            Add Friends
           </Text>
           <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
             Who are {params.kidName}'s awesome friends?
           </Text>
+
+          {/* Step dots — all filled on last step */}
+          <View style={styles.stepRow}>
+            {STEP_DOTS.map((active, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.stepDot,
+                  active
+                    ? [styles.stepDotActive, { backgroundColor: themeColors.success }]
+                    : { backgroundColor: themeColors.success + '35', width: 8 },
+                ]}
+              />
+            ))}
+          </View>
+
+          {/* Final step badge */}
+          <View style={[styles.finalBadge, { backgroundColor: themeColors.success + '18' }]}>
+            <Text style={[styles.finalBadgeText, { color: themeColors.success }]}>
+              Last step — almost done!
+            </Text>
+          </View>
         </Animated.View>
 
-        {/* Input Section */}
-        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.inputSection}>
-          <View style={styles.inputContainer}>
-            <LinearGradient
-              colors={[themeColors.cardBackground, themeColors.cardBackground]}
-              style={styles.inputWrapper}
-            >
-              <TextInput
-                style={[styles.input, { color: themeColors.text.primary }]}
-                placeholder="Enter friend's name..."
-                placeholderTextColor={themeColors.text.light}
-                value={currentName}
-                onChangeText={(value) => {
-                  setCurrentName(value);
-                  if (emptyNameHint && value.trim().length > 0) {
-                    setEmptyNameHint(false);
-                  }
-                }}
-                autoCapitalize="words"
-                returnKeyType="done"
-                onSubmitEditing={addFriend}
-                editable={!isLoading}
-              />
-            </LinearGradient>
+        {/* Input row */}
+        <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.inputSection}>
+          <View style={[
+            styles.inputCard,
+            { backgroundColor: themeColors.cardBackground, shadowColor: themeColors.success },
+            shake && { borderColor: themeColors.warning, borderWidth: 1.5 },
+          ]}>
+            <TextInput
+              style={[styles.input, { color: themeColors.text.primary }]}
+              placeholder="Enter a friend's name..."
+              placeholderTextColor={themeColors.text.light}
+              value={currentName}
+              onChangeText={setCurrentName}
+              autoCapitalize="words"
+              returnKeyType="done"
+              onSubmitEditing={addFriend}
+              editable={!isLoading}
+            />
             <TouchableOpacity
-              style={[
-                styles.addButton,
-                {
-                  backgroundColor: (currentName.trim().length === 0 || isLoading)
-                    ? themeColors.text.light
-                    : themeColors.primary
-                }
-              ]}
               onPress={addFriend}
+              style={[styles.addBtn, { backgroundColor: currentName.trim().length > 0 ? themeColors.success : themeColors.success + '40' }]}
+              activeOpacity={0.8}
               disabled={isLoading}
-              activeOpacity={0.7}
             >
-              <Plus size={24} color="#FFFFFF" strokeWidth={3} />
+              <Plus size={20} color="#FFFFFF" strokeWidth={3} />
             </TouchableOpacity>
           </View>
-          {emptyNameHint ? (
-            <Animated.Text entering={FadeInDown.springify()} style={[styles.inputHint, { color: themeColors.warning }]}>
-              Type a name first!
+          {errorMsg && (
+            <Animated.Text entering={FadeInDown.springify()} style={[styles.errorText, { color: themeColors.error }]}>
+              {errorMsg}
             </Animated.Text>
-          ) : null}
+          )}
         </Animated.View>
 
-        {/* List */}
-        <ScrollView
-          style={styles.listContainer}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        >
+        {/* Friends list */}
+        <ScrollView style={styles.list} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
           {friends.length === 0 ? (
-            <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.emptyState}>
-              <LinearGradient
-                colors={[themeColors.primary + '15', themeColors.primary + '08']}
-                style={styles.emptyIconContainer}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
+            <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.emptyState}>
+              <View style={[styles.emptyIconWrap, { backgroundColor: themeColors.success + '12' }]}>
                 <Text style={styles.emptyIcon}>👫</Text>
-              </LinearGradient>
-              <Text style={[styles.emptyStateText, { color: themeColors.text.primary }]}>
-                No friends added yet
-              </Text>
-              <Text style={[styles.emptyStateSubtext, { color: themeColors.text.secondary }]}>
-                Add friends to make stories more fun! 🎉
+              </View>
+              <Text style={[styles.emptyTitle, { color: themeColors.text.primary }]}>No friends added yet</Text>
+              <Text style={[styles.emptySubtitle, { color: themeColors.text.secondary }]}>
+                You can skip this step if you'd like
               </Text>
             </Animated.View>
           ) : (
             friends.map((friend, index) => (
               <Animated.View
-                key={index}
-                entering={ZoomIn.delay(index * 50).springify()}
-                exiting={FadeOutUp.springify()}
+                key={`${friend}-${index}`}
+                entering={ZoomIn.delay(index * 40).springify()}
+                exiting={FadeOutUp.duration(200)}
               >
-                <LinearGradient
-                  colors={themeColors.gradients.primary}
-                  style={styles.friendCard}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <View style={styles.friendIconContainer}>
-                    <Text style={styles.friendIcon}>
-                      {index % 6 === 0 ? '🧒' : index % 6 === 1 ? '👦' : index % 6 === 2 ? '👧' : index % 6 === 3 ? '🧑' : index % 6 === 4 ? '👶' : '🧓'}
+                <View style={[styles.friendCard, { backgroundColor: themeColors.cardBackground, shadowColor: themeColors.success }]}>
+                  <View style={[styles.friendEmojiBadge, { backgroundColor: themeColors.success + '15' }]}>
+                    <Text style={styles.friendEmoji}>
+                      {FRIEND_EMOJIS[index % FRIEND_EMOJIS.length]}
                     </Text>
                   </View>
-                  <Text style={styles.friendName}>{friend}</Text>
+                  <Text style={[styles.friendName, { color: themeColors.text.primary }]} numberOfLines={1}>
+                    {friend}
+                  </Text>
                   <TouchableOpacity
                     onPress={() => removeFriend(index)}
-                    style={styles.removeButton}
+                    style={[styles.removeBtn, { backgroundColor: themeColors.error + '18' }]}
                     activeOpacity={0.7}
                     disabled={isLoading}
                   >
-                    <X size={18} color="#FF5252" strokeWidth={3} />
+                    <X size={15} color={themeColors.error} strokeWidth={2.5} />
                   </TouchableOpacity>
-                </LinearGradient>
+                </View>
               </Animated.View>
             ))
           )}
         </ScrollView>
 
-        {/* Progress */}
-        <Animated.View entering={FadeInUp.delay(350).springify()} style={styles.progressContainer}>
-          <View style={styles.progressHeader}>
-            <Text style={[styles.progressLabel, { color: themeColors.text.secondary }]}>
-              Almost Done!
-            </Text>
-            <Text style={[styles.progressStep, { color: themeColors.success }]}>
-              Step 4 of 4 🎉
-            </Text>
-          </View>
-          <View style={[styles.progressBar, { backgroundColor: themeColors.success + '20' }]}>
-            <LinearGradient
-              colors={[themeColors.success, themeColors.successLight]}
-              style={[styles.progressFill, { width: '100%' }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            />
-          </View>
-          <View style={styles.progressDots}>
-            <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.success }]} />
-            <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.success }]} />
-            <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.success }]} />
-            <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.success }]} />
-          </View>
-        </Animated.View>
-
         {/* Footer */}
-        <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.footer}>
+        <Animated.View
+          entering={FadeInUp.delay(300).springify()}
+          style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
+        >
           <TouchableOpacity
-            onPress={handleSkip}
-            style={[styles.skipButton, { backgroundColor: themeColors.cardBackground }]}
+            onPress={handleComplete}
+            style={[styles.skipBtn, { backgroundColor: themeColors.cardBackground }]}
             activeOpacity={0.7}
             disabled={isLoading}
           >
-            <Text style={[styles.skipButtonText, { color: themeColors.text.secondary }]}>
-              Skip for now
-            </Text>
+            <Text style={[styles.skipText, { color: themeColors.text.secondary }]}>Skip</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleComplete}
-            activeOpacity={0.9}
+            activeOpacity={0.88}
             style={{ flex: 1 }}
             disabled={isLoading}
           >
             <LinearGradient
-              colors={isLoading
-                ? [themeColors.text.light, themeColors.text.light]
-                : [themeColors.success, themeColors.successLight]
-              }
-              style={styles.completeButton}
+              colors={isLoading ? [themeColors.text.light, themeColors.text.light] : [themeColors.success, themeColors.successLight]}
+              style={styles.ctaButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <View style={styles.completeButtonContent}>
-                  <Text style={styles.completeButtonText}>Start Adventures</Text>
+                <>
+                  <Text style={styles.ctaText}>Start Adventures</Text>
                   <Sparkles size={20} color="#FFFFFF" strokeWidth={2.5} />
-                </View>
+                </>
               )}
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
+  root: { flex: 1 },
+  kav: { flex: 1 },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: SPACING.xxl,
-    paddingBottom: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.lg,
   },
-  backButton: {
-    width: 44,
-    height: 44,
+  backBtn: {
+    width: 40,
+    height: 40,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.xxl,
     ...SHADOWS.sm,
   },
-  iconBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: BORDER_RADIUS.xl,
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: SPACING.lg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  iconGradient: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.lg,
-    ...SHADOWS.md,
   },
   title: {
-    fontSize: 34,
+    fontSize: 30,
     fontFamily: FONTS.extrabold,
-    marginBottom: SPACING.sm,
     letterSpacing: -0.5,
+    marginBottom: SPACING.sm,
   },
   subtitle: {
-    fontSize: FONT_SIZES.lg,
-    lineHeight: 26,
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONTS.medium,
+    lineHeight: 22,
+    marginBottom: SPACING.lg,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  stepDot: {
+    height: 6,
+    borderRadius: 3,
+  },
+  stepDotActive: {
+    width: 24,
+  },
+  finalBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.pill,
+  },
+  finalBadgeText: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.bold,
+  },
+  inputSection: {
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.md,
+  },
+  inputCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: BORDER_RADIUS.xl,
+    paddingRight: SPACING.sm,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 3,
+    overflow: 'hidden',
+  },
+  input: {
+    flex: 1,
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    fontSize: FONT_SIZES.md,
     fontFamily: FONTS.medium,
   },
-  inputHint: {
+  addBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: BORDER_RADIUS.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
     marginTop: SPACING.sm,
     marginLeft: SPACING.sm,
     fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.semibold,
   },
-  inputSection: {
-    paddingHorizontal: SPACING.xxl,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.md,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  inputWrapper: {
-    flex: 1,
-    borderRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.sm,
-  },
-  input: {
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
-    fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.medium,
-  },
-  addButton: {
-    width: 56,
-    height: 56,
-    borderRadius: BORDER_RADIUS.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.md,
-  },
-  listContainer: {
-    flex: 1,
-    paddingHorizontal: SPACING.xxl,
-  },
+  list: { flex: 1 },
   listContent: {
-    paddingBottom: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.lg,
     gap: SPACING.md,
   },
   emptyState: {
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.xxxl * 1.5,
+    paddingVertical: SPACING.xxxl * 2,
+    gap: SPACING.sm,
   },
-  emptyIconContainer: {
-    width: 100,
-    height: 100,
+  emptyIconWrap: {
+    width: 88,
+    height: 88,
     borderRadius: BORDER_RADIUS.xxl,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.xl,
-    ...SHADOWS.md,
+    marginBottom: SPACING.md,
   },
-  emptyIcon: {
-    fontSize: 50,
-  },
-  emptyStateText: {
-    fontSize: FONT_SIZES.xl,
+  emptyIcon: { fontSize: 44 },
+  emptyTitle: {
+    fontSize: FONT_SIZES.lg,
     fontFamily: FONTS.bold,
-    marginBottom: SPACING.sm,
   },
-  emptyStateSubtext: {
-    fontSize: FONT_SIZES.md,
+  emptySubtitle: {
+    fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.medium,
     textAlign: 'center',
   },
   friendCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.lg,
+    padding: SPACING.md,
     borderRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.lg,
+    gap: SPACING.md,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  friendIconContainer: {
-    width: 48,
-    height: 48,
+  friendEmojiBadge: {
+    width: 44,
+    height: 44,
     borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.lg,
-    ...SHADOWS.sm,
   },
-  friendIcon: {
-    fontSize: 24,
-  },
+  friendEmoji: { fontSize: 22 },
   friendName: {
     flex: 1,
-    fontSize: FONT_SIZES.lg,
-    color: '#FFFFFF',
-    fontFamily: FONTS.bold,
-  },
-  removeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.sm,
-  },
-  progressContainer: {
-    paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.lg,
-    gap: SPACING.md,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  progressLabel: {
-    fontSize: FONT_SIZES.sm,
+    fontSize: FONT_SIZES.md,
     fontFamily: FONTS.semibold,
   },
-  progressStep: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
-  },
-  progressBar: {
-    height: 10,
-    borderRadius: BORDER_RADIUS.md,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: BORDER_RADIUS.md,
-  },
-  progressDots: {
-    flexDirection: 'row',
+  removeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: BORDER_RADIUS.sm,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.md,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  dotCompleted: {
-    ...SHADOWS.sm,
   },
   footer: {
     flexDirection: 'row',
-    paddingHorizontal: SPACING.xxl,
+    paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
-    paddingBottom: SPACING.xxl + 10,
     gap: SPACING.md,
+    alignItems: 'center',
   },
-  skipButton: {
+  skipBtn: {
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.xl,
     borderRadius: BORDER_RADIUS.pill,
@@ -507,26 +445,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.sm,
   },
-  skipButtonText: {
+  skipText: {
     fontSize: FONT_SIZES.md,
     fontFamily: FONTS.semibold,
   },
-  completeButton: {
-    paddingVertical: SPACING.lg,
-    borderRadius: BORDER_RADIUS.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.xl,
-  },
-  completeButtonContent: {
+  ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: SPACING.sm,
+    paddingVertical: SPACING.xl - 2,
+    borderRadius: BORDER_RADIUS.pill,
+    ...SHADOWS.xl,
   },
-  completeButtonText: {
+  ctaText: {
     color: '#FFFFFF',
-    fontSize: FONT_SIZES.xl,
+    fontSize: FONT_SIZES.lg,
     fontFamily: FONTS.bold,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 });

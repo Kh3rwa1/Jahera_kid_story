@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -7,112 +7,41 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  StatusBar,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS, FONTS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
   FadeInDown,
   FadeInUp,
-  useAnimatedStyle,
-  withSpring,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  interpolate
+  ZoomIn,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { User, ArrowLeft, Heart, Star, Sparkles } from 'lucide-react-native';
+import { User, ArrowLeft, ChevronRight } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const STEP_DOTS = [false, true, false, false];
 
 export default function KidName() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
   const themeColors = currentTheme.colors;
   const [name, setName] = useState('');
 
-  // Floating animations
-  const float1 = useSharedValue(0);
-  const float2 = useSharedValue(0);
-  const float3 = useSharedValue(0);
-
-  useEffect(() => {
-    float1.value = withRepeat(
-      withSequence(
-        withSpring(-10, { damping: 3 }),
-        withSpring(0, { damping: 3 })
-      ),
-      -1,
-      false
-    );
-    float2.value = withRepeat(
-      withSequence(
-        withSpring(-15, { damping: 3 }),
-        withSpring(0, { damping: 3 })
-      ),
-      -1,
-      false
-    );
-    float3.value = withRepeat(
-      withSequence(
-        withSpring(-12, { damping: 3 }),
-        withSpring(0, { damping: 3 })
-      ),
-      -1,
-      false
-    );
-  }, []);
-
-  const float1Style = useAnimatedStyle(() => {
-    'worklet';
-    return {
-      transform: [{ translateY: float1.value }],
-      opacity: interpolate(float1.value, [-10, 0], [0.4, 0.7]),
-    };
-  });
-
-  const float2Style = useAnimatedStyle(() => {
-    'worklet';
-    return {
-      transform: [{ translateY: float2.value }],
-      opacity: interpolate(float2.value, [-15, 0], [0.4, 0.7]),
-    };
-  });
-
-  const float3Style = useAnimatedStyle(() => {
-    'worklet';
-    return {
-      transform: [{ translateY: float3.value }],
-      opacity: interpolate(float3.value, [-12, 0], [0.4, 0.7]),
-    };
-  });
-
   const handleContinue = async () => {
     const trimmedName = name.trim();
-
-    if (trimmedName.length === 0) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('✨ Name Required', "Please enter your child's name to continue.", [
-        { text: 'OK' },
-      ]);
-      return;
-    }
-
     if (trimmedName.length < 2) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('🌟 Almost There!', 'Name must be at least 2 characters long.', [{ text: 'OK' }]);
       return;
     }
-
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     router.push({
       pathname: '/onboarding/family-members',
-      params: {
-        languages: params.languages as string,
-        kidName: trimmedName,
-      },
+      params: { languages: params.languages as string, kidName: trimmedName },
     });
   };
 
@@ -121,62 +50,68 @@ export default function KidName() {
     router.back();
   };
 
+  const canContinue = name.trim().length >= 2;
+  const showFeedback = name.trim().length > 0;
+  const charsNeeded = Math.max(0, 2 - name.trim().length);
+
   return (
-    <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
+    <View style={styles.root}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}>
-
-        {/* Floating decorative elements */}
-        <Animated.View style={[styles.floatingElement, { top: '10%', left: '12%' }, float1Style]}>
-          <Heart size={28} color={themeColors.primary} strokeWidth={2} />
-        </Animated.View>
-        <Animated.View style={[styles.floatingElement, { top: '15%', right: '10%' }, float2Style]}>
-          <Star size={24} color={themeColors.primary} strokeWidth={2} />
-        </Animated.View>
-        <Animated.View style={[styles.floatingElement, { top: '25%', left: '8%' }, float3Style]}>
-          <Sparkles size={22} color={themeColors.primary} strokeWidth={2} />
-        </Animated.View>
-
+        style={styles.kav}
+      >
         {/* Header */}
-        <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
+        <Animated.View
+          entering={FadeInDown.delay(80).springify()}
+          style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}
+        >
           <TouchableOpacity
             onPress={handleBack}
-            style={[styles.backButton, { backgroundColor: themeColors.cardBackground }]}
+            style={[styles.backBtn, { backgroundColor: themeColors.cardBackground }]}
             activeOpacity={0.7}
           >
-            <ArrowLeft size={24} color={themeColors.text.primary} strokeWidth={2} />
+            <ArrowLeft size={20} color={themeColors.text.primary} strokeWidth={2.5} />
           </TouchableOpacity>
 
-          <LinearGradient
-            colors={[themeColors.primary + '25', themeColors.primary + '15']}
-            style={styles.iconBadge}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <User size={40} color={themeColors.primary} strokeWidth={2.5} />
-          </LinearGradient>
+          <View style={[styles.iconCircle, { shadowColor: themeColors.primary }]}>
+            <LinearGradient
+              colors={[themeColors.primary, themeColors.primaryDark]}
+              style={styles.iconGradient}
+            >
+              <User size={32} color="#FFFFFF" strokeWidth={2} />
+            </LinearGradient>
+          </View>
 
           <Text style={[styles.title, { color: themeColors.text.primary }]}>
-            What's your child's name? ✨
+            What's your{'\n'}child's name?
           </Text>
           <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
-            We'll create magical stories starring them!
+            We'll create magical stories starring them
           </Text>
+
+          {/* Step dots */}
+          <View style={styles.stepRow}>
+            {STEP_DOTS.map((active, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.stepDot,
+                  active
+                    ? [styles.stepDotActive, { backgroundColor: themeColors.primary }]
+                    : { backgroundColor: themeColors.primary + '25', width: 8 },
+                ]}
+              />
+            ))}
+          </View>
         </Animated.View>
 
-        {/* Input Section */}
-        <View style={styles.content}>
-          <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.inputContainer}>
-            <LinearGradient
-              colors={name.length >= 2
-                ? [themeColors.primary + '10', themeColors.primary + '05']
-                : [themeColors.cardBackground, themeColors.cardBackground]
-              }
-              style={styles.inputWrapper}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
+        {/* Input area */}
+        <View style={styles.inputArea}>
+          <Animated.View entering={FadeInDown.delay(220).springify()}>
+            <View style={[styles.inputCard, { backgroundColor: themeColors.cardBackground, shadowColor: themeColors.primary }]}>
               <TextInput
                 style={[styles.input, { color: themeColors.text.primary }]}
                 placeholder="Enter name here..."
@@ -188,204 +123,158 @@ export default function KidName() {
                 returnKeyType="next"
                 onSubmitEditing={handleContinue}
               />
-            </LinearGradient>
-            {name.length > 0 && (
-              <Animated.View entering={FadeInDown.springify()} style={styles.feedbackContainer}>
-                <Text style={[styles.feedbackText, { color: themeColors.primary }]}>
-                  {name.length < 2
-                    ? `${2 - name.length} more character${2 - name.length > 1 ? 's' : ''} needed`
-                    : `✓ Perfect! ${name} will love these stories! 🎉`
-                  }
-                </Text>
+            </View>
+
+            {showFeedback && (
+              <Animated.View entering={ZoomIn.springify()} style={styles.feedbackRow}>
+                <View style={[
+                  styles.feedbackBadge,
+                  { backgroundColor: canContinue ? themeColors.primary + '15' : themeColors.warning + '15' }
+                ]}>
+                  <Text style={[
+                    styles.feedbackText,
+                    { color: canContinue ? themeColors.primary : themeColors.warning }
+                  ]}>
+                    {canContinue
+                      ? `${name.trim()} is a great name!`
+                      : `${charsNeeded} more character${charsNeeded > 1 ? 's' : ''} needed`}
+                  </Text>
+                </View>
               </Animated.View>
             )}
-          </Animated.View>
-
-          {/* Enhanced Progress indicator */}
-          <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.progressContainer}>
-            <View style={styles.progressHeader}>
-              <Text style={[styles.progressLabel, { color: themeColors.text.secondary }]}>
-                Your Progress
-              </Text>
-              <Text style={[styles.progressStep, { color: themeColors.primary }]}>
-                Step 2 of 4
-              </Text>
-            </View>
-            <View style={[styles.progressBar, { backgroundColor: themeColors.primary + '20' }]}>
-              <LinearGradient
-                colors={themeColors.gradients.primary}
-                style={[styles.progressFill, { width: '50%' }]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              />
-            </View>
-            <View style={styles.progressDots}>
-              <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.primary }]} />
-              <View style={[styles.dot, styles.dotCompleted, { backgroundColor: themeColors.primary }]} />
-              <View style={[styles.dot, { backgroundColor: themeColors.primary + '30' }]} />
-              <View style={[styles.dot, { backgroundColor: themeColors.primary + '30' }]} />
-            </View>
           </Animated.View>
         </View>
 
         {/* Footer */}
-        <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.footer}>
-          <TouchableOpacity
-            onPress={handleContinue}
-            disabled={name.trim().length < 2}
-            activeOpacity={0.9}
-          >
+        <Animated.View
+          entering={FadeInUp.delay(320).springify()}
+          style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
+        >
+          <TouchableOpacity onPress={handleContinue} disabled={!canContinue} activeOpacity={0.88}>
             <LinearGradient
-              colors={name.trim().length < 2
-                ? [themeColors.text.light, themeColors.text.light]
-                : themeColors.gradients.primary
-              }
-              style={styles.continueButton}
+              colors={canContinue ? [themeColors.primary, themeColors.primaryDark] : [themeColors.text.light + 'AA', themeColors.text.light + 'AA']}
+              style={styles.ctaButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.continueButtonText}>
-                {name.trim().length < 2 ? 'Enter a name to continue' : 'Next Step →'}
+              <Text style={styles.ctaText}>
+                {canContinue ? 'Next Step' : 'Enter a name to continue'}
               </Text>
+              {canContinue && <ChevronRight size={22} color="#FFFFFF" strokeWidth={2.5} />}
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  floatingElement: {
-    position: 'absolute',
-    zIndex: 0,
-  },
+  root: { flex: 1 },
+  kav: { flex: 1 },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: SPACING.xxl,
+    paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xl,
-    zIndex: 1,
   },
-  backButton: {
-    width: 44,
-    height: 44,
+  backBtn: {
+    width: 40,
+    height: 40,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.xxl,
     ...SHADOWS.sm,
   },
-  iconBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: BORDER_RADIUS.xl,
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: SPACING.lg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  iconGradient: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.lg,
-    ...SHADOWS.md,
   },
   title: {
-    fontSize: 34,
+    fontSize: 30,
     fontFamily: FONTS.extrabold,
-    marginBottom: SPACING.sm,
     letterSpacing: -0.5,
+    lineHeight: 38,
+    marginBottom: SPACING.sm,
   },
   subtitle: {
-    fontSize: FONT_SIZES.lg,
-    lineHeight: 26,
+    fontSize: FONT_SIZES.md,
     fontFamily: FONTS.medium,
+    lineHeight: 22,
+    marginBottom: SPACING.lg,
   },
-  content: {
+  stepRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    alignItems: 'center',
+  },
+  stepDot: {
+    height: 6,
+    borderRadius: 3,
+  },
+  stepDotActive: {
+    width: 24,
+  },
+  inputArea: {
     flex: 1,
-    paddingHorizontal: SPACING.xxl,
-    zIndex: 1,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.sm,
   },
-  inputContainer: {
-    marginBottom: SPACING.xxl,
-  },
-  inputWrapper: {
+  inputCard: {
     borderRadius: BORDER_RADIUS.xl,
-    padding: 3,
-    ...SHADOWS.md,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    marginBottom: SPACING.lg,
   },
   input: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: SPACING.lg,
+    paddingVertical: SPACING.xl,
     paddingHorizontal: SPACING.xl,
-    borderRadius: BORDER_RADIUS.lg,
-    fontSize: 26,
+    fontSize: 28,
     fontFamily: FONTS.bold,
     textAlign: 'center',
   },
-  feedbackContainer: {
-    marginTop: SPACING.lg,
+  feedbackRow: {
     alignItems: 'center',
+  },
+  feedbackBadge: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.pill,
   },
   feedbackText: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.semibold,
-    textAlign: 'center',
-  },
-  progressContainer: {
-    gap: SPACING.md,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  progressLabel: {
     fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.semibold,
   },
-  progressStep: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
-  },
-  progressBar: {
-    height: 10,
-    borderRadius: BORDER_RADIUS.md,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: BORDER_RADIUS.md,
-  },
-  progressDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: SPACING.md,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  dotCompleted: {
-    ...SHADOWS.sm,
-  },
   footer: {
-    paddingHorizontal: SPACING.xxl,
+    paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
-    paddingBottom: SPACING.xxl + 10,
-    zIndex: 1,
   },
-  continueButton: {
-    paddingVertical: SPACING.xl,
-    borderRadius: BORDER_RADIUS.pill,
+  ctaButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.xl - 2,
+    borderRadius: BORDER_RADIUS.pill,
     ...SHADOWS.xl,
   },
-  continueButtonText: {
+  ctaText: {
     color: '#FFFFFF',
-    fontSize: FONT_SIZES.xl,
+    fontSize: FONT_SIZES.lg,
     fontFamily: FONTS.bold,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 });
