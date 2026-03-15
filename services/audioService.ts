@@ -1,69 +1,7 @@
-import { Platform } from 'react-native';
 import { apiKeysService } from './apiKeysService';
 
-const ELEVENLABS_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
-
-const LANGUAGE_VOICE_MAP: Record<string, string> = {
-  en: 'pNInz6obpgDQGcFmaJgB',
-  es: 'VR6AewLTigWG4xSOukaG',
-  fr: 'TxGEqnHWrfWFTfGW9XjX',
-  de: 'nPczCjzI2devNBz1zQrb',
-  it: 'XB0fDUnXU5powFXDhCwa',
-  pt: 'yoZ06aMxZJJ28mfd3POQ',
-  ru: 'bIHbv24MWmeRgasZH58o',
-  zh: 'Xb7hH8MSUJpSbSDYk0k2',
-  ja: 'jsCqWAovK2LkecY7zXl4',
-  ko: 'bVMeCyTHy58xNoL34h3p',
-  ar: 'pqHfZKP75CvOlQylNhV4',
-  hi: 'ZQe5CZNOzWyzPSCn5a3c',
-  tr: 'flq6f7yk4E4fJM5XTYuZ',
-  pl: 'ThT5KcBeYPX3keUQqHPh',
-  nl: 'D38z5RcWu1voky8WS1ja',
-  sv: 'N2lVS1w4EtoT3dr4eOWO',
-  no: 'SOYHLrjzK2X1ezoPC6cr',
-  da: 'EXAVITQu4vr4xnSDxMaL',
-  fi: 'JBFqnCBsd6RMkjVDRZzb',
-  el: 'iP95p4xoKVk53GoZ742B',
-};
-
-const DEFAULT_VOICE_ID = 'pNInz6obpgDQGcFmaJgB';
-
-function getVoiceForLanguage(languageCode: string): string {
-  return LANGUAGE_VOICE_MAP[languageCode] || DEFAULT_VOICE_ID;
-}
-
-async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000
-): Promise<T> {
-  let lastError: any;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error;
-
-      // Don't retry on auth errors or bad request
-      if (error instanceof Error &&
-          (error.message.includes('401') ||
-           error.message.includes('400') ||
-           error.message.includes('API key not configured'))) {
-        throw error;
-      }
-
-      // Wait before retrying (exponential backoff)
-      if (attempt < maxRetries - 1) {
-        const delay = baseDelay * Math.pow(2, attempt);
-        console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-
-  throw lastError;
-}
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function generateAudio(
   text: string,
@@ -73,86 +11,52 @@ export async function generateAudio(
   try {
     const elevenLabsApiKey = await apiKeysService.getElevenLabsKey();
 
-    if (!elevenLabsApiKey || elevenLabsApiKey === 'your-api-key-here') {
-      console.warn('ElevenLabs API key not configured');
-      return null; // Allow story to proceed without audio
-    }
+    const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/generate-audio`;
 
-    const voiceId = getVoiceForLanguage(languageCode);
-    const url = `${ELEVENLABS_URL}/${voiceId}`;
-
-    // Retry the API call with exponential backoff
-    const response = await retryWithBackoff(async () => {
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'xi-api-key': elevenLabsApiKey,
-        },
-        body: JSON.stringify({
-          text,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-          },
-        }),
-      });
-
-      if (!resp.ok) {
-        const errorText = await resp.text();
-        console.error('ElevenLabs API error:', resp.status, errorText);
-        throw new Error(`ElevenLabs API error: ${resp.status} - ${errorText.slice(0, 100)}`);
-      }
-
-      return resp;
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        text,
+        languageCode,
+        storyId,
+        elevenLabsApiKey: elevenLabsApiKey || null,
+      }),
     });
 
-    const arrayBuffer = await response.arrayBuffer();
-
-    if (Platform.OS === 'web') {
-      const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
-      const blobUrl = URL.createObjectURL(blob);
-      return blobUrl;
+    if (!response.ok) {
+      console.error('generate-audio function HTTP error:', response.status);
+      return null;
     }
 
-    const FileSystem = require('expo-file-system');
-    const audioDir = `${FileSystem.documentDirectory}audio/`;
-    const audioPath = `${audioDir}${storyId}.mp3`;
+    const data = await response.json();
 
-    const dirInfo = await FileSystem.getInfoAsync(audioDir);
-    if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(audioDir, { intermediates: true });
+    if (data.audioUrl) {
+      return data.audioUrl;
     }
 
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-    await FileSystem.writeAsStringAsync(audioPath, base64Audio, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    if (data.error) {
+      console.warn('generate-audio function error:', data.error);
+    }
 
-    return audioPath;
+    return null;
   } catch (error) {
     console.error('Error generating audio:', error);
-    // Return null to allow story to continue without audio
-    // The calling code will handle displaying appropriate message to user
     return null;
   }
 }
 
 export async function deleteAudio(audioPath: string): Promise<boolean> {
   try {
-    if (Platform.OS === 'web') {
+    if (audioPath.startsWith('blob:')) {
       URL.revokeObjectURL(audioPath);
       return true;
     }
-
-    const FileSystem = require('expo-file-system');
-    const fileInfo = await FileSystem.getInfoAsync(audioPath);
-    if (fileInfo.exists) {
-      await FileSystem.deleteAsync(audioPath);
-      return true;
-    }
-    return false;
+    return true;
   } catch (error) {
     console.error('Error deleting audio:', error);
     return false;
