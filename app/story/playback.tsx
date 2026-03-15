@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
 } from 'react-native-reanimated';
 import { storyService, quizService } from '@/services/database';
 import { Story } from '@/types/database';
@@ -28,13 +27,14 @@ import {
   RotateCcw,
   Award,
   RefreshCw,
-  Volume2,
   VolumeX,
   ArrowLeft,
   BookOpen,
   Clock,
   Share2,
   Library,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -42,23 +42,116 @@ import { hapticFeedback } from '@/utils/haptics';
 import { shareStory } from '@/utils/sharing';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const WORDS_PER_PAGE = 120;
+
+function splitIntoParagraphs(content: string): string[] {
+  return content
+    .split(/\n+/)
+    .map(p => p.trim())
+    .filter(p => p.length > 0);
+}
+
+function splitIntoWords(text: string): string[] {
+  return text.split(/(\s+)/).filter(t => t.length > 0);
+}
+
+function paginateWords(paragraphs: string[]): Array<{ tokens: string[]; isSpace: boolean[] }[]> {
+  const pages: Array<{ tokens: string[]; isSpace: boolean[] }[]> = [];
+  let currentPage: { tokens: string[]; isSpace: boolean[] }[] = [];
+  let wordCount = 0;
+
+  for (const para of paragraphs) {
+    const tokens = splitIntoWords(para);
+    const paraWords = tokens.filter(t => t.trim().length > 0).length;
+
+    if (wordCount > 0 && wordCount + paraWords > WORDS_PER_PAGE) {
+      pages.push(currentPage);
+      currentPage = [];
+      wordCount = 0;
+    }
+
+    currentPage.push({
+      tokens,
+      isSpace: tokens.map(t => /^\s+$/.test(t)),
+    });
+    wordCount += paraWords;
+  }
+
+  if (currentPage.length > 0) pages.push(currentPage);
+  return pages;
+}
+
+function buildWordIndex(paragraphs: string[]): string[] {
+  const allWords: string[] = [];
+  for (const para of paragraphs) {
+    const tokens = splitIntoWords(para);
+    for (const t of tokens) {
+      if (t.trim().length > 0) allWords.push(t);
+    }
+  }
+  return allWords;
+}
 
 export default function StoryPlayback() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { currentTheme } = useTheme();
-  const themeColors = currentTheme.colors;
+  const C = currentTheme.colors;
+  const scrollRef = useRef<ScrollView>(null);
+
   const [story, setStory] = useState<Story | null>(null);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [showText, setShowText] = useState(true);
   const [audioError, setAudioError] = useState(false);
   const [hasQuiz, setHasQuiz] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const playScale = useSharedValue(1);
+
+  const paragraphs = useMemo(
+    () => (story ? splitIntoParagraphs(story.content) : []),
+    [story]
+  );
+
+  const pages = useMemo(() => paginateWords(paragraphs), [paragraphs]);
+
+  const allWords = useMemo(() => buildWordIndex(paragraphs), [paragraphs]);
+
+  const activeWordIndex = useMemo(() => {
+    if (!isPlaying && position === 0) return -1;
+    if (duration <= 0 || allWords.length === 0) return -1;
+    const progress = Math.min(position / duration, 1);
+    return Math.floor(progress * allWords.length);
+  }, [position, duration, allWords.length, isPlaying]);
+
+  const pageWordRanges = useMemo(() => {
+    let wordOffset = 0;
+    return pages.map(page => {
+      const start = wordOffset;
+      let count = 0;
+      for (const para of page) {
+        for (let i = 0; i < para.tokens.length; i++) {
+          if (!para.isSpace[i] && para.tokens[i].trim().length > 0) count++;
+        }
+      }
+      wordOffset += count;
+      return { start, end: wordOffset - 1 };
+    });
+  }, [pages]);
+
+  useEffect(() => {
+    if (activeWordIndex >= 0 && pages.length > 0) {
+      for (let p = 0; p < pageWordRanges.length; p++) {
+        if (activeWordIndex <= pageWordRanges[p].end) {
+          if (p !== currentPage) setCurrentPage(p);
+          break;
+        }
+      }
+    }
+  }, [activeWordIndex]);
 
   useEffect(() => {
     loadStory();
@@ -66,24 +159,16 @@ export default function StoryPlayback() {
 
   useEffect(() => {
     return () => {
-      if (sound) {
-        sound.unloadAsync().catch(() => {});
-      }
+      if (sound) sound.unloadAsync().catch(() => {});
     };
   }, [sound]);
 
   const loadStory = async () => {
     try {
       const storyId = params.storyId as string;
-      if (!storyId) {
-        setIsLoading(false);
-        return;
-      }
+      if (!storyId) { setIsLoading(false); return; }
       const storyData = await storyService.getById(storyId);
-      if (!storyData) {
-        setIsLoading(false);
-        return;
-      }
+      if (!storyData) { setIsLoading(false); return; }
       setStory(storyData);
       const quizData = await quizService.getQuestionsByStoryId(storyId);
       setHasQuiz(!!quizData && quizData.length > 0);
@@ -91,7 +176,6 @@ export default function StoryPlayback() {
         await loadAudio(storyData.audio_url);
       } else {
         setAudioError(true);
-        setShowText(true);
       }
       setIsLoading(false);
     } catch {
@@ -114,7 +198,6 @@ export default function StoryPlayback() {
       setAudioError(false);
     } catch {
       setAudioError(true);
-      setShowText(true);
     }
   };
 
@@ -132,7 +215,6 @@ export default function StoryPlayback() {
     if (status.error) {
       setAudioError(true);
       setIsPlaying(false);
-      setShowText(true);
     }
   };
 
@@ -141,9 +223,7 @@ export default function StoryPlayback() {
     try {
       hapticFeedback.medium();
       playScale.value = withSpring(0.92, { damping: 10 });
-      setTimeout(() => {
-        playScale.value = withSpring(1, { damping: 10 });
-      }, 150);
+      setTimeout(() => { playScale.value = withSpring(1, { damping: 10 }); }, 150);
       if (isPlaying) {
         await sound.pauseAsync();
       } else {
@@ -151,7 +231,6 @@ export default function StoryPlayback() {
       }
     } catch {
       setAudioError(true);
-      setShowText(true);
     }
   }, [sound, isPlaying]);
 
@@ -161,37 +240,29 @@ export default function StoryPlayback() {
       hapticFeedback.light();
       await sound.setPositionAsync(0);
       await sound.playAsync();
+      setCurrentPage(0);
     } catch {}
   }, [sound]);
 
   const handleBack = useCallback(() => {
     hapticFeedback.light();
-    if (sound) {
-      sound.stopAsync().catch(() => {});
-    }
+    if (sound) sound.stopAsync().catch(() => {});
     router.back();
   }, [sound, router]);
 
   const handleShare = useCallback(async () => {
     if (!story) return;
     hapticFeedback.medium();
-    try {
-      await shareStory(story.title, story.content);
-    } catch {}
+    try { await shareStory(story.title, story.content); } catch {}
   }, [story]);
 
   const handleRegenerate = useCallback(() => {
     if (!story) return;
     hapticFeedback.medium();
-    if (sound) {
-      sound.stopAsync().catch(() => {});
-    }
+    if (sound) sound.stopAsync().catch(() => {});
     router.push({
       pathname: '/story/generate',
-      params: {
-        profileId: story.profile_id,
-        languageCode: story.language_code,
-      },
+      params: { profileId: story.profile_id, languageCode: story.language_code },
     });
   }, [story, sound, router]);
 
@@ -200,21 +271,18 @@ export default function StoryPlayback() {
       if (!sound || !duration) return;
       const { locationX } = event.nativeEvent;
       const barWidth = SCREEN_WIDTH - SPACING.xl * 2 - SPACING.lg * 2;
-      const percentage = Math.max(0, Math.min(1, locationX / barWidth));
-      const newPosition = duration * percentage;
+      const pct = Math.max(0, Math.min(1, locationX / barWidth));
       try {
         hapticFeedback.light();
-        await sound.setPositionAsync(newPosition);
+        await sound.setPositionAsync(duration * pct);
       } catch {}
     },
     [sound, duration]
   );
 
   const formatTime = (millis: number): string => {
-    const totalSeconds = Math.floor(millis / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    const s = Math.floor(millis / 1000);
+    return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   };
 
   const playAnimStyle = useAnimatedStyle(() => {
@@ -222,13 +290,15 @@ export default function StoryPlayback() {
     return { transform: [{ scale: playScale.value }] };
   });
 
+  const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
+
   if (isLoading) {
     return (
-      <LinearGradient colors={themeColors.backgroundGradient} style={styles.loadingContainer}>
-        <SafeAreaView style={styles.loadingContent}>
-          <BookOpen size={48} color={themeColors.primary} strokeWidth={1.5} />
-          <Text style={[styles.loadingText, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
-            Loading story...
+      <LinearGradient colors={C.backgroundGradient} style={styles.fill}>
+        <SafeAreaView style={[styles.fill, styles.center]}>
+          <BookOpen size={48} color={C.primary} strokeWidth={1.5} />
+          <Text style={[styles.loadingText, { color: C.text.secondary, fontFamily: FONTS.medium }]}>
+            Opening your story...
           </Text>
         </SafeAreaView>
       </LinearGradient>
@@ -237,17 +307,15 @@ export default function StoryPlayback() {
 
   if (!story) {
     return (
-      <LinearGradient colors={themeColors.backgroundGradient} style={styles.loadingContainer}>
-        <SafeAreaView style={styles.loadingContent}>
-          <Text style={[styles.errorTitle, { color: themeColors.text.primary, fontFamily: FONTS.bold }]}>
-            Story Not Found
-          </Text>
-          <Text style={[styles.errorSubtitle, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
+      <LinearGradient colors={C.backgroundGradient} style={styles.fill}>
+        <SafeAreaView style={[styles.fill, styles.center]}>
+          <Text style={[styles.errorTitle, { color: C.text.primary, fontFamily: FONTS.bold }]}>Story Not Found</Text>
+          <Text style={[styles.errorSubtitle, { color: C.text.secondary, fontFamily: FONTS.medium }]}>
             This story may have been deleted.
           </Text>
           <TouchableOpacity
             onPress={() => router.replace('/(tabs)')}
-            style={[styles.errorButton, { backgroundColor: themeColors.primary }]}
+            style={[styles.errorButton, { backgroundColor: C.primary }]}
           >
             <Text style={[styles.errorButtonText, { fontFamily: FONTS.semibold }]}>Go Home</Text>
           </TouchableOpacity>
@@ -256,140 +324,154 @@ export default function StoryPlayback() {
     );
   }
 
-  const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
+  const currentPageData = pages[currentPage] || [];
+  const wordOffsetOnPage = pageWordRanges[currentPage]?.start ?? 0;
+
+  let wordCounter = wordOffsetOnPage;
 
   return (
-    <LinearGradient colors={themeColors.backgroundGradient} style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
-        <TouchableOpacity
-          onPress={handleBack}
-          style={[styles.backButton, { backgroundColor: themeColors.cardBackground }]}
-          activeOpacity={0.7}
-        >
-          <ArrowLeft size={22} color={themeColors.text.primary} strokeWidth={2} />
-        </TouchableOpacity>
+    <LinearGradient colors={C.backgroundGradient} style={styles.fill}>
+      <SafeAreaView style={styles.fill} edges={['top', 'bottom']}>
 
-        <View style={styles.headerRight}>
-          {story.season && (
-            <View style={[styles.badge, { backgroundColor: themeColors.primary + '15' }]}>
-              <Text style={[styles.badgeText, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
-                {story.season}
-              </Text>
-            </View>
-          )}
-          {story.time_of_day && (
-            <View style={[styles.badge, { backgroundColor: themeColors.primary + '15' }]}>
-              <Clock size={12} color={themeColors.primary} />
-              <Text style={[styles.badgeText, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
-                {story.time_of_day}
-              </Text>
-            </View>
-          )}
+        <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.header}>
           <TouchableOpacity
-            onPress={() => router.push('/(tabs)/history')}
-            style={[styles.shareButton, { backgroundColor: themeColors.cardBackground }]}
+            onPress={handleBack}
+            style={[styles.iconBtn, { backgroundColor: C.cardBackground }]}
             activeOpacity={0.7}
           >
-            <Library size={18} color={themeColors.primary} />
+            <ArrowLeft size={22} color={C.text.primary} strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleShare}
-            style={[styles.shareButton, { backgroundColor: themeColors.cardBackground }]}
-            activeOpacity={0.7}
-          >
-            <Share2 size={18} color={themeColors.primary} />
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
 
-      <ScrollView
-        style={styles.scrollContent}
-        contentContainerStyle={styles.scrollContentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        <Animated.View entering={FadeInUp.delay(200).springify()}>
-          <Text style={[styles.storyTitle, { color: themeColors.text.primary, fontFamily: FONTS.bold }]}>
+          <View style={styles.headerCenter}>
+            {story.season && (
+              <View style={[styles.badge, { backgroundColor: C.primary + '18' }]}>
+                <Text style={[styles.badgeText, { color: C.primary, fontFamily: FONTS.semibold }]}>
+                  {story.season}
+                </Text>
+              </View>
+            )}
+            {story.time_of_day && (
+              <View style={[styles.badge, { backgroundColor: C.primary + '18' }]}>
+                <Clock size={11} color={C.primary} />
+                <Text style={[styles.badgeText, { color: C.primary, fontFamily: FONTS.semibold }]}>
+                  {story.time_of_day}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/history')}
+              style={[styles.iconBtn, { backgroundColor: C.cardBackground }]}
+              activeOpacity={0.7}
+            >
+              <Library size={18} color={C.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleShare}
+              style={[styles.iconBtn, { backgroundColor: C.cardBackground }]}
+              activeOpacity={0.7}
+            >
+              <Share2 size={18} color={C.primary} />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.delay(120).springify()} style={styles.titleWrap}>
+          <Text style={[styles.storyTitle, { color: C.text.primary, fontFamily: FONTS.bold }]}>
             {story.title}
           </Text>
         </Animated.View>
 
-        {!audioError && (
-          <Animated.View entering={FadeInUp.delay(300).springify()}>
-            <View style={[styles.audioCard, { backgroundColor: themeColors.cardBackground }]}>
-              <View style={styles.audioVisualizer}>
-                {Array.from({ length: 24 }).map((_, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.audioBar,
-                      {
-                        backgroundColor: themeColors.primary,
-                        height: isPlaying ? 8 + Math.random() * 32 : 8,
-                        opacity: isPlaying ? 0.4 + (i % 3) * 0.2 : 0.2,
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
+        <Animated.View entering={FadeInUp.delay(200).springify()} style={[styles.bookCard, { backgroundColor: C.cardBackground }]}>
+          <View style={[styles.bookSpineLeft, { backgroundColor: C.primary + '28' }]} />
 
-              <Text
-                style={[
-                  styles.playingLabel,
-                  { color: isPlaying ? themeColors.primary : themeColors.text.light, fontFamily: FONTS.semibold },
-                ]}
-              >
-                {isPlaying ? 'Now Playing' : 'Paused'}
-              </Text>
-            </View>
-          </Animated.View>
-        )}
+          <ScrollView
+            ref={scrollRef}
+            style={styles.pageScroll}
+            contentContainerStyle={styles.pageContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {currentPageData.map((para, paraIdx) => {
+              const paraElements: JSX.Element[] = [];
+              for (let ti = 0; ti < para.tokens.length; ti++) {
+                const token = para.tokens[ti];
+                const isSpaceToken = para.isSpace[ti];
+                if (isSpaceToken) {
+                  paraElements.push(<Text key={`sp-${paraIdx}-${ti}`}> </Text>);
+                } else {
+                  const wIdx = wordCounter;
+                  wordCounter++;
+                  const isActive = wIdx === activeWordIndex;
+                  const isPast = wIdx < activeWordIndex;
+                  paraElements.push(
+                    <Text
+                      key={`w-${paraIdx}-${ti}`}
+                      style={[
+                        styles.wordToken,
+                        { fontFamily: FONTS.regular, color: C.text.secondary },
+                        isPast && { color: C.text.primary + 'BB' },
+                        isActive && [
+                          styles.wordActive,
+                          { backgroundColor: C.primary + '30', color: C.primary },
+                        ],
+                      ]}
+                    >
+                      {token}
+                    </Text>
+                  );
+                }
+              }
+              return (
+                <Text key={`para-${paraIdx}`} style={styles.paragraph}>
+                  {paraElements}
+                </Text>
+              );
+            })}
+          </ScrollView>
 
-        {audioError && (
-          <Animated.View entering={FadeInUp.delay(300).springify()}>
-            <View style={[styles.audioErrorCard, { backgroundColor: themeColors.warning + '12' }]}>
-              <VolumeX size={24} color={themeColors.warning} strokeWidth={1.5} />
-              <Text style={[styles.audioErrorText, { color: themeColors.text.secondary, fontFamily: FONTS.medium }]}>
-                Audio narration unavailable. Read the story below.
-              </Text>
-            </View>
-          </Animated.View>
-        )}
+          <View style={[styles.bookSpineRight, { backgroundColor: C.primary + '10' }]} />
+        </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(400).springify()}>
+        <Animated.View entering={FadeInUp.delay(280).springify()} style={styles.pageNav}>
           <TouchableOpacity
             onPress={() => {
               hapticFeedback.light();
-              setShowText(!showText);
+              if (currentPage > 0) setCurrentPage(p => p - 1);
             }}
-            style={[styles.toggleTextButton, { borderColor: themeColors.primary + '30' }]}
+            disabled={currentPage === 0}
+            style={[styles.pageNavBtn, { opacity: currentPage === 0 ? 0.3 : 1 }]}
             activeOpacity={0.7}
           >
-            <BookOpen size={18} color={themeColors.primary} />
-            <Text style={[styles.toggleTextLabel, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
-              {showText ? 'Hide Story Text' : 'Show Story Text'}
-            </Text>
+            <ChevronLeft size={20} color={C.primary} />
+          </TouchableOpacity>
+
+          <Text style={[styles.pageIndicator, { color: C.text.secondary, fontFamily: FONTS.semibold }]}>
+            {currentPage + 1} / {Math.max(1, pages.length)}
+          </Text>
+
+          <TouchableOpacity
+            onPress={() => {
+              hapticFeedback.light();
+              if (currentPage < pages.length - 1) setCurrentPage(p => p + 1);
+            }}
+            disabled={currentPage >= pages.length - 1}
+            style={[styles.pageNavBtn, { opacity: currentPage >= pages.length - 1 ? 0.3 : 1 }]}
+            activeOpacity={0.7}
+          >
+            <ChevronRight size={20} color={C.primary} />
           </TouchableOpacity>
         </Animated.View>
 
-        {showText && (
-          <Animated.View entering={FadeInDown.springify()}>
-            <View style={[styles.storyTextCard, { backgroundColor: themeColors.cardBackground }]}>
-              <Text style={[styles.storyContent, { color: themeColors.text.secondary, fontFamily: FONTS.regular }]}>
-                {story.content}
-              </Text>
-            </View>
-          </Animated.View>
-        )}
-
-        <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.actionButtons}>
+        <Animated.View entering={FadeInUp.delay(340).springify()} style={styles.actionRow}>
           <TouchableOpacity
             onPress={handleRegenerate}
-            style={[styles.actionButton, { borderColor: themeColors.primary + '30', borderWidth: 1.5 }]}
+            style={[styles.actionBtn, { borderColor: C.primary + '35', borderWidth: 1.5 }]}
             activeOpacity={0.7}
           >
-            <RefreshCw size={20} color={themeColors.primary} />
-            <Text style={[styles.actionButtonText, { color: themeColors.primary, fontFamily: FONTS.semibold }]}>
+            <RefreshCw size={18} color={C.primary} />
+            <Text style={[styles.actionBtnText, { color: C.primary, fontFamily: FONTS.semibold }]}>
               New Story
             </Text>
           </TouchableOpacity>
@@ -398,145 +480,122 @@ export default function StoryPlayback() {
             <TouchableOpacity
               onPress={() => {
                 hapticFeedback.medium();
+                if (sound) sound.stopAsync().catch(() => {});
                 router.push({ pathname: '/story/quiz', params: { storyId: story.$id } });
               }}
               activeOpacity={0.9}
               style={{ flex: 1 }}
             >
               <LinearGradient
-                colors={themeColors.gradients.sunset}
-                style={styles.quizButton}
+                colors={C.gradients.sunset}
+                style={styles.quizBtn}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Award size={22} color="#FFFFFF" />
-                <Text style={[styles.quizButtonText, { fontFamily: FONTS.bold }]}>Start Quiz</Text>
+                <Award size={20} color="#FFFFFF" />
+                <Text style={[styles.quizBtnText, { fontFamily: FONTS.bold }]}>Start Quiz</Text>
               </LinearGradient>
             </TouchableOpacity>
           )}
         </Animated.View>
-      </ScrollView>
 
-      {!audioError && (
-        <View style={[styles.controls, { backgroundColor: themeColors.cardBackground }]}>
-          <Pressable onPress={handleProgressBarPress} style={styles.progressBarContainer}>
-            <View style={[styles.progressBar, { backgroundColor: themeColors.text.light + '25' }]}>
-              <LinearGradient
-                colors={themeColors.gradients.primary}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[styles.progressFill, { width: `${progressPercentage}%` }]}
-              />
-            </View>
-          </Pressable>
-
-          <View style={styles.timeRow}>
-            <Text style={[styles.timeText, { color: themeColors.text.light, fontFamily: FONTS.medium }]}>
-              {formatTime(position)}
-            </Text>
-            <Text style={[styles.timeText, { color: themeColors.text.light, fontFamily: FONTS.medium }]}>
-              {formatTime(duration)}
+        {audioError ? (
+          <View style={[styles.audioErrorBar, { backgroundColor: C.warning + '18' }]}>
+            <VolumeX size={18} color={C.warning} />
+            <Text style={[styles.audioErrorText, { color: C.text.secondary, fontFamily: FONTS.medium }]}>
+              Audio unavailable — reading mode active
             </Text>
           </View>
-
-          <View style={styles.controlButtons}>
-            <TouchableOpacity
-              onPress={handleRestart}
-              disabled={!sound}
-              style={styles.controlBtn}
-              activeOpacity={0.6}
-            >
-              <RotateCcw size={24} color={sound ? themeColors.text.primary : themeColors.text.light} />
-            </TouchableOpacity>
-
-            <Animated.View style={playAnimStyle}>
-              <TouchableOpacity
-                onPress={handlePlayPause}
-                disabled={!sound}
-                activeOpacity={0.8}
-              >
+        ) : (
+          <View style={[styles.controls, { backgroundColor: C.cardBackground }]}>
+            <Pressable onPress={handleProgressBarPress} style={styles.progressPressable}>
+              <View style={[styles.progressTrack, { backgroundColor: C.text.light + '28' }]}>
                 <LinearGradient
-                  colors={sound ? themeColors.gradients.primary : [themeColors.text.light, themeColors.text.light]}
-                  style={styles.playButton}
-                >
-                  {isPlaying ? (
-                    <Pause size={32} color="#FFFFFF" fill="#FFFFFF" />
-                  ) : (
-                    <Play size={32} color="#FFFFFF" fill="#FFFFFF" />
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
+                  colors={C.gradients.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.progressFill, { width: `${progressPercentage}%` }]}
+                />
+              </View>
+            </Pressable>
 
-            <View style={styles.controlBtn}>
-              <Volume2 size={24} color={themeColors.text.light} />
+            <View style={styles.timeRow}>
+              <Text style={[styles.timeText, { color: C.text.light, fontFamily: FONTS.medium }]}>
+                {formatTime(position)}
+              </Text>
+              <Text style={[styles.timeText, { color: C.text.light, fontFamily: FONTS.medium }]}>
+                {formatTime(duration)}
+              </Text>
+            </View>
+
+            <View style={styles.controlBtns}>
+              <TouchableOpacity
+                onPress={handleRestart}
+                disabled={!sound}
+                style={styles.sideBtn}
+                activeOpacity={0.6}
+              >
+                <RotateCcw size={22} color={sound ? C.text.primary : C.text.light} />
+              </TouchableOpacity>
+
+              <Animated.View style={playAnimStyle}>
+                <TouchableOpacity onPress={handlePlayPause} disabled={!sound} activeOpacity={0.8}>
+                  <LinearGradient
+                    colors={sound ? C.gradients.primary : [C.text.light, C.text.light]}
+                    style={styles.playBtn}
+                  >
+                    {isPlaying
+                      ? <Pause size={30} color="#FFF" fill="#FFF" />
+                      : <Play size={30} color="#FFF" fill="#FFF" />
+                    }
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+
+              <View style={styles.sideBtn} />
             </View>
           </View>
-        </View>
-      )}
+        )}
       </SafeAreaView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingContent: {
-    alignItems: 'center',
-    gap: SPACING.lg,
-  },
-  loadingText: {
-    fontSize: FONT_SIZES.md,
-  },
-  errorTitle: {
-    fontSize: FONT_SIZES.xxl,
-    marginBottom: SPACING.sm,
-  },
-  errorSubtitle: {
-    fontSize: FONT_SIZES.md,
-    marginBottom: SPACING.xl,
-  },
+  fill: { flex: 1 },
+  center: { justifyContent: 'center', alignItems: 'center', gap: SPACING.lg },
+
+  loadingText: { fontSize: FONT_SIZES.md },
+  errorTitle: { fontSize: FONT_SIZES.xxl, marginBottom: SPACING.sm },
+  errorSubtitle: { fontSize: FONT_SIZES.md, marginBottom: SPACING.xl },
   errorButton: {
     paddingHorizontal: SPACING.xxl,
     paddingVertical: SPACING.md,
     borderRadius: BORDER_RADIUS.pill,
   },
-  errorButtonText: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.md,
-  },
+  errorButtonText: { color: '#FFF', fontSize: FONT_SIZES.md },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: SPACING.md,
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.md,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: BORDER_RADIUS.lg,
+  headerCenter: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: SPACING.xs,
+    flex: 1,
     justifyContent: 'center',
-    ...SHADOWS.sm,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
   },
-  shareButton: {
+  iconBtn: {
     width: 40,
     height: 40,
     borderRadius: BORDER_RADIUS.lg,
@@ -548,132 +607,143 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 2,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
     borderRadius: BORDER_RADIUS.pill,
   },
   badgeText: {
-    fontSize: FONT_SIZES.xs,
+    fontSize: 11,
     textTransform: 'capitalize',
   },
-  scrollContent: {
-    flex: 1,
-  },
-  scrollContentContainer: {
+
+  titleWrap: {
     paddingHorizontal: SPACING.xl,
-    paddingBottom: 220,
+    paddingTop: SPACING.xs,
+    paddingBottom: SPACING.sm,
   },
   storyTitle: {
-    fontSize: 28,
-    lineHeight: 36,
-    marginBottom: SPACING.xl,
-    letterSpacing: -0.3,
+    fontSize: 24,
+    lineHeight: 30,
+    letterSpacing: -0.4,
   },
-  audioCard: {
+
+  bookCard: {
+    marginHorizontal: SPACING.xl,
     borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.xl,
-    marginBottom: SPACING.lg,
-    alignItems: 'center',
-    ...SHADOWS.sm,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    flex: 1,
+    minHeight: 240,
+    ...SHADOWS.md,
   },
-  audioVisualizer: {
+  bookSpineLeft: {
+    width: 6,
+    borderTopLeftRadius: BORDER_RADIUS.xl,
+    borderBottomLeftRadius: BORDER_RADIUS.xl,
+  },
+  bookSpineRight: {
+    width: 4,
+    borderTopRightRadius: BORDER_RADIUS.xl,
+    borderBottomRightRadius: BORDER_RADIUS.xl,
+  },
+  pageScroll: { flex: 1 },
+  pageContent: {
+    padding: SPACING.xl,
+    paddingRight: SPACING.lg,
+    gap: SPACING.lg,
+  },
+  paragraph: {
+    fontSize: 17,
+    lineHeight: 28,
+    flexWrap: 'wrap',
+    flexDirection: 'row',
+  },
+  wordToken: {
+    fontSize: 17,
+    lineHeight: 28,
+  },
+  wordActive: {
+    borderRadius: 4,
+    paddingHorizontal: 2,
+    overflow: 'hidden',
+    fontFamily: FONTS.bold,
+  },
+
+  pageNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 48,
-    gap: 3,
-    marginBottom: SPACING.md,
+    gap: SPACING.xl,
+    paddingVertical: SPACING.sm,
   },
-  audioBar: {
-    width: 4,
-    borderRadius: 2,
+  pageNavBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  playingLabel: {
+  pageIndicator: {
     fontSize: FONT_SIZES.sm,
+    minWidth: 56,
+    textAlign: 'center',
   },
-  audioErrorCard: {
+
+  actionRow: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.sm,
+  },
+  actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    marginBottom: SPACING.lg,
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
   },
-  audioErrorText: {
-    flex: 1,
-    fontSize: FONT_SIZES.sm,
-    lineHeight: 20,
-  },
-  toggleTextButton: {
+  actionBtnText: { fontSize: FONT_SIZES.sm },
+  quizBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
     paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.md,
+  },
+  quizBtnText: {
+    color: '#FFF',
+    fontSize: FONT_SIZES.md,
+  },
+
+  audioErrorBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    marginHorizontal: SPACING.xl,
     borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
+    padding: SPACING.md,
     marginBottom: SPACING.lg,
   },
-  toggleTextLabel: {
+  audioErrorText: {
+    flex: 1,
     fontSize: FONT_SIZES.sm,
   },
-  storyTextCard: {
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.xl,
-    marginBottom: SPACING.xl,
-    ...SHADOWS.sm,
-  },
-  storyContent: {
-    fontSize: FONT_SIZES.md,
-    lineHeight: 28,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    marginBottom: SPACING.xl,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
-    borderRadius: BORDER_RADIUS.xl,
-  },
-  actionButtonText: {
-    fontSize: FONT_SIZES.sm,
-  },
-  quizButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.lg,
-  },
-  quizButtonText: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.lg,
-  },
+
   controls: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingTop: SPACING.lg,
-    paddingBottom: 40,
+    paddingTop: SPACING.md,
+    paddingBottom: 28,
     paddingHorizontal: SPACING.xl,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
     ...SHADOWS.lg,
   },
-  progressBarContainer: {
-    paddingVertical: SPACING.sm,
-  },
-  progressBar: {
-    height: 6,
+  progressPressable: { paddingVertical: SPACING.sm },
+  progressTrack: {
+    height: 5,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -684,27 +754,24 @@ const styles = StyleSheet.create({
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
-  timeText: {
-    fontSize: FONT_SIZES.xs,
-  },
-  controlButtons: {
+  timeText: { fontSize: FONT_SIZES.xs },
+  controlBtns: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  controlBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  sideBtn: {
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  playButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+  playBtn: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.lg,

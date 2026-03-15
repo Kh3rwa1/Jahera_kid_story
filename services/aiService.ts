@@ -57,9 +57,9 @@ const MOOD_PROMPTS: Record<string, string> = {
 };
 
 const LENGTH_CONFIGS: Record<string, { words: string; tokens: number }> = {
-  short: { words: '80-120 words', tokens: 700 },
-  medium: { words: '180-250 words', tokens: 1100 },
-  long: { words: '350-450 words', tokens: 1800 },
+  short: { words: '200-280 words', tokens: 1100 },
+  medium: { words: '350-500 words', tokens: 1800 },
+  long: { words: '600-800 words', tokens: 2800 },
 };
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
@@ -171,6 +171,7 @@ Requirements:
 - Length: ${lengthConfig.words}
 - Age group: 4-10 years old
 - Must be educational and positive
+- Structure: write in 4-6 clear paragraphs separated by newlines, with a proper story arc (beginning, middle, end)
 ${characterContext}
 
 Return ONLY this JSON structure (no markdown, no extra keys):
