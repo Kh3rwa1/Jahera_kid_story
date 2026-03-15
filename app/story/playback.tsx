@@ -99,6 +99,20 @@ function buildWordIndex(paragraphs: string[]): string[] {
   return words;
 }
 
+function buildWordTimings(words: string[], totalChars: number): number[] {
+  let cumulative = 0;
+  const timings: number[] = [];
+  for (const word of words) {
+    timings.push(cumulative / Math.max(totalChars, 1));
+    cumulative += word.length + 1;
+  }
+  return timings;
+}
+
+function countTotalChars(words: string[]): number {
+  return words.reduce((sum, w) => sum + w.length + 1, 0);
+}
+
 function formatTime(millis: number): string {
   const s = Math.floor(millis / 1000);
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
@@ -116,6 +130,7 @@ export default function StoryPlayback() {
   const C = currentTheme.colors;
   const { prefs, setFontSize, setFontFamily, setLineSpacing, setTextAlign } = useReadingPreferences();
   const scrollRef = useRef<ScrollView>(null);
+  const lastPositionRef = useRef<number>(0);
   const insets = useSafeAreaInsets();
 
   const [story, setStory] = useState<Story | null>(null);
@@ -198,11 +213,20 @@ export default function StoryPlayback() {
   const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
   const paragraphs = useMemo(() => (story ? splitIntoParagraphs(story.content) : []), [story]);
   const allWords = useMemo(() => buildWordIndex(paragraphs), [paragraphs]);
+  const totalChars = useMemo(() => countTotalChars(allWords), [allWords]);
+  const wordTimings = useMemo(() => buildWordTimings(allWords, totalChars), [allWords, totalChars]);
 
   const activeWordIndex = useMemo(() => {
     if (duration <= 0 || allWords.length === 0 || position === 0) return -1;
-    return Math.floor(Math.min(position / duration, 1) * allWords.length);
-  }, [position, duration, allWords.length]);
+    const progress = Math.min(position / duration, 1);
+    let lo = 0, hi = wordTimings.length - 1, best = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (wordTimings[mid] <= progress) { best = mid; lo = mid + 1; }
+      else hi = mid - 1;
+    }
+    return best;
+  }, [position, duration, wordTimings]);
 
   useEffect(() => { loadStory(); }, []);
   useEffect(() => () => { if (sound) sound.unloadAsync().catch(() => {}); }, [sound]);
@@ -244,11 +268,15 @@ export default function StoryPlayback() {
 
   const onPlaybackStatusUpdate = (status: any) => {
     if (status.isLoaded) {
-      setPosition(status.positionMillis);
+      const newPos: number = status.positionMillis ?? 0;
+      if (Math.abs(newPos - lastPositionRef.current) >= 250 || status.didJustFinish) {
+        lastPositionRef.current = newPos;
+        setPosition(newPos);
+      }
       setDuration(status.durationMillis || 0);
       setIsPlaying(status.isPlaying);
       setIsBuffering(status.isBuffering || false);
-      if (status.didJustFinish) { setIsPlaying(false); setPosition(0); }
+      if (status.didJustFinish) { setIsPlaying(false); setPosition(0); lastPositionRef.current = 0; }
     } else if (status.error) {
       setAudioError(true); setIsPlaying(false);
     }
