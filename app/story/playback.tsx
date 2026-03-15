@@ -412,9 +412,14 @@ export default function StoryPlayback() {
 
               <View style={[styles.settingsDivider, { backgroundColor: '#E5E5E0' }]} />
 
-              <View style={styles.settingsRow}>
+              <View style={styles.settingsFontSection}>
                 <Text style={[styles.settingsLabel, { fontFamily: FONTS.semibold, color: '#555' }]}>Font</Text>
-                <View style={styles.fontFamilyRow}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.fontFamilyRow}
+                  style={styles.fontFamilyScroll}
+                >
                   {FONT_FAMILIES.map(f => (
                     <TouchableOpacity
                       key={f}
@@ -434,7 +439,7 @@ export default function StoryPlayback() {
                       </Text>
                     </TouchableOpacity>
                   ))}
-                </View>
+                </ScrollView>
               </View>
 
               <View style={[styles.settingsDivider, { backgroundColor: '#E5E5E0' }]} />
@@ -892,7 +897,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#11111108',
   },
   fontSizeNum: { fontSize: 15, minWidth: 24, textAlign: 'center' },
-  fontFamilyRow: { flexDirection: 'row', gap: SPACING.xs, flexWrap: 'wrap', justifyContent: 'flex-end' },
+  settingsFontSection: { paddingVertical: 2, gap: SPACING.xs },
+  fontFamilyScroll: { marginTop: 6 },
+  fontFamilyRow: { flexDirection: 'row', gap: SPACING.xs, paddingRight: SPACING.sm },
   fontChip: {
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#DDD',
