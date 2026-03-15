@@ -17,7 +17,14 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
+  interpolate,
+  cancelAnimation,
 } from 'react-native-reanimated';
+import { useEntranceSequence } from '@/utils/animations';
 import {
   Key,
   Palette,
@@ -57,27 +64,44 @@ interface SettingGroup {
   rows: SettingRow[];
 }
 
-function RowItem({ row, COLORS, onPress }: { row: SettingRow; COLORS: any; onPress: () => void }) {
+function RowItem({ row, COLORS, onPress, rowIndex }: { row: SettingRow; COLORS: any; onPress: () => void; rowIndex: number }) {
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const iconScale = useSharedValue(1);
+  const rowStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: iconScale.value }] }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.975, { damping: 18 });
+    iconScale.value = withSequence(
+      withSpring(0.85, { damping: 10, stiffness: 200 }),
+      withSpring(1.1, { damping: 8, stiffness: 180 })
+    );
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15 });
+    iconScale.value = withSpring(1, { damping: 12 });
+  };
 
   return (
-    <Animated.View style={animStyle}>
+    <Animated.View style={rowStyle}>
       <TouchableOpacity
         onPress={onPress}
-        onPressIn={() => { scale.value = withSpring(0.975, { damping: 18 }); }}
-        onPressOut={() => { scale.value = withSpring(1, { damping: 18 }); }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         activeOpacity={1}
         style={styles.row}
       >
-        <LinearGradient
-          colors={row.destructive ? [COLORS.error + '30', COLORS.error + '15'] : row.iconGradient}
-          style={styles.rowIcon}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          {row.icon}
-        </LinearGradient>
+        <Animated.View style={iconStyle}>
+          <LinearGradient
+            colors={row.destructive ? [COLORS.error + '30', COLORS.error + '15'] : row.iconGradient}
+            style={styles.rowIcon}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            {row.icon}
+          </LinearGradient>
+        </Animated.View>
         <View style={styles.rowBody}>
           <Text style={[styles.rowLabel, { color: row.destructive ? COLORS.error : COLORS.text.primary }]}>
             {row.label}
@@ -324,6 +348,7 @@ export default function SettingsTab() {
                     row={row}
                     COLORS={COLORS}
                     onPress={row.onPress ?? (() => row.route && router.push(row.route as any))}
+                    rowIndex={rIdx}
                   />
                   {rIdx < group.rows.length - 1 && (
                     <View style={[styles.divider, { backgroundColor: COLORS.text.primary + '09' }]} />
