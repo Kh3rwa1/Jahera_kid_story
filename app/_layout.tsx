@@ -15,6 +15,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AppProvider } from '@/contexts/AppContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ReadingPreferencesProvider } from '@/contexts/ReadingPreferencesContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -42,6 +43,7 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
+        <ReadingPreferencesProvider>
         <AuthProvider>
           <AppProvider>
             <Stack screenOptions={{ headerShown: false }}>
@@ -56,6 +58,7 @@ export default function RootLayout() {
             <StatusBar style="auto" />
           </AppProvider>
         </AuthProvider>
+        </ReadingPreferencesProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
