@@ -16,6 +16,7 @@ import {
   Shield,
   Crown,
   Zap,
+  BookOpen,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
@@ -47,6 +48,14 @@ export default function SettingsScreen() {
       icon: <Palette size={24} color="#FFFFFF" />,
       route: '/settings/customization',
       gradient: COLORS.gradients.primary,
+    },
+    {
+      id: 'reading',
+      title: 'Reading Preferences',
+      description: 'Font size, line spacing, text alignment',
+      icon: <BookOpen size={24} color="#FFFFFF" />,
+      route: '/settings/reading',
+      gradient: COLORS.gradients.forest || ['#2E7D32', '#66BB6A'],
     },
     {
       id: 'parent-dashboard',
