@@ -28,7 +28,7 @@ import {
   Circle as XCircle,
   Trophy,
   BookOpen,
-  Hop as Home,
+  House as Home,
   ChevronRight,
   ArrowLeft,
   Sparkles,
