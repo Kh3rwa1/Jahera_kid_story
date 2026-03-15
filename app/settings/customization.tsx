@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,99 +19,106 @@ import Animated, {
   withSpring,
   withSequence,
   withTiming,
-  Layout,
+  interpolate,
+  Extrapolation,
 } from 'react-native-reanimated';
-import { ArrowLeft, Check, Palette, AppWindow, Pipette, Sparkles } from 'lucide-react-native';
+import { ArrowLeft, Check, Palette, Pipette, Sparkles, Wand as Wand2, AppWindow } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { COLOR_SCHEMES } from '@/constants/themeSchemes';
 import { APP_ICONS } from '@/contexts/ThemeContext';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS } from '@/constants/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { ColorWheelPicker } from '@/components/ColorWheelPicker';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - SPACING.xl * 3) / 2;
+const THEME_CARD_WIDTH = width * 0.72;
+const THEME_CARD_MARGIN = 10;
+const ICON_CARD_SIZE = (width - SPACING.xl * 2 - SPACING.md * 3) / 4;
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-function AnimatedThemeCard({
+function ThemeCard({
   scheme,
   isSelected,
   onPress,
-  colors,
   index,
 }: {
   scheme: (typeof COLOR_SCHEMES)[0];
   isSelected: boolean;
   onPress: () => void;
-  colors: any;
   index: number;
 }) {
-  const cardScale = useSharedValue(1);
-  const checkScale = useSharedValue(isSelected ? 1 : 0);
-
-  const cardAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: cardScale.value }],
-  }));
-
-  const checkAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: checkScale.value }],
-    opacity: checkScale.value,
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
   }));
 
   const handlePress = () => {
-    cardScale.value = withSequence(
-      withSpring(0.92, { damping: 8, stiffness: 400 }),
-      withSpring(1.02, { damping: 10, stiffness: 300 }),
-      withSpring(1, { damping: 12, stiffness: 200 })
+    scale.value = withSequence(
+      withSpring(0.94, { damping: 10, stiffness: 500 }),
+      withSpring(1, { damping: 12, stiffness: 300 })
     );
-    checkScale.value = withSpring(1, { damping: 8, stiffness: 300 });
     onPress();
   };
 
   return (
     <Animated.View
-      entering={FadeInUp.delay(150 + index * 60).springify()}
-      layout={Layout.springify()}
+      entering={FadeInUp.delay(80 + index * 50).springify()}
+      style={animStyle}
     >
-      <AnimatedTouchable
-        style={[
-          cardAnimStyle,
-          styles.themeCard,
-          {
-            backgroundColor: colors.cardBackground,
-            borderColor: isSelected ? colors.primary : 'transparent',
-          },
-        ]}
+      <TouchableOpacity
         onPress={handlePress}
-        activeOpacity={0.85}
+        activeOpacity={0.92}
+        style={[
+          styles.themeCard,
+          isSelected && styles.themeCardSelected,
+        ]}
       >
         <LinearGradient
           colors={scheme.colors.gradients.primary as [string, string, ...string[]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.themePreview}
+          style={styles.themeGradient}
         >
+          <View style={styles.themeCardInner}>
+            <View style={styles.themeCardDots}>
+              <View style={[styles.dot, { backgroundColor: 'rgba(255,255,255,0.9)' }]} />
+              <View style={[styles.dot, { backgroundColor: 'rgba(255,255,255,0.6)' }]} />
+              <View style={[styles.dot, { backgroundColor: 'rgba(255,255,255,0.35)' }]} />
+            </View>
+            <View style={styles.themeCardMockLines}>
+              <View style={[styles.mockLine, { width: '70%', backgroundColor: 'rgba(255,255,255,0.8)' }]} />
+              <View style={[styles.mockLine, { width: '45%', backgroundColor: 'rgba(255,255,255,0.5)', marginTop: 6 }]} />
+            </View>
+          </View>
+
           {isSelected && (
-            <Animated.View
-              style={[checkAnimStyle, styles.checkBadge, { backgroundColor: colors.cardBackground }]}
-            >
-              <Check size={16} color={colors.primary} strokeWidth={3} />
+            <Animated.View entering={FadeIn.springify()} style={styles.themeCheckBadge}>
+              <Check size={14} color="#FFFFFF" strokeWidth={3} />
             </Animated.View>
           )}
         </LinearGradient>
-        <View style={styles.themeInfo}>
-          <Text style={styles.themeEmoji}>{scheme.emoji}</Text>
-          <Text style={[styles.themeName, { color: colors.text.primary }]} numberOfLines={1}>
-            {scheme.name}
-          </Text>
+
+        <View style={styles.themeCardFooter}>
+          <Text style={styles.themeCardEmoji}>{scheme.emoji}</Text>
+          <View style={styles.themeCardMeta}>
+            <Text style={styles.themeCardName}>{scheme.name}</Text>
+            <Text style={styles.themeCardSwatch} numberOfLines={1}>
+              {scheme.colors.primary}
+            </Text>
+          </View>
+          {isSelected && (
+            <View style={[styles.activeChip, { backgroundColor: scheme.colors.primary + '20' }]}>
+              <Text style={[styles.activeChipText, { color: scheme.colors.primary }]}>Active</Text>
+            </View>
+          )}
         </View>
-      </AnimatedTouchable>
+      </TouchableOpacity>
     </Animated.View>
   );
 }
 
-function AnimatedIconCard({
+function IconCard({
   icon,
   isSelected,
   onPress,
@@ -123,105 +131,124 @@ function AnimatedIconCard({
   colors: any;
   index: number;
 }) {
-  const cardScale = useSharedValue(1);
-  const emojiRotate = useSharedValue(0);
+  const scale = useSharedValue(1);
+  const rotate = useSharedValue(0);
 
-  const cardAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: cardScale.value }],
-  }));
-
-  const emojiAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${emojiRotate.value}deg` }],
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }, { rotate: `${rotate.value}deg` }],
   }));
 
   const handlePress = () => {
-    cardScale.value = withSequence(
-      withSpring(0.9, { damping: 8, stiffness: 400 }),
-      withSpring(1, { damping: 10, stiffness: 200 })
+    scale.value = withSequence(
+      withSpring(0.85, { damping: 8, stiffness: 500 }),
+      withSpring(1.08, { damping: 10, stiffness: 300 }),
+      withSpring(1, { damping: 12, stiffness: 200 })
     );
-    emojiRotate.value = withSequence(
-      withTiming(-15, { duration: 100 }),
-      withTiming(15, { duration: 100 }),
-      withTiming(-8, { duration: 80 }),
+    rotate.value = withSequence(
+      withTiming(-12, { duration: 80 }),
+      withTiming(12, { duration: 80 }),
       withTiming(0, { duration: 80 })
     );
     onPress();
   };
 
   return (
-    <Animated.View entering={FadeInUp.delay(200 + index * 50).springify()}>
-      <AnimatedTouchable
-        style={[
-          cardAnimStyle,
-          styles.iconCard,
-          {
-            backgroundColor: colors.cardBackground,
-            borderColor: isSelected ? colors.primary : 'transparent',
-          },
-        ]}
-        onPress={handlePress}
-        activeOpacity={0.85}
-      >
-        <View style={styles.iconContainer}>
-          <Animated.Text style={[styles.iconEmoji, emojiAnimStyle]}>{icon.emoji}</Animated.Text>
+    <Animated.View entering={FadeInUp.delay(120 + index * 40).springify()}>
+      <TouchableOpacity onPress={handlePress} activeOpacity={0.85} style={styles.iconCardOuter}>
+        <Animated.View
+          style={[
+            animStyle,
+            styles.iconCard,
+            {
+              backgroundColor: isSelected ? colors.primary + '15' : colors.cardBackground,
+              borderColor: isSelected ? colors.primary : colors.text.light + '25',
+              borderWidth: isSelected ? 2 : 1,
+            },
+          ]}
+        >
+          <Text style={styles.iconEmoji}>{icon.emoji}</Text>
           {isSelected && (
             <Animated.View
               entering={FadeIn.springify()}
-              style={[styles.checkBadgeSmall, { backgroundColor: colors.primary }]}
+              style={[styles.iconCheckDot, { backgroundColor: colors.primary }]}
             >
-              <Check size={12} color="#FFFFFF" strokeWidth={3} />
+              <Check size={9} color="#FFF" strokeWidth={3.5} />
             </Animated.View>
           )}
-        </View>
-        <Text style={[styles.iconName, { color: colors.text.primary }]} numberOfLines={1}>
+        </Animated.View>
+        <Text
+          style={[
+            styles.iconCardLabel,
+            { color: isSelected ? colors.primary : colors.text.secondary },
+          ]}
+          numberOfLines={1}
+        >
           {icon.name}
         </Text>
-        <Text style={[styles.iconDescription, { color: colors.text.light }]} numberOfLines={1}>
-          {icon.description}
-        </Text>
-      </AnimatedTouchable>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+function SectionLabel({
+  icon: Icon,
+  label,
+  color,
+  delay = 0,
+}: {
+  icon: any;
+  label: string;
+  color: string;
+  delay?: number;
+}) {
+  return (
+    <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.sectionLabel}>
+      <View style={[styles.sectionLabelIcon, { backgroundColor: color + '18' }]}>
+        <Icon size={15} color={color} strokeWidth={2.5} />
+      </View>
+      <Text style={[styles.sectionLabelText, { color }]}>{label}</Text>
     </Animated.View>
   );
 }
 
 export default function CustomizationScreen() {
   const router = useRouter();
-  const { currentTheme, currentIcon, customColor, setTheme, setIcon, setCustomColor, clearCustomColor } = useTheme();
+  const {
+    currentTheme,
+    currentIcon,
+    customColor,
+    setTheme,
+    setIcon,
+    setCustomColor,
+    clearCustomColor,
+  } = useTheme();
+
   const [selectedThemeId, setSelectedThemeId] = useState(customColor ? 'custom' : currentTheme.id);
   const [selectedIconId, setSelectedIconId] = useState(currentIcon.id);
   const [showColorWheel, setShowColorWheel] = useState(!!customColor);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  const toastScale = useSharedValue(0);
-
+  const toastAnim = useSharedValue(0);
   const toastAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: toastScale.value }],
-    opacity: toastScale.value,
+    opacity: toastAnim.value,
+    transform: [
+      {
+        translateY: interpolate(toastAnim.value, [0, 1], [-12, 0], Extrapolation.CLAMP),
+      },
+    ],
   }));
 
-  const showSuccess = useCallback((msg: string) => {
-    setErrorMsg(null);
-    setSuccessMsg(msg);
-    toastScale.value = withSequence(
-      withSpring(1.05, { damping: 8, stiffness: 300 }),
-      withSpring(1, { damping: 12, stiffness: 200 })
-    );
-    setTimeout(() => {
-      toastScale.value = withTiming(0, { duration: 200 });
-      setTimeout(() => setSuccessMsg(null), 200);
-    }, 1800);
-  }, [toastScale]);
-
-  const showError = useCallback((msg: string) => {
-    setSuccessMsg(null);
-    setErrorMsg(msg);
-    toastScale.value = withSpring(1, { damping: 12, stiffness: 200 });
-    setTimeout(() => {
-      toastScale.value = withTiming(0, { duration: 200 });
-      setTimeout(() => setErrorMsg(null), 200);
-    }, 2500);
-  }, [toastScale]);
+  const showToast = useCallback(
+    (msg: string, type: 'success' | 'error' = 'success') => {
+      setToast({ msg, type });
+      toastAnim.value = withSpring(1, { damping: 12, stiffness: 300 });
+      setTimeout(() => {
+        toastAnim.value = withTiming(0, { duration: 250 });
+        setTimeout(() => setToast(null), 260);
+      }, 2000);
+    },
+    [toastAnim]
+  );
 
   const handleThemeSelect = async (themeId: string) => {
     try {
@@ -229,18 +256,16 @@ export default function CustomizationScreen() {
       setSelectedThemeId(themeId);
       setShowColorWheel(false);
       await setTheme(themeId);
-      showSuccess('Theme updated!');
+      showToast('Theme updated');
     } catch {
-      showError('Failed to update theme.');
+      showToast('Failed to update theme', 'error');
     }
   };
 
   const handleColorWheelToggle = () => {
     hapticFeedback.light();
     setShowColorWheel(!showColorWheel);
-    if (!showColorWheel) {
-      setSelectedThemeId('custom');
-    }
+    if (!showColorWheel) setSelectedThemeId('custom');
   };
 
   const handleCustomColorSelect = async (color: string) => {
@@ -248,7 +273,7 @@ export default function CustomizationScreen() {
       setSelectedThemeId('custom');
       await setCustomColor(color);
     } catch {
-      showError('Failed to save custom color.');
+      showToast('Failed to save color', 'error');
     }
   };
 
@@ -258,9 +283,9 @@ export default function CustomizationScreen() {
       setShowColorWheel(false);
       await clearCustomColor();
       setSelectedThemeId(currentTheme.id);
-      showSuccess('Switched back to preset theme!');
+      showToast('Reset to preset theme');
     } catch {
-      showError('Failed to reset.');
+      showToast('Failed to reset', 'error');
     }
   };
 
@@ -269,121 +294,181 @@ export default function CustomizationScreen() {
       hapticFeedback.light();
       setSelectedIconId(iconId);
       await setIcon(iconId);
-      showSuccess('Icon updated!');
+      showToast('Icon updated');
     } catch {
-      showError('Failed to update icon.');
+      showToast('Failed to update icon', 'error');
     }
   };
 
   const COLORS = currentTheme.colors;
   const backScale = useSharedValue(1);
-  const backAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: backScale.value }],
-  }));
+  const backStyle = useAnimatedStyle(() => ({ transform: [{ scale: backScale.value }] }));
 
   return (
     <View style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <LinearGradient
+        colors={COLORS.backgroundGradient as [string, string, ...string[]]}
+        style={StyleSheet.absoluteFill}
+      />
 
-      <Animated.View entering={FadeInDown.delay(50).springify()} style={[styles.header]}>
+      <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.header}>
         <AnimatedTouchable
-          style={[backAnimStyle, styles.backButton, { backgroundColor: COLORS.cardBackground }]}
-          onPressIn={() => { backScale.value = withSpring(0.88, { damping: 8, stiffness: 400 }); }}
+          style={[backStyle, styles.backBtn, { backgroundColor: COLORS.cardBackground }]}
+          onPressIn={() => { backScale.value = withSpring(0.88, { damping: 8, stiffness: 500 }); }}
           onPressOut={() => { backScale.value = withSpring(1, { damping: 10, stiffness: 200 }); }}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={22} color={COLORS.text.primary} />
+          <ArrowLeft size={20} color={COLORS.text.primary} strokeWidth={2.5} />
         </AnimatedTouchable>
-        <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: COLORS.text.primary }]}>Customization</Text>
-          <Text style={[styles.headerSubtitle, { color: COLORS.text.secondary }]}>Make Jahera yours</Text>
+
+        <View style={styles.headerText}>
+          <Text style={[styles.headerTitle, { color: COLORS.text.primary }]}>Customize</Text>
+          <Text style={[styles.headerSub, { color: COLORS.text.secondary }]}>
+            Make it uniquely yours
+          </Text>
+        </View>
+
+        <View style={[styles.headerBadge, { backgroundColor: COLORS.primary + '18' }]}>
+          <Wand2 size={16} color={COLORS.primary} strokeWidth={2} />
         </View>
       </Animated.View>
 
-      {(successMsg || errorMsg) && (
-        <Animated.View style={[toastAnimStyle, styles.toastContainer]}>
-          <View style={[styles.toast, { backgroundColor: successMsg ? COLORS.success : COLORS.error }]}>
-            {successMsg && <Check size={16} color="#FFFFFF" strokeWidth={2.5} />}
-            <Text style={styles.toastText}>{successMsg || errorMsg}</Text>
-          </View>
+      {toast && (
+        <Animated.View style={[toastAnimStyle, styles.toastWrap]}>
+          <LinearGradient
+            colors={
+              toast.type === 'success'
+                ? ([COLORS.success, '#059669'] as [string, string])
+                : ([COLORS.error, '#DC2626'] as [string, string])
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.toast}
+          >
+            <Check size={14} color="#FFF" strokeWidth={3} />
+            <Text style={styles.toastText}>{toast.msg}</Text>
+          </LinearGradient>
         </Animated.View>
       )}
 
       <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
-        <Animated.View entering={FadeInDown.delay(100).springify()}>
+        <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.heroBanner}>
           <LinearGradient
             colors={COLORS.gradients.primary as [string, string, ...string[]]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.heroBanner}
+            style={styles.heroBannerGrad}
           >
-            <View style={styles.heroIconWrap}>
-              <Sparkles size={26} color="#FFFFFF" />
+            <View style={styles.heroLeft}>
+              <Text style={styles.heroTitle}>Design Your{'\n'}Experience</Text>
+              <Text style={styles.heroSub}>
+                Choose from curated themes or craft your own with the color picker
+              </Text>
             </View>
-            <View style={styles.heroContent}>
-              <Text style={styles.heroTitle}>Design Your Experience</Text>
-              <Text style={styles.heroSubtitle}>Pick a preset theme or create your own with the color wheel</Text>
+            <View style={styles.heroRight}>
+              <View style={styles.heroCircle1} />
+              <View style={styles.heroCircle2} />
+              <Sparkles size={32} color="rgba(255,255,255,0.9)" />
             </View>
           </LinearGradient>
         </Animated.View>
 
         <View style={styles.section}>
-          <Animated.View entering={FadeInDown.delay(130).springify()} style={styles.sectionHeader}>
-            <Palette size={22} color={COLORS.primary} />
-            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Color Theme</Text>
-          </Animated.View>
-          <Animated.Text entering={FadeIn.delay(180)} style={[styles.sectionDescription, { color: COLORS.text.secondary }]}>
-            Choose your favorite color scheme
+          <SectionLabel icon={Palette} label="Color Theme" color={COLORS.primary} delay={100} />
+          <Animated.Text
+            entering={FadeIn.delay(140)}
+            style={[styles.sectionDesc, { color: COLORS.text.secondary }]}
+          >
+            Swipe to explore all themes
           </Animated.Text>
-
-          <View style={styles.themesGrid}>
-            {COLOR_SCHEMES.map((scheme, index) => (
-              <AnimatedThemeCard
-                key={scheme.id}
-                scheme={scheme}
-                isSelected={selectedThemeId === scheme.id && !customColor}
-                onPress={() => handleThemeSelect(scheme.id)}
-                colors={COLORS}
-                index={index}
-              />
-            ))}
-          </View>
         </View>
 
-        <View style={styles.section}>
-          <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.sectionHeader}>
-            <Pipette size={22} color={COLORS.primary} />
-            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Custom Color</Text>
-          </Animated.View>
-          <Animated.Text entering={FadeIn.delay(220)} style={[styles.sectionDescription, { color: COLORS.text.secondary }]}>
-            Pick any color to generate a unique theme
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.themeScroll}
+          decelerationRate="fast"
+          snapToInterval={THEME_CARD_WIDTH + THEME_CARD_MARGIN * 2}
+          snapToAlignment="start"
+        >
+          {COLOR_SCHEMES.map((scheme, index) => (
+            <ThemeCard
+              key={scheme.id}
+              scheme={scheme}
+              isSelected={selectedThemeId === scheme.id && !customColor}
+              onPress={() => handleThemeSelect(scheme.id)}
+              index={index}
+            />
+          ))}
+        </ScrollView>
+
+        <View style={[styles.section, { marginTop: SPACING.xxl }]}>
+          <SectionLabel icon={Pipette} label="Custom Color" color={COLORS.primary} delay={160} />
+          <Animated.Text
+            entering={FadeIn.delay(200)}
+            style={[styles.sectionDesc, { color: COLORS.text.secondary }]}
+          >
+            Generate a unique theme from any color
           </Animated.Text>
 
-          <Animated.View entering={FadeInUp.delay(250).springify()}>
+          <Animated.View entering={FadeInUp.delay(220).springify()}>
             <TouchableOpacity
+              onPress={handleColorWheelToggle}
+              activeOpacity={0.85}
               style={[
-                styles.colorWheelToggle,
+                styles.colorToggleRow,
                 {
-                  backgroundColor: showColorWheel ? COLORS.primary + '15' : COLORS.cardBackground,
+                  backgroundColor: showColorWheel
+                    ? COLORS.primary + '12'
+                    : COLORS.cardBackground,
                   borderColor: showColorWheel ? COLORS.primary : COLORS.text.light + '30',
                 },
               ]}
-              onPress={handleColorWheelToggle}
-              activeOpacity={0.8}
             >
-              <View style={[styles.toggleIcon, { backgroundColor: showColorWheel ? COLORS.primary : COLORS.text.light + '40' }]}>
-                <Pipette size={18} color={showColorWheel ? '#FFFFFF' : COLORS.text.secondary} />
-              </View>
-              <View style={styles.toggleContent}>
-                <Text style={[styles.toggleTitle, { color: COLORS.text.primary }]}>
+              <LinearGradient
+                colors={
+                  showColorWheel
+                    ? (COLORS.gradients.primary as [string, string, ...string[]])
+                    : (['#E8E8E8', '#D8D8D8'] as [string, string])
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.colorToggleIcon}
+              >
+                <Pipette size={17} color="#FFFFFF" strokeWidth={2.5} />
+              </LinearGradient>
+
+              <View style={styles.colorToggleContent}>
+                <Text style={[styles.colorToggleTitle, { color: COLORS.text.primary }]}>
                   {showColorWheel ? 'Color Wheel Active' : 'Open Color Wheel'}
                 </Text>
-                <Text style={[styles.toggleSubtitle, { color: COLORS.text.secondary }]}>
-                  {showColorWheel ? 'Drag around the wheel to pick your color' : 'Tap to create a fully custom theme'}
+                <Text style={[styles.colorToggleSub, { color: COLORS.text.secondary }]}>
+                  {showColorWheel
+                    ? 'Drag to pick your perfect hue'
+                    : 'Create a fully custom theme'}
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.colorToggleArrow,
+                  {
+                    backgroundColor: showColorWheel
+                      ? COLORS.primary + '20'
+                      : COLORS.text.light + '18',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.colorToggleArrowText,
+                    { color: showColorWheel ? COLORS.primary : COLORS.text.secondary },
+                  ]}
+                >
+                  {showColorWheel ? '▲' : '▼'}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -403,18 +488,18 @@ export default function CustomizationScreen() {
           )}
         </View>
 
-        <View style={styles.section}>
-          <Animated.View entering={FadeInDown.delay(220).springify()} style={styles.sectionHeader}>
-            <AppWindow size={22} color={COLORS.primary} />
-            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>App Icon</Text>
-          </Animated.View>
-          <Animated.Text entering={FadeIn.delay(260)} style={[styles.sectionDescription, { color: COLORS.text.secondary }]}>
-            Choose your app icon style
+        <View style={[styles.section, { marginTop: SPACING.xxl }]}>
+          <SectionLabel icon={AppWindow} label="App Icon" color={COLORS.primary} delay={240} />
+          <Animated.Text
+            entering={FadeIn.delay(280)}
+            style={[styles.sectionDesc, { color: COLORS.text.secondary }]}
+          >
+            Choose your icon style
           </Animated.Text>
 
-          <View style={styles.iconsGrid}>
+          <View style={styles.iconsRow}>
             {APP_ICONS.map((icon, index) => (
-              <AnimatedIconCard
+              <IconCard
                 key={icon.id}
                 icon={icon}
                 isSelected={selectedIconId === icon.id}
@@ -426,11 +511,16 @@ export default function CustomizationScreen() {
           </View>
         </View>
 
-        <Animated.View entering={FadeIn.delay(400)}>
-          <View style={[styles.infoBox, { backgroundColor: COLORS.primary + '12' }]}>
-            <Sparkles size={16} color={COLORS.primary} />
-            <Text style={[styles.infoText, { color: COLORS.text.primary }]}>
-              Changes are applied instantly and saved automatically.
+        <Animated.View entering={FadeIn.delay(360)} style={styles.footerNote}>
+          <View
+            style={[
+              styles.footerNotePill,
+              { backgroundColor: COLORS.primary + '12', borderColor: COLORS.primary + '20' },
+            ]}
+          >
+            <Sparkles size={13} color={COLORS.primary} strokeWidth={2} />
+            <Text style={[styles.footerNoteText, { color: COLORS.text.secondary }]}>
+              All changes are saved automatically
             </Text>
           </View>
         </Animated.View>
@@ -446,235 +536,362 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 60 : 48,
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.md,
+    paddingBottom: SPACING.lg,
+    gap: SPACING.md,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.lg,
-    ...SHADOWS.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  headerContent: {
+  headerText: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: FONT_SIZES.xxl,
+    fontSize: 26,
     fontFamily: FONTS.bold,
+    letterSpacing: -0.5,
+    lineHeight: 32,
   },
-  headerSubtitle: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.medium,
-    marginTop: 2,
+  headerSub: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    marginTop: 1,
   },
-  toastContainer: {
+  headerBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toastWrap: {
     paddingHorizontal: SPACING.xl,
     marginBottom: SPACING.sm,
+    zIndex: 100,
   },
   toast: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-    paddingVertical: SPACING.md,
+    paddingVertical: 10,
     paddingHorizontal: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    ...SHADOWS.md,
+    borderRadius: BORDER_RADIUS.round,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   toastText: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.sm,
+    color: '#FFF',
+    fontSize: 13,
     fontFamily: FONTS.semibold,
   },
-  content: {
-    flex: 1,
-  },
   scrollContent: {
-    padding: SPACING.xl,
     paddingBottom: 120,
   },
   heroBanner: {
+    marginHorizontal: SPACING.xl,
+    marginBottom: SPACING.xxl,
+    borderRadius: BORDER_RADIUS.xxl,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  heroBannerGrad: {
     flexDirection: 'row',
+    alignItems: 'center',
     padding: SPACING.xl,
-    borderRadius: BORDER_RADIUS.xl,
+    paddingVertical: 28,
     gap: SPACING.lg,
-    alignItems: 'center',
-    marginBottom: SPACING.xxxl,
-    ...SHADOWS.lg,
   },
-  heroIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroContent: {
+  heroLeft: {
     flex: 1,
   },
   heroTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontFamily: FONTS.bold,
     color: '#FFFFFF',
-    marginBottom: SPACING.xs,
+    lineHeight: 28,
+    letterSpacing: -0.3,
+    marginBottom: SPACING.sm,
   },
-  heroSubtitle: {
+  heroSub: {
     fontSize: 13,
     fontFamily: FONTS.regular,
-    color: '#FFFFFF',
-    opacity: 0.9,
+    color: 'rgba(255,255,255,0.82)',
     lineHeight: 18,
   },
-  section: {
-    marginBottom: SPACING.xxl,
+  heroRight: {
+    width: 72,
+    height: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
-  sectionHeader: {
+  heroCircle1: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  heroCircle2: {
+    position: 'absolute',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  section: {
+    paddingHorizontal: SPACING.xl,
+  },
+  sectionLabel: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-    marginBottom: SPACING.xs,
+    marginBottom: 4,
   },
-  sectionTitle: {
-    fontSize: FONT_SIZES.xl,
+  sectionLabelIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionLabelText: {
+    fontSize: FONT_SIZES.md,
     fontFamily: FONTS.bold,
+    letterSpacing: -0.2,
   },
-  sectionDescription: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.medium,
+  sectionDesc: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
     marginBottom: SPACING.lg,
+    marginLeft: 4,
   },
-  themesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.md,
+  themeScroll: {
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: 4,
+    gap: THEME_CARD_MARGIN * 2,
   },
   themeCard: {
-    width: CARD_WIDTH,
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 3,
+    width: THEME_CARD_WIDTH,
+    borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
-    ...SHADOWS.md,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    elevation: 6,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  themePreview: {
-    height: 90,
-    justifyContent: 'center',
-    alignItems: 'center',
+  themeCardSelected: {
+    borderColor: 'rgba(0,0,0,0.1)',
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 10,
   },
-  checkBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.sm,
-  },
-  themeInfo: {
+  themeGradient: {
+    height: 130,
+    position: 'relative',
+    justifyContent: 'flex-end',
     padding: SPACING.md,
+  },
+  themeCardInner: {
+    position: 'absolute',
+    top: SPACING.lg,
+    left: SPACING.lg,
+    right: SPACING.lg,
+  },
+  themeCardDots: {
+    flexDirection: 'row',
+    gap: 5,
+    marginBottom: SPACING.md,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  themeCardMockLines: {
+    gap: 0,
+  },
+  mockLine: {
+    height: 8,
+    borderRadius: 4,
+  },
+  themeCheckBadge: {
+    position: 'absolute',
+    top: SPACING.md,
+    right: SPACING.md,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  themeCardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     gap: SPACING.sm,
+    backgroundColor: '#FFFFFF',
   },
-  themeEmoji: {
-    fontSize: 20,
+  themeCardEmoji: {
+    fontSize: 22,
   },
-  themeName: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.semibold,
+  themeCardMeta: {
     flex: 1,
   },
-  colorWheelToggle: {
+  themeCardName: {
+    fontSize: 14,
+    fontFamily: FONTS.bold,
+    color: '#1A1F36',
+    letterSpacing: -0.2,
+  },
+  themeCardSwatch: {
+    fontSize: 10,
+    fontFamily: FONTS.regular,
+    color: '#ADB5BD',
+    marginTop: 1,
+  },
+  activeChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BORDER_RADIUS.round,
+  },
+  activeChipText: {
+    fontSize: 11,
+    fontFamily: FONTS.semibold,
+  },
+  colorToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
     borderWidth: 1.5,
-    ...SHADOWS.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  toggleIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  colorToggleIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  toggleContent: {
+  colorToggleContent: {
     flex: 1,
     gap: 2,
   },
-  toggleTitle: {
-    fontSize: FONT_SIZES.md,
+  colorToggleTitle: {
+    fontSize: 15,
     fontFamily: FONTS.bold,
+    letterSpacing: -0.2,
   },
-  toggleSubtitle: {
+  colorToggleSub: {
     fontSize: 12,
     fontFamily: FONTS.regular,
     lineHeight: 16,
   },
+  colorToggleArrow: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  colorToggleArrowText: {
+    fontSize: 10,
+    fontFamily: FONTS.bold,
+  },
   colorWheelWrap: {
     marginTop: SPACING.xl,
-    paddingVertical: SPACING.xl,
     alignItems: 'center',
   },
-  iconsGrid: {
+  iconsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING.md,
   },
-  iconCard: {
-    width: CARD_WIDTH,
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 3,
-    padding: SPACING.lg,
+  iconCardOuter: {
     alignItems: 'center',
-    ...SHADOWS.md,
+    gap: SPACING.xs,
+    width: ICON_CARD_SIZE,
   },
-  iconContainer: {
+  iconCard: {
+    width: ICON_CARD_SIZE,
+    height: ICON_CARD_SIZE,
+    borderRadius: BORDER_RADIUS.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
-    marginBottom: SPACING.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   iconEmoji: {
-    fontSize: 44,
+    fontSize: 36,
   },
-  checkBadgeSmall: {
+  iconCheckDot: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
+    top: 6,
+    right: 6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
-  iconName: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
-    textAlign: 'center',
-    marginBottom: SPACING.xs,
-  },
-  iconDescription: {
-    fontSize: FONT_SIZES.xs,
-    fontFamily: FONTS.regular,
+  iconCardLabel: {
+    fontSize: 11,
+    fontFamily: FONTS.semibold,
     textAlign: 'center',
   },
-  infoBox: {
+  footerNote: {
+    alignItems: 'center',
+    paddingTop: SPACING.xxl,
+    paddingBottom: SPACING.xl,
+  },
+  footerNotePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    marginTop: SPACING.md,
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.round,
+    borderWidth: 1,
   },
-  infoText: {
-    flex: 1,
-    fontSize: FONT_SIZES.sm,
+  footerNoteText: {
+    fontSize: 12,
     fontFamily: FONTS.medium,
-    lineHeight: 20,
   },
 });
