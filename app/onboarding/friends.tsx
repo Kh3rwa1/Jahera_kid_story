@@ -23,7 +23,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const STEP_DOTS = [false, false, false, true];
 const FRIEND_EMOJIS = ['🧒', '👦', '👧', '🧑', '👶', '🧓'];
 
 export default function Friends() {
@@ -39,6 +38,9 @@ export default function Friends() {
   const [shake, setShake] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const successColor = themeColors.success;
+  const successLight = themeColors.successLight;
 
   const addFriend = async () => {
     const trimmed = currentName.trim();
@@ -101,70 +103,68 @@ export default function Friends() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        {/* Header */}
-        <Animated.View
-          entering={FadeInDown.delay(80).springify()}
-          style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}
+        {/* Hero zone */}
+        <LinearGradient
+          colors={[successColor, successLight]}
+          style={[styles.hero, { paddingTop: insets.top + SPACING.lg }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
-          <TouchableOpacity
-            onPress={handleBack}
-            style={[styles.backBtn, { backgroundColor: themeColors.cardBackground }]}
-            activeOpacity={0.7}
-            disabled={isLoading}
-          >
-            <ArrowLeft size={20} color={themeColors.text.primary} strokeWidth={2.5} />
-          </TouchableOpacity>
-
-          <View style={[styles.iconCircle, { shadowColor: themeColors.success }]}>
-            <LinearGradient
-              colors={[themeColors.success, themeColors.successLight]}
-              style={styles.iconGradient}
+          <View style={styles.heroTop}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.backBtn}
+              activeOpacity={0.7}
+              disabled={isLoading}
             >
-              <UserPlus size={32} color="#FFFFFF" strokeWidth={2} />
-            </LinearGradient>
+              <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+            </TouchableOpacity>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: '100%' }]} />
+            </View>
+            <Text style={styles.stepLabelText}>4 / 4</Text>
           </View>
 
-          <Text style={[styles.title, { color: themeColors.text.primary }]}>
+          {/* Overlapping friend emojis scene */}
+          <Animated.View entering={FadeInDown.delay(160).springify()} style={styles.emojiScene}>
+            <View style={[styles.emojiCircle, styles.emojiCircleMid]}>
+              <Text style={styles.emojiMid}>👦</Text>
+            </View>
+            <View style={[styles.emojiCircle, styles.emojiCircleLarge, styles.emojiOverlapLeft]}>
+              <Text style={styles.emojiLarge}>👧</Text>
+            </View>
+            <View style={[styles.emojiCircle, styles.emojiCircleMid, styles.emojiOverlapLeft]}>
+              <Text style={styles.emojiMid}>🧒</Text>
+            </View>
+          </Animated.View>
+
+          <Animated.Text entering={FadeInDown.delay(200).springify()} style={styles.heroTitle}>
             Add Friends
-          </Text>
-          <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
+          </Animated.Text>
+          <Animated.Text entering={FadeInDown.delay(240).springify()} style={styles.heroSubtitle}>
             Who are {params.kidName}'s awesome friends?
-          </Text>
-
-          {/* Step dots — all filled on last step */}
-          <View style={styles.stepRow}>
-            {STEP_DOTS.map((active, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.stepDot,
-                  active
-                    ? [styles.stepDotActive, { backgroundColor: themeColors.success }]
-                    : { backgroundColor: themeColors.success + '35', width: 8 },
-                ]}
-              />
-            ))}
-          </View>
+          </Animated.Text>
 
           {/* Final step badge */}
-          <View style={[styles.finalBadge, { backgroundColor: themeColors.success + '18' }]}>
-            <Text style={[styles.finalBadgeText, { color: themeColors.success }]}>
-              Last step — almost done!
-            </Text>
-          </View>
-        </Animated.View>
+          <Animated.View entering={FadeInDown.delay(280).springify()} style={styles.finalBadge}>
+            <Sparkles size={12} color="rgba(255,255,255,0.9)" strokeWidth={2} />
+            <Text style={styles.finalBadgeText}>Last step — almost done!</Text>
+          </Animated.View>
+        </LinearGradient>
 
         {/* Input row */}
-        <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.inputSection}>
+        <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.inputSection}>
           <View style={[
             styles.inputCard,
-            { backgroundColor: themeColors.cardBackground, shadowColor: themeColors.success },
-            shake && { borderColor: themeColors.warning, borderWidth: 1.5 },
+            { backgroundColor: themeColors.cardBackground },
+            shake && { borderColor: themeColors.warning, borderWidth: 2 },
           ]}>
+            <View style={[styles.inputIcon, { backgroundColor: successColor + '12' }]}>
+              <UserPlus size={18} color={successColor} strokeWidth={2} />
+            </View>
             <TextInput
               style={[styles.input, { color: themeColors.text.primary }]}
               placeholder="Enter a friend's name..."
@@ -176,13 +176,17 @@ export default function Friends() {
               onSubmitEditing={addFriend}
               editable={!isLoading}
             />
-            <TouchableOpacity
-              onPress={addFriend}
-              style={[styles.addBtn, { backgroundColor: currentName.trim().length > 0 ? themeColors.success : themeColors.success + '40' }]}
-              activeOpacity={0.8}
-              disabled={isLoading}
-            >
-              <Plus size={20} color="#FFFFFF" strokeWidth={3} />
+            <TouchableOpacity onPress={addFriend} activeOpacity={0.8} disabled={isLoading}>
+              <LinearGradient
+                colors={currentName.trim().length > 0
+                  ? [successColor, successLight]
+                  : [successColor + '40', successColor + '40']}
+                style={styles.addBtn}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Plus size={20} color="#FFFFFF" strokeWidth={3} />
+              </LinearGradient>
             </TouchableOpacity>
           </View>
           {errorMsg && (
@@ -195,9 +199,17 @@ export default function Friends() {
         {/* Friends list */}
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
           {friends.length === 0 ? (
-            <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.emptyState}>
-              <View style={[styles.emptyIconWrap, { backgroundColor: themeColors.success + '12' }]}>
-                <Text style={styles.emptyIcon}>👫</Text>
+            <Animated.View entering={FadeInDown.delay(340).springify()} style={styles.emptyState}>
+              <View style={styles.emptyIconRow}>
+                <View style={[styles.emptyDot, { backgroundColor: successColor + '10' }]}>
+                  <Text style={styles.emptyDotEmoji}>👦</Text>
+                </View>
+                <View style={[styles.emptyDot, styles.emptyDotLarge, { backgroundColor: successColor + '18' }]}>
+                  <Text style={styles.emptyDotEmojiLarge}>👫</Text>
+                </View>
+                <View style={[styles.emptyDot, { backgroundColor: successColor + '10' }]}>
+                  <Text style={styles.emptyDotEmoji}>👧</Text>
+                </View>
               </View>
               <Text style={[styles.emptyTitle, { color: themeColors.text.primary }]}>No friends added yet</Text>
               <Text style={[styles.emptySubtitle, { color: themeColors.text.secondary }]}>
@@ -211,8 +223,9 @@ export default function Friends() {
                 entering={ZoomIn.delay(index * 40).springify()}
                 exiting={FadeOutUp.duration(200)}
               >
-                <View style={[styles.friendCard, { backgroundColor: themeColors.cardBackground, shadowColor: themeColors.success }]}>
-                  <View style={[styles.friendEmojiBadge, { backgroundColor: themeColors.success + '15' }]}>
+                <View style={[styles.friendCard, { backgroundColor: themeColors.cardBackground }]}>
+                  <View style={[styles.friendAccent, { backgroundColor: successColor }]} />
+                  <View style={[styles.friendEmojiBadge, { backgroundColor: successColor + '12' }]}>
                     <Text style={styles.friendEmoji}>
                       {FRIEND_EMOJIS[index % FRIEND_EMOJIS.length]}
                     </Text>
@@ -222,11 +235,11 @@ export default function Friends() {
                   </Text>
                   <TouchableOpacity
                     onPress={() => removeFriend(index)}
-                    style={[styles.removeBtn, { backgroundColor: themeColors.error + '18' }]}
+                    style={[styles.removeBtn, { backgroundColor: themeColors.error + '12' }]}
                     activeOpacity={0.7}
                     disabled={isLoading}
                   >
-                    <X size={15} color={themeColors.error} strokeWidth={2.5} />
+                    <X size={14} color={themeColors.error} strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
               </Animated.View>
@@ -241,20 +254,11 @@ export default function Friends() {
         >
           <TouchableOpacity
             onPress={handleComplete}
-            style={[styles.skipBtn, { backgroundColor: themeColors.cardBackground }]}
-            activeOpacity={0.7}
-            disabled={isLoading}
-          >
-            <Text style={[styles.skipText, { color: themeColors.text.secondary }]}>Skip</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleComplete}
             activeOpacity={0.88}
-            style={{ flex: 1 }}
             disabled={isLoading}
           >
             <LinearGradient
-              colors={isLoading ? [themeColors.text.light, themeColors.text.light] : [themeColors.success, themeColors.successLight]}
+              colors={isLoading ? ['#D1D5DB', '#D1D5DB'] : [successColor, successLight]}
               style={styles.ctaButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -263,11 +267,21 @@ export default function Friends() {
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Text style={styles.ctaText}>Start Adventures</Text>
+                  <Text style={styles.ctaText}>
+                    {friends.length > 0 ? `Start Adventures (${friends.length} friends)` : 'Start Adventures'}
+                  </Text>
                   <Sparkles size={20} color="#FFFFFF" strokeWidth={2.5} />
                 </>
               )}
             </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleComplete}
+            activeOpacity={0.7}
+            style={styles.skipLink}
+            disabled={isLoading}
+          >
+            <Text style={[styles.skipText, { color: themeColors.text.light }]}>Skip this step</Text>
           </TouchableOpacity>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -276,98 +290,128 @@ export default function Friends() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: '#F8F9FA' },
   kav: { flex: 1 },
-  header: {
+  hero: {
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.xxl,
+    alignItems: 'center',
+  },
+  heroTop: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    marginBottom: SPACING.xxl,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.xxl,
-    ...SHADOWS.sm,
   },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: SPACING.lg,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  iconGradient: {
+  progressTrack: {
     flex: 1,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+  },
+  stepLabelText: {
+    fontSize: FONT_SIZES.xs,
+    fontFamily: FONTS.bold,
+    color: 'rgba(255,255,255,0.75)',
+  },
+  emojiScene: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: SPACING.lg,
   },
-  title: {
-    fontSize: 30,
+  emojiCircle: {
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  emojiCircleLarge: { width: 64, height: 64 },
+  emojiCircleMid: { width: 52, height: 52 },
+  emojiOverlapLeft: { marginLeft: -14 },
+  emojiLarge: { fontSize: 30 },
+  emojiMid: { fontSize: 24 },
+  heroTitle: {
+    fontSize: 26,
     fontFamily: FONTS.extrabold,
-    letterSpacing: -0.5,
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+    textAlign: 'center',
     marginBottom: SPACING.sm,
   },
-  subtitle: {
-    fontSize: FONT_SIZES.md,
+  heroSubtitle: {
+    fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.medium,
-    lineHeight: 22,
-    marginBottom: SPACING.lg,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    alignItems: 'center',
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
     marginBottom: SPACING.md,
   },
-  stepDot: {
-    height: 6,
-    borderRadius: 3,
-  },
-  stepDotActive: {
-    width: 24,
-  },
   finalBadge: {
-    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.pill,
   },
   finalBadgeText: {
-    fontSize: FONT_SIZES.sm,
+    fontSize: FONT_SIZES.xs,
     fontFamily: FONTS.bold,
+    color: 'rgba(255,255,255,0.95)',
+    letterSpacing: 0.3,
   },
   inputSection: {
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.md,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
   inputCard: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: BORDER_RADIUS.xl,
-    paddingRight: SPACING.sm,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 12,
-    elevation: 3,
-    overflow: 'hidden',
+    gap: SPACING.sm,
+    paddingLeft: SPACING.md,
+    paddingRight: SPACING.md,
+    paddingVertical: SPACING.sm,
+    ...SHADOWS.md,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  inputIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     flex: 1,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md,
     fontSize: FONT_SIZES.md,
     fontFamily: FONTS.medium,
   },
   addBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -381,22 +425,35 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
-    gap: SPACING.md,
+    paddingTop: SPACING.sm,
+    gap: SPACING.sm,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: SPACING.xxxl * 2,
+    paddingVertical: SPACING.xxxl,
     gap: SPACING.sm,
   },
-  emptyIconWrap: {
-    width: 88,
-    height: 88,
-    borderRadius: BORDER_RADIUS.xxl,
+  emptyIconRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: SPACING.md,
   },
-  emptyIcon: { fontSize: 44 },
+  emptyDot: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyDotLarge: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    marginHorizontal: -8,
+    zIndex: 1,
+  },
+  emptyDotEmoji: { fontSize: 22 },
+  emptyDotEmojiLarge: { fontSize: 30 },
   emptyTitle: {
     fontSize: FONT_SIZES.lg,
     fontFamily: FONTS.bold,
@@ -409,59 +466,48 @@ const styles = StyleSheet.create({
   friendCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.md,
     borderRadius: BORDER_RADIUS.xl,
     gap: SPACING.md,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    overflow: 'hidden',
+    ...SHADOWS.sm,
+    paddingVertical: SPACING.md,
+    paddingRight: SPACING.md,
+  },
+  friendAccent: {
+    width: 4,
+    alignSelf: 'stretch',
   },
   friendEmojiBadge: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  friendEmoji: { fontSize: 22 },
+  friendEmoji: { fontSize: 24 },
   friendName: {
     flex: 1,
     fontSize: FONT_SIZES.md,
     fontFamily: FONTS.semibold,
   },
   removeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: BORDER_RADIUS.sm,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
   footer: {
-    flexDirection: 'row',
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
-    gap: SPACING.md,
-    alignItems: 'center',
-  },
-  skipBtn: {
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
-    borderRadius: BORDER_RADIUS.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.sm,
-  },
-  skipText: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.semibold,
+    backgroundColor: '#F8F9FA',
   },
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    paddingVertical: SPACING.xl - 2,
+    paddingVertical: 18,
     borderRadius: BORDER_RADIUS.pill,
     ...SHADOWS.xl,
   },
@@ -470,5 +516,13 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.lg,
     fontFamily: FONTS.bold,
     letterSpacing: 0.3,
+  },
+  skipLink: {
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+  },
+  skipText: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.medium,
   },
 });

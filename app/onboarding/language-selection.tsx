@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SUPPORTED_LANGUAGES, MAX_LANGUAGES, Language } from '@/constants/languages';
 import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
@@ -13,7 +13,7 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-  ZoomIn,
+  interpolate,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -22,8 +22,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
-const STEP_DOTS = [true, false, false, false];
-
 export default function LanguageSelection() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -31,23 +29,29 @@ export default function LanguageSelection() {
   const themeColors = currentTheme.colors;
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
 
-  const pulse = useSharedValue(1);
+  const ring1 = useSharedValue(1);
+  const ring2 = useSharedValue(1);
 
   useEffect(() => {
-    pulse.value = withRepeat(
-      withSequence(
-        withTiming(1.06, { duration: 1600 }),
-        withTiming(1, { duration: 1600 })
-      ),
-      -1,
-      true
+    ring1.value = withRepeat(
+      withSequence(withTiming(1.4, { duration: 2000 }), withTiming(1, { duration: 2000 })),
+      -1, true
+    );
+    ring2.value = withRepeat(
+      withSequence(withTiming(1, { duration: 800 }), withTiming(1.25, { duration: 2000 }), withTiming(1, { duration: 1200 })),
+      -1, true
     );
   }, []);
 
-  const iconPulseStyle = useAnimatedStyle(() => {
-    'worklet';
-    return { transform: [{ scale: pulse.value }] };
-  });
+  const ring1Style = useAnimatedStyle(() => ({
+    transform: [{ scale: ring1.value }],
+    opacity: interpolate(ring1.value, [1, 1.4], [0.18, 0]),
+  }));
+
+  const ring2Style = useAnimatedStyle(() => ({
+    transform: [{ scale: ring2.value }],
+    opacity: interpolate(ring2.value, [1, 1.25], [0.28, 0]),
+  }));
 
   const toggleLanguage = async (language: Language) => {
     const isSelected = selectedLanguages.some(l => l.code === language.code);
@@ -77,62 +81,65 @@ export default function LanguageSelection() {
   };
 
   const canContinue = selectedLanguages.length > 0;
+  const progressWidth = (1 / 4) * 100;
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* Header */}
-      <Animated.View
-        entering={FadeInDown.delay(80).springify()}
-        style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}
+      {/* Hero zone */}
+      <LinearGradient
+        colors={[themeColors.primary, themeColors.primaryDark]}
+        style={[styles.hero, { paddingTop: insets.top + SPACING.lg }]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        <Animated.View style={iconPulseStyle}>
-          <View style={[styles.iconCircle, { shadowColor: themeColors.primary }]}>
-            <LinearGradient
-              colors={[themeColors.primary, themeColors.primaryDark]}
-              style={styles.iconGradient}
-            >
-              <Globe2 size={32} color="#FFFFFF" strokeWidth={2} />
-            </LinearGradient>
+        {/* Progress bar */}
+        <View style={styles.progressTrack}>
+          <Animated.View
+            entering={FadeInDown.delay(100)}
+            style={[styles.progressFill, { width: `${progressWidth}%`, backgroundColor: 'rgba(255,255,255,0.9)' }]}
+          />
+        </View>
+
+        {/* Step label */}
+        <Animated.View entering={FadeInDown.delay(120)} style={styles.stepLabel}>
+          <Text style={styles.stepLabelText}>Step 1 of 4</Text>
+        </Animated.View>
+
+        {/* Globe icon with rings */}
+        <Animated.View entering={FadeInDown.delay(160).springify()} style={styles.iconZone}>
+          <Animated.View style={[styles.ring, { width: 140, height: 140, borderRadius: 70, borderColor: 'rgba(255,255,255,0.3)' }, ring1Style]} />
+          <Animated.View style={[styles.ring, { width: 100, height: 100, borderRadius: 50, borderColor: 'rgba(255,255,255,0.4)' }, ring2Style]} />
+          <View style={styles.iconCircle}>
+            <Globe2 size={38} color="#FFFFFF" strokeWidth={1.8} />
           </View>
         </Animated.View>
 
-        <Text style={[styles.title, { color: themeColors.text.primary }]}>
+        <Animated.Text entering={FadeInDown.delay(200).springify()} style={styles.heroTitle}>
           Choose Language
-        </Text>
-        <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
+        </Animated.Text>
+        <Animated.Text entering={FadeInDown.delay(240).springify()} style={styles.heroSubtitle}>
           Pick up to {MAX_LANGUAGES} languages for magical stories
-        </Text>
+        </Animated.Text>
 
-        {/* Step indicator */}
-        <View style={styles.stepRow}>
-          {STEP_DOTS.map((active, i) => (
-            <View
-              key={i}
-              style={[
-                styles.stepDot,
-                active
-                  ? [styles.stepDotActive, { backgroundColor: themeColors.primary }]
-                  : { backgroundColor: themeColors.primary + '25' },
-              ]}
-            />
-          ))}
-        </View>
-
-        {/* Selection count */}
-        <View style={[styles.countBadge, { backgroundColor: themeColors.primary + '15' }]}>
-          <Text style={[styles.countText, { color: themeColors.primary }]}>
-            {selectedLanguages.length} of {MAX_LANGUAGES} selected
+        {/* Selection pill */}
+        <Animated.View entering={FadeInDown.delay(280).springify()} style={styles.selectionPillRow}>
+          {[0, 1, 2].map(i => {
+            const filled = i < selectedLanguages.length;
+            return (
+              <View key={i} style={[styles.selectionPill, filled ? styles.selectionPillFilled : styles.selectionPillEmpty]}>
+                {filled && <Check size={12} color={themeColors.primary} strokeWidth={3} />}
+              </View>
+            );
+          })}
+          <Text style={styles.selectionPillText}>
+            {selectedLanguages.length === 0
+              ? 'None selected'
+              : `${selectedLanguages.length} of ${MAX_LANGUAGES} selected`}
           </Text>
-          {selectedLanguages.length > 0 && (
-            <Animated.Text entering={ZoomIn.springify()} style={styles.countEmoji}>
-              ✓
-            </Animated.Text>
-          )}
-        </View>
-      </Animated.View>
+        </Animated.View>
+      </LinearGradient>
 
       {/* Language list */}
       <ScrollView
@@ -142,48 +149,39 @@ export default function LanguageSelection() {
       >
         {SUPPORTED_LANGUAGES.map((language, index) => {
           const isSelected = selectedLanguages.some(l => l.code === language.code);
+          const selectionOrder = selectedLanguages.findIndex(l => l.code === language.code);
           return (
             <Animated.View
               key={language.code}
-              entering={FadeInDown.delay(160 + index * 45).springify()}
+              entering={FadeInDown.delay(80 + index * 40).springify()}
             >
               <TouchableOpacity
                 onPress={() => toggleLanguage(language)}
-                activeOpacity={0.75}
-                style={styles.cardTouchable}
+                activeOpacity={0.72}
               >
-                {isSelected ? (
-                  <LinearGradient
-                    colors={[themeColors.primary, themeColors.primaryDark]}
-                    style={styles.card}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <View style={styles.flagBadgeSelected}>
-                      <Text style={styles.flagText}>{language.flag}</Text>
-                    </View>
-                    <View style={styles.langInfo}>
-                      <Text style={styles.langNameSelected}>{language.name}</Text>
-                      <Text style={styles.langNativeSelected}>{language.nativeName}</Text>
-                    </View>
-                    <View style={styles.checkCircle}>
-                      <Check size={16} color={themeColors.primary} strokeWidth={3} />
-                    </View>
-                  </LinearGradient>
-                ) : (
-                  <View style={[styles.card, { backgroundColor: themeColors.cardBackground, shadowColor: themeColors.primary }]}>
-                    <View style={[styles.flagBadge, { backgroundColor: themeColors.primary + '12' }]}>
-                      <Text style={styles.flagText}>{language.flag}</Text>
-                    </View>
-                    <View style={styles.langInfo}>
-                      <Text style={[styles.langName, { color: themeColors.text.primary }]}>{language.name}</Text>
-                      <Text style={[styles.langNative, { color: themeColors.text.secondary }]}>{language.nativeName}</Text>
-                    </View>
-                    <View style={[styles.chevronBadge, { backgroundColor: themeColors.primary + '10' }]}>
-                      <ChevronRight size={16} color={themeColors.primary} strokeWidth={2.5} />
-                    </View>
+                <View style={[
+                  styles.card,
+                  { backgroundColor: themeColors.cardBackground },
+                  isSelected && { borderColor: themeColors.primary, borderWidth: 2 },
+                ]}>
+                  {isSelected && (
+                    <View style={[styles.cardAccent, { backgroundColor: themeColors.primary }]} />
+                  )}
+                  <View style={[styles.flagBadge, { backgroundColor: isSelected ? themeColors.primary + '15' : themeColors.primary + '0A' }]}>
+                    <Text style={styles.flagText}>{language.flag}</Text>
                   </View>
-                )}
+                  <View style={styles.langInfo}>
+                    <Text style={[styles.langName, { color: themeColors.text.primary }]}>{language.name}</Text>
+                    <Text style={[styles.langNative, { color: themeColors.text.secondary }]}>{language.nativeName}</Text>
+                  </View>
+                  {isSelected ? (
+                    <View style={[styles.checkCircle, { backgroundColor: themeColors.primary }]}>
+                      <Check size={14} color="#FFFFFF" strokeWidth={3} />
+                    </View>
+                  ) : (
+                    <View style={[styles.unselectedDot, { borderColor: themeColors.primary + '40' }]} />
+                  )}
+                </View>
               </TouchableOpacity>
             </Animated.View>
           );
@@ -197,13 +195,13 @@ export default function LanguageSelection() {
       >
         <TouchableOpacity onPress={handleContinue} disabled={!canContinue} activeOpacity={0.88}>
           <LinearGradient
-            colors={canContinue ? [themeColors.primary, themeColors.primaryDark] : [themeColors.text.light + 'AA', themeColors.text.light + 'AA']}
+            colors={canContinue ? [themeColors.primary, themeColors.primaryDark] : ['#D1D5DB', '#D1D5DB']}
             style={styles.ctaButton}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <Text style={styles.ctaText}>
-              {canContinue ? 'Continue' : 'Select a language'}
+              {canContinue ? `Continue (${selectedLanguages.length})` : 'Select a language'}
             </Text>
             {canContinue && <ChevronRight size={22} color="#FFFFFF" strokeWidth={2.5} />}
           </LinearGradient>
@@ -214,103 +212,134 @@ export default function LanguageSelection() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  header: {
+  root: { flex: 1, backgroundColor: '#F8F9FA' },
+  hero: {
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.lg,
-    alignItems: 'flex-start',
+    paddingBottom: SPACING.xxl,
+    alignItems: 'center',
   },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+  progressTrack: {
+    width: '100%',
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 2,
+    marginBottom: SPACING.md,
     overflow: 'hidden',
-    marginBottom: SPACING.lg,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
   },
-  iconGradient: {
-    flex: 1,
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  stepLabel: {
+    alignSelf: 'flex-start',
+    marginBottom: SPACING.lg,
+  },
+  stepLabelText: {
+    fontSize: FONT_SIZES.xs,
+    fontFamily: FONTS.bold,
+    color: 'rgba(255,255,255,0.75)',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  iconZone: {
+    width: 80,
+    height: 80,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: SPACING.lg,
   },
-  title: {
-    fontSize: 30,
+  ring: {
+    position: 'absolute',
+    borderWidth: 1.5,
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  heroTitle: {
+    fontSize: 26,
     fontFamily: FONTS.extrabold,
-    letterSpacing: -0.5,
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
     marginBottom: SPACING.xs,
+    textAlign: 'center',
   },
-  subtitle: {
-    fontSize: FONT_SIZES.md,
+  heroSubtitle: {
+    fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.medium,
-    lineHeight: 22,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
     marginBottom: SPACING.lg,
   },
-  stepRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.lg,
-  },
-  stepDot: {
-    height: 6,
-    borderRadius: 3,
-  },
-  stepDotActive: {
-    width: 24,
-  },
-  countBadge: {
+  selectionPillRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
+    gap: SPACING.sm,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.pill,
   },
-  countText: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.bold,
+  selectionPill: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  countEmoji: {
-    fontSize: 13,
+  selectionPillFilled: {
+    backgroundColor: '#FFFFFF',
+  },
+  selectionPillEmpty: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  selectionPillText: {
+    fontSize: FONT_SIZES.xs,
     fontFamily: FONTS.bold,
+    color: 'rgba(255,255,255,0.9)',
+    letterSpacing: 0.3,
   },
   list: { flex: 1 },
   listContent: {
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.sm,
+    paddingTop: SPACING.lg,
     paddingBottom: SPACING.xl,
-    gap: SPACING.md,
+    gap: SPACING.sm,
   },
-  cardTouchable: {},
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.lg,
+    padding: SPACING.md,
     borderRadius: BORDER_RADIUS.xl,
-    gap: SPACING.lg,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
-    elevation: 3,
+    gap: SPACING.md,
+    ...SHADOWS.sm,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  cardAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
   flagBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 48,
+    height: 48,
+    borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  flagBadgeSelected: {
-    width: 52,
-    height: 52,
-    borderRadius: BORDER_RADIUS.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  flagText: { fontSize: 30 },
+  flagText: { fontSize: 28 },
   langInfo: { flex: 1 },
   langName: {
     fontSize: FONT_SIZES.md,
@@ -318,46 +347,34 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   langNative: {
-    fontSize: FONT_SIZES.sm,
+    fontSize: FONT_SIZES.xs,
     fontFamily: FONTS.medium,
-  },
-  langNameSelected: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  langNativeSelected: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  chevronBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: BORDER_RADIUS.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   checkCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.sm,
   },
+  unselectedDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+  },
   footer: {
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
+    backgroundColor: '#F8F9FA',
   },
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    paddingVertical: SPACING.xl - 2,
+    paddingVertical: 18,
     borderRadius: BORDER_RADIUS.pill,
     ...SHADOWS.xl,
   },

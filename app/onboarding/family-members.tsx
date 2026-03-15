@@ -19,7 +19,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const STEP_DOTS = [false, false, true, false];
 const MEMBER_EMOJIS = ['👨', '👩', '👧', '👦', '👴', '👵'];
 
 export default function FamilyMembers() {
@@ -79,63 +78,63 @@ export default function FamilyMembers() {
     router.back();
   };
 
+  const progressWidth = (3 / 4) * 100;
+
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        {/* Header */}
-        <Animated.View
-          entering={FadeInDown.delay(80).springify()}
-          style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}
+        {/* Hero zone */}
+        <LinearGradient
+          colors={[themeColors.primary, themeColors.primaryDark]}
+          style={[styles.hero, { paddingTop: insets.top + SPACING.lg }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
-          <TouchableOpacity
-            onPress={handleBack}
-            style={[styles.backBtn, { backgroundColor: themeColors.cardBackground }]}
-            activeOpacity={0.7}
-          >
-            <ArrowLeft size={20} color={themeColors.text.primary} strokeWidth={2.5} />
-          </TouchableOpacity>
-
-          <View style={[styles.iconCircle, { shadowColor: themeColors.primary }]}>
-            <LinearGradient
-              colors={[themeColors.primary, themeColors.primaryDark]}
-              style={styles.iconGradient}
-            >
-              <Users size={32} color="#FFFFFF" strokeWidth={2} />
-            </LinearGradient>
-          </View>
-
-          <Text style={[styles.title, { color: themeColors.text.primary }]}>
-            Add Family{'\n'}Members
-          </Text>
-          <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
-            Who joins {params.kidName} on adventures?
-          </Text>
-
-          <View style={styles.stepRow}>
-            {STEP_DOTS.map((active, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.stepDot,
-                  active
-                    ? [styles.stepDotActive, { backgroundColor: themeColors.primary }]
-                    : { backgroundColor: themeColors.primary + '25', width: 8 },
-                ]}
+          <View style={styles.heroTop}>
+            <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
+              <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+            </TouchableOpacity>
+            <View style={styles.progressTrack}>
+              <Animated.View
+                entering={FadeInDown.delay(100)}
+                style={[styles.progressFill, { width: `${progressWidth}%` }]}
               />
-            ))}
+            </View>
+            <Text style={styles.stepLabelText}>3 / 4</Text>
           </View>
-        </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(160).springify()} style={styles.emojiScene}>
+            <View style={[styles.emojiCircle, styles.emojiCircleLarge]}>
+              <Text style={styles.emojiLarge}>👨</Text>
+            </View>
+            <View style={[styles.emojiCircle, styles.emojiCircleMid, styles.emojiOverlapLeft]}>
+              <Text style={styles.emojiMid}>👩</Text>
+            </View>
+            <View style={[styles.emojiCircle, styles.emojiCircleSmall, styles.emojiOverlapRight]}>
+              <Text style={styles.emojiSmall}>👧</Text>
+            </View>
+          </Animated.View>
+
+          <Animated.Text entering={FadeInDown.delay(200).springify()} style={styles.heroTitle}>
+            Add Family{'\n'}Members
+          </Animated.Text>
+          <Animated.Text entering={FadeInDown.delay(240).springify()} style={styles.heroSubtitle}>
+            Who joins {params.kidName} on adventures?
+          </Animated.Text>
+        </LinearGradient>
 
         {/* Input row */}
-        <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.inputSection}>
+        <Animated.View entering={FadeInDown.delay(280).springify()} style={styles.inputSection}>
           <View style={[
             styles.inputCard,
-            { backgroundColor: themeColors.cardBackground, shadowColor: themeColors.primary },
-            shake && { borderColor: themeColors.warning, borderWidth: 1.5 },
+            { backgroundColor: themeColors.cardBackground },
+            shake && { borderColor: themeColors.warning, borderWidth: 2 },
           ]}>
+            <View style={[styles.inputIcon, { backgroundColor: themeColors.primary + '12' }]}>
+              <Users size={18} color={themeColors.primary} strokeWidth={2} />
+            </View>
             <TextInput
               style={[styles.input, { color: themeColors.text.primary }]}
               placeholder="Type a family member's name..."
@@ -148,10 +147,18 @@ export default function FamilyMembers() {
             />
             <TouchableOpacity
               onPress={addFamilyMember}
-              style={[styles.addBtn, { backgroundColor: currentName.trim().length > 0 ? themeColors.primary : themeColors.primary + '40' }]}
               activeOpacity={0.8}
             >
-              <Plus size={20} color="#FFFFFF" strokeWidth={3} />
+              <LinearGradient
+                colors={currentName.trim().length > 0
+                  ? [themeColors.primary, themeColors.primaryDark]
+                  : [themeColors.primary + '40', themeColors.primary + '40']}
+                style={styles.addBtn}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Plus size={20} color="#FFFFFF" strokeWidth={3} />
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -159,9 +166,17 @@ export default function FamilyMembers() {
         {/* Members list */}
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
           {familyMembers.length === 0 ? (
-            <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.emptyState}>
-              <View style={[styles.emptyIconWrap, { backgroundColor: themeColors.primary + '12' }]}>
-                <Text style={styles.emptyIcon}>👨‍👩‍👧‍👦</Text>
+            <Animated.View entering={FadeInDown.delay(320).springify()} style={styles.emptyState}>
+              <View style={[styles.emptyIconRow]}>
+                <View style={[styles.emptyDot, { backgroundColor: themeColors.primary + '10' }]}>
+                  <Text style={styles.emptyDotEmoji}>👴</Text>
+                </View>
+                <View style={[styles.emptyDot, styles.emptyDotLarge, { backgroundColor: themeColors.primary + '18' }]}>
+                  <Text style={styles.emptyDotEmojiLarge}>👨‍👩‍👧‍👦</Text>
+                </View>
+                <View style={[styles.emptyDot, { backgroundColor: themeColors.primary + '10' }]}>
+                  <Text style={styles.emptyDotEmoji}>👵</Text>
+                </View>
               </View>
               <Text style={[styles.emptyTitle, { color: themeColors.text.primary }]}>No family members yet</Text>
               <Text style={[styles.emptySubtitle, { color: themeColors.text.secondary }]}>
@@ -175,8 +190,9 @@ export default function FamilyMembers() {
                 entering={ZoomIn.delay(index * 40).springify()}
                 exiting={FadeOutUp.duration(200)}
               >
-                <View style={[styles.memberCard, { backgroundColor: themeColors.cardBackground, shadowColor: themeColors.primary }]}>
-                  <View style={[styles.memberEmojiBadge, { backgroundColor: themeColors.primary + '15' }]}>
+                <View style={[styles.memberCard, { backgroundColor: themeColors.cardBackground }]}>
+                  <View style={[styles.memberAccent, { backgroundColor: themeColors.primary }]} />
+                  <View style={[styles.memberEmojiBadge, { backgroundColor: themeColors.primary + '12' }]}>
                     <Text style={styles.memberEmoji}>
                       {MEMBER_EMOJIS[index % MEMBER_EMOJIS.length]}
                     </Text>
@@ -186,10 +202,10 @@ export default function FamilyMembers() {
                   </Text>
                   <TouchableOpacity
                     onPress={() => removeFamilyMember(index)}
-                    style={[styles.removeBtn, { backgroundColor: themeColors.error + '18' }]}
+                    style={[styles.removeBtn, { backgroundColor: themeColors.error + '12' }]}
                     activeOpacity={0.7}
                   >
-                    <X size={15} color={themeColors.error} strokeWidth={2.5} />
+                    <X size={14} color={themeColors.error} strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
               </Animated.View>
@@ -202,23 +218,21 @@ export default function FamilyMembers() {
           entering={FadeInUp.delay(300).springify()}
           style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
         >
-          <TouchableOpacity
-            onPress={handleSkip}
-            style={[styles.skipBtn, { backgroundColor: themeColors.cardBackground }]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.skipText, { color: themeColors.text.secondary }]}>Skip</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleContinue} activeOpacity={0.88} style={{ flex: 1 }}>
+          <TouchableOpacity onPress={handleContinue} activeOpacity={0.88}>
             <LinearGradient
               colors={[themeColors.primary, themeColors.primaryDark]}
               style={styles.ctaButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.ctaText}>Next Step</Text>
+              <Text style={styles.ctaText}>
+                {familyMembers.length > 0 ? `Next Step (${familyMembers.length} added)` : 'Next Step'}
+              </Text>
               <ChevronRight size={22} color="#FFFFFF" strokeWidth={2.5} />
             </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSkip} activeOpacity={0.7} style={styles.skipLink}>
+            <Text style={[styles.skipText, { color: themeColors.text.light }]}>Skip this step</Text>
           </TouchableOpacity>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -227,88 +241,116 @@ export default function FamilyMembers() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: '#F8F9FA' },
   kav: { flex: 1 },
-  header: {
+  hero: {
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.xxl,
+    alignItems: 'center',
+  },
+  heroTop: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    marginBottom: SPACING.xxl,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.xxl,
-    ...SHADOWS.sm,
   },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: SPACING.lg,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  iconGradient: {
+  progressTrack: {
     flex: 1,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+  },
+  stepLabelText: {
+    fontSize: FONT_SIZES.xs,
+    fontFamily: FONTS.bold,
+    color: 'rgba(255,255,255,0.75)',
+  },
+  emojiScene: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: SPACING.lg,
   },
-  title: {
-    fontSize: 30,
+  emojiCircle: {
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  emojiCircleLarge: { width: 60, height: 60 },
+  emojiCircleMid: { width: 56, height: 56 },
+  emojiCircleSmall: { width: 48, height: 48 },
+  emojiOverlapLeft: { marginLeft: -12, zIndex: 1 },
+  emojiOverlapRight: { marginLeft: -12, zIndex: 0 },
+  emojiLarge: { fontSize: 28 },
+  emojiMid: { fontSize: 24 },
+  emojiSmall: { fontSize: 20 },
+  heroTitle: {
+    fontSize: 26,
     fontFamily: FONTS.extrabold,
-    letterSpacing: -0.5,
-    lineHeight: 38,
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+    textAlign: 'center',
+    lineHeight: 34,
     marginBottom: SPACING.sm,
   },
-  subtitle: {
-    fontSize: FONT_SIZES.md,
+  heroSubtitle: {
+    fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.medium,
-    lineHeight: 22,
-    marginBottom: SPACING.lg,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    alignItems: 'center',
-  },
-  stepDot: {
-    height: 6,
-    borderRadius: 3,
-  },
-  stepDotActive: {
-    width: 24,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
   },
   inputSection: {
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.md,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
   inputCard: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: BORDER_RADIUS.xl,
-    paddingRight: SPACING.sm,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 12,
-    elevation: 3,
-    overflow: 'hidden',
+    gap: SPACING.sm,
+    paddingLeft: SPACING.md,
+    paddingRight: SPACING.md,
+    paddingVertical: SPACING.sm,
+    ...SHADOWS.md,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  inputIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     flex: 1,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md,
     fontSize: FONT_SIZES.md,
     fontFamily: FONTS.medium,
   },
   addBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -316,22 +358,35 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
-    gap: SPACING.md,
+    paddingTop: SPACING.sm,
+    gap: SPACING.sm,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: SPACING.xxxl * 2,
+    paddingVertical: SPACING.xxxl,
     gap: SPACING.sm,
   },
-  emptyIconWrap: {
-    width: 88,
-    height: 88,
-    borderRadius: BORDER_RADIUS.xxl,
+  emptyIconRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: SPACING.md,
   },
-  emptyIcon: { fontSize: 44 },
+  emptyDot: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyDotLarge: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    marginHorizontal: -8,
+    zIndex: 1,
+  },
+  emptyDotEmoji: { fontSize: 22 },
+  emptyDotEmojiLarge: { fontSize: 30 },
   emptyTitle: {
     fontSize: FONT_SIZES.lg,
     fontFamily: FONTS.bold,
@@ -344,59 +399,48 @@ const styles = StyleSheet.create({
   memberCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.md,
     borderRadius: BORDER_RADIUS.xl,
     gap: SPACING.md,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    overflow: 'hidden',
+    ...SHADOWS.sm,
+    paddingVertical: SPACING.md,
+    paddingRight: SPACING.md,
+  },
+  memberAccent: {
+    width: 4,
+    alignSelf: 'stretch',
   },
   memberEmojiBadge: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  memberEmoji: { fontSize: 22 },
+  memberEmoji: { fontSize: 24 },
   memberName: {
     flex: 1,
     fontSize: FONT_SIZES.md,
     fontFamily: FONTS.semibold,
   },
   removeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: BORDER_RADIUS.sm,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
   footer: {
-    flexDirection: 'row',
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
-    gap: SPACING.md,
-    alignItems: 'center',
-  },
-  skipBtn: {
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
-    borderRadius: BORDER_RADIUS.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.sm,
-  },
-  skipText: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.semibold,
+    backgroundColor: '#F8F9FA',
   },
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    paddingVertical: SPACING.xl - 2,
+    paddingVertical: 18,
     borderRadius: BORDER_RADIUS.pill,
     ...SHADOWS.xl,
   },
@@ -405,5 +449,13 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.lg,
     fontFamily: FONTS.bold,
     letterSpacing: 0.3,
+  },
+  skipLink: {
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+  },
+  skipText: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONTS.medium,
   },
 });
