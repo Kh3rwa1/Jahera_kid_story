@@ -125,25 +125,23 @@ interface StatsTickerProps {
 
 function StatsTicker({ stories, languages, characters, primaryColor, cardBackground, textPrimary, textSecondary }: StatsTickerProps) {
   const translateX = useSharedValue(0);
-  const containerWidth = useRef(0);
-  const contentWidth = useRef(0);
+  const halfWidth = useSharedValue(0);
+  const ready = useRef(false);
 
-  const items = [
-    { value: stories, label: 'Stories', icon: <BookOpen size={13} color={primaryColor} strokeWidth={2} />, color: primaryColor },
-    { value: languages, label: 'Languages', icon: <Globe size={13} color="#F59E0B" strokeWidth={2} />, color: '#F59E0B' },
-    { value: characters, label: 'Characters', icon: <Users size={13} color="#10B981" strokeWidth={2} />, color: '#10B981' },
+  const baseItems = [
     { value: stories, label: 'Stories', icon: <BookOpen size={13} color={primaryColor} strokeWidth={2} />, color: primaryColor },
     { value: languages, label: 'Languages', icon: <Globe size={13} color="#F59E0B" strokeWidth={2} />, color: '#F59E0B' },
     { value: characters, label: 'Characters', icon: <Users size={13} color="#10B981" strokeWidth={2} />, color: '#10B981' },
   ];
+  const items = [...baseItems, ...baseItems, ...baseItems, ...baseItems];
 
-  const startAnimation = useCallback((cw: number, conW: number) => {
+  const startAnimation = useCallback((hw: number) => {
     cancelAnimation(translateX);
     translateX.value = 0;
-    const halfContent = cw / 2;
-    const duration = halfContent * 22;
+    const SPEED = 45;
+    const duration = (hw / SPEED) * 1000;
     translateX.value = withRepeat(
-      withTiming(-halfContent, { duration, easing: Easing.linear }),
+      withTiming(-hw, { duration, easing: Easing.linear }),
       -1,
       false
     );
@@ -157,19 +155,16 @@ function StatsTicker({ stories, languages, characters, primaryColor, cardBackgro
     <Animated.View
       entering={FadeInDown.delay(220).springify()}
       style={styles.statsTickerWrapper}
-      onLayout={(e) => {
-        containerWidth.current = e.nativeEvent.layout.width;
-        if (contentWidth.current > 0) {
-          startAnimation(contentWidth.current, containerWidth.current);
-        }
-      }}
     >
       <Animated.View
         style={[styles.statsTickerTrack, animStyle]}
         onLayout={(e) => {
-          contentWidth.current = e.nativeEvent.layout.width;
-          if (containerWidth.current > 0) {
-            startAnimation(contentWidth.current, containerWidth.current);
+          const totalW = e.nativeEvent.layout.width;
+          const hw = totalW / 2;
+          if (hw > 0 && !ready.current) {
+            ready.current = true;
+            halfWidth.value = hw;
+            startAnimation(hw);
           }
         }}
       >
@@ -180,9 +175,6 @@ function StatsTicker({ stories, languages, characters, primaryColor, cardBackgro
             </View>
             <Text style={[styles.statsTickerVal, { color: textPrimary }]}>{s.value}</Text>
             <Text style={[styles.statsTickerLbl, { color: textSecondary }]}>{s.label}</Text>
-            {i < items.length - 1 && (
-              <View style={[styles.statsTickerDot, { backgroundColor: textSecondary + '40' }]} />
-            )}
           </View>
         ))}
       </Animated.View>
@@ -718,33 +710,30 @@ const styles = StyleSheet.create({
   statsTickerWrapper: {
     overflow: 'hidden',
     marginBottom: SPACING.xxl,
-    height: 68,
+    height: 60,
+    justifyContent: 'center',
   },
   statsTickerTrack: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
     gap: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
   },
   statsTickerPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: BORDER_RADIUS.pill,
-    gap: 6,
+    gap: 7,
     ...SHADOWS.xs,
   },
   statsTickerIcon: {
-    width: 28, height: 28, borderRadius: 14,
+    width: 30, height: 30, borderRadius: 15,
     alignItems: 'center', justifyContent: 'center',
   },
-  statsTickerVal: { fontSize: 18, fontFamily: FONTS.extrabold, letterSpacing: -0.5 },
+  statsTickerVal: { fontSize: 17, fontFamily: FONTS.extrabold, letterSpacing: -0.5 },
   statsTickerLbl: { fontSize: 12, fontFamily: FONTS.semibold },
-  statsTickerDot: {
-    width: 4, height: 4, borderRadius: 2,
-    marginLeft: 8,
-  },
 
   /* Sections */
   section: { marginBottom: SPACING.xxl },
