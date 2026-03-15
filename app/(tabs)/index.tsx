@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -21,6 +21,8 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
+  Easing,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { Sparkles, BookOpen, ChevronRight, Globe, Users, Volume2, Clock, Play, Shuffle, Settings, Flame, Crown, ArrowRight, Wand as Wand2, TrendingUp } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
@@ -109,6 +111,83 @@ function FloatAnim({ children, delay = 0 }: { children: React.ReactNode; delay?:
   }, []);
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
   return <Animated.View style={style}>{children}</Animated.View>;
+}
+
+interface StatsTickerProps {
+  stories: number;
+  languages: number;
+  characters: number;
+  primaryColor: string;
+  cardBackground: string;
+  textPrimary: string;
+  textSecondary: string;
+}
+
+function StatsTicker({ stories, languages, characters, primaryColor, cardBackground, textPrimary, textSecondary }: StatsTickerProps) {
+  const translateX = useSharedValue(0);
+  const containerWidth = useRef(0);
+  const contentWidth = useRef(0);
+
+  const items = [
+    { value: stories, label: 'Stories', icon: <BookOpen size={13} color={primaryColor} strokeWidth={2} />, color: primaryColor },
+    { value: languages, label: 'Languages', icon: <Globe size={13} color="#F59E0B" strokeWidth={2} />, color: '#F59E0B' },
+    { value: characters, label: 'Characters', icon: <Users size={13} color="#10B981" strokeWidth={2} />, color: '#10B981' },
+    { value: stories, label: 'Stories', icon: <BookOpen size={13} color={primaryColor} strokeWidth={2} />, color: primaryColor },
+    { value: languages, label: 'Languages', icon: <Globe size={13} color="#F59E0B" strokeWidth={2} />, color: '#F59E0B' },
+    { value: characters, label: 'Characters', icon: <Users size={13} color="#10B981" strokeWidth={2} />, color: '#10B981' },
+  ];
+
+  const startAnimation = useCallback((cw: number, conW: number) => {
+    cancelAnimation(translateX);
+    translateX.value = 0;
+    const halfContent = cw / 2;
+    const duration = halfContent * 22;
+    translateX.value = withRepeat(
+      withTiming(-halfContent, { duration, easing: Easing.linear }),
+      -1,
+      false
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(220).springify()}
+      style={styles.statsTickerWrapper}
+      onLayout={(e) => {
+        containerWidth.current = e.nativeEvent.layout.width;
+        if (contentWidth.current > 0) {
+          startAnimation(contentWidth.current, containerWidth.current);
+        }
+      }}
+    >
+      <Animated.View
+        style={[styles.statsTickerTrack, animStyle]}
+        onLayout={(e) => {
+          contentWidth.current = e.nativeEvent.layout.width;
+          if (containerWidth.current > 0) {
+            startAnimation(contentWidth.current, containerWidth.current);
+          }
+        }}
+      >
+        {items.map((s, i) => (
+          <View key={i} style={[styles.statsTickerPill, { backgroundColor: cardBackground }]}>
+            <View style={[styles.statsTickerIcon, { backgroundColor: s.color + '20' }]}>
+              {s.icon}
+            </View>
+            <Text style={[styles.statsTickerVal, { color: textPrimary }]}>{s.value}</Text>
+            <Text style={[styles.statsTickerLbl, { color: textSecondary }]}>{s.label}</Text>
+            {i < items.length - 1 && (
+              <View style={[styles.statsTickerDot, { backgroundColor: textSecondary + '40' }]} />
+            )}
+          </View>
+        ))}
+      </Animated.View>
+    </Animated.View>
+  );
 }
 
 export default function HomeScreen() {
@@ -311,22 +390,16 @@ export default function HomeScreen() {
           </Animated.View>
         )}
 
-        {/* ─── STATS STRIP ─── */}
-        <Animated.View entering={FadeInDown.delay(220).springify()} style={styles.statsStrip}>
-          {[
-            { value: stories.length, label: 'Stories', icon: <BookOpen size={14} color={C.primary} strokeWidth={2} />, color: C.primary, onPress: () => router.push('/(tabs)/history') },
-            { value: profile.languages?.length || 0, label: 'Languages', icon: <Globe size={14} color="#F59E0B" strokeWidth={2} />, color: '#F59E0B', onPress: () => router.push('/settings/edit-profile') },
-            { value: (profile.family_members?.length || 0) + (profile.friends?.length || 0), label: 'Characters', icon: <Users size={14} color="#10B981" strokeWidth={2} />, color: '#10B981', onPress: () => router.push('/settings/edit-profile') },
-          ].map((s, i) => (
-            <TouchableOpacity key={s.label} style={[styles.statPill, { backgroundColor: C.cardBackground }]} onPress={s.onPress} activeOpacity={0.75}>
-              <View style={[styles.statIconBg, { backgroundColor: s.color + '18' }]}>
-                {s.icon}
-              </View>
-              <Text style={[styles.statVal, { color: C.text.primary }]}>{s.value}</Text>
-              <Text style={[styles.statLbl, { color: C.text.secondary }]}>{s.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </Animated.View>
+        {/* ─── STATS TICKER ─── */}
+        <StatsTicker
+          stories={stories.length}
+          languages={profile.languages?.length || 0}
+          characters={(profile.family_members?.length || 0) + (profile.friends?.length || 0)}
+          primaryColor={C.primary}
+          cardBackground={C.cardBackground}
+          textPrimary={C.text.primary}
+          textSecondary={C.text.secondary}
+        />
 
         {/* ─── RECENT STORIES ─── */}
         <View style={styles.section}>
@@ -641,27 +714,37 @@ const styles = StyleSheet.create({
   quickLabel: { fontSize: 13, fontFamily: FONTS.bold, textAlign: 'center' },
   quickSublabel: { fontSize: 10, fontFamily: FONTS.medium, textAlign: 'center' },
 
-  /* Stats */
-  statsStrip: {
-    flexDirection: 'row',
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.sm,
+  /* Stats Ticker */
+  statsTickerWrapper: {
+    overflow: 'hidden',
     marginBottom: SPACING.xxl,
+    height: 68,
   },
-  statPill: {
-    flex: 1, alignItems: 'center',
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.xl,
-    gap: 3,
+  statsTickerTrack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    gap: SPACING.sm,
+  },
+  statsTickerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.pill,
+    gap: 6,
     ...SHADOWS.xs,
   },
-  statIconBg: {
-    width: 36, height: 36, borderRadius: 18,
+  statsTickerIcon: {
+    width: 28, height: 28, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 2,
   },
-  statVal: { fontSize: 22, fontFamily: FONTS.extrabold, letterSpacing: -0.5 },
-  statLbl: { fontSize: 11, fontFamily: FONTS.semibold },
+  statsTickerVal: { fontSize: 18, fontFamily: FONTS.extrabold, letterSpacing: -0.5 },
+  statsTickerLbl: { fontSize: 12, fontFamily: FONTS.semibold },
+  statsTickerDot: {
+    width: 4, height: 4, borderRadius: 2,
+    marginLeft: 8,
+  },
 
   /* Sections */
   section: { marginBottom: SPACING.xxl },
