@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -58,6 +58,8 @@ export default function QuizScreen() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [score, setScore] = useState(0);
+  const scoreRef = useRef(0);
+  const [finalScore, setFinalScore] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -134,7 +136,8 @@ export default function QuizScreen() {
       setIsCorrect(correct);
       if (correct) {
         hapticFeedback.success();
-        setScore((s) => s + 1);
+        scoreRef.current += 1;
+        setScore(scoreRef.current);
         scoreScale.value = withSequence(
           withSpring(1.4, { damping: 6, stiffness: 500 }),
           withSpring(1, { damping: 12 })
@@ -156,9 +159,10 @@ export default function QuizScreen() {
         setIsCorrect(null);
       }, 180);
     } else {
-      const finalScore = isCorrect ? score + 1 : score;
+      const computed = scoreRef.current;
+      setFinalScore(computed);
       if (profile && story) {
-        await quizService.createAttempt(profile.$id, story.$id, finalScore, questions.length);
+        await quizService.createAttempt(profile.$id, story.$id, computed, questions.length);
         await refreshQuizAttempts();
       }
       setShowCelebration(true);
@@ -167,7 +171,7 @@ export default function QuizScreen() {
         setShowCelebration(false);
       }, 2000);
     }
-  }, [currentQuestionIndex, questions, story, score, isCorrect, animateTransition]);
+  }, [currentQuestionIndex, questions, story, profile, refreshQuizAttempts, animateTransition]);
 
   const handleFinish = useCallback(() => {
     hapticFeedback.medium();
@@ -230,7 +234,6 @@ export default function QuizScreen() {
   }
 
   if (showResult) {
-    const finalScore = score;
     const percentage = Math.round((finalScore / questions.length) * 100);
     const isPerfect = percentage === 100;
     const isGreat = percentage >= 66 && percentage < 100;
