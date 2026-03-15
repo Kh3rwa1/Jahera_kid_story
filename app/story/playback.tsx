@@ -24,7 +24,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Play, Pause, Award, RefreshCw, VolumeX, ArrowLeft, BookOpen, Share2, Minus, Plus, Headphones, ChevronLeft as AlignLeft, SkipBack, SkipForward } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useReadingPreferences, LINE_SPACING_VALUES } from '@/contexts/ReadingPreferencesContext';
+import { useReadingPreferences, LINE_SPACING_VALUES, FONT_FAMILY_VALUES } from '@/contexts/ReadingPreferencesContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { shareStory } from '@/utils/sharing';
 
@@ -251,6 +251,7 @@ export default function StoryPlayback() {
 
   const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
   const lineHeight = prefs.fontSize * LINE_SPACING_VALUES[prefs.lineSpacing];
+  const activeFontDef = FONT_FAMILY_VALUES[prefs.fontFamily ?? 'nunito'];
 
   if (isLoading) {
     return (
@@ -594,7 +595,7 @@ export default function StoryPlayback() {
                           {
                             fontSize: prefs.fontSize,
                             lineHeight,
-                            fontFamily: FONTS.regular,
+                            fontFamily: activeFontDef.regular,
                             color: C.text.secondary,
                           },
                           isPast && { color: C.text.primary },
@@ -602,7 +603,7 @@ export default function StoryPlayback() {
                             color: C.primary,
                             backgroundColor: C.primary + '22',
                             borderRadius: 4,
-                            fontFamily: FONTS.bold,
+                            fontFamily: activeFontDef.bold,
                             overflow: 'hidden',
                           },
                         ]}

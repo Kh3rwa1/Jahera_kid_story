@@ -5,17 +5,20 @@ const STORAGE_KEY = 'reading_preferences';
 
 export type LineSpacing = 'compact' | 'normal' | 'relaxed';
 export type TextAlign = 'left' | 'justify';
+export type FontFamily = 'nunito' | 'merriweather' | 'comic-neue' | 'atkinson';
 
 export interface ReadingPreferences {
   fontSize: number;
   lineSpacing: LineSpacing;
   textAlign: TextAlign;
+  fontFamily: FontFamily;
 }
 
 const DEFAULTS: ReadingPreferences = {
   fontSize: 17,
   lineSpacing: 'normal',
   textAlign: 'left',
+  fontFamily: 'nunito',
 };
 
 export const LINE_SPACING_VALUES: Record<LineSpacing, number> = {
@@ -24,11 +27,39 @@ export const LINE_SPACING_VALUES: Record<LineSpacing, number> = {
   relaxed: 1.9,
 };
 
+export const FONT_FAMILY_VALUES: Record<FontFamily, { regular: string; bold: string; label: string; sample: string }> = {
+  nunito: {
+    regular: 'Nunito-Regular',
+    bold: 'Nunito-Bold',
+    label: 'Nunito',
+    sample: 'Friendly & modern',
+  },
+  merriweather: {
+    regular: 'Merriweather-Regular',
+    bold: 'Merriweather-Bold',
+    label: 'Merriweather',
+    sample: 'Classic & elegant',
+  },
+  'comic-neue': {
+    regular: 'ComicNeue-Regular',
+    bold: 'ComicNeue-Bold',
+    label: 'Comic Neue',
+    sample: 'Fun & playful',
+  },
+  atkinson: {
+    regular: 'Atkinson-Regular',
+    bold: 'Atkinson-Bold',
+    label: 'Atkinson',
+    sample: 'Clear & accessible',
+  },
+};
+
 interface ReadingPreferencesContextValue {
   prefs: ReadingPreferences;
   setFontSize: (size: number) => void;
   setLineSpacing: (spacing: LineSpacing) => void;
   setTextAlign: (align: TextAlign) => void;
+  setFontFamily: (family: FontFamily) => void;
   resetToDefaults: () => void;
 }
 
@@ -74,13 +105,21 @@ export function ReadingPreferencesProvider({ children }: { children: ReactNode }
     });
   }, []);
 
+  const setFontFamily = useCallback((family: FontFamily) => {
+    setPrefs(prev => {
+      const updated = { ...prev, fontFamily: family };
+      storage.setItem(STORAGE_KEY, updated).catch(() => {});
+      return updated;
+    });
+  }, []);
+
   const resetToDefaults = useCallback(() => {
     save(DEFAULTS);
   }, [save]);
 
   return (
     <ReadingPreferencesContext.Provider
-      value={{ prefs, setFontSize, setLineSpacing, setTextAlign, resetToDefaults }}
+      value={{ prefs, setFontSize, setLineSpacing, setTextAlign, setFontFamily, resetToDefaults }}
     >
       {children}
     </ReadingPreferencesContext.Provider>
