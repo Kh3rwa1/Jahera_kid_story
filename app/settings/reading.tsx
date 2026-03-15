@@ -1,12 +1,14 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, RotateCcw } from 'lucide-react-native';
+import { ArrowLeft, RotateCcw, Check } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
   useReadingPreferences,
   LINE_SPACING_VALUES,
+  FONT_FAMILY_VALUES,
   LineSpacing,
   TextAlign,
+  FontFamily,
 } from '@/contexts/ReadingPreferencesContext';
 import { SPACING, BORDER_RADIUS, FONTS, FONT_SIZES, SHADOWS } from '@/constants/theme';
 import { hapticFeedback } from '@/utils/haptics';
@@ -14,14 +16,17 @@ import { hapticFeedback } from '@/utils/haptics';
 const PREVIEW_TEXT =
   "Once upon a time, in a forest filled with sparkling fireflies, a young child discovered a hidden door between two ancient oak trees. Behind it lay a world of wonders waiting to be explored.";
 
+const FONT_OPTIONS: FontFamily[] = ['nunito', 'merriweather', 'comic-neue', 'atkinson'];
+
 export default function ReadingPreferencesScreen() {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
-  const { prefs, setFontSize, setLineSpacing, setTextAlign, resetToDefaults } =
+  const { prefs, setFontSize, setLineSpacing, setTextAlign, setFontFamily, resetToDefaults } =
     useReadingPreferences();
 
   const lineHeight = prefs.fontSize * LINE_SPACING_VALUES[prefs.lineSpacing];
+  const activeFontDef = FONT_FAMILY_VALUES[prefs.fontFamily];
 
   const spacingOptions: { id: LineSpacing; label: string }[] = [
     { id: 'compact', label: 'Compact' },
@@ -75,7 +80,7 @@ export default function ReadingPreferencesScreen() {
               {
                 fontSize: prefs.fontSize,
                 lineHeight,
-                fontFamily: FONTS.regular,
+                fontFamily: activeFontDef.regular,
                 color: C.text.primary,
                 textAlign: prefs.textAlign,
               },
@@ -83,6 +88,76 @@ export default function ReadingPreferencesScreen() {
           >
             {PREVIEW_TEXT}
           </Text>
+        </View>
+
+        <View style={[styles.section, { backgroundColor: C.cardBackground }]}>
+          <Text style={[styles.sectionLabel, { color: C.text.secondary, fontFamily: FONTS.semibold }]}>
+            FONT STYLE
+          </Text>
+          <View style={styles.fontGrid}>
+            {FONT_OPTIONS.map(key => {
+              const def = FONT_FAMILY_VALUES[key];
+              const isActive = prefs.fontFamily === key;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => { hapticFeedback.light(); setFontFamily(key); }}
+                  style={[
+                    styles.fontCard,
+                    {
+                      backgroundColor: isActive ? C.primary + '10' : C.background,
+                      borderColor: isActive ? C.primary : C.text.light + '28',
+                      borderWidth: isActive ? 2 : 1.5,
+                    },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.fontCardHeader}>
+                    <Text
+                      style={[
+                        styles.fontCardName,
+                        {
+                          fontFamily: def.bold,
+                          color: isActive ? C.primary : C.text.primary,
+                        },
+                      ]}
+                    >
+                      {def.label}
+                    </Text>
+                    {isActive && (
+                      <View style={[styles.fontCheckBadge, { backgroundColor: C.primary }]}>
+                        <Check size={10} color="#FFF" strokeWidth={3} />
+                      </View>
+                    )}
+                  </View>
+                  <Text
+                    style={[
+                      styles.fontCardSample,
+                      {
+                        fontFamily: def.regular,
+                        color: C.text.secondary,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {def.sample}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.fontCardPreview,
+                      {
+                        fontFamily: def.regular,
+                        color: isActive ? C.primary : C.text.primary,
+                      },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    The quick brown fox jumps over the lazy dog
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
 
         <View style={[styles.section, { backgroundColor: C.cardBackground }]}>
@@ -285,6 +360,43 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1,
     marginBottom: SPACING.lg,
+  },
+
+  fontGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  fontCard: {
+    width: '47.5%',
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
+    gap: 4,
+  },
+  fontCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  fontCardName: {
+    fontSize: 14,
+  },
+  fontCheckBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fontCardSample: {
+    fontSize: 10,
+    letterSpacing: 0.2,
+    marginBottom: 4,
+  },
+  fontCardPreview: {
+    fontSize: 12,
+    lineHeight: 17,
   },
 
   fontSizeRow: {

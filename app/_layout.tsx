@@ -9,6 +9,18 @@ import {
   Nunito_700Bold,
   Nunito_800ExtraBold,
 } from '@expo-google-fonts/nunito';
+import {
+  Merriweather_400Regular,
+  Merriweather_700Bold,
+} from '@expo-google-fonts/merriweather';
+import {
+  ComicNeue_400Regular,
+  ComicNeue_700Bold,
+} from '@expo-google-fonts/comic-neue';
+import {
+  AtkinsonHyperlegible_400Regular,
+  AtkinsonHyperlegible_700Bold,
+} from '@expo-google-fonts/atkinson-hyperlegible';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -28,6 +40,12 @@ export default function RootLayout() {
     'Nunito-SemiBold': Nunito_600SemiBold,
     'Nunito-Bold': Nunito_700Bold,
     'Nunito-ExtraBold': Nunito_800ExtraBold,
+    'Merriweather-Regular': Merriweather_400Regular,
+    'Merriweather-Bold': Merriweather_700Bold,
+    'ComicNeue-Regular': ComicNeue_400Regular,
+    'ComicNeue-Bold': ComicNeue_700Bold,
+    'Atkinson-Regular': AtkinsonHyperlegible_400Regular,
+    'Atkinson-Bold': AtkinsonHyperlegible_700Bold,
   });
 
   useEffect(() => {
