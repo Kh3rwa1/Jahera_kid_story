@@ -17,7 +17,16 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
+  withRepeat,
+  withSequence,
+  withDelay,
+  Easing,
+  cancelAnimation,
+  interpolate,
+  FadeIn,
 } from 'react-native-reanimated';
+import { useFloat, useRotate } from '@/utils/animations';
 import { storyService, quizService } from '@/services/database';
 import { Story } from '@/types/database';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -93,6 +102,35 @@ export default function StoryPlayback() {
   const [tab, setTab] = useState<TabMode>('audio');
 
   const playScale = useSharedValue(1);
+  const coverRotation = useSharedValue(0);
+  const coverFloat = useSharedValue(0);
+
+  useEffect(() => {
+    if (isPlaying) {
+      coverRotation.value = withRepeat(
+        withTiming(360, { duration: 12000, easing: Easing.linear }),
+        -1, false
+      );
+      coverFloat.value = withRepeat(
+        withSequence(
+          withTiming(-6, { duration: 2200, easing: Easing.inOut(Easing.sin) }),
+          withTiming(6, { duration: 2200, easing: Easing.inOut(Easing.sin) })
+        ),
+        -1, true
+      );
+    } else {
+      cancelAnimation(coverRotation);
+      cancelAnimation(coverFloat);
+      coverFloat.value = withSpring(0, { damping: 8 });
+    }
+  }, [isPlaying]);
+
+  const coverArtStyle = useAnimatedStyle(() => ({
+    transform: [
+      { rotate: `${coverRotation.value}deg` },
+      { translateY: coverFloat.value },
+    ],
+  }));
 
   const paragraphs = useMemo(
     () => (story ? splitIntoParagraphs(story.content) : []),
@@ -354,12 +392,14 @@ export default function StoryPlayback() {
       {tab === 'audio' && !audioError ? (
         <View style={styles.fill}>
           <View style={styles.heroContent}>
-            <LinearGradient
-              colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']}
-              style={styles.coverArt}
-            >
-              <BookOpen size={56} color="rgba(255,255,255,0.9)" strokeWidth={1.2} />
-            </LinearGradient>
+            <Animated.View style={coverArtStyle}>
+              <LinearGradient
+                colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']}
+                style={styles.coverArt}
+              >
+                <BookOpen size={56} color="rgba(255,255,255,0.9)" strokeWidth={1.2} />
+              </LinearGradient>
+            </Animated.View>
 
             <Text
               style={[styles.heroTitle, { fontFamily: FONTS.extrabold }]}
@@ -425,16 +465,12 @@ export default function StoryPlayback() {
 
             <Pressable onPress={handleProgressBarPress} style={styles.progressTouchable}>
               <View style={[styles.progressTrack, { backgroundColor: '#0000001A' }]}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${progressPercentage}%`, backgroundColor: C.primary },
-                  ]}
-                />
-                <View
+                <View style={[styles.progressFill, { width: `${progressPercentage}%`, backgroundColor: C.primary }]} />
+                <Animated.View
                   style={[
                     styles.progressThumb,
                     { left: `${progressPercentage}%`, backgroundColor: C.primary, borderColor: '#FFF' },
+                    playAnimStyle,
                   ]}
                 />
               </View>

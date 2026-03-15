@@ -10,11 +10,15 @@ import ReAnimated, {
   withTiming,
   withSequence,
   withSpring,
+  withDelay,
+  cancelAnimation,
+  interpolate,
   Easing as ReEasing,
   FadeInUp,
   FadeInDown,
   ZoomIn,
 } from 'react-native-reanimated';
+import { useEffect as useEffectGen } from 'react';
 import { profileService, storyService, quizService } from '@/services/database';
 import { generateAdventureStory, QuotaExceededError, StoryOptions } from '@/services/aiService';
 import { generateAudio } from '@/services/audioService';
@@ -81,10 +85,19 @@ function ThemeCard({ theme, selected, onPress }: {
   onPress: () => void;
 }) {
   const scale = useSharedValue(1);
+  const glow = useSharedValue(selected ? 1 : 0);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(glow.value, [0, 1], [0, 0.5]),
+    transform: [{ scale: interpolate(glow.value, [0, 1], [0.8, 1.15]) }],
+  }));
+
+  useEffectGen(() => {
+    glow.value = withSpring(selected ? 1 : 0, { damping: 12 });
+  }, [selected]);
 
   const handlePress = () => {
-    scale.value = withSequence(withSpring(0.9, { damping: 10 }), withSpring(1, { damping: 12 }));
+    scale.value = withSequence(withSpring(0.88, { damping: 10 }), withSpring(1, { damping: 12 }));
     onPress();
     hapticFeedback.light();
   };
@@ -92,6 +105,7 @@ function ThemeCard({ theme, selected, onPress }: {
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={1}>
       <ReAnimated.View style={animStyle}>
+        <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: BORDER_RADIUS.xl, backgroundColor: theme.gradient[0] }, glowStyle]} />
         <View style={[styles.themeCard, selected && styles.themeCardSelected]}>
           {selected ? (
             <LinearGradient colors={theme.gradient} style={styles.themeCardGradient}>
@@ -174,6 +188,48 @@ function LengthCard({ len, selected, isPro, onPress }: {
         </Text>
       </View>
     </TouchableOpacity>
+  );
+}
+
+function CtaButton({ gradient, onPress }: { gradient: [string, string]; onPress: () => void }) {
+  const shimmerX = useSharedValue(-1);
+  const scale = useSharedValue(1);
+
+  useEffectGen(() => {
+    shimmerX.value = withRepeat(
+      withTiming(1, { duration: 2600, easing: ReEasing.linear }),
+      -1, false
+    );
+    return () => cancelAnimation(shimmerX);
+  }, []);
+
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(shimmerX.value, [-1, 1], [-200, 200]) }],
+  }));
+  const scaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <ReAnimated.View style={scaleStyle}>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={() => { scale.value = withSpring(0.96, { damping: 14 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 12 }); }}
+        activeOpacity={1}
+      >
+        <LinearGradient colors={gradient} style={styles.ctaButton} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', borderRadius: BORDER_RADIUS.xxl }]}>
+            <ReAnimated.View style={[styles.ctaShimmer, shimmerStyle]} />
+          </View>
+          <View style={styles.ctaButtonInner}>
+            <Wand2 size={22} color="#FFFFFF" strokeWidth={2} />
+            <Text style={styles.ctaText}>Create Story</Text>
+            <View style={styles.ctaArrow}>
+              <Sparkles size={16} color="rgba(255,255,255,0.8)" />
+            </View>
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+    </ReAnimated.View>
   );
 }
 
@@ -628,22 +684,10 @@ export default function GenerateStory() {
             </View>
           )}
 
-          <TouchableOpacity onPress={handleStartGeneration} activeOpacity={0.9}>
-            <LinearGradient
-              colors={selectedThemeObj.gradient}
-              style={styles.ctaButton}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.ctaButtonInner}>
-                <Wand2 size={22} color="#FFFFFF" strokeWidth={2} />
-                <Text style={styles.ctaText}>Create Story</Text>
-                <View style={styles.ctaArrow}>
-                  <Sparkles size={16} color="rgba(255,255,255,0.8)" />
-                </View>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
+          <CtaButton
+            gradient={selectedThemeObj.gradient}
+            onPress={handleStartGeneration}
+          />
         </ReAnimated.View>
       </ScrollView>
     </SafeAreaView>
@@ -868,6 +912,13 @@ const styles = StyleSheet.create({
   },
   ctaArrow: {
     marginLeft: 4,
+  },
+  ctaShimmer: {
+    position: 'absolute',
+    top: 0, bottom: 0,
+    width: 60,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    transform: [{ skewX: '-20deg' }],
   },
 
   quotaContainer: {

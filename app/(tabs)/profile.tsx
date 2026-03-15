@@ -14,17 +14,21 @@ import Animated, {
   FadeInDown,
   FadeInUp,
   FadeInRight,
+  useSharedValue,
+  useAnimatedStyle,
+  withDelay,
+  withTiming,
+  withSpring,
+  Easing,
 } from 'react-native-reanimated';
+import { useEntranceSequence, useProgressBar, useGlowPulse } from '@/utils/animations';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import {
   BookOpen,
   Award,
-  Target,
-  Star,
   Flame,
-  TrendingUp,
   Zap,
   ChevronRight,
 } from 'lucide-react-native';
@@ -33,6 +37,33 @@ import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { KidsBubbleBackground } from '@/components/KidsBubbleBackground';
+
+function AnimatedAchievementCard({ card, index }: { card: any; index: number }) {
+  const entrance = useEntranceSequence(index, 120, 70);
+  const scale = useSharedValue(1);
+  const glowStyle = useGlowPulse(0.85, 1, 2000 + index * 300);
+
+  return (
+    <Animated.View style={[styles.achieveCard, entrance]}>
+      <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, opacity: 1 }]} />
+      <LinearGradient colors={card.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.achieveCardInner}>
+        <Animated.Text style={[styles.achieveEmoji, glowStyle]}>{card.emoji}</Animated.Text>
+        <Text style={styles.achieveValue}>{card.value}</Text>
+        <Text style={styles.achieveLabel}>{card.label}</Text>
+        <Text style={styles.achieveSub}>{card.sub}</Text>
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
+function AnimatedLangProgressBar({ pct, primaryColor, delay }: { pct: number; primaryColor: string; delay: number }) {
+  const barStyle = useProgressBar(Math.max(pct, 10), 1000, delay);
+  return (
+    <View style={[styles.langBar, { backgroundColor: 'rgba(0,0,0,0.08)' }]}>
+      <Animated.View style={[styles.langBarFill, { backgroundColor: primaryColor }, barStyle]} />
+    </View>
+  );
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -208,44 +239,11 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.achieveRow}>
             {[
-              {
-                label: 'Avg Score',
-                value: `${stats.avgScore}%`,
-                sub: 'quiz accuracy',
-                gradient: [COLORS.primary + 'DD', COLORS.primaryDark + 'DD'] as [string, string],
-                icon: <Target size={22} color="#FFFFFF" />,
-                emoji: '🎯',
-              },
-              {
-                label: 'Perfect',
-                value: String(stats.perfectScores),
-                sub: 'flawless runs',
-                gradient: ['#F59E0BDD', '#D97706DD'] as [string, string],
-                icon: <Star size={22} color="#FFFFFF" />,
-                emoji: '⭐',
-              },
-              {
-                label: 'Words',
-                value: totalWords > 999 ? `${(totalWords / 1000).toFixed(1)}k` : String(totalWords),
-                sub: 'words read',
-                gradient: [COLORS.success + 'DD', '#16A34ADD'] as [string, string],
-                icon: <TrendingUp size={22} color="#FFFFFF" />,
-                emoji: '📝',
-              },
-            ].map(card => (
-              <View key={card.label} style={styles.achieveCard}>
-                <LinearGradient
-                  colors={card.gradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.achieveCardInner}
-                >
-                  <Text style={styles.achieveEmoji}>{card.emoji}</Text>
-                  <Text style={styles.achieveValue}>{card.value}</Text>
-                  <Text style={styles.achieveLabel}>{card.label}</Text>
-                  <Text style={styles.achieveSub}>{card.sub}</Text>
-                </LinearGradient>
-              </View>
+              { label: 'Avg Score', value: `${stats.avgScore}%`, sub: 'quiz accuracy', gradient: [COLORS.primary + 'DD', COLORS.primaryDark + 'DD'] as [string, string], emoji: '🎯' },
+              { label: 'Perfect', value: String(stats.perfectScores), sub: 'flawless runs', gradient: ['#F59E0BDD', '#D97706DD'] as [string, string], emoji: '⭐' },
+              { label: 'Words', value: totalWords > 999 ? `${(totalWords / 1000).toFixed(1)}k` : String(totalWords), sub: 'words read', gradient: [COLORS.success + 'DD', '#16A34ADD'] as [string, string], emoji: '📝' },
+            ].map((card, i) => (
+              <AnimatedAchievementCard key={card.label} card={card} index={i} />
             ))}
           </View>
         </Animated.View>
@@ -328,14 +326,7 @@ export default function ProfileScreen() {
                       <Text style={[styles.langCount, { color: COLORS.text.secondary }]}>
                         {langCount} {langCount === 1 ? 'story' : 'stories'}
                       </Text>
-                      <View style={[styles.langBar, { backgroundColor: COLORS.text.primary + '12' }]}>
-                        <View
-                          style={[
-                            styles.langBarFill,
-                            { backgroundColor: COLORS.primary, width: `${Math.max(pct, 10)}%` },
-                          ]}
-                        />
-                      </View>
+                      <AnimatedLangProgressBar pct={pct} primaryColor={COLORS.primary} delay={400 + langIdx * 100} />
                     </View>
                   </Animated.View>
                 );

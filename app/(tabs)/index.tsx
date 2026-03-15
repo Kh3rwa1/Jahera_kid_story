@@ -21,10 +21,13 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
+  withSpring,
   Easing,
   cancelAnimation,
+  interpolate,
 } from 'react-native-reanimated';
-import { Sparkles, BookOpen, ChevronRight, Globe, Users, Volume2, Clock, Play, Shuffle, Settings, Flame, Crown, ArrowRight, Wand as Wand2, TrendingUp } from 'lucide-react-native';
+import { useFloat, useGlowPulse, useEntranceSequence, useSpringPress } from '@/utils/animations';
+import { Sparkles, BookOpen, ChevronRight, Globe, Users, Volume2, Clock, Play, Shuffle, Settings, Crown, ArrowRight, Wand as Wand2, TrendingUp } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
@@ -78,15 +81,15 @@ const SEASON_CONFIG: Record<string, { colors: readonly [string, string, string];
 
 function PulseRing({ color, delay }: { color: string; delay: number }) {
   const scale = useSharedValue(1);
-  const opacity = useSharedValue(0.6);
+  const opacity = useSharedValue(0.5);
 
   useEffect(() => {
     scale.value = withDelay(delay, withRepeat(
-      withSequence(withTiming(1.6, { duration: 1800 }), withTiming(1, { duration: 0 })),
+      withSequence(withTiming(1.7, { duration: 2000, easing: Easing.out(Easing.quad) }), withTiming(1, { duration: 0 })),
       -1, false
     ));
     opacity.value = withDelay(delay, withRepeat(
-      withSequence(withTiming(0, { duration: 1800 }), withTiming(0.6, { duration: 0 })),
+      withSequence(withTiming(0, { duration: 2000, easing: Easing.out(Easing.quad) }), withTiming(0.5, { duration: 0 })),
       -1, false
     ));
   }, []);
@@ -96,21 +99,46 @@ function PulseRing({ color, delay }: { color: string; delay: number }) {
     opacity: opacity.value,
   }));
 
-  return (
-    <Animated.View style={[styles.pulseRing, { borderColor: color }, style]} />
-  );
+  return <Animated.View style={[styles.pulseRing, { borderColor: color }, style]} />;
 }
 
 function FloatAnim({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const y = useSharedValue(0);
+  const floatStyle = useFloat(7, 2800, delay);
+  return <Animated.View style={floatStyle}>{children}</Animated.View>;
+}
+
+function HeroShimmer() {
+  const x = useSharedValue(-1);
   useEffect(() => {
-    y.value = withDelay(delay, withRepeat(
-      withSequence(withTiming(-8, { duration: 2400 }), withTiming(8, { duration: 2400 })),
-      -1, true
-    ));
+    x.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.linear }), -1, false);
+    return () => cancelAnimation(x);
   }, []);
-  const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
-  return <Animated.View style={style}>{children}</Animated.View>;
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(x.value, [-1, 1], [-320, 320]) }],
+  }));
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} pointerEvents="none">
+      <Animated.View style={[styles.shimmerOverlay, shimmerStyle]} />
+    </Animated.View>
+  );
+}
+
+function AnimatedStreakChip({ count }: { count: number }) {
+  const scale = useSharedValue(0.7);
+  const opacity = useSharedValue(0);
+  useEffect(() => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 120 });
+    opacity.value = withTiming(1, { duration: 300 });
+  }, []);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+  return (
+    <Animated.View style={[styles.streakChip, { backgroundColor: '#FFF3E0' }, style]}>
+      <Animated.Text style={styles.streakChipText}>🔥 {count}</Animated.Text>
+    </Animated.View>
+  );
 }
 
 interface StatsTickerProps {
@@ -179,6 +207,54 @@ function StatsTicker({ stories, languages, characters, primaryColor, cardBackgro
         ))}
       </Animated.View>
     </Animated.View>
+  );
+}
+
+function QuickActionItem({ item, index }: { item: { icon: React.ReactNode; label: string; sublabel: string; grad: [string, string]; onPress: () => void; textPrimary: string; textSecondary: string }; index: number }) {
+  const entranceStyle = useEntranceSequence(index, 160, 60);
+  const { style: pressStyle, onPressIn, onPressOut } = useSpringPress();
+
+  return (
+    <Animated.View style={[styles.quickItem, entranceStyle]}>
+      <Animated.View style={pressStyle}>
+        <TouchableOpacity
+          onPress={item.onPress}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          activeOpacity={1}
+          style={styles.quickCard}
+        >
+          <LinearGradient colors={item.grad} style={styles.quickIconCircle}>
+            {item.icon}
+          </LinearGradient>
+          <Text style={[styles.quickLabel, { color: item.textPrimary }]}>{item.label}</Text>
+          <Text style={[styles.quickSublabel, { color: item.textSecondary }]}>{item.sublabel}</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </Animated.View>
+  );
+}
+
+function QuickActions({ handleLastStory, handleRandomStory, storiesCount, textPrimary, textSecondary, onLibrary }: {
+  handleLastStory: () => void;
+  handleRandomStory: () => void;
+  storiesCount: number;
+  textPrimary: string;
+  textSecondary: string;
+  onLibrary: () => void;
+}) {
+  const actions = [
+    { icon: <Play size={16} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />, label: 'Continue', sublabel: 'Last story', grad: ['#3B82F6', '#2563EB'] as [string, string], onPress: handleLastStory, textPrimary, textSecondary },
+    { icon: <Shuffle size={16} color="#FFFFFF" strokeWidth={2.5} />, label: 'Surprise', sublabel: 'Random pick', grad: ['#F59E0B', '#D97706'] as [string, string], onPress: handleRandomStory, textPrimary, textSecondary },
+    { icon: <TrendingUp size={16} color="#FFFFFF" strokeWidth={2.5} />, label: 'Library', sublabel: `${storiesCount} stories`, grad: ['#10B981', '#059669'] as [string, string], onPress: onLibrary, textPrimary, textSecondary },
+  ];
+
+  return (
+    <View style={styles.quickRow}>
+      {actions.map((a, i) => (
+        <QuickActionItem key={a.label} item={a} index={i} />
+      ))}
+    </View>
   );
 }
 
@@ -254,10 +330,7 @@ export default function HomeScreen() {
 
           <View style={styles.topBarRight}>
             {streak && streak.current_streak > 0 && (
-              <View style={[styles.streakChip, { backgroundColor: '#FFF3E0' }]}>
-                <Flame size={13} color="#F59E0B" />
-                <Text style={styles.streakChipText}>{streak.current_streak}</Text>
-              </View>
+              <AnimatedStreakChip count={streak.current_streak} />
             )}
             {isPro && (
               <View style={[styles.proChip, { backgroundColor: C.warning + '20' }]}>
@@ -284,6 +357,7 @@ export default function HomeScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.heroCard}
             >
+              <HeroShimmer />
               {/* Background glow orbs */}
               <View style={[styles.orb, styles.orbTL, { backgroundColor: 'rgba(255,255,255,0.15)' }]} />
               <View style={[styles.orb, styles.orbBR, { backgroundColor: 'rgba(255,255,255,0.08)' }]} />
@@ -345,41 +419,14 @@ export default function HomeScreen() {
 
         {/* ─── QUICK ACTIONS ─── */}
         {stories.length > 0 && (
-          <Animated.View entering={FadeInDown.delay(160).springify()} style={styles.quickRow}>
-            {[
-              {
-                icon: <Play size={16} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />,
-                label: 'Continue',
-                sublabel: 'Last story',
-                grad: ['#3B82F6', '#2563EB'] as [string, string],
-                onPress: handleLastStory,
-              },
-              {
-                icon: <Shuffle size={16} color="#FFFFFF" strokeWidth={2.5} />,
-                label: 'Surprise',
-                sublabel: 'Random pick',
-                grad: ['#F59E0B', '#D97706'] as [string, string],
-                onPress: handleRandomStory,
-              },
-              {
-                icon: <TrendingUp size={16} color="#FFFFFF" strokeWidth={2.5} />,
-                label: 'Library',
-                sublabel: `${stories.length} stories`,
-                grad: ['#10B981', '#059669'] as [string, string],
-                onPress: () => router.push('/(tabs)/history'),
-              },
-            ].map((a, i) => (
-              <Animated.View key={a.label} entering={FadeInDown.delay(180 + i * 50).springify()} style={styles.quickItem}>
-                <AnimatedPressable onPress={a.onPress} scaleDown={0.93} style={styles.quickCard}>
-                  <LinearGradient colors={a.grad} style={styles.quickIconCircle}>
-                    {a.icon}
-                  </LinearGradient>
-                  <Text style={[styles.quickLabel, { color: C.text.primary }]}>{a.label}</Text>
-                  <Text style={[styles.quickSublabel, { color: C.text.secondary }]}>{a.sublabel}</Text>
-                </AnimatedPressable>
-              </Animated.View>
-            ))}
-          </Animated.View>
+          <QuickActions
+            handleLastStory={handleLastStory}
+            handleRandomStory={handleRandomStory}
+            storiesCount={stories.length}
+            textPrimary={C.text.primary}
+            textSecondary={C.text.secondary}
+            onLibrary={() => router.push('/(tabs)/history')}
+          />
         )}
 
         {/* ─── STATS TICKER ─── */}
@@ -852,9 +899,15 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  /* Pulse ring (unused visually but kept for possible future use) */
   pulseRing: {
     position: 'absolute', width: 60, height: 60,
     borderRadius: 30, borderWidth: 2,
+  },
+  shimmerOverlay: {
+    position: 'absolute',
+    top: 0, bottom: 0,
+    width: 80,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    transform: [{ skewX: '-20deg' }],
   },
 });

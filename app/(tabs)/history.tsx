@@ -12,7 +12,11 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp, ZoomIn, FadeIn } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown, FadeInUp, ZoomIn, FadeIn,
+  useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay,
+} from 'react-native-reanimated';
+import { useEntranceSequence, useSpringPress } from '@/utils/animations';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag, getLanguageNativeName } from '@/utils/languageUtils';
@@ -64,6 +68,81 @@ function getSeasonPalette(season: string): { colors: readonly [string, string, s
 
 type SortOption = 'newest' | 'oldest' | 'language';
 type ViewMode = 'grid' | 'list';
+
+function AnimatedFilterChip({ label, flag, active, primaryColor, cardBackground, textSecondary, onPress, index }: {
+  label: string; flag?: string; active: boolean; primaryColor: string; cardBackground: string; textSecondary: string; onPress: () => void; index: number;
+}) {
+  const scale = useSharedValue(active ? 1.04 : 1);
+  const entrance = useEntranceSequence(index, 130, 40);
+
+  const handlePress = () => {
+    scale.value = withSpring(0.9, { damping: 10 });
+    setTimeout(() => { scale.value = withSpring(active ? 1 : 1.04, { damping: 12 }); }, 100);
+    onPress();
+  };
+
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Animated.View style={[entrance, pressStyle]}>
+      <TouchableOpacity
+        style={[styles.filterChip, { backgroundColor: active ? primaryColor : cardBackground }]}
+        onPress={handlePress}
+        activeOpacity={0.85}
+      >
+        {flag && <Text style={styles.filterChipFlag}>{flag}</Text>}
+        <Text style={[styles.filterChipText, { color: active ? '#FFF' : textSecondary }]}>{label}</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+function AnimatedStoryGridCard({ story, idx, palette, onPress, onLongPress, COLORS }: any) {
+  const entrance = useEntranceSequence(idx, 60, 40);
+  const { style: pressStyle, onPressIn, onPressOut } = useSpringPress();
+
+  return (
+    <Animated.View style={[styles.gridItem, entrance]}>
+      <Animated.View style={pressStyle}>
+        <TouchableOpacity
+          style={[styles.gridCard, { backgroundColor: COLORS.cardBackground }]}
+          onPress={onPress}
+          onLongPress={onLongPress}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          activeOpacity={1}
+          delayLongPress={500}
+        >
+          <LinearGradient colors={palette.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.gridThumb}>
+            <Text style={styles.gridSeasonEmoji}>{palette.emoji}</Text>
+            <View style={[styles.gridPlayCircle, { backgroundColor: 'rgba(255,255,255,0.72)' }]}>
+              <Play size={16} color={palette.accent} fill={palette.accent} strokeWidth={0} />
+            </View>
+            <View style={styles.gridBadgeRow}>
+              <View style={styles.gridLangBadge}>
+                <Text style={{ fontSize: 12 }}>{getLanguageFlag(story.language_code)}</Text>
+              </View>
+              {story.audio_url && (
+                <View style={[styles.gridAudioBadge, { backgroundColor: 'rgba(0,0,0,0.22)' }]}>
+                  <Volume2 size={9} color="#FFF" />
+                </View>
+              )}
+            </View>
+          </LinearGradient>
+          <View style={styles.gridInfo}>
+            <Text style={[styles.gridTitle, { color: COLORS.text.primary }]} numberOfLines={2}>{story.title}</Text>
+            <View style={styles.gridMeta}>
+              <Clock size={10} color={COLORS.text.light} />
+              <Text style={[styles.gridMetaText, { color: COLORS.text.light }]}>
+                {getRelativeTime(story.generated_at || story.$createdAt)}
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    </Animated.View>
+  );
+}
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -264,33 +343,24 @@ export default function HistoryScreen() {
 
         {/* ── Language filter chips ── */}
         {languages.length > 1 && (
-          <Animated.View entering={FadeInDown.delay(140).springify()}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterScroll}
-            >
-              {[null, ...languages].map((lang) => {
-                const active = lang === null ? !selectedLanguage : selectedLanguage === lang;
-                return (
-                  <TouchableOpacity
-                    key={lang ?? '__all'}
-                    style={[
-                      styles.filterChip,
-                      { backgroundColor: active ? COLORS.primary : COLORS.cardBackground },
-                    ]}
-                    onPress={() => setSelectedLanguage(lang)}
-                    activeOpacity={0.75}
-                  >
-                    {lang && <Text style={styles.filterChipFlag}>{getLanguageFlag(lang)}</Text>}
-                    <Text style={[styles.filterChipText, { color: active ? '#FFF' : COLORS.text.secondary }]}>
-                      {lang ? getLanguageNativeName(lang) : 'All'}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </Animated.View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+            {[null, ...languages].map((lang, idx) => {
+              const active = lang === null ? !selectedLanguage : selectedLanguage === lang;
+              return (
+                <AnimatedFilterChip
+                  key={lang ?? '__all'}
+                  label={lang ? getLanguageNativeName(lang) : 'All'}
+                  flag={lang ? getLanguageFlag(lang) : undefined}
+                  active={active}
+                  primaryColor={COLORS.primary}
+                  cardBackground={COLORS.cardBackground}
+                  textSecondary={COLORS.text.secondary}
+                  onPress={() => setSelectedLanguage(lang)}
+                  index={idx}
+                />
+              );
+            })}
+          </ScrollView>
         )}
 
         {/* ── Section label ── */}
@@ -320,56 +390,15 @@ export default function HistoryScreen() {
             {filteredStories.map((story, idx) => {
               const palette = getSeasonPalette(story.season);
               return (
-                <Animated.View
+                <AnimatedStoryGridCard
                   key={story.$id}
-                  entering={FadeInUp.delay(80 + idx * 35).springify()}
-                  style={styles.gridItem}
-                >
-                  <AnimatedPressable
-                    style={[styles.gridCard, { backgroundColor: COLORS.cardBackground }]}
-                    onPress={() => handlePlayStory(story.$id)}
-                    onLongPress={() => setDeleteId(story.$id)}
-                    scaleDown={0.93}
-                    delayLongPress={500}
-                  >
-                    <LinearGradient
-                      colors={palette.colors}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.gridThumb}
-                    >
-                      <Text style={styles.gridSeasonEmoji}>{palette.emoji}</Text>
-                      <View style={[styles.gridPlayCircle, { backgroundColor: 'rgba(255,255,255,0.72)' }]}>
-                        <Play size={16} color={palette.accent} fill={palette.accent} strokeWidth={0} />
-                      </View>
-                      <View style={styles.gridBadgeRow}>
-                        <View style={styles.gridLangBadge}>
-                          <Text style={{ fontSize: 12 }}>{getLanguageFlag(story.language_code)}</Text>
-                        </View>
-                        {story.audio_url && (
-                          <View style={[styles.gridAudioBadge, { backgroundColor: 'rgba(0,0,0,0.22)' }]}>
-                            <Volume2 size={9} color="#FFF" />
-                          </View>
-                        )}
-                      </View>
-                    </LinearGradient>
-
-                    <View style={styles.gridInfo}>
-                      <Text
-                        style={[styles.gridTitle, { color: COLORS.text.primary }]}
-                        numberOfLines={2}
-                      >
-                        {story.title}
-                      </Text>
-                      <View style={styles.gridMeta}>
-                        <Clock size={10} color={COLORS.text.light} />
-                        <Text style={[styles.gridMetaText, { color: COLORS.text.light }]}>
-                          {getRelativeTime(story.generated_at || story.$createdAt)}
-                        </Text>
-                      </View>
-                    </View>
-                  </AnimatedPressable>
-                </Animated.View>
+                  story={story}
+                  idx={idx}
+                  palette={palette}
+                  onPress={() => handlePlayStory(story.$id)}
+                  onLongPress={() => setDeleteId(story.$id)}
+                  COLORS={COLORS}
+                />
               );
             })}
           </View>
