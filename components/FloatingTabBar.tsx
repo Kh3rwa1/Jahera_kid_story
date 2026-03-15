@@ -19,14 +19,14 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Hop as Home, Library, Award, Settings } from 'lucide-react-native';
+import { House, Library, Award, Settings } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { FONTS } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const TABS = [
-  { name: 'index',    icon: Home,    label: 'Home',     route: '/(tabs)/' },
+  { name: 'index',    icon: House,   label: 'Home',     route: '/(tabs)/' },
   { name: 'history',  icon: Library, label: 'Library',  route: '/(tabs)/history' },
   { name: 'profile',  icon: Award,   label: 'Progress', route: '/(tabs)/profile' },
   { name: 'settings', icon: Settings, label: 'Settings', route: '/(tabs)/settings' },
@@ -113,8 +113,9 @@ export function FloatingTabBar({
   activeTab: string;
   onTabPress: (route: string) => void;
 }) {
-  const { currentTheme, isDark } = useTheme();
+  const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
+  const isDark = COLORS.background < '#888888';
   const insets = useSafeAreaInsets();
 
   const activeIndex = TABS.findIndex(t => t.name === activeTab);
