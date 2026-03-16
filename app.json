@@ -64,6 +64,9 @@
     "experiments": {
       "typedRoutes": true
     },
+    "updates": {
+      "enabled": false
+    },
     "extra": {
       "eas": {
         "projectId": "jahera-kids-stories"
