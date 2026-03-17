@@ -43,6 +43,7 @@ import {
 } from '@/contexts/ReadingPreferencesContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { shareStory } from '@/utils/sharing';
+import { MarqueeText } from '@/components/MarqueeText';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -375,19 +376,20 @@ export default function StoryPlayback() {
 
   if (tab === 'text' || audioError) {
     return (
-      <View style={styles.fill}>
+      <View style={[styles.fill, { backgroundColor: C.background }]}>
         <StatusBar barStyle="dark-content" />
 
-        <SafeAreaView edges={['top']} style={{ backgroundColor: '#FAFAF8' }}>
-          <View style={[styles.readNavBar, { borderBottomColor: '#E5E5E0' }]}>
-            <TouchableOpacity onPress={handleBack} style={styles.readNavBtn} activeOpacity={0.7}>
-              <ArrowLeft size={20} color="#111" strokeWidth={2.5} />
+        <SafeAreaView edges={['top']} style={{ backgroundColor: C.cardBackground }}>
+          <View style={[styles.readNavBar, { borderBottomColor: C.text.light + '22', backgroundColor: C.cardBackground }]}>
+            <TouchableOpacity onPress={handleBack} style={[styles.readNavBtn, { backgroundColor: C.text.primary + '08' }]} activeOpacity={0.7}>
+              <ArrowLeft size={20} color={C.text.primary} strokeWidth={2.5} />
             </TouchableOpacity>
 
             <View style={styles.readNavCenter}>
-              <Text style={[styles.readNavTitle, { fontFamily: FONTS.bold, color: '#111' }]} numberOfLines={1}>
-                {story.title}
-              </Text>
+              <MarqueeText
+                text={story.title}
+                style={[styles.readNavTitle, { fontFamily: FONTS.bold, color: C.text.primary }]}
+              />
               <View style={[styles.readNavAccent, { backgroundColor: accentColor }]} />
             </View>
 
@@ -404,30 +406,30 @@ export default function StoryPlayback() {
               )}
               <TouchableOpacity
                 onPress={() => { hapticFeedback.light(); setShowSettings(s => !s); }}
-                style={[styles.readNavIconBtn, { backgroundColor: showSettings ? '#11111110' : 'transparent' }]}
+                style={[styles.readNavIconBtn, { backgroundColor: showSettings ? C.text.primary + '10' : 'transparent' }]}
                 activeOpacity={0.7}
               >
-                <Type size={18} color="#555" />
+                <Type size={18} color={C.text.secondary} />
               </TouchableOpacity>
               <TouchableOpacity onPress={handleShare} style={styles.readNavIconBtn} activeOpacity={0.7}>
-                <Share2 size={18} color="#555" />
+                <Share2 size={18} color={C.text.secondary} />
               </TouchableOpacity>
             </View>
           </View>
 
           {showSettings && (
-            <Animated.View entering={FadeInDown.duration(200)} style={styles.settingsPanel}>
+            <Animated.View entering={FadeInDown.duration(200)} style={[styles.settingsPanel, { backgroundColor: C.cardBackground, borderBottomColor: C.text.light + '20' }]}>
               <View style={styles.settingsRow}>
-                <Text style={[styles.settingsLabel, { fontFamily: FONTS.semibold, color: '#555' }]}>Size</Text>
+                <Text style={[styles.settingsLabel, { fontFamily: FONTS.semibold, color: C.text.secondary }]}>Size</Text>
                 <View style={styles.fontSizeRow}>
                   <TouchableOpacity
                     onPress={() => { hapticFeedback.light(); setFontSize(prefs.fontSize - 1); }}
-                    style={styles.fontSizeBtn}
+                    style={[styles.fontSizeBtn, { backgroundColor: C.text.primary + '08' }]}
                     activeOpacity={0.7}
                   >
-                    <Minus size={14} color="#333" />
+                    <Minus size={14} color={C.text.primary} />
                   </TouchableOpacity>
-                  <Text style={[styles.fontSizeNum, { fontFamily: FONTS.bold, color: '#111' }]}>{prefs.fontSize}</Text>
+                  <Text style={[styles.fontSizeNum, { fontFamily: FONTS.bold, color: C.text.primary }]}>{prefs.fontSize}</Text>
                   <TouchableOpacity
                     onPress={() => { hapticFeedback.light(); setFontSize(prefs.fontSize + 1); }}
                     style={[styles.fontSizeBtn, { backgroundColor: accentColor + '25' }]}
@@ -438,10 +440,10 @@ export default function StoryPlayback() {
                 </View>
               </View>
 
-              <View style={[styles.settingsDivider, { backgroundColor: '#E5E5E0' }]} />
+              <View style={[styles.settingsDivider, { backgroundColor: C.text.light + '30' }]} />
 
               <View style={styles.settingsFontSection}>
-                <Text style={[styles.settingsLabel, { fontFamily: FONTS.semibold, color: '#555' }]}>Font</Text>
+                <Text style={[styles.settingsLabel, { fontFamily: FONTS.semibold, color: C.text.secondary }]}>Font</Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -454,6 +456,7 @@ export default function StoryPlayback() {
                       onPress={() => { hapticFeedback.light(); setFontFamily(f); }}
                       style={[
                         styles.fontChip,
+                        { backgroundColor: C.cardBackground, borderColor: C.text.light + '40' },
                         prefs.fontFamily === f && { backgroundColor: accentColor, borderColor: accentColor },
                       ]}
                       activeOpacity={0.7}
@@ -461,7 +464,7 @@ export default function StoryPlayback() {
                       <Text style={[
                         styles.fontChipText,
                         { fontFamily: FONT_FAMILY_VALUES[f].regular },
-                        prefs.fontFamily === f ? { color: '#FFF' } : { color: '#444' },
+                        prefs.fontFamily === f ? { color: '#FFF' } : { color: C.text.secondary },
                       ]}>
                         {FONT_FAMILY_VALUES[f].label}
                       </Text>
@@ -470,10 +473,10 @@ export default function StoryPlayback() {
                 </ScrollView>
               </View>
 
-              <View style={[styles.settingsDivider, { backgroundColor: '#E5E5E0' }]} />
+              <View style={[styles.settingsDivider, { backgroundColor: C.text.light + '30' }]} />
 
               <View style={styles.settingsRow}>
-                <Text style={[styles.settingsLabel, { fontFamily: FONTS.semibold, color: '#555' }]}>Spacing</Text>
+                <Text style={[styles.settingsLabel, { fontFamily: FONTS.semibold, color: C.text.secondary }]}>Spacing</Text>
                 <View style={styles.spacingRow}>
                   {LINE_SPACINGS.map(s => (
                     <TouchableOpacity
@@ -481,6 +484,7 @@ export default function StoryPlayback() {
                       onPress={() => { hapticFeedback.light(); setLineSpacing(s); }}
                       style={[
                         styles.spacingChip,
+                        { backgroundColor: C.cardBackground, borderColor: C.text.light + '40' },
                         prefs.lineSpacing === s && { backgroundColor: accentColor, borderColor: accentColor },
                       ]}
                       activeOpacity={0.7}
@@ -488,7 +492,7 @@ export default function StoryPlayback() {
                       <Text style={[
                         styles.spacingChipText,
                         { fontFamily: FONTS.medium },
-                        prefs.lineSpacing === s ? { color: '#FFF' } : { color: '#444' },
+                        prefs.lineSpacing === s ? { color: '#FFF' } : { color: C.text.secondary },
                       ]}>
                         {s.charAt(0).toUpperCase() + s.slice(1)}
                       </Text>
@@ -497,24 +501,24 @@ export default function StoryPlayback() {
                 </View>
               </View>
 
-              <View style={[styles.settingsDivider, { backgroundColor: '#E5E5E0' }]} />
+              <View style={[styles.settingsDivider, { backgroundColor: C.text.light + '30' }]} />
 
               <View style={styles.settingsRow}>
-                <Text style={[styles.settingsLabel, { fontFamily: FONTS.semibold, color: '#555' }]}>Align</Text>
+                <Text style={[styles.settingsLabel, { fontFamily: FONTS.semibold, color: C.text.secondary }]}>Align</Text>
                 <View style={styles.alignRow}>
                   <TouchableOpacity
                     onPress={() => { hapticFeedback.light(); setTextAlign('left'); }}
-                    style={[styles.alignBtn, prefs.textAlign === 'left' && { backgroundColor: accentColor, borderColor: accentColor }]}
+                    style={[styles.alignBtn, { backgroundColor: C.cardBackground, borderColor: C.text.light + '40' }, prefs.textAlign === 'left' && { backgroundColor: accentColor, borderColor: accentColor }]}
                     activeOpacity={0.7}
                   >
-                    <AlignLeft size={16} color={prefs.textAlign === 'left' ? '#FFF' : '#444'} />
+                    <AlignLeft size={16} color={prefs.textAlign === 'left' ? '#FFF' : C.text.secondary} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => { hapticFeedback.light(); setTextAlign('justify'); }}
-                    style={[styles.alignBtn, prefs.textAlign === 'justify' && { backgroundColor: accentColor, borderColor: accentColor }]}
+                    style={[styles.alignBtn, { backgroundColor: C.cardBackground, borderColor: C.text.light + '40' }, prefs.textAlign === 'justify' && { backgroundColor: accentColor, borderColor: accentColor }]}
                     activeOpacity={0.7}
                   >
-                    <AlignJustify size={16} color={prefs.textAlign === 'justify' ? '#FFF' : '#444'} />
+                    <AlignJustify size={16} color={prefs.textAlign === 'justify' ? '#FFF' : C.text.secondary} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -524,7 +528,7 @@ export default function StoryPlayback() {
 
         <ScrollView
           ref={scrollRef}
-          style={[styles.fill, { backgroundColor: '#FAFAF8' }]}
+          style={[styles.fill, { backgroundColor: C.background }]}
           contentContainerStyle={[styles.readContent, { paddingBottom: insets.bottom + 40 }]}
           showsVerticalScrollIndicator={false}
         >
@@ -538,13 +542,13 @@ export default function StoryPlayback() {
               </View>
             )}
             {story.mood && (
-              <View style={[styles.readMetaBadge, { backgroundColor: '#11111108', borderColor: '#11111115' }]}>
-                <Text style={[styles.readMetaBadgeText, { fontFamily: FONTS.medium, color: '#666' }]}>
+              <View style={[styles.readMetaBadge, { backgroundColor: C.text.primary + '08', borderColor: C.text.primary + '12' }]}>
+                <Text style={[styles.readMetaBadgeText, { fontFamily: FONTS.medium, color: C.text.secondary }]}>
                   {story.mood}
                 </Text>
               </View>
             )}
-            <Text style={[styles.readMetaWords, { fontFamily: FONTS.medium, color: '#999' }]}>
+            <Text style={[styles.readMetaWords, { fontFamily: FONTS.medium, color: C.text.light }]}>
               {allWords.length} words
             </Text>
           </View>
@@ -569,9 +573,9 @@ export default function StoryPlayback() {
                         fontSize: prefs.fontSize,
                         lineHeight,
                         fontFamily: activeFontDef.regular,
-                        color: '#444',
+                        color: C.text.secondary,
                       },
-                      isPast && { color: '#111' },
+                      isPast && { color: C.text.primary },
                       isActive && {
                         color: accentColor,
                         backgroundColor: accentColor + '20',
@@ -601,7 +605,7 @@ export default function StoryPlayback() {
             );
           })}
 
-          <View style={[styles.readEndDivider, { backgroundColor: '#E5E5E0' }]} />
+          <View style={[styles.readEndDivider, { backgroundColor: C.text.light + '30' }]} />
 
           <View style={styles.readEndActions}>
             {!audioError && (
@@ -630,11 +634,11 @@ export default function StoryPlayback() {
             )}
             <TouchableOpacity
               onPress={handleNewStory}
-              style={[styles.readEndBtn, { borderColor: '#DDD' }]}
+              style={[styles.readEndBtn, { borderColor: C.text.light + '40' }]}
               activeOpacity={0.7}
             >
-              <RefreshCw size={14} color="#888" />
-              <Text style={[styles.readEndBtnText, { color: '#888', fontFamily: FONTS.semibold }]}>
+              <RefreshCw size={14} color={C.text.light} />
+              <Text style={[styles.readEndBtnText, { color: C.text.light, fontFamily: FONTS.semibold }]}>
                 New Story
               </Text>
             </TouchableOpacity>
@@ -713,9 +717,11 @@ export default function StoryPlayback() {
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(180).duration(600)} style={styles.heroMeta}>
-          <Text style={[styles.heroTitle, { fontFamily: FONTS.extrabold }]} numberOfLines={2}>
-            {story.title}
-          </Text>
+          <MarqueeText
+            text={story.title}
+            style={[styles.heroTitle, { fontFamily: FONTS.extrabold }]}
+            containerStyle={{ width: '100%' }}
+          />
           <View style={styles.heroBadges}>
             {story.theme && (
               <View style={[styles.heroBadge, { borderColor: accentColor + '55', backgroundColor: accentColor + '22' }]}>
@@ -779,27 +785,27 @@ export default function StoryPlayback() {
             <Text style={[styles.statValue, { fontFamily: FONTS.bold, color: '#111' }]}>
               {story.word_count ?? allWords.length}
             </Text>
-            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: '#888' }]}>words</Text>
+            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: '#777' }]}>words</Text>
           </View>
-          <View style={[styles.statDot, { backgroundColor: '#33333320' }]} />
+          <View style={[styles.statDot, { backgroundColor: '#00000015' }]} />
           <View style={styles.statItem}>
             <Text style={[styles.statValue, { fontFamily: FONTS.bold, color: '#111' }]}>{formatTime(duration)}</Text>
-            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: '#888' }]}>length</Text>
+            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: '#777' }]}>length</Text>
           </View>
-          <View style={[styles.statDot, { backgroundColor: '#33333320' }]} />
+          <View style={[styles.statDot, { backgroundColor: '#00000015' }]} />
           <View style={styles.statItem}>
             <Text style={[styles.statValue, { fontFamily: FONTS.bold, color: '#111' }]}>
               {story.language_code?.toUpperCase() ?? 'EN'}
             </Text>
-            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: '#888' }]}>lang</Text>
+            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: '#777' }]}>lang</Text>
           </View>
         </View>
 
         <View style={styles.controlsRow}>
           <Animated.View style={skipBackStyle}>
             <TouchableOpacity onPress={handleSkipBack} disabled={!sound} style={[styles.skipBtn, !sound && { opacity: 0.3 }]} activeOpacity={0.7}>
-              <SkipBack size={26} color="#111" strokeWidth={2} />
-              <Text style={[styles.skipSec, { color: '#888', fontFamily: FONTS.bold }]}>10</Text>
+              <SkipBack size={26} color="#1A1A2E" strokeWidth={2} />
+              <Text style={[styles.skipSec, { color: '#777', fontFamily: FONTS.bold }]}>10</Text>
             </TouchableOpacity>
           </Animated.View>
 
@@ -830,8 +836,8 @@ export default function StoryPlayback() {
 
           <Animated.View style={skipFwdStyle}>
             <TouchableOpacity onPress={handleSkipForward} disabled={!sound} style={[styles.skipBtn, !sound && { opacity: 0.3 }]} activeOpacity={0.7}>
-              <SkipForward size={26} color="#111" strokeWidth={2} />
-              <Text style={[styles.skipSec, { color: '#888', fontFamily: FONTS.bold }]}>15</Text>
+              <SkipForward size={26} color="#1A1A2E" strokeWidth={2} />
+              <Text style={[styles.skipSec, { color: '#777', fontFamily: FONTS.bold }]}>15</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -851,7 +857,7 @@ export default function StoryPlayback() {
           )}
           <TouchableOpacity
             onPress={handleNewStory}
-            style={[styles.outlineBtn, { borderColor: '#DDD' }]}
+            style={[styles.outlineBtn, { borderColor: '#DDDDDD' }]}
             activeOpacity={0.7}
           >
             <RefreshCw size={14} color="#888" />
