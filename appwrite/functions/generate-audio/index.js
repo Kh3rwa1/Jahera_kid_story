@@ -50,10 +50,16 @@ module.exports = async ({ req, res, log, error }) => {
       }
     }
 
-    const { text, languageCode, storyId, elevenLabsApiKey: clientKey } = body;
+    const { text, languageCode, storyId } = body;
 
     if (!text || !storyId) {
       return res.json({ error: 'Missing required fields: text, storyId', audioUrl: null }, 400);
+    }
+
+    const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY;
+
+    if (!elevenLabsApiKey || elevenLabsApiKey.length < 20) {
+      return res.json({ error: 'ElevenLabs API key not configured on server', audioUrl: null });
     }
 
     const client = new sdk.Client()
@@ -61,30 +67,7 @@ module.exports = async ({ req, res, log, error }) => {
       .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
       .setKey(process.env.APPWRITE_API_KEY);
 
-    const databases = new sdk.Databases(client);
     const storage = new sdk.Storage(client);
-
-    let elevenLabsApiKey = clientKey || null;
-
-    if (!elevenLabsApiKey) {
-      try {
-        const databaseId = process.env.APPWRITE_DATABASE_ID || 'jahera_db';
-        const result = await databases.listDocuments(databaseId, 'api_keys', [
-          sdk.Query.equal('key_name', 'elevenlabs_api_key'),
-          sdk.Query.equal('is_active', true),
-          sdk.Query.limit(1),
-        ]);
-        if (result.documents.length > 0) {
-          elevenLabsApiKey = result.documents[0].key_value;
-        }
-      } catch (err) {
-        log('Could not fetch ElevenLabs key from database: ' + err.message);
-      }
-    }
-
-    if (!elevenLabsApiKey || elevenLabsApiKey.length < 20) {
-      return res.json({ error: 'ElevenLabs API key not configured', audioUrl: null });
-    }
 
     const voiceId = LANGUAGE_VOICE_MAP[languageCode || 'en'] || DEFAULT_VOICE_ID;
     const elevenLabsPath = `/v1/text-to-speech/${voiceId}`;

@@ -1,9 +1,12 @@
 import { Client, Account, Databases, Storage, ID, Query } from 'react-native-appwrite';
 import { Platform } from 'react-native';
 
+const ENDPOINT = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || 'https://sfo.cloud.appwrite.io/v1';
+const PROJECT_ID = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || '69b5657c000d2c28a436';
+
 const clientBuilder = new Client()
-  .setEndpoint('https://sfo.cloud.appwrite.io/v1')
-  .setProject('69b5657c000d2c28a436');
+  .setEndpoint(ENDPOINT)
+  .setProject(PROJECT_ID);
 
 if (Platform.OS !== 'web') {
   clientBuilder.setPlatform(process.env.EXPO_PUBLIC_APPWRITE_PLATFORM || 'com.hindi.harp');
@@ -16,6 +19,8 @@ export const databases = new Databases(client);
 export const storage = new Storage(client);
 
 export const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID || 'jahera_db';
+export const APPWRITE_ENDPOINT = ENDPOINT;
+export const APPWRITE_PROJECT_ID = PROJECT_ID;
 
 export const COLLECTIONS = {
   PROFILES: 'profiles',

@@ -1,7 +1,4 @@
-import { apiKeysService } from './apiKeysService';
-
-const APPWRITE_ENDPOINT = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!;
-const APPWRITE_PROJECT_ID = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!;
+import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID } from '@/lib/appwrite';
 
 export async function generateAudio(
   text: string,
@@ -9,8 +6,6 @@ export async function generateAudio(
   storyId: string
 ): Promise<string | null> {
   try {
-    const elevenLabsApiKey = await apiKeysService.getElevenLabsKey();
-
     const functionUrl = `${APPWRITE_ENDPOINT}/functions/generate-audio/executions`;
 
     const response = await fetch(functionUrl, {
@@ -21,12 +16,7 @@ export async function generateAudio(
       },
       body: JSON.stringify({
         async: false,
-        body: JSON.stringify({
-          text,
-          languageCode,
-          storyId,
-          elevenLabsApiKey: elevenLabsApiKey || null,
-        }),
+        body: JSON.stringify({ text, languageCode, storyId }),
       }),
     });
 
@@ -45,13 +35,9 @@ export async function generateAudio(
       return null;
     }
 
-    if (data.audioUrl) {
-      return data.audioUrl;
-    }
+    if (data.audioUrl) return data.audioUrl;
 
-    if (data.error) {
-      console.warn('generate-audio function error:', data.error);
-    }
+    if (data.error) console.warn('generate-audio function error:', data.error);
 
     return null;
   } catch (error) {
@@ -64,7 +50,6 @@ export async function deleteAudio(audioPath: string): Promise<boolean> {
   try {
     if (audioPath.startsWith('blob:')) {
       URL.revokeObjectURL(audioPath);
-      return true;
     }
     return true;
   } catch (error) {
