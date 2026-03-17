@@ -16,7 +16,9 @@ import ReAnimated, {
   Easing as ReEasing,
   FadeInUp,
   FadeInDown,
+  FadeInLeft,
   ZoomIn,
+  SlideInDown,
 } from 'react-native-reanimated';
 import { useEffect as useEffectGen } from 'react';
 import { profileService, storyService, quizService, familyMemberService, friendService } from '@/services/database';
@@ -535,11 +537,20 @@ export default function GenerateStory() {
   }
 
   if (phase === 'generating') {
+    const activeStepIndex = steps.findIndex(s => !s.completed);
+    const activeStep = activeStepIndex >= 0 ? steps[activeStepIndex] : steps[steps.length - 1];
+
     return (
       <SafeAreaView style={[styles.generatingScreen, { backgroundColor: themeColors.background }]}>
+        <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
+
+        <View style={[styles.genAmbientOrb1, { backgroundColor: themeColors.primary + '0C' }]} />
+        <View style={[styles.genAmbientOrb2, { backgroundColor: themeColors.gradients.sunset[0] + '08' }]} />
+
         <View style={styles.generatingContent}>
-          <ReAnimated.View entering={ZoomIn.springify()} style={styles.orbContainer}>
-            <ReAnimated.View style={[styles.orbRing, orbStyle]} />
+          <ReAnimated.View entering={ZoomIn.delay(0).springify()} style={styles.orbContainer}>
+            <ReAnimated.View style={[styles.orbRingOuter, orbStyle]} />
+            <View style={[styles.orbRingMid, { borderColor: themeColors.primary + '18' }]} />
             <ReAnimated.View style={[styles.pulseWrap, pulseAnimStyle]}>
               <LinearGradient
                 colors={[...themeColors.gradients.sunset]}
@@ -547,94 +558,128 @@ export default function GenerateStory() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Wand2 size={52} color="#FFFFFF" strokeWidth={1.5} />
+                <Wand2 size={48} color="#FFFFFF" strokeWidth={1.5} />
               </LinearGradient>
             </ReAnimated.View>
           </ReAnimated.View>
 
-          <ReAnimated.Text
-            entering={FadeInUp.delay(200).springify()}
-            style={styles.genTitle}
-          >
-            Creating Your Story
-          </ReAnimated.Text>
+          <ReAnimated.View entering={FadeInUp.delay(140).springify()} style={styles.genTitleBlock}>
+            <Text style={[styles.genTitle, { color: themeColors.text.primary }]}>
+              Creating Your Story
+            </Text>
+            {locationCtx && (
+              <View style={[styles.locationBadge, { backgroundColor: themeColors.primary + '10', borderColor: themeColors.primary + '20' }]}>
+                <MapPin size={11} color={themeColors.primary} strokeWidth={2.5} />
+                <Text style={[styles.locationBadgeText, { color: themeColors.primary }]}>
+                  Set in {formatLocationLabel(locationCtx)}
+                </Text>
+              </View>
+            )}
+          </ReAnimated.View>
 
-          {locationCtx && (
-            <ReAnimated.View entering={FadeInUp.delay(240).springify()} style={styles.locationBadge}>
-              <MapPin size={12} color="#0EA5E9" strokeWidth={2.5} />
-              <Text style={styles.locationBadgeText}>
-                Set in {formatLocationLabel(locationCtx)}
-              </Text>
-            </ReAnimated.View>
-          )}
+          <ReAnimated.View entering={FadeInUp.delay(200).springify()} style={styles.activeStepChip}>
+            <View style={[styles.activeStepDot, { backgroundColor: themeColors.primary }]} />
+            <Text style={[styles.activeStepText, { color: themeColors.text.secondary }]}>
+              {status}
+            </Text>
+          </ReAnimated.View>
 
-          <ReAnimated.Text
-            entering={FadeInUp.delay(280).springify()}
-            style={styles.genStatus}
-          >
-            {status}
-          </ReAnimated.Text>
-
-          <ReAnimated.View entering={FadeInUp.delay(340).springify()} style={styles.progressWrap}>
-            <View style={styles.progressTrack}>
+          <ReAnimated.View entering={FadeInUp.delay(260).springify()} style={styles.progressWrap}>
+            <View style={[styles.progressTrack, { backgroundColor: themeColors.text.light + '18' }]}>
               <LinearGradient
                 colors={[...themeColors.gradients.sunset]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[styles.progressFill, { width: `${progress}%` }]}
               />
+              <View style={[styles.progressShimmer, { width: `${progress}%` }]}>
+                <LinearGradient
+                  colors={['transparent', 'rgba(255,255,255,0.25)', 'transparent']}
+                  style={StyleSheet.absoluteFill}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                />
+              </View>
             </View>
-            <Text style={styles.progressPct}>{progress}%</Text>
+            <Text style={[styles.progressPct, { color: themeColors.primary }]}>{progress}%</Text>
           </ReAnimated.View>
 
           <ReAnimated.View
-            entering={FadeInUp.delay(400).springify()}
-            style={[styles.stepsCard, { backgroundColor: themeColors.cardBackground }]}
+            entering={FadeInUp.delay(320).springify()}
+            style={[styles.timelineCard, { backgroundColor: themeColors.cardBackground }]}
           >
             {steps.map((step, i) => {
               const Icon = step.icon;
+              const isActive = !step.completed && activeStepIndex === i;
+              const isPast = step.completed;
+              const isFuture = !step.completed && activeStepIndex !== i;
+
               return (
-                <View key={step.id} style={styles.stepRow}>
-                  <View style={[
-                    styles.stepDot,
-                    step.completed
-                      ? { backgroundColor: themeColors.success }
-                      : { backgroundColor: themeColors.text.light + '20' },
-                  ]}>
-                    {step.completed
-                      ? <Check size={13} color="#FFFFFF" strokeWidth={3} />
-                      : <Icon size={13} color={themeColors.text.light} strokeWidth={2} />
-                    }
+                <View key={step.id} style={styles.timelineRow}>
+                  <View style={styles.timelineLeft}>
+                    <View style={[
+                      styles.timelineDot,
+                      isPast && { backgroundColor: themeColors.success },
+                      isActive && { backgroundColor: themeColors.primary },
+                      isFuture && { backgroundColor: themeColors.text.light + '20' },
+                    ]}>
+                      {isPast
+                        ? <Check size={11} color="#FFFFFF" strokeWidth={3} />
+                        : <Icon size={11} color={isPast || isActive ? '#FFFFFF' : themeColors.text.light} strokeWidth={2} />
+                      }
+                    </View>
+                    {i < steps.length - 1 && (
+                      <View style={[
+                        styles.timelineConnector,
+                        { backgroundColor: isPast ? themeColors.success + '40' : themeColors.text.light + '15' },
+                      ]} />
+                    )}
                   </View>
-                  <Text style={[
-                    styles.stepLabel,
-                    { color: step.completed ? themeColors.text.primary : themeColors.text.light },
-                  ]}>
-                    {step.label}
-                  </Text>
-                  {step.completed && (
-                    <ReAnimated.View entering={ZoomIn.springify()} style={styles.stepCheck}>
-                      <Text style={{ fontSize: 12 }}>✓</Text>
-                    </ReAnimated.View>
-                  )}
+
+                  <View style={[styles.timelineContent, i < steps.length - 1 && { marginBottom: SPACING.md }]}>
+                    <Text style={[
+                      styles.timelineLabel,
+                      isPast && { color: themeColors.text.secondary },
+                      isActive && { color: themeColors.text.primary },
+                      isFuture && { color: themeColors.text.light },
+                    ]}>
+                      {step.label}
+                    </Text>
+                    {isActive && (
+                      <ReAnimated.View entering={FadeInLeft.springify()} style={styles.activePulseRow}>
+                        {[0, 1, 2].map(j => (
+                          <View key={j} style={[styles.activePulseDot, { backgroundColor: themeColors.primary }]} />
+                        ))}
+                      </ReAnimated.View>
+                    )}
+                    {isPast && (
+                      <ReAnimated.Text entering={FadeInLeft.springify()} style={[styles.stepDoneText, { color: themeColors.success }]}>
+                        Done
+                      </ReAnimated.Text>
+                    )}
+                  </View>
                 </View>
               );
             })}
           </ReAnimated.View>
 
           <ReAnimated.View
-            entering={FadeInUp.delay(480).springify()}
-            style={[styles.funFactCard, { backgroundColor: themeColors.primary + '0C' }]}
+            entering={FadeInUp.delay(420).springify()}
+            style={[styles.funFactCard, { backgroundColor: themeColors.primary + '09', borderColor: themeColors.primary + '18' }]}
           >
+            <Sparkles size={14} color={themeColors.primary} strokeWidth={2} />
             <Text style={[styles.funFact, { color: themeColors.text.secondary }]}>
               {FUN_FACTS[funFactIndex]}
             </Text>
           </ReAnimated.View>
 
           {longWait && (
-            <Text style={[styles.longWaitText, { color: themeColors.text.light }]}>
-              Making it extra special — hang tight! ✨
-            </Text>
+            <ReAnimated.View entering={SlideInDown.springify()} style={[styles.longWaitCard, { backgroundColor: themeColors.cardBackground }]}>
+              <Wand2 size={16} color={themeColors.primary} strokeWidth={2} />
+              <Text style={[styles.longWaitText, { color: themeColors.text.secondary }]}>
+                Making it extra special — hang tight!
+              </Text>
+            </ReAnimated.View>
           )}
         </View>
       </SafeAreaView>
@@ -1056,6 +1101,23 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  genAmbientOrb1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    top: -80,
+    right: -80,
+  },
+  genAmbientOrb2: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    bottom: 60,
+    left: -80,
   },
   generatingContent: {
     width: '100%',
@@ -1064,20 +1126,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   orbContainer: {
-    width: 160,
-    height: 160,
+    width: 180,
+    height: 180,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.xxl,
   },
-  orbRing: {
+  orbRingOuter: {
     position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 1.5,
-    borderColor: 'rgba(99,102,241,0.2)',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.15)',
     borderStyle: 'dashed',
+  },
+  orbRingMid: {
+    position: 'absolute',
+    width: 148,
+    height: 148,
+    borderRadius: 74,
+    borderWidth: 1.5,
   },
   pulseWrap: { ...SHADOWS.lg },
   iconCircle: {
@@ -1087,13 +1156,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  genTitleBlock: {
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
   genTitle: {
     fontSize: 26,
     fontFamily: FONTS.extrabold,
-    color: '#0F172A',
     textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: SPACING.sm,
+    lineHeight: 32,
   },
   locationBadge: {
     flexDirection: 'row',
@@ -1102,23 +1175,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: BORDER_RADIUS.pill,
-    backgroundColor: '#EFF6FF',
     borderWidth: 1,
-    borderColor: '#BFDBFE',
-    marginBottom: SPACING.sm,
   },
   locationBadgeText: {
     fontSize: 12,
     fontFamily: FONTS.semibold,
-    color: '#0EA5E9',
   },
-  genStatus: {
-    fontSize: 14,
+  activeStepChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginBottom: SPACING.xl,
+  },
+  activeStepDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  activeStepText: {
+    fontSize: 13,
     fontFamily: FONTS.medium,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: SPACING.xxl,
-    lineHeight: 21,
+    lineHeight: 18,
   },
   progressWrap: {
     width: '100%',
@@ -1126,56 +1203,117 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   progressTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E2E8F0',
+    height: 9,
+    borderRadius: 5,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  progressFill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 5,
+  },
+  progressShimmer: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 5,
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', borderRadius: 4 },
   progressPct: {
     fontSize: 12,
-    fontFamily: FONTS.semibold,
-    color: '#94A3B8',
+    fontFamily: FONTS.bold,
     textAlign: 'center',
   },
-  stepsCard: {
+  timelineCard: {
     width: '100%',
-    padding: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
     borderRadius: BORDER_RADIUS.xl,
-    gap: SPACING.md,
     marginBottom: SPACING.lg,
     ...SHADOWS.sm,
   },
-  stepRow: {
+  timelineRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
   },
-  stepDot: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+  timelineLeft: {
+    alignItems: 'center',
+    width: 32,
+    marginRight: SPACING.md,
+  },
+  timelineDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepLabel: { fontSize: 14, fontFamily: FONTS.medium, flex: 1 },
-  stepCheck: { marginLeft: 'auto' as any },
+  timelineConnector: {
+    width: 2,
+    flex: 1,
+    minHeight: SPACING.lg,
+    marginTop: 3,
+    marginBottom: 3,
+    borderRadius: 1,
+  },
+  timelineContent: {
+    flex: 1,
+    paddingTop: 5,
+    gap: 3,
+  },
+  timelineLabel: {
+    fontSize: 13,
+    fontFamily: FONTS.semibold,
+    lineHeight: 18,
+  },
+  activePulseRow: {
+    flexDirection: 'row',
+    gap: 3,
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  activePulseDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    opacity: 0.6,
+  },
+  stepDoneText: {
+    fontSize: 11,
+    fontFamily: FONTS.semibold,
+    marginTop: 1,
+  },
   funFactCard: {
     width: '100%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
+    borderWidth: 1,
     marginBottom: SPACING.md,
   },
   funFact: {
-    fontSize: 13,
+    flex: 1,
+    fontSize: 12,
     fontFamily: FONTS.medium,
-    textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
+  },
+  longWaitCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.xs,
   },
   longWaitText: {
     fontSize: 13,
     fontFamily: FONTS.medium,
-    textAlign: 'center',
-    color: '#94A3B8',
   },
 });
