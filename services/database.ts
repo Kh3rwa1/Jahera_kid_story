@@ -73,6 +73,8 @@ function rowToStory(row: any): Story {
     time_of_day: row.time_of_day,
     generated_at: row.generated_at,
     $createdAt: row.created_at,
+    location_city: row.location_city ?? null,
+    location_country: row.location_country ?? null,
   };
 }
 
@@ -397,6 +399,8 @@ export const storyService = {
           like_count: story.like_count,
           time_of_day: story.time_of_day,
           generated_at: story.generated_at,
+          location_city: story.location_city ?? null,
+          location_country: story.location_country ?? null,
         })
         .select()
         .single();

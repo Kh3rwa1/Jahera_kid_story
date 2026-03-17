@@ -56,6 +56,8 @@ export interface Story {
   time_of_day: string;
   generated_at: string;
   $createdAt: string;
+  location_city: string | null;
+  location_country: string | null;
 }
 
 export interface ProfileWithRelations extends Profile {
