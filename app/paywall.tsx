@@ -7,11 +7,19 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import {
   X,
   Sparkles,
@@ -22,6 +30,9 @@ import {
   BookOpen,
   Users,
   Zap,
+  Star,
+  Shield,
+  Clock,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
@@ -29,13 +40,15 @@ import { subscriptionService } from '@/services/subscriptionService';
 import { SPACING, BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
 import { hapticFeedback } from '@/utils/haptics';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 const PRO_FEATURES = [
-  { icon: Infinity, label: 'Unlimited stories every month' },
-  { icon: Globe, label: 'All 20+ languages unlocked' },
-  { icon: Volume2, label: 'AI voice narration for every story' },
-  { icon: BookOpen, label: 'Long-form stories (250+ words)' },
-  { icon: Users, label: 'Family plan for up to 4 children' },
-  { icon: Zap, label: 'Priority story generation speed' },
+  { icon: Infinity, label: 'Unlimited stories', sub: 'Every single month', color: '#FF6B6B' },
+  { icon: Globe, label: '20+ languages', sub: 'All unlocked instantly', color: '#4ECDC4' },
+  { icon: Volume2, label: 'AI narration', sub: 'Every story voiced', color: '#45B7D1' },
+  { icon: BookOpen, label: 'Long-form stories', sub: '250+ words per story', color: '#96CEB4' },
+  { icon: Users, label: 'Family plan', sub: 'Up to 4 children', color: '#FFEAA7' },
+  { icon: Zap, label: 'Priority speed', sub: 'Instant generation', color: '#DDA0DD' },
 ];
 
 const PLANS = [
@@ -46,26 +59,130 @@ const PLANS = [
     period: '/month',
     badge: null,
     highlight: false,
+    perMonth: null,
+    description: 'Full access, month to month',
   },
   {
     id: 'yearly',
-    label: 'Yearly',
+    label: 'Annual',
     price: '$49.99',
     period: '/year',
-    badge: 'SAVE 40%',
+    badge: 'BEST VALUE',
     highlight: true,
     perMonth: '$4.17/mo',
+    description: 'Save 40% vs monthly',
   },
   {
     id: 'family',
     label: 'Family',
     price: '$9.99',
     period: '/month',
-    badge: '4 KIDS',
+    badge: 'UP TO 4 KIDS',
     highlight: false,
-    perMonth: 'Up to 4 children',
+    perMonth: 'Per family',
+    description: 'Up to 4 children included',
   },
 ];
+
+const TRUST_BADGES = [
+  { icon: Shield, label: '7-Day Free Trial' },
+  { icon: Clock, label: 'Cancel Anytime' },
+  { icon: Star, label: 'No Hidden Fees' },
+];
+
+function PlanCard({
+  plan,
+  selected,
+  onSelect,
+  COLORS,
+}: {
+  plan: (typeof PLANS)[0];
+  selected: boolean;
+  onSelect: () => void;
+  COLORS: any;
+}) {
+  const scale = useSharedValue(1);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    scale.value = withSpring(0.97, { damping: 15 }, () => {
+      scale.value = withSpring(1, { damping: 15 });
+    });
+    onSelect();
+  };
+
+  return (
+    <TouchableOpacity onPress={handlePress} activeOpacity={0.9}>
+      <Animated.View style={animStyle}>
+        {plan.badge && (
+          <View style={styles.badgeFloating}>
+            <LinearGradient
+              colors={plan.highlight ? ['#FF8C42', '#FF6B35'] : ['#2ECC71', '#27AE60']}
+              style={styles.badgeGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text style={styles.badgeText}>{plan.badge}</Text>
+            </LinearGradient>
+          </View>
+        )}
+        <View
+          style={[
+            styles.planCard,
+            { backgroundColor: COLORS.cardBackground },
+            selected && { borderColor: COLORS.primary, borderWidth: 2.5 },
+            !selected && { borderColor: COLORS.text.light + '20', borderWidth: 1.5 },
+            plan.badge && { marginTop: 14 },
+          ]}
+        >
+          {selected && (
+            <LinearGradient
+              colors={[COLORS.primary + '12', COLORS.primary + '04']}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+          )}
+
+          <View style={styles.planCardInner}>
+            <View style={styles.planLeft}>
+              <Text style={[styles.planLabel, { color: selected ? COLORS.primary : COLORS.text.secondary }]}>
+                {plan.label}
+              </Text>
+              <Text style={[styles.planDescription, { color: COLORS.text.light }]}>
+                {plan.description}
+              </Text>
+              {plan.perMonth && (
+                <View style={[styles.planPerMonthChip, { backgroundColor: selected ? COLORS.primary + '18' : COLORS.text.light + '12' }]}>
+                  <Text style={[styles.planPerMonthText, { color: selected ? COLORS.primary : COLORS.text.secondary }]}>
+                    {plan.perMonth}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.planRight}>
+              <Text style={[styles.planPrice, { color: selected ? COLORS.primary : COLORS.text.primary }]}>
+                {plan.price}
+              </Text>
+              <Text style={[styles.planPeriod, { color: COLORS.text.light }]}>{plan.period}</Text>
+            </View>
+
+            <View style={[
+              styles.planCheckCircle,
+              { backgroundColor: selected ? COLORS.primary : COLORS.text.light + '20' },
+            ]}>
+              {selected && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
+            </View>
+          </View>
+        </View>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
 
 export default function PaywallScreen() {
   const router = useRouter();
@@ -112,7 +229,7 @@ export default function PaywallScreen() {
       Alert.alert(
         '7-Day Free Trial Started!',
         'Enjoy full Pro access for 7 days, completely free.',
-        [{ text: 'Lets Go!', onPress: () => router.back() }]
+        [{ text: "Let's Go!", onPress: () => router.back() }]
       );
     } catch {
       Alert.alert('Something went wrong', 'Please try again.');
@@ -125,86 +242,93 @@ export default function PaywallScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top', 'bottom']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
 
+      <View style={styles.decorativeOrb1} />
+      <View style={styles.decorativeOrb2} />
+
       <TouchableOpacity
-        style={[styles.closeButton, { backgroundColor: COLORS.cardBackground }]}
+        style={[styles.closeButton, { backgroundColor: COLORS.cardBackground, ...SHADOWS.sm }]}
         onPress={() => router.back()}
         activeOpacity={0.7}
       >
-        <X size={20} color={COLORS.text.secondary} />
+        <X size={18} color={COLORS.text.secondary} />
       </TouchableOpacity>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.heroSection}>
-          <LinearGradient
-            colors={COLORS.gradients.sunset}
-            style={styles.iconCircle}
-          >
-            <Sparkles size={40} color="#FFFFFF" strokeWidth={1.5} />
-          </LinearGradient>
+        <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.heroSection}>
+          <View style={styles.iconGlowOuter}>
+            <View style={[styles.iconGlowInner, { backgroundColor: COLORS.primary + '20' }]}>
+              <LinearGradient
+                colors={COLORS.gradients.sunset}
+                style={styles.iconCircle}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Sparkles size={44} color="#FFFFFF" strokeWidth={1.5} />
+              </LinearGradient>
+            </View>
+          </View>
+
+          <Text style={[styles.heroTag, { color: COLORS.primary }]}>PRO MEMBERSHIP</Text>
           <Text style={[styles.heroTitle, { color: COLORS.text.primary }]}>
             Unlock Jahera Pro
           </Text>
           <Text style={[styles.heroSubtitle, { color: COLORS.text.secondary }]}>
-            Unlimited magical stories for your child, personalized with AI
+            Unlimited magical stories for your child,{'\n'}personalized with AI
           </Text>
-        </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(200).springify()} style={[styles.featuresCard, { backgroundColor: COLORS.cardBackground }]}>
-          {PRO_FEATURES.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <View key={index} style={styles.featureRow}>
-                <View style={[styles.featureIconWrap, { backgroundColor: COLORS.primary + '15' }]}>
-                  <Icon size={16} color={COLORS.primary} strokeWidth={2} />
+          <View style={styles.trustBadgesRow}>
+            {TRUST_BADGES.map((badge, i) => {
+              const Icon = badge.icon;
+              return (
+                <View key={i} style={[styles.trustBadge, { backgroundColor: COLORS.cardBackground, ...SHADOWS.xs }]}>
+                  <Icon size={12} color={COLORS.primary} strokeWidth={2.5} />
+                  <Text style={[styles.trustBadgeText, { color: COLORS.text.secondary }]}>{badge.label}</Text>
                 </View>
-                <Text style={[styles.featureLabel, { color: COLORS.text.primary }]}>{feature.label}</Text>
-                <Check size={16} color={COLORS.success} strokeWidth={2.5} />
-              </View>
-            );
-          })}
+              );
+            })}
+          </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.plansSection}>
-          <Text style={[styles.plansTitle, { color: COLORS.text.primary }]}>Choose Your Plan</Text>
-          <View style={styles.plansGrid}>
-            {PLANS.map(plan => (
-              <TouchableOpacity
-                key={plan.id}
-                onPress={() => { setSelectedPlan(plan.id); hapticFeedback.light(); }}
-                activeOpacity={0.85}
-              >
-                <View style={[
-                  styles.planCard,
-                  { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '30' },
-                  selectedPlan === plan.id && { borderColor: COLORS.primary, borderWidth: 2 },
-                  plan.highlight && selectedPlan === plan.id && styles.planCardHighlight,
-                ]}>
-                  {plan.badge && (
-                    <View style={[styles.planBadge, { backgroundColor: plan.highlight ? COLORS.primary : COLORS.warning }]}>
-                      <Text style={styles.planBadgeText}>{plan.badge}</Text>
-                    </View>
-                  )}
-                  <Text style={[styles.planLabel, { color: COLORS.text.secondary }]}>{plan.label}</Text>
-                  <View style={styles.planPriceRow}>
-                    <Text style={[styles.planPrice, { color: COLORS.text.primary }]}>{plan.price}</Text>
-                    <Text style={[styles.planPeriod, { color: COLORS.text.light }]}>{plan.period}</Text>
+        <Animated.View entering={FadeInUp.delay(180).springify()} style={styles.featuresSection}>
+          <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Everything you get</Text>
+          <View style={styles.featuresGrid}>
+            {PRO_FEATURES.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <View
+                  key={index}
+                  style={[styles.featureChip, { backgroundColor: COLORS.cardBackground, ...SHADOWS.xs }]}
+                >
+                  <View style={[styles.featureIconBubble, { backgroundColor: feature.color + '20' }]}>
+                    <Icon size={18} color={feature.color} strokeWidth={2} />
                   </View>
-                  {plan.perMonth && (
-                    <Text style={[styles.planPerMonth, { color: COLORS.text.secondary }]}>{plan.perMonth}</Text>
-                  )}
-                  {selectedPlan === plan.id && (
-                    <View style={[styles.planSelectedDot, { backgroundColor: COLORS.primary }]} />
-                  )}
+                  <Text style={[styles.featureChipLabel, { color: COLORS.text.primary }]}>{feature.label}</Text>
+                  <Text style={[styles.featureChipSub, { color: COLORS.text.light }]}>{feature.sub}</Text>
                 </View>
-              </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.delay(260).springify()} style={styles.plansSection}>
+          <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Choose your plan</Text>
+          <View style={styles.plansList}>
+            {PLANS.map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                selected={selectedPlan === plan.id}
+                onSelect={() => { setSelectedPlan(plan.id); hapticFeedback.light(); }}
+                COLORS={COLORS}
+              />
             ))}
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.ctaSection}>
+        <Animated.View entering={FadeInUp.delay(340).springify()} style={styles.ctaSection}>
           <TouchableOpacity
             onPress={handleSubscribe}
             activeOpacity={0.9}
@@ -216,7 +340,11 @@ export default function PaywallScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Sparkles size={20} color="#FFFFFF" />
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Sparkles size={20} color="#FFFFFF" strokeWidth={2} />
+              )}
               <Text style={styles.ctaButtonText}>
                 {isLoading ? 'Processing...' : 'Subscribe Now'}
               </Text>
@@ -225,7 +353,7 @@ export default function PaywallScreen() {
 
           <TouchableOpacity
             onPress={handleStartTrial}
-            style={[styles.trialButton, { borderColor: COLORS.primary + '40' }]}
+            style={[styles.trialButton, { backgroundColor: COLORS.primary + '12', borderColor: COLORS.primary + '30' }]}
             activeOpacity={0.8}
             disabled={isLoading}
           >
@@ -233,6 +361,21 @@ export default function PaywallScreen() {
               Start 7-Day Free Trial
             </Text>
           </TouchableOpacity>
+
+          <View style={styles.socialProofRow}>
+            <View style={styles.avatarStack}>
+              {['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'].map((color, i) => (
+                <View key={i} style={[styles.avatarBubble, { backgroundColor: color, marginLeft: i > 0 ? -8 : 0 }]}>
+                  <Text style={styles.avatarEmoji}>
+                    {['😊', '🎉', '✨', '🌟'][i]}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <Text style={[styles.socialProofText, { color: COLORS.text.secondary }]}>
+              Join 10,000+ families already reading
+            </Text>
+          </View>
 
           <Text style={[styles.disclaimer, { color: COLORS.text.light }]}>
             Cancel anytime. No hidden fees. Billed through your app store.
@@ -244,10 +387,30 @@ export default function PaywallScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, overflow: 'hidden' },
+  decorativeOrb1: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(255,107,107,0.06)',
+    top: -80,
+    right: -80,
+    zIndex: 0,
+  },
+  decorativeOrb2: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(78,205,196,0.05)',
+    bottom: 100,
+    left: -60,
+    zIndex: 0,
+  },
   closeButton: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 56 : 16,
+    top: Platform.OS === 'ios' ? 54 : 14,
     right: SPACING.xl,
     width: 36,
     height: 36,
@@ -255,132 +418,199 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
-    ...SHADOWS.sm,
   },
-  scrollContent: { paddingBottom: 40 },
+  scrollContent: {
+    paddingBottom: 48,
+  },
   heroSection: {
     alignItems: 'center',
-    paddingTop: SPACING.xxxl + SPACING.xl,
+    paddingTop: SPACING.xxxl + SPACING.xl + 16,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxl,
     gap: SPACING.md,
   },
-  iconCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+  iconGlowOuter: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.sm,
+    backgroundColor: 'rgba(255,107,107,0.06)',
+    marginBottom: 4,
+  },
+  iconGlowInner: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
     ...SHADOWS.lg,
   },
+  heroTag: {
+    fontSize: 11,
+    fontFamily: FONTS.bold,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+  },
   heroTitle: {
-    fontSize: 28,
-    fontFamily: FONTS.extrabold,
+    fontSize: 34,
+    fontFamily: FONTS.display,
     textAlign: 'center',
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
+    lineHeight: 40,
   },
   heroSubtitle: {
     fontSize: 15,
     fontFamily: FONTS.medium,
     textAlign: 'center',
-    lineHeight: 22,
-    maxWidth: 300,
+    lineHeight: 23,
   },
-  featuresCard: {
-    marginHorizontal: SPACING.xl,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    gap: SPACING.md,
-    marginBottom: SPACING.xxl,
-    ...SHADOWS.sm,
+  trustBadgesRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: SPACING.sm,
   },
-  featureRow: {
+  trustBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
+    gap: 5,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.pill,
   },
-  featureIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  trustBadgeText: {
+    fontSize: 12,
+    fontFamily: FONTS.semibold,
+  },
+  featuresSection: {
+    paddingHorizontal: SPACING.xl,
+    marginBottom: SPACING.xl,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontFamily: FONTS.displayBold,
+    marginBottom: SPACING.lg,
+    letterSpacing: -0.3,
+  },
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  featureChip: {
+    width: (SCREEN_WIDTH - SPACING.xl * 2 - SPACING.sm) / 2,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+    gap: 6,
+  },
+  featureIconBubble: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 2,
   },
-  featureLabel: {
-    flex: 1,
+  featureChipLabel: {
     fontSize: 14,
-    fontFamily: FONTS.medium,
+    fontFamily: FONTS.bold,
+    lineHeight: 18,
+  },
+  featureChipSub: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    lineHeight: 16,
   },
   plansSection: {
     paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xxl,
+    marginBottom: SPACING.xl,
   },
-  plansTitle: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    marginBottom: SPACING.lg,
-  },
-  plansGrid: {
-    flexDirection: 'row',
+  plansList: {
     gap: SPACING.sm,
   },
-  planCard: {
-    flex: 1,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    gap: 4,
-    minHeight: 100,
-    ...SHADOWS.xs,
-    position: 'relative',
+  badgeFloating: {
+    alignSelf: 'flex-start',
+    marginLeft: SPACING.lg,
+    marginBottom: -8,
+    zIndex: 2,
   },
-  planCardHighlight: {
-    ...SHADOWS.md,
-  },
-  planBadge: {
-    position: 'absolute',
-    top: -10,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
+  badgeGradient: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 5,
     borderRadius: BORDER_RADIUS.pill,
   },
-  planBadgeText: {
-    fontSize: 9,
+  badgeText: {
+    fontSize: 10,
     fontFamily: FONTS.bold,
     color: '#FFFFFF',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  planCard: {
+    borderRadius: BORDER_RADIUS.xl,
+    overflow: 'hidden',
+    ...SHADOWS.sm,
+  },
+  planCardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.lg,
+    gap: SPACING.md,
+  },
+  planLeft: {
+    flex: 1,
+    gap: 4,
   },
   planLabel: {
+    fontSize: 16,
+    fontFamily: FONTS.bold,
+    lineHeight: 20,
+  },
+  planDescription: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    lineHeight: 16,
+  },
+  planPerMonthChip: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BORDER_RADIUS.pill,
+    marginTop: 4,
+  },
+  planPerMonthText: {
     fontSize: 11,
     fontFamily: FONTS.semibold,
-    marginTop: SPACING.sm,
   },
-  planPriceRow: {
-    flexDirection: 'row',
+  planRight: {
     alignItems: 'flex-end',
     gap: 2,
   },
   planPrice: {
-    fontSize: 18,
-    fontFamily: FONTS.extrabold,
+    fontSize: 28,
+    fontFamily: FONTS.display,
+    lineHeight: 32,
   },
   planPeriod: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: FONTS.medium,
-    paddingBottom: 2,
   },
-  planPerMonth: {
-    fontSize: 10,
-    fontFamily: FONTS.medium,
-    textAlign: 'center',
-  },
-  planSelectedDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginTop: 4,
+  planCheckCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
   },
   ctaSection: {
     paddingHorizontal: SPACING.xl,
@@ -391,7 +621,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    paddingVertical: SPACING.xl,
+    paddingVertical: 18,
     borderRadius: BORDER_RADIUS.pill,
     ...SHADOWS.lg,
   },
@@ -404,13 +634,40 @@ const styles = StyleSheet.create({
   trialButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.lg,
+    paddingVertical: 16,
     borderRadius: BORDER_RADIUS.pill,
     borderWidth: 1.5,
   },
   trialButtonText: {
     fontSize: 15,
     fontFamily: FONTS.semibold,
+  },
+  socialProofRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.xs,
+  },
+  avatarStack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarBubble: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  avatarEmoji: {
+    fontSize: 13,
+  },
+  socialProofText: {
+    fontSize: 13,
+    fontFamily: FONTS.medium,
   },
   disclaimer: {
     fontSize: 11,
