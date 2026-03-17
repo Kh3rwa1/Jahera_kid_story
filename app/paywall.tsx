@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,12 +19,16 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withRepeat,
+  withTiming,
+  withSequence,
+  interpolate,
+  Easing,
 } from 'react-native-reanimated';
 import {
   X,
   Sparkles,
   Check,
-  Infinity,
   Globe,
   Volume2,
   BookOpen,
@@ -33,6 +37,8 @@ import {
   Star,
   Shield,
   Clock,
+  Infinity as InfinityIcon,
+  ChevronRight,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
@@ -42,13 +48,20 @@ import { hapticFeedback } from '@/utils/haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const FREE_VS_PRO = [
+  { label: 'Stories/month', free: '3', pro: 'Unlimited' },
+  { label: 'AI narration', free: '✗', pro: '✓' },
+  { label: 'Languages', free: '2', pro: '20+' },
+  { label: 'Story length', free: 'Short', pro: 'All lengths' },
+];
+
 const PRO_FEATURES = [
-  { icon: Infinity, label: 'Unlimited stories', sub: 'Every single month', color: '#FF6B6B' },
+  { icon: InfinityIcon, label: 'Unlimited stories', sub: 'Every single month', color: '#FF6B6B' },
   { icon: Globe, label: '20+ languages', sub: 'All unlocked instantly', color: '#4ECDC4' },
   { icon: Volume2, label: 'AI narration', sub: 'Every story voiced', color: '#45B7D1' },
-  { icon: BookOpen, label: 'Long-form stories', sub: '250+ words per story', color: '#96CEB4' },
-  { icon: Users, label: 'Family plan', sub: 'Up to 4 children', color: '#FFEAA7' },
-  { icon: Zap, label: 'Priority speed', sub: 'Instant generation', color: '#DDA0DD' },
+  { icon: BookOpen, label: 'Long-form stories', sub: '250+ words per story', color: '#F59E0B' },
+  { icon: Users, label: 'Family plan', sub: 'Up to 4 children', color: '#10B981' },
+  { icon: Zap, label: 'Priority speed', sub: 'Instant generation', color: '#6366F1' },
 ];
 
 const PLANS = [
@@ -84,11 +97,67 @@ const PLANS = [
   },
 ];
 
-const TRUST_BADGES = [
-  { icon: Shield, label: '7-Day Free Trial' },
-  { icon: Clock, label: 'Cancel Anytime' },
-  { icon: Star, label: 'No Hidden Fees' },
+const AVATARS = [
+  { initials: 'SA', color: '#FF6B6B' },
+  { initials: 'MK', color: '#4ECDC4' },
+  { initials: 'JL', color: '#45B7D1' },
+  { initials: 'RT', color: '#F59E0B' },
 ];
+
+function ShimmerCta({ onPress, isLoading, label, gradient }: {
+  onPress: () => void;
+  isLoading: boolean;
+  label: string;
+  gradient: readonly [string, string, ...string[]];
+}) {
+  const shimmerX = useSharedValue(-1);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    shimmerX.value = withRepeat(
+      withTiming(1, { duration: 2800, easing: Easing.linear }),
+      -1,
+      false
+    );
+  }, []);
+
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(shimmerX.value, [-1, 1], [-220, 220]) }],
+  }));
+
+  const scaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={scaleStyle}>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={() => { scale.value = withSpring(0.97, { damping: 14 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 12 }); }}
+        activeOpacity={1}
+        disabled={isLoading}
+      >
+        <LinearGradient
+          colors={gradient as [string, string]}
+          style={styles.ctaButton}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', borderRadius: BORDER_RADIUS.pill }]}>
+            <Animated.View style={[styles.ctaShimmer, shimmerStyle]} />
+          </View>
+          {isLoading ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Sparkles size={19} color="#FFFFFF" strokeWidth={2} />
+          )}
+          <Text style={styles.ctaButtonText}>{isLoading ? 'Processing...' : label}</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
 
 function PlanCard({
   plan,
@@ -108,39 +177,83 @@ function PlanCard({
   }));
 
   const handlePress = () => {
-    scale.value = withSpring(0.97, { damping: 15 }, () => {
-      scale.value = withSpring(1, { damping: 15 });
-    });
+    scale.value = withSequence(
+      withSpring(0.97, { damping: 15 }),
+      withSpring(1, { damping: 15 })
+    );
     onSelect();
   };
+
+  if (plan.highlight) {
+    return (
+      <TouchableOpacity onPress={handlePress} activeOpacity={0.9}>
+        <Animated.View style={animStyle}>
+          <LinearGradient
+            colors={selected ? ['#FF8C42', '#FF5C00'] : ['#FFF4EE', '#FFF4EE']}
+            style={[styles.featuredPlanCard, selected && styles.featuredPlanCardSelected]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.featuredPlanBadgeRow}>
+              <View style={styles.featuredBadge}>
+                <Text style={styles.featuredBadgeText}>BEST VALUE</Text>
+              </View>
+              <Text style={[styles.featuredSaving, { color: selected ? 'rgba(255,255,255,0.85)' : '#FF8C42' }]}>
+                Save 40%
+              </Text>
+            </View>
+
+            <View style={styles.featuredPlanBody}>
+              <View style={styles.featuredPlanLeft}>
+                <Text style={[styles.featuredPlanLabel, { color: selected ? '#FFFFFF' : '#1E293B' }]}>
+                  Annual
+                </Text>
+                <Text style={[styles.featuredPlanDesc, { color: selected ? 'rgba(255,255,255,0.7)' : '#64748B' }]}>
+                  Billed once per year
+                </Text>
+                <View style={[styles.perMonthChip, { backgroundColor: selected ? 'rgba(255,255,255,0.2)' : '#FF8C4218' }]}>
+                  <Text style={[styles.perMonthText, { color: selected ? '#FFFFFF' : '#FF8C42' }]}>
+                    $4.17/mo
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.featuredPlanRight}>
+                <Text style={[styles.featuredPlanPrice, { color: selected ? '#FFFFFF' : '#1E293B' }]}>
+                  $49.99
+                </Text>
+                <Text style={[styles.featuredPlanPeriod, { color: selected ? 'rgba(255,255,255,0.65)' : '#94A3B8' }]}>
+                  /year
+                </Text>
+              </View>
+
+              <View style={[styles.planCheckCircle, {
+                backgroundColor: selected ? '#FFFFFF' : '#FF8C4220',
+              }]}>
+                {selected
+                  ? <Check size={13} color="#FF8C42" strokeWidth={3} />
+                  : <View style={styles.emptyCircleInner} />
+                }
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={0.9}>
       <Animated.View style={animStyle}>
-        {plan.badge && (
-          <View style={styles.badgeFloating}>
-            <LinearGradient
-              colors={plan.highlight ? ['#FF8C42', '#FF6B35'] : ['#2ECC71', '#27AE60']}
-              style={styles.badgeGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
-              <Text style={styles.badgeText}>{plan.badge}</Text>
-            </LinearGradient>
-          </View>
-        )}
-        <View
-          style={[
-            styles.planCard,
-            { backgroundColor: COLORS.cardBackground },
-            selected && { borderColor: COLORS.primary, borderWidth: 2.5 },
-            !selected && { borderColor: COLORS.text.light + '20', borderWidth: 1.5 },
-            plan.badge && { marginTop: 14 },
-          ]}
-        >
+        <View style={[
+          styles.planCard,
+          { backgroundColor: COLORS.cardBackground },
+          selected && { borderColor: COLORS.primary, borderWidth: 2 },
+          !selected && { borderColor: COLORS.text.light + '25', borderWidth: 1.5 },
+        ]}>
           {selected && (
             <LinearGradient
-              colors={[COLORS.primary + '12', COLORS.primary + '04']}
+              colors={[COLORS.primary + '10', COLORS.primary + '03']}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -149,9 +262,16 @@ function PlanCard({
 
           <View style={styles.planCardInner}>
             <View style={styles.planLeft}>
-              <Text style={[styles.planLabel, { color: selected ? COLORS.primary : COLORS.text.secondary }]}>
-                {plan.label}
-              </Text>
+              <View style={styles.planLabelRow}>
+                <Text style={[styles.planLabel, { color: selected ? COLORS.primary : COLORS.text.primary }]}>
+                  {plan.label}
+                </Text>
+                {plan.badge && (
+                  <View style={[styles.inlineBadge, { backgroundColor: '#10B98118' }]}>
+                    <Text style={[styles.inlineBadgeText, { color: '#10B981' }]}>{plan.badge}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={[styles.planDescription, { color: COLORS.text.light }]}>
                 {plan.description}
               </Text>
@@ -171,10 +291,9 @@ function PlanCard({
               <Text style={[styles.planPeriod, { color: COLORS.text.light }]}>{plan.period}</Text>
             </View>
 
-            <View style={[
-              styles.planCheckCircle,
-              { backgroundColor: selected ? COLORS.primary : COLORS.text.light + '20' },
-            ]}>
+            <View style={[styles.planCheckCircle, {
+              backgroundColor: selected ? COLORS.primary : COLORS.text.light + '20',
+            }]}>
               {selected && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
             </View>
           </View>
@@ -242,7 +361,7 @@ export default function PaywallScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top', 'bottom']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
 
-      <View style={styles.decorativeOrb1} />
+      <View style={[styles.decorativeOrb1, { backgroundColor: COLORS.primary + '08' }]} />
       <View style={styles.decorativeOrb2} />
 
       <TouchableOpacity
@@ -250,28 +369,34 @@ export default function PaywallScreen() {
         onPress={() => router.back()}
         activeOpacity={0.7}
       >
-        <X size={18} color={COLORS.text.secondary} />
+        <X size={17} color={COLORS.text.secondary} />
       </TouchableOpacity>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.heroSection}>
-          <View style={styles.iconGlowOuter}>
-            <View style={[styles.iconGlowInner, { backgroundColor: COLORS.primary + '20' }]}>
+        <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.heroSection}>
+          <View style={[styles.iconGlowOuter, { backgroundColor: COLORS.primary + '0A' }]}>
+            <View style={[styles.iconGlowMid, { backgroundColor: COLORS.primary + '16' }]}>
               <LinearGradient
                 colors={COLORS.gradients.sunset}
                 style={styles.iconCircle}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Sparkles size={44} color="#FFFFFF" strokeWidth={1.5} />
+                <Sparkles size={40} color="#FFFFFF" strokeWidth={1.5} />
               </LinearGradient>
             </View>
           </View>
 
-          <Text style={[styles.heroTag, { color: COLORS.primary }]}>PRO MEMBERSHIP</Text>
+          <View style={styles.ratingRow}>
+            {[1, 2, 3, 4, 5].map(i => (
+              <Star key={i} size={14} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
+            ))}
+            <Text style={[styles.ratingText, { color: COLORS.text.secondary }]}>4.9 · 2,400+ ratings</Text>
+          </View>
+
           <Text style={[styles.heroTitle, { color: COLORS.text.primary }]}>
             Unlock Jahera Pro
           </Text>
@@ -279,21 +404,24 @@ export default function PaywallScreen() {
             Unlimited magical stories for your child,{'\n'}personalized with AI
           </Text>
 
-          <View style={styles.trustBadgesRow}>
-            {TRUST_BADGES.map((badge, i) => {
-              const Icon = badge.icon;
+          <View style={styles.trustRow}>
+            {[
+              { icon: Shield, label: '7-Day Free Trial' },
+              { icon: Clock, label: 'Cancel Anytime' },
+            ].map((b, i) => {
+              const Icon = b.icon;
               return (
-                <View key={i} style={[styles.trustBadge, { backgroundColor: COLORS.cardBackground, ...SHADOWS.xs }]}>
-                  <Icon size={12} color={COLORS.primary} strokeWidth={2.5} />
-                  <Text style={[styles.trustBadgeText, { color: COLORS.text.secondary }]}>{badge.label}</Text>
+                <View key={i} style={[styles.trustPill, { backgroundColor: COLORS.cardBackground, ...SHADOWS.xs }]}>
+                  <Icon size={11} color={COLORS.primary} strokeWidth={2.5} />
+                  <Text style={[styles.trustPillText, { color: COLORS.text.secondary }]}>{b.label}</Text>
                 </View>
               );
             })}
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(180).springify()} style={styles.featuresSection}>
-          <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Everything you get</Text>
+        <Animated.View entering={FadeInUp.delay(160).springify()} style={styles.sectionWrap}>
+          <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>What you get</Text>
           <View style={styles.featuresGrid}>
             {PRO_FEATURES.map((feature, index) => {
               const Icon = feature.icon;
@@ -302,8 +430,8 @@ export default function PaywallScreen() {
                   key={index}
                   style={[styles.featureChip, { backgroundColor: COLORS.cardBackground, ...SHADOWS.xs }]}
                 >
-                  <View style={[styles.featureIconBubble, { backgroundColor: feature.color + '20' }]}>
-                    <Icon size={18} color={feature.color} strokeWidth={2} />
+                  <View style={[styles.featureIconBubble, { backgroundColor: feature.color + '18' }]}>
+                    <Icon size={17} color={feature.color} strokeWidth={2} />
                   </View>
                   <Text style={[styles.featureChipLabel, { color: COLORS.text.primary }]}>{feature.label}</Text>
                   <Text style={[styles.featureChipSub, { color: COLORS.text.light }]}>{feature.sub}</Text>
@@ -313,8 +441,34 @@ export default function PaywallScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(260).springify()} style={styles.plansSection}>
+        <Animated.View entering={FadeInUp.delay(220).springify()} style={styles.sectionWrap}>
+          <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Free vs Pro</Text>
+          <View style={[styles.compareTable, { backgroundColor: COLORS.cardBackground, ...SHADOWS.sm }]}>
+            <View style={styles.compareHeader}>
+              <Text style={[styles.compareHeaderLabel, { color: COLORS.text.light, flex: 2 }]}>Feature</Text>
+              <Text style={[styles.compareHeaderLabel, { color: COLORS.text.light }]}>Free</Text>
+              <LinearGradient
+                colors={COLORS.gradients.sunset}
+                style={styles.compareProHeader}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Text style={styles.compareProHeaderText}>Pro</Text>
+              </LinearGradient>
+            </View>
+            {FREE_VS_PRO.map((row, i) => (
+              <View key={i} style={[styles.compareRow, i < FREE_VS_PRO.length - 1 && { borderBottomWidth: 1, borderBottomColor: COLORS.text.light + '12' }]}>
+                <Text style={[styles.compareRowLabel, { color: COLORS.text.secondary, flex: 2 }]}>{row.label}</Text>
+                <Text style={[styles.compareRowFree, { color: COLORS.text.light }]}>{row.free}</Text>
+                <Text style={[styles.compareRowPro, { color: COLORS.primary }]}>{row.pro}</Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.delay(280).springify()} style={styles.sectionWrap}>
           <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Choose your plan</Text>
+
           <View style={styles.plansList}>
             {PLANS.map((plan) => (
               <PlanCard
@@ -329,51 +483,35 @@ export default function PaywallScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(340).springify()} style={styles.ctaSection}>
-          <TouchableOpacity
-            onPress={handleSubscribe}
-            activeOpacity={0.9}
-            disabled={isLoading}
-          >
-            <LinearGradient
-              colors={COLORS.gradients.sunset}
-              style={styles.ctaButton}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Sparkles size={20} color="#FFFFFF" strokeWidth={2} />
-              )}
-              <Text style={styles.ctaButtonText}>
-                {isLoading ? 'Processing...' : 'Subscribe Now'}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          <ShimmerCta
+            onPress={handleStartTrial}
+            isLoading={isLoading}
+            label="Start 7-Day Free Trial"
+            gradient={COLORS.gradients.sunset}
+          />
 
           <TouchableOpacity
-            onPress={handleStartTrial}
-            style={[styles.trialButton, { backgroundColor: COLORS.primary + '12', borderColor: COLORS.primary + '30' }]}
+            onPress={handleSubscribe}
+            style={[styles.subscribeButton, { borderColor: COLORS.text.light + '30', backgroundColor: COLORS.cardBackground }]}
             activeOpacity={0.8}
             disabled={isLoading}
           >
-            <Text style={[styles.trialButtonText, { color: COLORS.primary }]}>
-              Start 7-Day Free Trial
+            <Text style={[styles.subscribeButtonText, { color: COLORS.text.secondary }]}>
+              Subscribe Now
             </Text>
+            <ChevronRight size={15} color={COLORS.text.light} strokeWidth={2} />
           </TouchableOpacity>
 
           <View style={styles.socialProofRow}>
             <View style={styles.avatarStack}>
-              {['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'].map((color, i) => (
-                <View key={i} style={[styles.avatarBubble, { backgroundColor: color, marginLeft: i > 0 ? -8 : 0 }]}>
-                  <Text style={styles.avatarEmoji}>
-                    {['😊', '🎉', '✨', '🌟'][i]}
-                  </Text>
+              {AVATARS.map((a, i) => (
+                <View key={i} style={[styles.avatarBubble, { backgroundColor: a.color, marginLeft: i > 0 ? -9 : 0, borderColor: COLORS.background }]}>
+                  <Text style={styles.avatarInitials}>{a.initials}</Text>
                 </View>
               ))}
             </View>
             <Text style={[styles.socialProofText, { color: COLORS.text.secondary }]}>
-              Join 10,000+ families already reading
+              Join 10,000+ families reading
             </Text>
           </View>
 
@@ -390,58 +528,55 @@ const styles = StyleSheet.create({
   container: { flex: 1, overflow: 'hidden' },
   decorativeOrb1: {
     position: 'absolute',
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: 'rgba(255,107,107,0.06)',
-    top: -80,
-    right: -80,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    top: -100,
+    right: -100,
     zIndex: 0,
   },
   decorativeOrb2: {
     position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
     backgroundColor: 'rgba(78,205,196,0.05)',
-    bottom: 100,
+    bottom: 120,
     left: -60,
     zIndex: 0,
   },
   closeButton: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 54 : 14,
+    top: Platform.OS === 'ios' ? 52 : 12,
     right: SPACING.xl,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
   },
-  scrollContent: {
-    paddingBottom: 48,
-  },
+  scrollContent: { paddingBottom: 52 },
+
   heroSection: {
     alignItems: 'center',
-    paddingTop: SPACING.xxxl + SPACING.xl + 16,
+    paddingTop: SPACING.xxxl + SPACING.xl + 12,
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxl,
     gap: SPACING.md,
   },
   iconGlowOuter: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 128,
+    height: 128,
+    borderRadius: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,107,107,0.06)',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  iconGlowInner: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  iconGlowMid: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -453,18 +588,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.lg,
   },
-  heroTag: {
-    fontSize: 11,
-    fontFamily: FONTS.bold,
-    letterSpacing: 2.5,
-    textTransform: 'uppercase',
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontFamily: FONTS.semibold,
+    marginLeft: 2,
   },
   heroTitle: {
-    fontSize: 34,
+    fontSize: 32,
     fontFamily: FONTS.display,
     textAlign: 'center',
-    letterSpacing: -0.8,
-    lineHeight: 40,
+    letterSpacing: -0.6,
+    lineHeight: 38,
   },
   heroSubtitle: {
     fontSize: 15,
@@ -472,35 +612,35 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 23,
   },
-  trustBadgesRow: {
+  trustRow: {
     flexDirection: 'row',
     gap: SPACING.sm,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: SPACING.sm,
+    marginTop: SPACING.xs,
   },
-  trustBadge: {
+  trustPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: BORDER_RADIUS.pill,
   },
-  trustBadgeText: {
+  trustPillText: {
     fontSize: 12,
     fontFamily: FONTS.semibold,
   },
-  featuresSection: {
+
+  sectionWrap: {
     paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.xxl,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontFamily: FONTS.displayBold,
     marginBottom: SPACING.lg,
     letterSpacing: -0.3,
   },
+
   featuresGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -510,55 +650,164 @@ const styles = StyleSheet.create({
     width: (SCREEN_WIDTH - SPACING.xl * 2 - SPACING.sm) / 2,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
-    gap: 6,
+    gap: 5,
   },
   featureIconBubble: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
   },
   featureChipLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: FONTS.bold,
-    lineHeight: 18,
+    lineHeight: 17,
   },
   featureChipSub: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: FONTS.regular,
-    lineHeight: 16,
+    lineHeight: 15,
   },
-  plansSection: {
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xl,
+
+  compareTable: {
+    borderRadius: BORDER_RADIUS.xl,
+    overflow: 'hidden',
   },
+  compareHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  compareHeaderLabel: {
+    fontSize: 11,
+    fontFamily: FONTS.bold,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    width: 70,
+    textAlign: 'center',
+  },
+  compareProHeader: {
+    width: 70,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.pill,
+    alignItems: 'center',
+  },
+  compareProHeaderText: {
+    fontSize: 11,
+    fontFamily: FONTS.bold,
+    color: '#FFFFFF',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  compareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: 14,
+  },
+  compareRowLabel: {
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+  },
+  compareRowFree: {
+    fontSize: 13,
+    fontFamily: FONTS.semibold,
+    width: 70,
+    textAlign: 'center',
+  },
+  compareRowPro: {
+    fontSize: 13,
+    fontFamily: FONTS.bold,
+    width: 70,
+    textAlign: 'center',
+  },
+
   plansList: {
     gap: SPACING.sm,
   },
-  badgeFloating: {
-    alignSelf: 'flex-start',
-    marginLeft: SPACING.lg,
-    marginBottom: -8,
-    zIndex: 2,
+
+  featuredPlanCard: {
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.lg,
+    gap: SPACING.sm,
+    ...SHADOWS.md,
   },
-  badgeGradient: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 5,
+  featuredPlanCardSelected: {
+    ...SHADOWS.lg,
+  },
+  featuredPlanBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  featuredBadge: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: BORDER_RADIUS.pill,
   },
-  badgeText: {
+  featuredBadgeText: {
     fontSize: 10,
     fontFamily: FONTS.bold,
     color: '#FFFFFF',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
+  featuredSaving: {
+    fontSize: 12,
+    fontFamily: FONTS.bold,
+  },
+  featuredPlanBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  featuredPlanLeft: {
+    flex: 1,
+    gap: 4,
+  },
+  featuredPlanLabel: {
+    fontSize: 17,
+    fontFamily: FONTS.bold,
+    lineHeight: 21,
+  },
+  featuredPlanDesc: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+  },
+  perMonthChip: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BORDER_RADIUS.pill,
+    marginTop: 4,
+  },
+  perMonthText: {
+    fontSize: 11,
+    fontFamily: FONTS.bold,
+  },
+  featuredPlanRight: {
+    alignItems: 'flex-end',
+    gap: 1,
+  },
+  featuredPlanPrice: {
+    fontSize: 28,
+    fontFamily: FONTS.display,
+    lineHeight: 32,
+  },
+  featuredPlanPeriod: {
+    fontSize: 12,
+    fontFamily: FONTS.medium,
+  },
+
   planCard: {
     borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
-    ...SHADOWS.sm,
+    ...SHADOWS.xs,
   },
   planCardInner: {
     flexDirection: 'row',
@@ -568,12 +817,27 @@ const styles = StyleSheet.create({
   },
   planLeft: {
     flex: 1,
-    gap: 4,
+    gap: 3,
+  },
+  planLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
   },
   planLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: FONTS.bold,
-    lineHeight: 20,
+    lineHeight: 19,
+  },
+  inlineBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: BORDER_RADIUS.pill,
+  },
+  inlineBadgeText: {
+    fontSize: 9,
+    fontFamily: FONTS.bold,
+    letterSpacing: 0.5,
   },
   planDescription: {
     fontSize: 12,
@@ -582,13 +846,13 @@ const styles = StyleSheet.create({
   },
   planPerMonthChip: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: BORDER_RADIUS.pill,
-    marginTop: 4,
+    marginTop: 3,
   },
   planPerMonthText: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: FONTS.semibold,
   },
   planRight: {
@@ -596,12 +860,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   planPrice: {
-    fontSize: 28,
+    fontSize: 24,
     fontFamily: FONTS.display,
-    lineHeight: 32,
+    lineHeight: 28,
   },
   planPeriod: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: FONTS.medium,
   },
   planCheckCircle: {
@@ -610,8 +874,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 4,
+    marginLeft: 2,
   },
+  emptyCircleInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,140,66,0.4)',
+  },
+
   ctaSection: {
     paddingHorizontal: SPACING.xl,
     gap: SPACING.md,
@@ -623,25 +894,37 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     paddingVertical: 18,
     borderRadius: BORDER_RADIUS.pill,
+    overflow: 'hidden',
     ...SHADOWS.lg,
   },
+  ctaShimmer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 70,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    transform: [{ skewX: '-20deg' }],
+  },
   ctaButtonText: {
-    fontSize: 17,
+    fontSize: 16,
     fontFamily: FONTS.bold,
     color: '#FFFFFF',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
-  trialButton: {
+  subscribeButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
+    gap: 4,
+    paddingVertical: 15,
     borderRadius: BORDER_RADIUS.pill,
     borderWidth: 1.5,
   },
-  trialButtonText: {
-    fontSize: 15,
+  subscribeButtonText: {
+    fontSize: 14,
     fontFamily: FONTS.semibold,
   },
+
   socialProofRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -654,16 +937,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarBubble: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
   },
-  avatarEmoji: {
-    fontSize: 13,
+  avatarInitials: {
+    fontSize: 10,
+    fontFamily: FONTS.bold,
+    color: '#FFFFFF',
   },
   socialProofText: {
     fontSize: 13,
@@ -674,5 +958,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     textAlign: 'center',
     lineHeight: 16,
+    paddingBottom: 4,
   },
 });
