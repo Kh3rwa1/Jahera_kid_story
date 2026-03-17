@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { ProfileWithRelations, Story, QuizAttempt, SubscriptionStatus, Streak } from '@/types/database';
 import { profileService, storyService, quizService } from '@/services/database';
 import { subscriptionService, streakService } from '@/services/subscriptionService';
+import { revenueCatService } from '@/services/revenueCatService';
 import { handleError } from '@/utils/errorHandler';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -50,6 +51,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       setError(null);
 
+      await revenueCatService.configure(user.$id);
+
       const data = await profileService.getWithRelationsByUserId(user.$id);
       if (!data) {
         setProfile(null);
@@ -87,6 +90,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const clearProfile = useCallback(() => {
+    revenueCatService.reset();
     setProfile(null);
     setStories([]);
     setQuizAttempts([]);

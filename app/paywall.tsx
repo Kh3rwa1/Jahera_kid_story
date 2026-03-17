@@ -39,9 +39,11 @@ import {
   Clock,
   Infinity as InfinityIcon,
   ChevronRight,
+  RotateCcw,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
+import { revenueCatService, RCOffering } from '@/services/revenueCatService';
 import { subscriptionService } from '@/services/subscriptionService';
 import { SPACING, BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
 import { hapticFeedback } from '@/utils/haptics';
@@ -64,45 +66,72 @@ const PRO_FEATURES = [
   { icon: Zap, label: 'Priority speed', sub: 'Instant generation', color: '#6366F1' },
 ];
 
-const PLANS = [
-  {
-    id: 'monthly',
-    label: 'Monthly',
-    price: '$6.99',
-    period: '/month',
-    badge: null,
-    highlight: false,
-    perMonth: null,
-    description: 'Full access, month to month',
-  },
-  {
-    id: 'yearly',
-    label: 'Annual',
-    price: '$49.99',
-    period: '/year',
-    badge: 'BEST VALUE',
-    highlight: true,
-    perMonth: '$4.17/mo',
-    description: 'Save 40% vs monthly',
-  },
-  {
-    id: 'family',
-    label: 'Family',
-    price: '$9.99',
-    period: '/month',
-    badge: 'UP TO 4 KIDS',
-    highlight: false,
-    perMonth: 'Per family',
-    description: 'Up to 4 children included',
-  },
-];
-
 const AVATARS = [
   { initials: 'SA', color: '#FF6B6B' },
   { initials: 'MK', color: '#4ECDC4' },
   { initials: 'JL', color: '#45B7D1' },
   { initials: 'RT', color: '#F59E0B' },
 ];
+
+type PlanId = 'monthly' | 'yearly' | 'family';
+
+interface PlanDisplayItem {
+  id: PlanId;
+  label: string;
+  price: string;
+  period: string;
+  badge: string | null;
+  highlight: boolean;
+  perMonth: string | null;
+  description: string;
+  rcPackage: any | null;
+}
+
+function buildPlans(offerings: RCOffering): PlanDisplayItem[] {
+  const monthlyPrice = offerings.monthly?.product?.priceString ?? '$6.99';
+  const yearlyPrice = offerings.yearly?.product?.priceString ?? '$49.99';
+  const familyPrice = offerings.family?.product?.priceString ?? '$9.99';
+
+  const yearlyMonthly = offerings.yearly?.product?.price
+    ? `$${(offerings.yearly.product.price / 12).toFixed(2)}/mo`
+    : '$4.17/mo';
+
+  return [
+    {
+      id: 'monthly',
+      label: 'Monthly',
+      price: monthlyPrice,
+      period: '/month',
+      badge: null,
+      highlight: false,
+      perMonth: null,
+      description: 'Full access, month to month',
+      rcPackage: offerings.monthly,
+    },
+    {
+      id: 'yearly',
+      label: 'Annual',
+      price: yearlyPrice,
+      period: '/year',
+      badge: 'BEST VALUE',
+      highlight: true,
+      perMonth: yearlyMonthly,
+      description: 'Save ~40% vs monthly',
+      rcPackage: offerings.yearly,
+    },
+    {
+      id: 'family',
+      label: 'Family',
+      price: familyPrice,
+      period: '/month',
+      badge: 'UP TO 4 KIDS',
+      highlight: false,
+      perMonth: 'Per family',
+      description: 'Up to 4 children included',
+      rcPackage: offerings.family,
+    },
+  ];
+}
 
 function ShimmerCta({ onPress, isLoading, label, gradient }: {
   onPress: () => void;
@@ -165,7 +194,7 @@ function PlanCard({
   onSelect,
   COLORS,
 }: {
-  plan: (typeof PLANS)[0];
+  plan: PlanDisplayItem;
   selected: boolean;
   onSelect: () => void;
   COLORS: any;
@@ -211,19 +240,21 @@ function PlanCard({
                 <Text style={[styles.featuredPlanDesc, { color: selected ? 'rgba(255,255,255,0.7)' : '#64748B' }]}>
                   Billed once per year
                 </Text>
-                <View style={[styles.perMonthChip, { backgroundColor: selected ? 'rgba(255,255,255,0.2)' : '#FF8C4218' }]}>
-                  <Text style={[styles.perMonthText, { color: selected ? '#FFFFFF' : '#FF8C42' }]}>
-                    $4.17/mo
-                  </Text>
-                </View>
+                {plan.perMonth && (
+                  <View style={[styles.perMonthChip, { backgroundColor: selected ? 'rgba(255,255,255,0.2)' : '#FF8C4218' }]}>
+                    <Text style={[styles.perMonthText, { color: selected ? '#FFFFFF' : '#FF8C42' }]}>
+                      {plan.perMonth}
+                    </Text>
+                  </View>
+                )}
               </View>
 
               <View style={styles.featuredPlanRight}>
                 <Text style={[styles.featuredPlanPrice, { color: selected ? '#FFFFFF' : '#1E293B' }]}>
-                  $49.99
+                  {plan.price}
                 </Text>
                 <Text style={[styles.featuredPlanPeriod, { color: selected ? 'rgba(255,255,255,0.65)' : '#94A3B8' }]}>
-                  /year
+                  {plan.period}
                 </Text>
               </View>
 
@@ -308,8 +339,26 @@ export default function PaywallScreen() {
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
   const { profile, refreshSubscription } = useApp();
-  const [selectedPlan, setSelectedPlan] = useState('yearly');
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>('yearly');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [offerings, setOfferings] = useState<RCOffering>({ monthly: null, yearly: null, family: null, raw: null });
+  const [offeringsLoading, setOfferingsLoading] = useState(true);
+
+  const rcAvailable = revenueCatService.isAvailable();
+  const plans = buildPlans(offerings);
+  const selectedPlanData = plans.find(p => p.id === selectedPlan) ?? plans[1];
+
+  useEffect(() => {
+    if (rcAvailable) {
+      revenueCatService.getOfferings().then(o => {
+        setOfferings(o);
+        setOfferingsLoading(false);
+      });
+    } else {
+      setOfferingsLoading(false);
+    }
+  }, [rcAvailable]);
 
   const handleSubscribe = async () => {
     if (!profile) return;
@@ -317,20 +366,46 @@ export default function PaywallScreen() {
     hapticFeedback.medium();
 
     try {
-      if (selectedPlan === 'family') {
-        await subscriptionService.upgradeToFamily(profile.$id);
+      if (rcAvailable && selectedPlanData.rcPackage) {
+        const result = await revenueCatService.purchasePackage(selectedPlanData.rcPackage);
+
+        if (result.cancelled) {
+          setIsLoading(false);
+          return;
+        }
+
+        if (result.success) {
+          if (result.plan === 'family') {
+            await subscriptionService.upgradeToFamily(profile.$id);
+          } else {
+            await subscriptionService.upgradeToPro(profile.$id);
+          }
+          await refreshSubscription();
+          hapticFeedback.success();
+          Alert.alert(
+            'Welcome to Pro!',
+            'Your subscription is now active. Enjoy unlimited stories!',
+            [{ text: 'Start Exploring', onPress: () => router.back() }]
+          );
+        } else {
+          Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
+        }
       } else {
-        await subscriptionService.upgradeToPro(profile.$id);
+        if (selectedPlan === 'family') {
+          await subscriptionService.upgradeToFamily(profile.$id);
+        } else {
+          await subscriptionService.upgradeToPro(profile.$id);
+        }
+        await refreshSubscription();
+        hapticFeedback.success();
+        Alert.alert(
+          'Welcome to Pro!',
+          'Your subscription is now active. Enjoy unlimited stories!',
+          [{ text: 'Start Exploring', onPress: () => router.back() }]
+        );
       }
-      await refreshSubscription();
-      hapticFeedback.success();
-      Alert.alert(
-        'Welcome to Pro!',
-        'Your subscription is now active. Enjoy unlimited stories!',
-        [{ text: 'Start Exploring', onPress: () => router.back() }]
-      );
-    } catch {
-      Alert.alert('Something went wrong', 'Please try again.');
+    } catch (err: any) {
+      Alert.alert('Something went wrong', err?.message ?? 'Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -342,18 +417,71 @@ export default function PaywallScreen() {
     hapticFeedback.medium();
 
     try {
-      await subscriptionService.startTrial(profile.$id);
-      await refreshSubscription();
-      hapticFeedback.success();
-      Alert.alert(
-        '7-Day Free Trial Started!',
-        'Enjoy full Pro access for 7 days, completely free.',
-        [{ text: "Let's Go!", onPress: () => router.back() }]
-      );
-    } catch {
-      Alert.alert('Something went wrong', 'Please try again.');
+      if (rcAvailable && selectedPlanData.rcPackage) {
+        const result = await revenueCatService.purchasePackage(selectedPlanData.rcPackage);
+
+        if (result.cancelled) {
+          setIsLoading(false);
+          return;
+        }
+
+        if (result.success) {
+          await subscriptionService.upgradeToPro(profile.$id);
+          await refreshSubscription();
+          hapticFeedback.success();
+          Alert.alert(
+            'Welcome to Pro!',
+            'Your trial is now active. Enjoy full access!',
+            [{ text: "Let's Go!", onPress: () => router.back() }]
+          );
+        } else {
+          Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
+        }
+      } else {
+        await subscriptionService.startTrial(profile.$id);
+        await refreshSubscription();
+        hapticFeedback.success();
+        Alert.alert(
+          '7-Day Free Trial Started!',
+          'Enjoy full Pro access for 7 days, completely free.',
+          [{ text: "Let's Go!", onPress: () => router.back() }]
+        );
+      }
+    } catch (err: any) {
+      Alert.alert('Something went wrong', err?.message ?? 'Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    if (!profile) return;
+    setIsRestoring(true);
+    hapticFeedback.light();
+
+    try {
+      const rcInfo = await revenueCatService.restorePurchases();
+
+      if (rcInfo.isActive) {
+        if (rcInfo.plan === 'family') {
+          await subscriptionService.upgradeToFamily(profile.$id);
+        } else {
+          await subscriptionService.upgradeToPro(profile.$id);
+        }
+        await refreshSubscription();
+        hapticFeedback.success();
+        Alert.alert(
+          'Purchases Restored',
+          'Your subscription has been restored successfully.',
+          [{ text: 'Great!', onPress: () => router.back() }]
+        );
+      } else {
+        Alert.alert('No Purchases Found', 'We could not find any active subscriptions linked to your account.');
+      }
+    } catch {
+      Alert.alert('Restore Failed', 'Please try again or contact support.');
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -469,17 +597,26 @@ export default function PaywallScreen() {
         <Animated.View entering={FadeInUp.delay(280).springify()} style={styles.sectionWrap}>
           <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Choose your plan</Text>
 
-          <View style={styles.plansList}>
-            {PLANS.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                selected={selectedPlan === plan.id}
-                onSelect={() => { setSelectedPlan(plan.id); hapticFeedback.light(); }}
-                COLORS={COLORS}
-              />
-            ))}
-          </View>
+          {offeringsLoading ? (
+            <View style={styles.offeringsLoader}>
+              <ActivityIndicator color={COLORS.primary} size="small" />
+              <Text style={[styles.offeringsLoaderText, { color: COLORS.text.secondary }]}>
+                Loading plans...
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.plansList}>
+              {plans.map((plan) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  selected={selectedPlan === plan.id}
+                  onSelect={() => { setSelectedPlan(plan.id); hapticFeedback.light(); }}
+                  COLORS={COLORS}
+                />
+              ))}
+            </View>
+          )}
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(340).springify()} style={styles.ctaSection}>
@@ -494,7 +631,7 @@ export default function PaywallScreen() {
             onPress={handleSubscribe}
             style={[styles.subscribeButton, { borderColor: COLORS.text.light + '30', backgroundColor: COLORS.cardBackground }]}
             activeOpacity={0.8}
-            disabled={isLoading}
+            disabled={isLoading || isRestoring}
           >
             <Text style={[styles.subscribeButtonText, { color: COLORS.text.secondary }]}>
               Subscribe Now
@@ -514,6 +651,22 @@ export default function PaywallScreen() {
               Join 10,000+ families reading
             </Text>
           </View>
+
+          <TouchableOpacity
+            onPress={handleRestorePurchases}
+            style={styles.restoreButton}
+            activeOpacity={0.7}
+            disabled={isLoading || isRestoring}
+          >
+            {isRestoring ? (
+              <ActivityIndicator size="small" color={COLORS.text.light} />
+            ) : (
+              <RotateCcw size={13} color={COLORS.text.light} strokeWidth={2} />
+            )}
+            <Text style={[styles.restoreText, { color: COLORS.text.light }]}>
+              {isRestoring ? 'Restoring...' : 'Restore Purchases'}
+            </Text>
+          </TouchableOpacity>
 
           <Text style={[styles.disclaimer, { color: COLORS.text.light }]}>
             Cancel anytime. No hidden fees. Billed through your app store.
@@ -725,6 +878,18 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     width: 70,
     textAlign: 'center',
+  },
+
+  offeringsLoader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.xxl,
+  },
+  offeringsLoaderText: {
+    fontSize: 14,
+    fontFamily: FONTS.medium,
   },
 
   plansList: {
@@ -951,6 +1116,17 @@ const styles = StyleSheet.create({
   },
   socialProofText: {
     fontSize: 13,
+    fontFamily: FONTS.medium,
+  },
+  restoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+  },
+  restoreText: {
+    fontSize: 12,
     fontFamily: FONTS.medium,
   },
   disclaimer: {
