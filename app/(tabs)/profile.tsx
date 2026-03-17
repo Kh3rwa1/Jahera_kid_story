@@ -37,6 +37,7 @@ import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { KidsBubbleBackground } from '@/components/KidsBubbleBackground';
+import { MarqueeText } from '@/components/MarqueeText';
 
 function AnimatedAchievementCard({ card, index }: { card: any; index: number }) {
   const entrance = useEntranceSequence(index, 120, 70);
@@ -284,9 +285,10 @@ export default function ProfileScreen() {
                         <Text style={[styles.scorePillText, { color: scoreColor }]}>{pct}%</Text>
                       </LinearGradient>
                       <View style={styles.quizInfo}>
-                        <Text style={[styles.quizTitle, { color: COLORS.text.primary }]} numberOfLines={1}>
-                          {title}
-                        </Text>
+                        <MarqueeText
+                          text={title}
+                          style={[styles.quizTitle, { color: COLORS.text.primary }]}
+                        />
                         <Text style={[styles.quizSub, { color: COLORS.text.secondary }]}>
                           {attempt.score} / {attempt.total_questions} correct
                         </Text>

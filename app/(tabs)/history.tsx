@@ -37,6 +37,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { storyService } from '@/services/database';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { KidsBubbleBackground } from '@/components/KidsBubbleBackground';
+import { MarqueeText } from '@/components/MarqueeText';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = (SCREEN_WIDTH - SPACING.xl * 2 - SPACING.md) / 2;
@@ -262,23 +263,25 @@ export default function HistoryScreen() {
                       </View>
                       {featuredStory.audio_url && (
                         <View style={[styles.audioPill, { backgroundColor: 'rgba(0,0,0,0.12)' }]}>
-                          <Volume2 size={11} color="rgba(26,26,46,0.7)" />
-                          <Text style={[styles.audioPillText, { color: 'rgba(26,26,46,0.7)' }]}>Audio</Text>
+                          <Volume2 size={11} color={palette.accent} />
+                          <Text style={[styles.audioPillText, { color: palette.accent }]}>Audio</Text>
                         </View>
                       )}
                     </View>
 
                     <View style={styles.featuredCenter}>
                       <Text style={styles.featuredSeasonIcon}>{palette.emoji}</Text>
-                      <Text style={[styles.featuredTitle, { color: '#1A1A2E' }]} numberOfLines={2}>
-                        {featuredStory.title}
-                      </Text>
+                      <MarqueeText
+                        text={featuredStory.title}
+                        style={[styles.featuredTitle, { color: '#1A1A2E' }]}
+                        containerStyle={{ flex: 1 }}
+                      />
                     </View>
 
                     <View style={styles.featuredMeta}>
                       <View style={styles.featuredMetaLeft}>
                         <Text style={styles.featuredLangFlag}>{getLanguageFlag(featuredStory.language_code)}</Text>
-                        <Text style={[styles.featuredMetaText, { color: 'rgba(26,26,46,0.6)' }]}>
+                        <Text style={[styles.featuredMetaText, { color: palette.accent + 'CC' }]}>
                           {getRelativeTime(featuredStory.generated_at || featuredStory.$createdAt)}
                         </Text>
                       </View>
@@ -425,9 +428,10 @@ export default function HistoryScreen() {
                     </LinearGradient>
 
                     <View style={styles.listInfo}>
-                      <Text style={[styles.listTitle, { color: COLORS.text.primary }]} numberOfLines={1}>
-                        {story.title}
-                      </Text>
+                      <MarqueeText
+                        text={story.title}
+                        style={[styles.listTitle, { color: COLORS.text.primary }]}
+                      />
                       <View style={styles.listMeta}>
                         <Text style={styles.listLangFlag}>{getLanguageFlag(story.language_code)}</Text>
                         <Text style={[styles.listMetaText, { color: COLORS.text.secondary }]}>
