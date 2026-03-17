@@ -46,17 +46,17 @@ export default function Friends() {
     const trimmed = currentName.trim();
     if (!trimmed.length) {
       setShake(true);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       setTimeout(() => setShake(false), 600);
       return;
     }
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setFriends([...friends, trimmed]);
     setCurrentName('');
   };
 
   const removeFriend = async (index: number) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setFriends(friends.filter((_, i) => i !== index));
   };
 
@@ -68,7 +68,7 @@ export default function Friends() {
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       const languages = JSON.parse(params.languages as string);
       const kidName = params.kidName as string;
       const familyMembers = JSON.parse((params.familyMembers as string) || '[]');
@@ -87,17 +87,17 @@ export default function Friends() {
         ...friends.map(name => friendService.add(profile.$id, name)),
       ]);
       await loadProfile();
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(tabs)');
     } catch {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setErrorMsg('Something went wrong. Please try again.');
       setIsLoading(false);
     }
   };
 
   const handleBack = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
 
@@ -106,12 +106,9 @@ export default function Friends() {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        {/* Hero zone */}
         <LinearGradient
-          colors={[successColor, successLight]}
+          colors={['#0F0F1A', '#1A0826', '#0A1628']}
           style={[styles.hero, { paddingTop: insets.top + SPACING.lg }]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
         >
           <View style={styles.heroTop}>
             <TouchableOpacity
@@ -123,7 +120,7 @@ export default function Friends() {
               <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
             <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: '100%' }]} />
+              <View style={[styles.progressFill, { width: '100%', backgroundColor: successColor }]} />
             </View>
             <Text style={styles.stepLabelText}>4 / 4</Text>
           </View>
@@ -290,7 +287,7 @@ export default function Friends() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8F9FA' },
+  root: { flex: 1, backgroundColor: '#F7F8FA' },
   kav: { flex: 1 },
   hero: {
     paddingHorizontal: SPACING.xl,
@@ -305,29 +302,31 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xxl,
   },
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   progressTrack: {
     flex: 1,
     height: 3,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 2,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.9)',
   },
   stepLabelText: {
     fontSize: FONT_SIZES.xs,
     fontFamily: FONTS.bold,
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 0.5,
   },
   emojiScene: {
     flexDirection: 'row',
@@ -339,9 +338,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   emojiCircleLarge: { width: 64, height: 64 },
   emojiCircleMid: { width: 52, height: 52 },
@@ -349,17 +348,18 @@ const styles = StyleSheet.create({
   emojiLarge: { fontSize: 30 },
   emojiMid: { fontSize: 24 },
   heroTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
-    letterSpacing: -0.3,
+    letterSpacing: -0.8,
     textAlign: 'center',
+    lineHeight: 38,
     marginBottom: SPACING.sm,
   },
   heroSubtitle: {
     fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.55)',
     textAlign: 'center',
     marginBottom: SPACING.md,
   },
@@ -500,7 +500,9 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F7F8FA',
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEF2',
   },
   ctaButton: {
     flexDirection: 'row',

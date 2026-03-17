@@ -35,22 +35,22 @@ export default function FamilyMembers() {
     const trimmed = currentName.trim();
     if (!trimmed.length) {
       setShake(true);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       setTimeout(() => setShake(false), 600);
       return;
     }
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setFamilyMembers([...familyMembers, trimmed]);
     setCurrentName('');
   };
 
   const removeFamilyMember = async (index: number) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setFamilyMembers(familyMembers.filter((_, i) => i !== index));
   };
 
   const handleContinue = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     router.push({
       pathname: '/onboarding/friends',
       params: {
@@ -62,7 +62,7 @@ export default function FamilyMembers() {
   };
 
   const handleSkip = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: '/onboarding/friends',
       params: {
@@ -74,7 +74,7 @@ export default function FamilyMembers() {
   };
 
   const handleBack = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
 
@@ -85,12 +85,9 @@ export default function FamilyMembers() {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        {/* Hero zone */}
         <LinearGradient
-          colors={[themeColors.primary, themeColors.primaryDark]}
+          colors={['#0F0F1A', '#1A0826', '#0A1628']}
           style={[styles.hero, { paddingTop: insets.top + SPACING.lg }]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
         >
           <View style={styles.heroTop}>
             <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
@@ -99,7 +96,7 @@ export default function FamilyMembers() {
             <View style={styles.progressTrack}>
               <Animated.View
                 entering={FadeInDown.delay(100)}
-                style={[styles.progressFill, { width: `${progressWidth}%` }]}
+                style={[styles.progressFill, { width: `${progressWidth}%`, backgroundColor: themeColors.primary }]}
               />
             </View>
             <Text style={styles.stepLabelText}>3 / 4</Text>
@@ -241,7 +238,7 @@ export default function FamilyMembers() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8F9FA' },
+  root: { flex: 1, backgroundColor: '#F7F8FA' },
   kav: { flex: 1 },
   hero: {
     paddingHorizontal: SPACING.xl,
@@ -256,29 +253,31 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xxl,
   },
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   progressTrack: {
     flex: 1,
     height: 3,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 2,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.9)',
   },
   stepLabelText: {
     fontSize: FONT_SIZES.xs,
     fontFamily: FONTS.bold,
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 0.5,
   },
   emojiScene: {
     flexDirection: 'row',
@@ -290,9 +289,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   emojiCircleLarge: { width: 60, height: 60 },
   emojiCircleMid: { width: 56, height: 56 },
@@ -303,18 +302,18 @@ const styles = StyleSheet.create({
   emojiMid: { fontSize: 24 },
   emojiSmall: { fontSize: 20 },
   heroTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
-    letterSpacing: -0.3,
+    letterSpacing: -0.8,
     textAlign: 'center',
-    lineHeight: 34,
+    lineHeight: 38,
     marginBottom: SPACING.sm,
   },
   heroSubtitle: {
     fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.55)',
     textAlign: 'center',
   },
   inputSection: {
@@ -433,7 +432,9 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F7F8FA',
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEF2',
   },
   ctaButton: {
     flexDirection: 'row',
