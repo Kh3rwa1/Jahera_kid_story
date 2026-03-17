@@ -45,6 +45,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
 import { revenueCatService, RCOffering } from '@/services/revenueCatService';
 import { subscriptionService } from '@/services/subscriptionService';
+
+const ENTITLEMENT_PRO = 'pro';
 import { SPACING, BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
 import { hapticFeedback } from '@/utils/haptics';
 
@@ -73,7 +75,7 @@ const AVATARS = [
   { initials: 'RT', color: '#F59E0B' },
 ];
 
-type PlanId = 'monthly' | 'yearly' | 'family';
+type PlanId = 'weekly' | 'monthly' | 'yearly' | 'family';
 
 interface PlanDisplayItem {
   id: PlanId;
@@ -88,6 +90,7 @@ interface PlanDisplayItem {
 }
 
 function buildPlans(offerings: RCOffering): PlanDisplayItem[] {
+  const weeklyPrice = offerings.weekly?.product?.priceString ?? '$1.99';
   const monthlyPrice = offerings.monthly?.product?.priceString ?? '$6.99';
   const yearlyPrice = offerings.yearly?.product?.priceString ?? '$49.99';
   const familyPrice = offerings.family?.product?.priceString ?? '$9.99';
@@ -97,6 +100,17 @@ function buildPlans(offerings: RCOffering): PlanDisplayItem[] {
     : '$4.17/mo';
 
   return [
+    {
+      id: 'weekly',
+      label: 'Weekly',
+      price: weeklyPrice,
+      period: '/week',
+      badge: 'TRY IT OUT',
+      highlight: false,
+      perMonth: null,
+      description: 'Try Pro risk-free for a week',
+      rcPackage: offerings.weekly,
+    },
     {
       id: 'monthly',
       label: 'Monthly',
@@ -346,8 +360,9 @@ export default function PaywallScreen() {
   const [offeringsLoading, setOfferingsLoading] = useState(true);
 
   const rcAvailable = revenueCatService.isAvailable();
+  const rcUIAvailable = revenueCatService.isUIAvailable();
   const plans = buildPlans(offerings);
-  const selectedPlanData = plans.find(p => p.id === selectedPlan) ?? plans[1];
+  const selectedPlanData = plans.find(p => p.id === selectedPlan) ?? plans[2];
 
   useEffect(() => {
     if (rcAvailable) {
@@ -360,6 +375,65 @@ export default function PaywallScreen() {
     }
   }, [rcAvailable]);
 
+  const handleGetStarted = async () => {
+    if (!profile) return;
+    setIsLoading(true);
+    hapticFeedback.medium();
+
+    try {
+      if (rcUIAvailable) {
+        const result = await revenueCatService.presentPaywall(offerings.raw);
+        if (result.purchased || result.restored) {
+          await subscriptionService.syncFromRevenueCat(profile.$id);
+          await refreshSubscription();
+          hapticFeedback.success();
+          Alert.alert(
+            result.restored ? 'Purchases Restored' : 'Welcome to Pro!',
+            result.restored
+              ? 'Your subscription has been restored.'
+              : 'Your subscription is now active. Enjoy unlimited stories!',
+            [{ text: "Let's Go!", onPress: () => router.back() }]
+          );
+        }
+        return;
+      }
+
+      if (rcAvailable && selectedPlanData.rcPackage) {
+        const result = await revenueCatService.purchasePackage(selectedPlanData.rcPackage);
+        if (result.cancelled) return;
+        if (result.success) {
+          await subscriptionService.syncFromRevenueCat(profile.$id);
+          await refreshSubscription();
+          hapticFeedback.success();
+          Alert.alert(
+            'Welcome to Pro!',
+            'Your subscription is now active. Enjoy unlimited stories!',
+            [{ text: "Let's Go!", onPress: () => router.back() }]
+          );
+        } else {
+          Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
+        }
+      } else {
+        if (selectedPlan === 'family') {
+          await subscriptionService.upgradeToFamily(profile.$id);
+        } else {
+          await subscriptionService.startTrial(profile.$id);
+        }
+        await refreshSubscription();
+        hapticFeedback.success();
+        Alert.alert(
+          'Welcome to Pro!',
+          'Your subscription is now active. Enjoy unlimited stories!',
+          [{ text: "Let's Go!", onPress: () => router.back() }]
+        );
+      }
+    } catch (err: any) {
+      Alert.alert('Something went wrong', err?.message ?? 'Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubscribe = async () => {
     if (!profile) return;
     setIsLoading(true);
@@ -368,18 +442,9 @@ export default function PaywallScreen() {
     try {
       if (rcAvailable && selectedPlanData.rcPackage) {
         const result = await revenueCatService.purchasePackage(selectedPlanData.rcPackage);
-
-        if (result.cancelled) {
-          setIsLoading(false);
-          return;
-        }
-
+        if (result.cancelled) return;
         if (result.success) {
-          if (result.plan === 'family') {
-            await subscriptionService.upgradeToFamily(profile.$id);
-          } else {
-            await subscriptionService.upgradeToPro(profile.$id);
-          }
+          await subscriptionService.syncFromRevenueCat(profile.$id);
           await refreshSubscription();
           hapticFeedback.success();
           Alert.alert(
@@ -411,57 +476,36 @@ export default function PaywallScreen() {
     }
   };
 
-  const handleStartTrial = async () => {
-    if (!profile) return;
-    setIsLoading(true);
-    hapticFeedback.medium();
-
-    try {
-      if (rcAvailable && selectedPlanData.rcPackage) {
-        const result = await revenueCatService.purchasePackage(selectedPlanData.rcPackage);
-
-        if (result.cancelled) {
-          setIsLoading(false);
-          return;
-        }
-
-        if (result.success) {
-          await subscriptionService.upgradeToPro(profile.$id);
-          await refreshSubscription();
-          hapticFeedback.success();
-          Alert.alert(
-            'Welcome to Pro!',
-            'Your trial is now active. Enjoy full access!',
-            [{ text: "Let's Go!", onPress: () => router.back() }]
-          );
-        } else {
-          Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
-        }
-      } else {
-        await subscriptionService.startTrial(profile.$id);
-        await refreshSubscription();
-        hapticFeedback.success();
-        Alert.alert(
-          '7-Day Free Trial Started!',
-          'Enjoy full Pro access for 7 days, completely free.',
-          [{ text: "Let's Go!", onPress: () => router.back() }]
-        );
-      }
-    } catch (err: any) {
-      Alert.alert('Something went wrong', err?.message ?? 'Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleRestorePurchases = async () => {
     if (!profile) return;
+
+    if (rcUIAvailable) {
+      setIsRestoring(true);
+      hapticFeedback.light();
+      try {
+        const result = await revenueCatService.presentPaywallIfNeeded(ENTITLEMENT_PRO);
+        if (result.purchased || result.restored) {
+          await subscriptionService.syncFromRevenueCat(profile.$id);
+          await refreshSubscription();
+          hapticFeedback.success();
+          if (result.restored) {
+            Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.', [
+              { text: 'Great!', onPress: () => router.back() },
+            ]);
+          }
+        }
+      } catch {
+        Alert.alert('Restore Failed', 'Please try again or contact support.');
+      } finally {
+        setIsRestoring(false);
+      }
+      return;
+    }
+
     setIsRestoring(true);
     hapticFeedback.light();
-
     try {
       const rcInfo = await revenueCatService.restorePurchases();
-
       if (rcInfo.isActive) {
         if (rcInfo.plan === 'family') {
           await subscriptionService.upgradeToFamily(profile.$id);
@@ -470,11 +514,9 @@ export default function PaywallScreen() {
         }
         await refreshSubscription();
         hapticFeedback.success();
-        Alert.alert(
-          'Purchases Restored',
-          'Your subscription has been restored successfully.',
-          [{ text: 'Great!', onPress: () => router.back() }]
-        );
+        Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.', [
+          { text: 'Great!', onPress: () => router.back() },
+        ]);
       } else {
         Alert.alert('No Purchases Found', 'We could not find any active subscriptions linked to your account.');
       }
@@ -621,7 +663,7 @@ export default function PaywallScreen() {
 
         <Animated.View entering={FadeInUp.delay(340).springify()} style={styles.ctaSection}>
           <ShimmerCta
-            onPress={handleStartTrial}
+            onPress={handleGetStarted}
             isLoading={isLoading}
             label="Start 7-Day Free Trial"
             gradient={COLORS.gradients.sunset}
