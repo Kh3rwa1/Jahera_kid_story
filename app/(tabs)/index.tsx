@@ -244,9 +244,9 @@ function QuickActions({ handleLastStory, handleRandomStory, storiesCount, textPr
   onLibrary: () => void;
 }) {
   const actions = [
-    { icon: <Play size={16} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />, label: 'Continue', sublabel: 'Last story', grad: ['#3B82F6', '#2563EB'] as [string, string], onPress: handleLastStory, textPrimary, textSecondary },
-    { icon: <Shuffle size={16} color="#FFFFFF" strokeWidth={2.5} />, label: 'Surprise', sublabel: 'Random pick', grad: ['#F59E0B', '#D97706'] as [string, string], onPress: handleRandomStory, textPrimary, textSecondary },
-    { icon: <TrendingUp size={16} color="#FFFFFF" strokeWidth={2.5} />, label: 'Library', sublabel: `${storiesCount} stories`, grad: ['#10B981', '#059669'] as [string, string], onPress: onLibrary, textPrimary, textSecondary },
+    { icon: <Play size={20} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />, label: 'Continue', sublabel: 'Last story', grad: ['#2979FF', '#0050CC'] as [string, string], onPress: handleLastStory, textPrimary, textSecondary },
+    { icon: <Shuffle size={20} color="#FFFFFF" strokeWidth={2.5} />, label: 'Surprise', sublabel: 'Random pick', grad: ['#FF9500', '#FF6D00'] as [string, string], onPress: handleRandomStory, textPrimary, textSecondary },
+    { icon: <TrendingUp size={20} color="#FFFFFF" strokeWidth={2.5} />, label: 'Library', sublabel: `${storiesCount} stories`, grad: ['#00C853', '#009624'] as [string, string], onPress: onLibrary, textPrimary, textSecondary },
   ];
 
   return (
@@ -652,15 +652,15 @@ const styles = StyleSheet.create({
   },
   avatarRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, flex: 1 },
   greetBlock: { gap: 1 },
-  greetLine1: { fontSize: 12, fontFamily: FONTS.semibold, letterSpacing: 0.2 },
-  greetLine2: { fontSize: 20, fontFamily: FONTS.extrabold, letterSpacing: -0.4 },
+  greetLine1: { fontSize: 13, fontFamily: FONTS.displayMedium, letterSpacing: 0.1 },
+  greetLine2: { fontSize: 24, fontFamily: FONTS.display, letterSpacing: -0.3 },
   topBarRight: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   streakChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: BORDER_RADIUS.pill,
   },
-  streakChipText: { fontSize: 13, fontFamily: FONTS.extrabold, color: '#F59E0B' },
+  streakChipText: { fontSize: 14, fontFamily: FONTS.display, color: '#FF9500' },
   proChip: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     paddingHorizontal: 8, paddingVertical: 4,
@@ -697,14 +697,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: BORDER_RADIUS.pill,
   },
-  heroPillText: { fontSize: 11, fontFamily: FONTS.bold, color: '#FFFFFF', letterSpacing: 0.3 },
+  heroPillText: { fontSize: 12, fontFamily: FONTS.displayBold, color: '#FFFFFF', letterSpacing: 0.2 },
   heroH1: {
-    fontSize: 32, fontFamily: FONTS.extrabold,
-    color: '#FFFFFF', letterSpacing: -0.8, lineHeight: 36,
+    fontSize: 36, fontFamily: FONTS.display,
+    color: '#FFFFFF', letterSpacing: -0.5, lineHeight: 40,
   },
   heroSub: {
-    fontSize: 13, fontFamily: FONTS.semibold,
-    color: 'rgba(255,255,255,0.82)', lineHeight: 19,
+    fontSize: 14, fontFamily: FONTS.displayMedium,
+    color: 'rgba(255,255,255,0.88)', lineHeight: 20,
   },
   heroBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 7,
@@ -715,9 +715,9 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
     marginTop: 4,
   },
-  heroBtnText: { fontSize: 14, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
+  heroBtnText: { fontSize: 15, fontFamily: FONTS.display, color: '#FFFFFF' },
   heroEmojiStack: { alignItems: 'center', gap: 4 },
-  heroEmojiMain: { fontSize: 72 },
+  heroEmojiMain: { fontSize: 80 },
   heroSparkleRow: { flexDirection: 'row', gap: 4 },
   heroSparkle: { fontSize: 20 },
   heroStrip: {
@@ -745,13 +745,13 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   quickIconCircle: {
-    width: 46, height: 46, borderRadius: 23,
+    width: 52, height: 52, borderRadius: 26,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 2,
     ...SHADOWS.sm,
   },
-  quickLabel: { fontSize: 13, fontFamily: FONTS.bold, textAlign: 'center' },
-  quickSublabel: { fontSize: 10, fontFamily: FONTS.medium, textAlign: 'center' },
+  quickLabel: { fontSize: 14, fontFamily: FONTS.displayBold, textAlign: 'center' },
+  quickSublabel: { fontSize: 11, fontFamily: FONTS.displayMedium, textAlign: 'center' },
 
   /* Stats Ticker */
   statsTickerWrapper: {
@@ -779,8 +779,8 @@ const styles = StyleSheet.create({
     width: 30, height: 30, borderRadius: 15,
     alignItems: 'center', justifyContent: 'center',
   },
-  statsTickerVal: { fontSize: 17, fontFamily: FONTS.extrabold, letterSpacing: -0.5 },
-  statsTickerLbl: { fontSize: 12, fontFamily: FONTS.semibold },
+  statsTickerVal: { fontSize: 18, fontFamily: FONTS.display, letterSpacing: -0.3 },
+  statsTickerLbl: { fontSize: 13, fontFamily: FONTS.displayMedium },
 
   /* Sections */
   section: { marginBottom: SPACING.xxl },
@@ -788,12 +788,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: SPACING.xl, marginBottom: SPACING.md,
   },
-  secTitle: { fontSize: 20, fontFamily: FONTS.extrabold, letterSpacing: -0.4 },
+  secTitle: { fontSize: 22, fontFamily: FONTS.display, letterSpacing: -0.3 },
   seeAllBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 2,
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: BORDER_RADIUS.pill,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: BORDER_RADIUS.pill,
   },
-  seeAllText: { fontSize: 13, fontFamily: FONTS.bold },
+  seeAllText: { fontSize: 13, fontFamily: FONTS.displayBold },
 
   /* Empty state */
   emptyWrap: { paddingHorizontal: SPACING.xl },
@@ -806,14 +806,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF9E6', alignItems: 'center', justifyContent: 'center',
   },
   emptyEmoji: { fontSize: 40 },
-  emptyTitle: { fontSize: 20, fontFamily: FONTS.extrabold, letterSpacing: -0.3 },
-  emptySub: { fontSize: 14, fontFamily: FONTS.medium, textAlign: 'center', lineHeight: 21 },
+  emptyTitle: { fontSize: 22, fontFamily: FONTS.display, letterSpacing: -0.2 },
+  emptySub: { fontSize: 14, fontFamily: FONTS.displayMedium, textAlign: 'center', lineHeight: 22 },
   emptyAction: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-    paddingHorizontal: SPACING.xl, paddingVertical: 13,
+    paddingHorizontal: SPACING.xl, paddingVertical: 14,
     borderRadius: BORDER_RADIUS.pill, marginTop: 4, ...SHADOWS.sm,
   },
-  emptyActionText: { fontSize: 15, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  emptyActionText: { fontSize: 16, fontFamily: FONTS.displayBold, color: '#FFFFFF' },
 
   /* Story carousel */
   carousel: { paddingHorizontal: SPACING.xl, gap: SPACING.md },
@@ -844,8 +844,8 @@ const styles = StyleSheet.create({
   },
   storyContent: { padding: SPACING.md, paddingTop: SPACING.sm + 2 },
   storyTitle: {
-    fontSize: 14, fontFamily: FONTS.bold,
-    marginBottom: 6, lineHeight: 20, letterSpacing: -0.1, minHeight: 40,
+    fontSize: 15, fontFamily: FONTS.displayBold,
+    marginBottom: 6, lineHeight: 21, letterSpacing: -0.1, minHeight: 42,
   },
   storyMeta: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
   storyMetaText: { fontSize: 11, fontFamily: FONTS.medium },
@@ -862,8 +862,8 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.xl, alignItems: 'center', gap: 4, minWidth: 112, ...SHADOWS.xs,
   },
   langFlag: { fontSize: 28 },
-  langName: { fontSize: 13, fontFamily: FONTS.bold },
-  langCount: { fontSize: 11, fontFamily: FONTS.medium },
+  langName: { fontSize: 14, fontFamily: FONTS.displayBold },
+  langCount: { fontSize: 12, fontFamily: FONTS.displayMedium },
   langBar: { width: '100%', height: 4, borderRadius: 2, overflow: 'hidden', marginTop: 2 },
   langBarFill: { height: '100%', borderRadius: 2 },
 
@@ -876,10 +876,10 @@ const styles = StyleSheet.create({
     width: 50, height: 50, borderRadius: 25,
     alignItems: 'center', justifyContent: 'center',
   },
-  charInitial: { fontSize: 20, fontFamily: FONTS.extrabold },
-  charName: { fontSize: 13, fontFamily: FONTS.bold, maxWidth: 80, textAlign: 'center' },
-  charTag: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BORDER_RADIUS.pill },
-  charTagText: { fontSize: 10, fontFamily: FONTS.bold },
+  charInitial: { fontSize: 22, fontFamily: FONTS.display },
+  charName: { fontSize: 13, fontFamily: FONTS.displayBold, maxWidth: 80, textAlign: 'center' },
+  charTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: BORDER_RADIUS.pill },
+  charTagText: { fontSize: 11, fontFamily: FONTS.displayBold },
 
   /* Upgrade banner */
   upgradeBanner: {
@@ -892,8 +892,8 @@ const styles = StyleSheet.create({
     ...SHADOWS.md,
   },
   upgradeLeft: { flex: 1, gap: 4 },
-  upgradeTitle: { fontSize: 17, fontFamily: FONTS.extrabold, color: '#FFFFFF', letterSpacing: -0.3 },
-  upgradeSub: { fontSize: 13, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.7)' },
+  upgradeTitle: { fontSize: 18, fontFamily: FONTS.display, color: '#FFFFFF', letterSpacing: -0.2 },
+  upgradeSub: { fontSize: 13, fontFamily: FONTS.displayMedium, color: 'rgba(255,255,255,0.8)' },
   upgradeArrow: {
     width: 38, height: 38, borderRadius: 19,
     alignItems: 'center', justifyContent: 'center',

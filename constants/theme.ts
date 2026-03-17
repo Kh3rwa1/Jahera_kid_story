@@ -35,12 +35,12 @@ export const SPACING = {
 };
 
 export const BORDER_RADIUS = {
-  xs: 6,
-  sm: 10,
-  md: 14,
-  lg: 18,
-  xl: 24,
-  xxl: 28,
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 20,
+  xl: 26,
+  xxl: 32,
   round: 100,
   pill: 999,
 };
@@ -52,8 +52,8 @@ export const FONT_SIZES = {
   lg: 18,
   xl: 20,
   xxl: 24,
-  xxxl: 28,
-  huge: 32,
+  xxxl: 30,
+  huge: 36,
 };
 
 export const FONT_WEIGHTS = {
@@ -70,6 +70,10 @@ export const FONTS = {
   semibold: 'Nunito-SemiBold',
   bold: 'Nunito-Bold',
   extrabold: 'Nunito-ExtraBold',
+  display: 'Baloo2-ExtraBold',
+  displayBold: 'Baloo2-Bold',
+  displayMedium: 'Baloo2-Medium',
+  displaySemiBold: 'Baloo2-SemiBold',
 };
 
 // Helper function to create dynamic shadows based on theme colors
@@ -84,31 +88,31 @@ export function createShadows(primaryColor: string) {
     },
     xs: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.04,
-      shadowRadius: 2,
-      elevation: 1,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.07,
+      shadowRadius: 4,
+      elevation: 2,
     },
     sm: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 6,
-      elevation: 2,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 3,
     },
     md: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 4,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.13,
+      shadowRadius: 14,
+      elevation: 6,
     },
     lg: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.1,
-      shadowRadius: 20,
-      elevation: 8,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.16,
+      shadowRadius: 24,
+      elevation: 10,
     },
     xl: {
       shadowColor: '#000',

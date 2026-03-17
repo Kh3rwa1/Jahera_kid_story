@@ -386,9 +386,9 @@ const styles = StyleSheet.create({
   pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   pageTitleEmoji: { fontSize: 22 },
   pageTitle: {
-    fontSize: 28,
-    fontFamily: FONTS.extrabold,
-    letterSpacing: -0.6,
+    fontSize: 32,
+    fontFamily: FONTS.display,
+    letterSpacing: -0.4,
   },
 
   heroCard: {

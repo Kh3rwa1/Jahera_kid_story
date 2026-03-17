@@ -8,6 +8,7 @@ import {
   Text,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -32,10 +33,10 @@ const TABS = [
   { name: 'settings', icon: Settings, label: 'Settings', route: '/(tabs)/settings' },
 ];
 
-const BAR_WIDTH = Math.min(SCREEN_WIDTH - 32, 440);
+const BAR_WIDTH = Math.min(SCREEN_WIDTH - 28, 440);
 const TAB_WIDTH = BAR_WIDTH / TABS.length;
-const PILL_WIDTH = TAB_WIDTH - 12;
-const PILL_HEIGHT = 46;
+const PILL_WIDTH = TAB_WIDTH - 10;
+const PILL_HEIGHT = 50;
 
 function TabItem({
   tab,
@@ -95,7 +96,7 @@ function TabItem({
       <Animated.Text
         style={[
           styles.tabLabel,
-          { color: activeColor, fontFamily: FONTS.bold },
+          { color: activeColor, fontFamily: FONTS.displayBold },
           labelStyle,
         ]}
         numberOfLines={1}
@@ -191,14 +192,24 @@ export function FloatingTabBar({
           style={[
             styles.activePill,
             {
-              backgroundColor: COLORS.primary + (isDark ? '22' : '16'),
-              borderColor: COLORS.primary + '30',
               width: PILL_WIDTH,
               height: PILL_HEIGHT,
             },
             pillStyle,
           ]}
-        />
+        >
+          <LinearGradient
+            colors={[COLORS.primary, COLORS.primaryDark] as [string, string]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[StyleSheet.absoluteFillObject, { borderRadius: 25, opacity: isDark ? 0.28 : 0.2 }]}
+          />
+          <View style={[StyleSheet.absoluteFillObject, {
+            borderRadius: 25,
+            borderWidth: 1.5,
+            borderColor: COLORS.primary + (isDark ? '40' : '35'),
+          }]} />
+        </Animated.View>
 
         {/* Tab items */}
         <View style={styles.tabsRow}>
@@ -236,12 +247,12 @@ const styles = StyleSheet.create({
   glowHalo: {
     position: 'absolute',
     width: HALO_SIZE,
-    height: 64,
-    borderRadius: 40,
-    bottom: -8,
+    height: 72,
+    borderRadius: 44,
+    bottom: -10,
     alignSelf: 'center',
-    opacity: 0.35,
-    filter: Platform.OS === 'web' ? 'blur(20px)' : undefined,
+    opacity: 0.5,
+    filter: Platform.OS === 'web' ? 'blur(22px)' : undefined,
   } as any,
   shadow1: {
     position: 'absolute',
@@ -290,16 +301,16 @@ const styles = StyleSheet.create({
 
   activePill: {
     position: 'absolute',
-    top: (Platform.OS === 'web' ? 68 : 64) / 2 - PILL_HEIGHT / 2,
-    borderRadius: 22,
-    borderWidth: 1,
+    top: 68 / 2 - PILL_HEIGHT / 2,
+    borderRadius: 25,
+    overflow: 'hidden',
   },
 
   tabsRow: {
     flexDirection: 'row',
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 4,
-    height: 64,
+    height: 68,
     alignItems: 'center',
   },
 
@@ -308,7 +319,7 @@ const styles = StyleSheet.create({
     height: PILL_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: 3,
   },
 
   tabContent: {
@@ -317,8 +328,8 @@ const styles = StyleSheet.create({
   },
 
   tabLabel: {
-    fontSize: 10.5,
-    letterSpacing: 0.15,
-    lineHeight: 13,
+    fontSize: 11.5,
+    letterSpacing: 0.1,
+    lineHeight: 14,
   },
 });
