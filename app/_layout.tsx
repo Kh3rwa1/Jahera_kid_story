@@ -21,6 +21,13 @@ import {
   AtkinsonHyperlegible_400Regular,
   AtkinsonHyperlegible_700Bold,
 } from '@expo-google-fonts/atkinson-hyperlegible';
+import {
+  Baloo2_400Regular,
+  Baloo2_500Medium,
+  Baloo2_600SemiBold,
+  Baloo2_700Bold,
+  Baloo2_800ExtraBold,
+} from '@expo-google-fonts/baloo-2';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -46,6 +53,11 @@ export default function RootLayout() {
     'ComicNeue-Bold': ComicNeue_700Bold,
     'Atkinson-Regular': AtkinsonHyperlegible_400Regular,
     'Atkinson-Bold': AtkinsonHyperlegible_700Bold,
+    'Baloo2-Regular': Baloo2_400Regular,
+    'Baloo2-Medium': Baloo2_500Medium,
+    'Baloo2-SemiBold': Baloo2_600SemiBold,
+    'Baloo2-Bold': Baloo2_700Bold,
+    'Baloo2-ExtraBold': Baloo2_800ExtraBold,
   });
 
   useEffect(() => {

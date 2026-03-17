@@ -406,9 +406,9 @@ const styles = StyleSheet.create({
   pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   pageTitleEmoji: { fontSize: 22 },
   pageTitle: {
-    fontSize: 28,
-    fontFamily: FONTS.extrabold,
-    letterSpacing: -0.6,
+    fontSize: 32,
+    fontFamily: FONTS.display,
+    letterSpacing: -0.4,
   },
 
   heroBanner: {
@@ -441,10 +441,10 @@ const styles = StyleSheet.create({
   streakPinText: { fontSize: 9, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
   heroMeta: { flex: 1, gap: SPACING.sm, paddingTop: 4 },
   heroName: {
-    fontSize: 26,
-    fontFamily: FONTS.extrabold,
+    fontSize: 30,
+    fontFamily: FONTS.display,
     color: '#FFFFFF',
-    letterSpacing: -0.6,
+    letterSpacing: -0.4,
   },
   langPill: {
     flexDirection: 'row',

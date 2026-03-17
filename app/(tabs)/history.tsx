@@ -491,9 +491,9 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   titleEmoji: { fontSize: 22 },
   pageTitle: {
-    fontSize: 28,
-    fontFamily: FONTS.extrabold,
-    letterSpacing: -0.6,
+    fontSize: 32,
+    fontFamily: FONTS.display,
+    letterSpacing: -0.4,
   },
   pageSubtitle: {
     fontSize: 13,
