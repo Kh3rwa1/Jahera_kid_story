@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { ProfileWithRelations, Story, QuizAttempt, SubscriptionStatus, Streak } from '@/types/database';
 import { profileService, storyService, quizService } from '@/services/database';
 import { subscriptionService, streakService } from '@/services/subscriptionService';
@@ -35,6 +35,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const rcListenerCleanupRef = useRef<(() => void) | null>(null);
+  const profileIdRef = useRef<string | null>(null);
 
   const loadProfile = useCallback(async () => {
     if (!user) {
@@ -64,6 +66,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
 
       setProfile(data);
+      profileIdRef.current = data.$id;
 
       const [storiesData, attemptsData, subData, streakData] = await Promise.all([
         storyService.getByProfileId(data.$id),
@@ -76,6 +79,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setQuizAttempts(attemptsData || []);
       setSubscription(subData);
       setStreak(streakData);
+
+      if (rcListenerCleanupRef.current) {
+        rcListenerCleanupRef.current();
+      }
+      rcListenerCleanupRef.current = revenueCatService.addCustomerInfoListener((rcInfo) => {
+        (async () => {
+          const pid = profileIdRef.current;
+          if (!pid) return;
+          try {
+            await subscriptionService.syncFromRevenueCat(pid);
+            const [newSubData, newStreakData] = await Promise.all([
+              subscriptionService.getStatus(pid),
+              streakService.getStreak(pid),
+            ]);
+            setSubscription(newSubData);
+            setStreak(newStreakData);
+          } catch {
+            // ignore background sync errors
+          }
+        })();
+      });
     } catch (err) {
       const appError = handleError(err, 'AppContext.loadProfile');
       setError(appError.message);
@@ -90,6 +114,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const clearProfile = useCallback(() => {
+    if (rcListenerCleanupRef.current) {
+      rcListenerCleanupRef.current();
+      rcListenerCleanupRef.current = null;
+    }
+    profileIdRef.current = null;
     revenueCatService.reset();
     setProfile(null);
     setStories([]);

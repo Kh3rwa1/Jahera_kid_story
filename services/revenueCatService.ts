@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 let Purchases: any = null;
 let PurchasesPackage: any = null;
 let LOG_LEVEL: any = null;
+let RevenueCatUI: any = null;
 
 if (Platform.OS !== 'web') {
   try {
@@ -13,11 +14,19 @@ if (Platform.OS !== 'web') {
   } catch {
     // SDK not available
   }
+
+  try {
+    const rcui = require('react-native-purchases-ui');
+    RevenueCatUI = rcui.default ?? rcui;
+  } catch {
+    // RC UI SDK not available
+  }
 }
 
 export type PlanType = 'free' | 'pro' | 'family';
 
 export interface RCOffering {
+  weekly: any | null;
   monthly: any | null;
   yearly: any | null;
   family: any | null;
@@ -28,6 +37,13 @@ export interface RCCustomerInfo {
   plan: PlanType;
   isActive: boolean;
   expiresAt: string | null;
+}
+
+export interface RCPaywallResult {
+  purchased: boolean;
+  restored: boolean;
+  cancelled: boolean;
+  plan: PlanType;
 }
 
 const IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
@@ -95,7 +111,7 @@ export const revenueCatService = {
   },
 
   async getOfferings(): Promise<RCOffering> {
-    const empty: RCOffering = { monthly: null, yearly: null, family: null, raw: null };
+    const empty: RCOffering = { weekly: null, monthly: null, yearly: null, family: null, raw: null };
     if (Platform.OS === 'web' || !Purchases) return empty;
 
     try {
@@ -105,10 +121,11 @@ export const revenueCatService = {
 
       const findPackage = (id: string) =>
         current.availablePackages?.find((p: any) =>
-          p.packageType === id || p.identifier?.toLowerCase().includes(id)
+          p.packageType === id || p.identifier?.toLowerCase().includes(id.toLowerCase())
         ) ?? null;
 
       return {
+        weekly: findPackage('WEEKLY') ?? findPackage('weekly'),
         monthly: findPackage('MONTHLY') ?? findPackage('monthly'),
         yearly: findPackage('ANNUAL') ?? findPackage('yearly'),
         family: findPackage('family'),
@@ -135,6 +152,103 @@ export const revenueCatService = {
       }
       console.warn('[RevenueCat] purchasePackage error:', err);
       throw err;
+    }
+  },
+
+  async presentPaywall(offering?: any): Promise<RCPaywallResult> {
+    const empty: RCPaywallResult = { purchased: false, restored: false, cancelled: true, plan: 'free' };
+    if (Platform.OS === 'web' || !RevenueCatUI) return empty;
+
+    try {
+      const params = offering ? { offering } : undefined;
+      const result = await RevenueCatUI.presentPaywall(params);
+      const purchased = result === 'PURCHASED';
+      const restored = result === 'RESTORED';
+      const customerInfo = purchased || restored
+        ? await Purchases?.getCustomerInfo?.()
+        : null;
+      const plan = customerInfo ? extractPlan(customerInfo) : 'free';
+      return {
+        purchased,
+        restored,
+        cancelled: !purchased && !restored,
+        plan,
+      };
+    } catch (err) {
+      console.warn('[RevenueCat] presentPaywall error:', err);
+      return empty;
+    }
+  },
+
+  async presentPaywallIfNeeded(entitlementId: string): Promise<RCPaywallResult> {
+    const empty: RCPaywallResult = { purchased: false, restored: false, cancelled: true, plan: 'free' };
+    if (Platform.OS === 'web' || !RevenueCatUI) return empty;
+
+    try {
+      const result = await RevenueCatUI.presentPaywallIfNeeded({
+        requiredEntitlementIdentifier: entitlementId,
+      });
+      const purchased = result === 'PURCHASED';
+      const restored = result === 'RESTORED';
+      const notRequired = result === 'NOT_PRESENTED';
+      const customerInfo = (purchased || restored || notRequired)
+        ? await Purchases?.getCustomerInfo?.()
+        : null;
+      const plan = customerInfo ? extractPlan(customerInfo) : 'free';
+      return {
+        purchased,
+        restored,
+        cancelled: !purchased && !restored && !notRequired,
+        plan,
+      };
+    } catch (err) {
+      console.warn('[RevenueCat] presentPaywallIfNeeded error:', err);
+      return empty;
+    }
+  },
+
+  async presentCustomerCenter(onRestored?: (plan: PlanType) => void): Promise<void> {
+    if (Platform.OS === 'web' || !RevenueCatUI) return;
+
+    try {
+      await RevenueCatUI.presentCustomerCenter({
+        customerCenterActionListener: {
+          onRestoreCompleted: async (customerInfo: any) => {
+            if (onRestored) {
+              const plan = extractPlan(customerInfo);
+              onRestored(plan);
+            }
+          },
+        },
+      });
+    } catch (err) {
+      console.warn('[RevenueCat] presentCustomerCenter error:', err);
+    }
+  },
+
+  addCustomerInfoListener(callback: (info: RCCustomerInfo) => void): () => void {
+    if (Platform.OS === 'web' || !Purchases) return () => {};
+
+    try {
+      const listener = (customerInfo: any) => {
+        const plan = extractPlan(customerInfo);
+        callback({
+          plan,
+          isActive: plan !== 'free',
+          expiresAt: extractExpiry(customerInfo),
+        });
+      };
+      Purchases.addCustomerInfoUpdateListener(listener);
+      return () => {
+        try {
+          Purchases.removeCustomerInfoUpdateListener?.(listener);
+        } catch {
+          // ignore
+        }
+      };
+    } catch (err) {
+      console.warn('[RevenueCat] addCustomerInfoListener error:', err);
+      return () => {};
     }
   },
 
@@ -178,5 +292,9 @@ export const revenueCatService = {
 
   isAvailable(): boolean {
     return Platform.OS !== 'web' && !!Purchases && !!getApiKey();
+  },
+
+  isUIAvailable(): boolean {
+    return Platform.OS !== 'web' && !!RevenueCatUI && !!getApiKey();
   },
 };

@@ -20,6 +20,7 @@ import {
   Zap,
   BookOpen,
   RotateCcw,
+  CreditCard,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
@@ -27,6 +28,8 @@ import { revenueCatService } from '@/services/revenueCatService';
 import { subscriptionService } from '@/services/subscriptionService';
 import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, FONTS, SHADOWS } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+
+const ENTITLEMENT_PRO = 'pro';
 
 interface SettingItem {
   id: string;
@@ -45,9 +48,51 @@ export default function SettingsScreen() {
   const [isRestoring, setIsRestoring] = useState(false);
 
   const isPro = subscription?.plan !== 'free';
+  const rcUIAvailable = revenueCatService.isUIAvailable();
+
+  const handleManageSubscription = async () => {
+    if (!profile) return;
+
+    if (rcUIAvailable) {
+      await revenueCatService.presentCustomerCenter(async (plan) => {
+        await subscriptionService.syncFromRevenueCat(profile.$id);
+        await refreshSubscription();
+        if (plan !== 'free') {
+          Alert.alert('Subscription Restored', 'Your subscription has been restored successfully.');
+        }
+      });
+      return;
+    }
+
+    Alert.alert(
+      'Manage Subscription',
+      'To manage your subscription, visit the Subscriptions section in your device Settings.',
+      [{ text: 'OK' }]
+    );
+  };
 
   const handleRestorePurchases = async () => {
     if (!profile) return;
+
+    if (rcUIAvailable) {
+      setIsRestoring(true);
+      try {
+        const result = await revenueCatService.presentPaywallIfNeeded(ENTITLEMENT_PRO);
+        if (result.purchased || result.restored) {
+          await subscriptionService.syncFromRevenueCat(profile.$id);
+          await refreshSubscription();
+          if (result.restored) {
+            Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.');
+          }
+        }
+      } catch {
+        Alert.alert('Restore Failed', 'Please try again or contact support.');
+      } finally {
+        setIsRestoring(false);
+      }
+      return;
+    }
+
     setIsRestoring(true);
     try {
       const rcInfo = await revenueCatService.restorePurchases();
@@ -149,19 +194,22 @@ export default function SettingsScreen() {
         )}
 
         {isPro && (
-          <LinearGradient
-            colors={COLORS.gradients.sunset}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.proBanner}>
-            <Crown size={24} color="#FFFFFF" />
-            <View>
-              <Text style={styles.proBannerTitle}>
-                {subscription?.plan === 'family' ? 'Family Plan Active' : 'Pro Plan Active'}
-              </Text>
-              <Text style={styles.proBannerSub}>Enjoying unlimited stories</Text>
-            </View>
-          </LinearGradient>
+          <TouchableOpacity onPress={handleManageSubscription} activeOpacity={0.9}>
+            <LinearGradient
+              colors={COLORS.gradients.sunset}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.proBanner}>
+              <Crown size={24} color="#FFFFFF" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.proBannerTitle}>
+                  {subscription?.plan === 'family' ? 'Family Plan Active' : 'Pro Plan Active'}
+                </Text>
+                <Text style={styles.proBannerSub}>Tap to manage subscription</Text>
+              </View>
+              <CreditCard size={18} color="rgba(255,255,255,0.7)" />
+            </LinearGradient>
+          </TouchableOpacity>
         )}
 
         <View style={styles.settingsSection}>
