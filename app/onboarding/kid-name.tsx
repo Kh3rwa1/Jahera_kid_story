@@ -10,13 +10,9 @@ import {
   StatusBar,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  ZoomIn,
-} from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { User, ArrowLeft, ChevronRight, Check, Sparkles } from 'lucide-react-native';
@@ -33,10 +29,10 @@ export default function KidName() {
   const handleContinue = async () => {
     const trimmedName = name.trim();
     if (trimmedName.length < 2) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     router.push({
       pathname: '/onboarding/family-members',
       params: { languages: params.languages as string, kidName: trimmedName },
@@ -44,78 +40,67 @@ export default function KidName() {
   };
 
   const handleBack = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
 
   const canContinue = name.trim().length >= 2;
   const showFeedback = name.trim().length > 0;
   const charsNeeded = Math.max(0, 2 - name.trim().length);
-  const progressWidth = (2 / 4) * 100;
 
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.kav}
-      >
-        {/* Hero zone */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
         <LinearGradient
-          colors={[themeColors.primary, themeColors.primaryDark]}
-          style={[styles.hero, { paddingTop: insets.top + SPACING.lg }]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          colors={['#0F0F1A', '#1A0826', '#0A1628']}
+          style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}
         >
-          {/* Back + Progress */}
-          <View style={styles.heroTop}>
-            <TouchableOpacity
-              onPress={handleBack}
-              style={styles.backBtn}
-              activeOpacity={0.7}
-            >
-              <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+          <View style={styles.headerTop}>
+            <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
+              <ArrowLeft size={20} color="rgba(255,255,255,0.8)" strokeWidth={2.5} />
             </TouchableOpacity>
             <View style={styles.progressTrack}>
               <Animated.View
                 entering={FadeInDown.delay(100)}
-                style={[styles.progressFill, { width: `${progressWidth}%` }]}
+                style={[styles.progressFill, { width: '50%', backgroundColor: themeColors.primary }]}
               />
             </View>
-            <Text style={styles.stepLabelText}>2 / 4</Text>
+            <Text style={styles.stepBadge}>2 / 4</Text>
           </View>
 
-          {/* Icon */}
-          <Animated.View entering={FadeInDown.delay(160).springify()} style={styles.iconZone}>
-            <View style={styles.iconCircle}>
-              <User size={36} color="#FFFFFF" strokeWidth={1.8} />
+          <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.iconZone}>
+            <View style={[styles.iconOuter, { borderColor: themeColors.primary + '40' }]}>
+              <LinearGradient
+                colors={[themeColors.primary, themeColors.primaryDark]}
+                style={styles.iconCircle}
+              >
+                <User size={30} color="#FFFFFF" strokeWidth={1.8} />
+              </LinearGradient>
             </View>
-            {/* Decorative sparkles */}
-            <View style={[styles.sparkle, { top: -8, right: -8 }]}>
-              <Sparkles size={16} color="rgba(255,255,255,0.7)" strokeWidth={2} />
+            <View style={styles.sparkleTop}>
+              <Sparkles size={14} color={themeColors.primary + 'CC'} strokeWidth={2} />
             </View>
-            <View style={[styles.sparkle, { bottom: -4, left: -10 }]}>
-              <Sparkles size={12} color="rgba(255,255,255,0.5)" strokeWidth={2} />
+            <View style={styles.sparkleBottom}>
+              <Sparkles size={10} color='rgba(255,255,255,0.4)' strokeWidth={2} />
             </View>
           </Animated.View>
 
-          <Animated.Text entering={FadeInDown.delay(200).springify()} style={styles.heroTitle}>
+          <Animated.Text entering={FadeInDown.delay(250).springify()} style={styles.headerTitle}>
             What's your{'\n'}child's name?
           </Animated.Text>
-          <Animated.Text entering={FadeInDown.delay(240).springify()} style={styles.heroSubtitle}>
-            We'll create magical stories starring them
+          <Animated.Text entering={FadeInDown.delay(300).springify()} style={styles.headerSubtitle}>
+            They'll star in every story we create
           </Animated.Text>
         </LinearGradient>
 
-        {/* Content zone */}
-        <View style={styles.content}>
-          <Animated.View entering={FadeInDown.delay(280).springify()} style={styles.inputWrapper}>
-            <View style={[styles.inputCard, { backgroundColor: themeColors.cardBackground }]}>
+        <View style={styles.body}>
+          <Animated.View entering={FadeInDown.delay(320).springify()} style={styles.inputSection}>
+            <View style={[styles.inputCard, { borderColor: canContinue ? themeColors.primary : '#E8E8F0' }]}>
               <TextInput
-                style={[styles.input, { color: themeColors.text.primary }]}
-                placeholder="Enter name here..."
-                placeholderTextColor={themeColors.text.light}
+                style={[styles.input, { color: '#1A1A2E' }]}
+                placeholder="Type a name..."
+                placeholderTextColor="#C4C4D4"
                 value={name}
                 onChangeText={setName}
                 autoFocus
@@ -124,24 +109,27 @@ export default function KidName() {
                 onSubmitEditing={handleContinue}
               />
               {canContinue && (
-                <Animated.View entering={ZoomIn.springify()} style={[styles.inputCheck, { backgroundColor: themeColors.primary }]}>
-                  <Check size={16} color="#FFFFFF" strokeWidth={3} />
+                <Animated.View entering={ZoomIn.springify()} style={[styles.checkBadge, { backgroundColor: themeColors.primary }]}>
+                  <Check size={15} color="#FFFFFF" strokeWidth={3} />
                 </Animated.View>
               )}
             </View>
 
             {showFeedback && (
-              <Animated.View entering={FadeInDown.delay(40).springify()} style={styles.feedbackRow}>
+              <Animated.View entering={FadeInDown.delay(40).springify()} style={styles.feedbackWrap}>
                 <View style={[
-                  styles.feedbackBadge,
-                  { backgroundColor: canContinue ? themeColors.primary + '12' : themeColors.warning + '12' },
+                  styles.feedbackChip,
+                  {
+                    backgroundColor: canContinue ? themeColors.primary + '10' : '#FFF8E6',
+                    borderColor: canContinue ? themeColors.primary + '30' : '#F59E0B30',
+                  },
                 ]}>
                   <Text style={[
                     styles.feedbackText,
-                    { color: canContinue ? themeColors.primary : themeColors.warning },
+                    { color: canContinue ? themeColors.primary : '#B45309' },
                   ]}>
                     {canContinue
-                      ? `${name.trim()} is a wonderful name!`
+                      ? `${name.trim()} sounds wonderful!`
                       : `${charsNeeded} more character${charsNeeded > 1 ? 's' : ''} needed`}
                   </Text>
                 </View>
@@ -149,31 +137,26 @@ export default function KidName() {
             )}
           </Animated.View>
 
-          {/* Hint text */}
-          <Animated.Text
-            entering={FadeInDown.delay(340).springify()}
-            style={[styles.hint, { color: themeColors.text.light }]}
-          >
-            This is used to personalize every story
+          <Animated.Text entering={FadeInDown.delay(400).springify()} style={styles.hint}>
+            This name will appear throughout all stories
           </Animated.Text>
         </View>
 
-        {/* Footer */}
         <Animated.View
-          entering={FadeInUp.delay(320).springify()}
+          entering={FadeInUp.delay(340).springify()}
           style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
         >
           <TouchableOpacity onPress={handleContinue} disabled={!canContinue} activeOpacity={0.88}>
             <LinearGradient
-              colors={canContinue ? [themeColors.primary, themeColors.primaryDark] : ['#D1D5DB', '#D1D5DB']}
-              style={styles.ctaButton}
+              colors={canContinue ? [themeColors.primary, themeColors.primaryDark] : ['#E5E7EB', '#E5E7EB']}
+              style={styles.ctaBtn}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              end={{ x: 1, y: 0 }}
             >
-              <Text style={styles.ctaText}>
-                {canContinue ? 'Next Step' : 'Enter a name to continue'}
+              <Text style={[styles.ctaBtnText, !canContinue && { color: '#9CA3AF' }]}>
+                {canContinue ? 'Continue' : 'Enter a name first'}
               </Text>
-              {canContinue && <ChevronRight size={22} color="#FFFFFF" strokeWidth={2.5} />}
+              {canContinue && <ChevronRight size={20} color="#FFFFFF" strokeWidth={2.5} />}
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -183,14 +166,14 @@ export default function KidName() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8F9FA' },
+  root: { flex: 1, backgroundColor: '#F7F8FA' },
   kav: { flex: 1 },
-  hero: {
+  header: {
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxxl,
     alignItems: 'center',
   },
-  heroTop: {
+  headerTop: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
@@ -198,104 +181,123 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xxl,
   },
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   progressTrack: {
     flex: 1,
     height: 3,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 2,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.9)',
   },
-  stepLabelText: {
+  stepBadge: {
     fontSize: FONT_SIZES.xs,
     fontFamily: FONTS.bold,
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 0.5,
   },
   iconZone: {
-    width: 80,
-    height: 80,
+    width: 88,
+    height: 88,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xl,
+  },
+  iconOuter: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   iconCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.35)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
   },
-  sparkle: {
-    position: 'absolute',
-  },
-  heroTitle: {
-    fontSize: 26,
+  sparkleTop: { position: 'absolute', top: -4, right: -4 },
+  sparkleBottom: { position: 'absolute', bottom: -2, left: -6 },
+  headerTitle: {
+    fontSize: 28,
     fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
-    letterSpacing: -0.3,
+    letterSpacing: -0.8,
     textAlign: 'center',
-    lineHeight: 34,
+    lineHeight: 38,
     marginBottom: SPACING.sm,
   },
-  heroSubtitle: {
+  headerSubtitle: {
     fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.55)',
     textAlign: 'center',
   },
-  content: {
+  body: {
     flex: 1,
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.xxxl,
   },
-  inputWrapper: {
-    marginBottom: SPACING.lg,
-  },
+  inputSection: { marginBottom: SPACING.md },
   inputCard: {
-    borderRadius: BORDER_RADIUS.xl,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: BORDER_RADIUS.xl,
+    borderWidth: 2,
     paddingRight: SPACING.md,
-    ...SHADOWS.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 4,
     marginBottom: SPACING.md,
   },
   input: {
     flex: 1,
     paddingVertical: SPACING.xl,
     paddingHorizontal: SPACING.xl,
-    fontSize: 30,
+    fontSize: 32,
     fontFamily: FONTS.bold,
     textAlign: 'center',
   },
-  inputCheck: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  checkBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  feedbackRow: {
-    alignItems: 'center',
-  },
-  feedbackBadge: {
+  feedbackWrap: { alignItems: 'center' },
+  feedbackChip: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.pill,
+    borderWidth: 1,
   },
   feedbackText: {
     fontSize: FONT_SIZES.sm,
@@ -304,27 +306,33 @@ const styles = StyleSheet.create({
   hint: {
     fontSize: FONT_SIZES.xs,
     fontFamily: FONTS.medium,
+    color: '#B0B0C0',
     textAlign: 'center',
-    marginTop: SPACING.sm,
   },
   footer: {
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F7F8FA',
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEF2',
   },
-  ctaButton: {
+  ctaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
     paddingVertical: 18,
     borderRadius: BORDER_RADIUS.pill,
-    ...SHADOWS.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  ctaText: {
+  ctaBtnText: {
     color: '#FFFFFF',
-    fontSize: FONT_SIZES.lg,
+    fontSize: FONT_SIZES.md,
     fontFamily: FONTS.bold,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
 });
