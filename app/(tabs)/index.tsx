@@ -7,7 +7,6 @@ import {
   RefreshControl,
   Text,
   Dimensions,
-  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -382,10 +381,7 @@ export default function HomeScreen() {
 
                 <FloatAnim delay={400}>
                   <View style={styles.heroEmojiStack}>
-                    <Image
-                      source={{ uri: 'https://img.icons8.com/animated-emoji/96/man-mage.gif' }}
-                      style={styles.heroEmojiImg}
-                    />
+                    <Text style={styles.heroEmojiMain}>🧙‍♂️</Text>
                     <View style={styles.heroSparkleRow}>
                       <Text style={styles.heroSparkle}>✨</Text>
                       <Text style={styles.heroSparkle}>⭐</Text>
@@ -721,7 +717,7 @@ const styles = StyleSheet.create({
   },
   heroBtnText: { fontSize: 15, fontFamily: FONTS.display, color: '#FFFFFF' },
   heroEmojiStack: { alignItems: 'center', gap: 4 },
-  heroEmojiImg: { width: 96, height: 96 },
+  heroEmojiMain: { fontSize: 80 },
   heroSparkleRow: { flexDirection: 'row', gap: 4 },
   heroSparkle: { fontSize: 20 },
   heroStrip: {
