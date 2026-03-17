@@ -19,16 +19,19 @@ import ReAnimated, {
   ZoomIn,
 } from 'react-native-reanimated';
 import { useEffect as useEffectGen } from 'react';
-import { profileService, storyService, quizService } from '@/services/database';
+import { profileService, storyService, quizService, familyMemberService, friendService } from '@/services/database';
 import { generateAdventureStory, QuotaExceededError, StoryOptions } from '@/services/aiService';
 import { generateAudio } from '@/services/audioService';
 import { getCurrentContext } from '@/utils/contextUtils';
-import { Sparkles, BookOpen, Volume2, Circle as HelpCircle, Check, Zap, ChevronLeft, Wand as Wand2 } from 'lucide-react-native';
+import { getLocationContext, formatLocationLabel, LocationContext } from '@/services/locationService';
+import { Sparkles, BookOpen, Volume2, Circle as HelpCircle, Check, Zap, ChevronLeft, Wand as Wand2, MapPin } from 'lucide-react-native';
 import { ErrorState } from '@/components/ErrorState';
+import { CharacterManager } from '@/components/CharacterManager';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
 import { hapticFeedback } from '@/utils/haptics';
+import { FamilyMember, Friend } from '@/types/database';
 
 const { width: SW } = Dimensions.get('window');
 const CARD_SIZE = (SW - SPACING.xl * 2 - SPACING.sm * 3) / 4;
@@ -245,6 +248,11 @@ export default function GenerateStory() {
   const [selectedMood, setSelectedMood] = useState('exciting');
   const [selectedLength, setSelectedLength] = useState<'short' | 'medium' | 'long'>('short');
 
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [locationCtx, setLocationCtx] = useState<LocationContext | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
+
   const [status, setStatus] = useState('Preparing your adventure...');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -259,6 +267,7 @@ export default function GenerateStory() {
     isMountedRef.current = true;
     return () => { isMountedRef.current = false; };
   }, []);
+
   const [steps, setSteps] = useState<GenerationStep[]>([
     { id: 'profile', label: 'Loading profile', icon: Sparkles, completed: false },
     { id: 'story', label: 'Creating story', icon: BookOpen, completed: false },
@@ -270,6 +279,27 @@ export default function GenerateStory() {
   const orbRotate = useSharedValue(0);
 
   const isPro = subscription?.plan !== 'free';
+
+  useEffect(() => {
+    const profileId = params.profileId as string;
+    if (!profileId) return;
+
+    Promise.all([
+      familyMemberService.getByProfileId(profileId),
+      friendService.getByProfileId(profileId),
+    ]).then(([fm, fr]) => {
+      if (fm) setFamilyMembers(fm);
+      if (fr) setFriends(fr);
+    });
+
+    setLocationLoading(true);
+    getLocationContext().then(ctx => {
+      if (isMountedRef.current) {
+        setLocationCtx(ctx);
+        setLocationLoading(false);
+      }
+    });
+  }, [params.profileId]);
 
   useEffect(() => {
     if (phase !== 'generating') return;
@@ -349,6 +379,7 @@ export default function GenerateStory() {
         theme: selectedTheme,
         mood: selectedMood,
         length: selectedLength,
+        locationContext: locationCtx,
       };
 
       const story = await generateAdventureStory(profile, languageCode, context, options);
@@ -377,6 +408,8 @@ export default function GenerateStory() {
         share_token: null,
         like_count: 0,
         generated_at: new Date().toISOString(),
+        location_city: locationCtx?.city ?? null,
+        location_country: locationCtx?.country ?? null,
       });
 
       if (!storyRecord) {
@@ -525,6 +558,16 @@ export default function GenerateStory() {
           >
             Creating Your Story
           </ReAnimated.Text>
+
+          {locationCtx && (
+            <ReAnimated.View entering={FadeInUp.delay(240).springify()} style={styles.locationBadge}>
+              <MapPin size={12} color="#0EA5E9" strokeWidth={2.5} />
+              <Text style={styles.locationBadgeText}>
+                Set in {formatLocationLabel(locationCtx)}
+              </Text>
+            </ReAnimated.View>
+          )}
+
           <ReAnimated.Text
             entering={FadeInUp.delay(280).springify()}
             style={styles.genStatus}
@@ -599,6 +642,7 @@ export default function GenerateStory() {
   }
 
   const selectedThemeObj = THEMES.find(t => t.id === selectedTheme)!;
+  const locationLabel = formatLocationLabel(locationCtx);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -610,6 +654,16 @@ export default function GenerateStory() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ChevronLeft size={22} color="#1E293B" />
           </TouchableOpacity>
+
+          <View style={styles.locationPill}>
+            <MapPin size={12} color={locationLoading ? '#94A3B8' : locationLabel ? '#0EA5E9' : '#94A3B8'} strokeWidth={2.5} />
+            <Text style={[
+              styles.locationPillText,
+              { color: locationLoading ? '#94A3B8' : locationLabel ? '#0EA5E9' : '#94A3B8' },
+            ]}>
+              {locationLoading ? 'Locating...' : locationLabel || 'Location unavailable'}
+            </Text>
+          </View>
         </ReAnimated.View>
 
         <ReAnimated.View entering={FadeInDown.delay(60).springify()} style={styles.header}>
@@ -674,7 +728,17 @@ export default function GenerateStory() {
           </View>
         </ReAnimated.View>
 
-        <ReAnimated.View entering={FadeInUp.delay(340).springify()} style={styles.ctaSection}>
+        <ReAnimated.View entering={FadeInUp.delay(340).springify()} style={styles.section}>
+          <CharacterManager
+            profileId={params.profileId as string}
+            familyMembers={familyMembers}
+            friends={friends}
+            onFamilyMembersChange={setFamilyMembers}
+            onFriendsChange={setFriends}
+          />
+        </ReAnimated.View>
+
+        <ReAnimated.View entering={FadeInUp.delay(400).springify()} style={styles.ctaSection}>
           {subscription && subscription.plan === 'free' && (
             <View style={styles.quotaRow}>
               <View style={styles.quotaDot} />
@@ -702,6 +766,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.sm,
     paddingBottom: SPACING.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   backBtn: {
     width: 40,
@@ -710,6 +777,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  locationPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.pill,
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  locationPillText: {
+    fontSize: 12,
+    fontFamily: FONTS.semibold,
   },
 
   header: {
@@ -1013,6 +1095,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: -0.5,
     marginBottom: SPACING.sm,
+  },
+  locationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: BORDER_RADIUS.pill,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    marginBottom: SPACING.sm,
+  },
+  locationBadgeText: {
+    fontSize: 12,
+    fontFamily: FONTS.semibold,
+    color: '#0EA5E9',
   },
   genStatus: {
     fontSize: 14,

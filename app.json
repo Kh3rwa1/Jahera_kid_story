@@ -41,7 +41,9 @@
       },
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.INTERNET"
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ],
       "playStoreUrl": "https://play.google.com/store/apps/details?id=com.hindi.harp"
     },
@@ -54,6 +56,13 @@
       "expo-router",
       "expo-font",
       "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Jahera to use your location to set stories in your neighbourhood.",
+          "locationWhenInUsePermission": "Allow Jahera to use your location to set stories in your neighbourhood."
+        }
+      ],
       [
         "expo-av",
         {

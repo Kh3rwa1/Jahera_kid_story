@@ -1,6 +1,7 @@
 import { ProfileWithRelations } from '@/types/database';
 import { StoryContext } from '@/utils/contextUtils';
 import { apiKeysService, ApiProvider } from '@/services/apiKeysService';
+import { LocationContext } from '@/services/locationService';
 
 export class QuotaExceededError extends Error {
   constructor(message: string) {
@@ -13,6 +14,7 @@ export interface StoryOptions {
   theme?: string;
   mood?: string;
   length?: 'short' | 'medium' | 'long';
+  locationContext?: LocationContext | null;
 }
 
 export interface QuizQuestion {
@@ -159,6 +161,12 @@ function buildPrompt(
   const moodDesc = options?.mood ? MOOD_PROMPTS[options.mood] || options.mood : 'engaging and fun';
   const lengthConfig = LENGTH_CONFIGS[options?.length || 'medium'];
 
+  const loc = options?.locationContext;
+  const locationParts = [loc?.city, loc?.country].filter(Boolean);
+  const locationLine = locationParts.length > 0
+    ? `- Location: Set the story in or around ${locationParts.join(', ')} — weave in local landmarks, nature, or culture naturally`
+    : '';
+
   const systemMessage = `You are a creative children's story writer. You write engaging, age-appropriate stories for children aged 4-10. Always respond with valid JSON only — no markdown, no code fences, no extra text.`;
 
   const userMessage = `Write a children's story for a child named ${profile.kid_name}.
@@ -172,6 +180,7 @@ Requirements:
 - Age group: 4-10 years old
 - Must be educational and positive
 - Structure: write in 4-6 clear paragraphs separated by newlines, with a proper story arc (beginning, middle, end)
+${locationLine}
 ${characterContext}
 
 Return ONLY this JSON structure (no markdown, no extra keys):
