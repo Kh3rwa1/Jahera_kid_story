@@ -50,7 +50,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       setError(null);
 
-      const data = await profileService.getWithRelationsByUserId(user.id);
+      const data = await profileService.getWithRelationsByUserId(user.$id);
       if (!data) {
         setProfile(null);
         setStories([]);

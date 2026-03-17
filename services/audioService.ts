@@ -1,7 +1,7 @@
 import { apiKeysService } from './apiKeysService';
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+const APPWRITE_ENDPOINT = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!;
+const APPWRITE_PROJECT_ID = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!;
 
 export async function generateAudio(
   text: string,
@@ -11,20 +11,22 @@ export async function generateAudio(
   try {
     const elevenLabsApiKey = await apiKeysService.getElevenLabsKey();
 
-    const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/generate-audio`;
+    const functionUrl = `${APPWRITE_ENDPOINT}/functions/generate-audio/executions`;
 
-    const response = await fetch(edgeFunctionUrl, {
+    const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Apikey': SUPABASE_ANON_KEY,
+        'X-Appwrite-Project': APPWRITE_PROJECT_ID,
       },
       body: JSON.stringify({
-        text,
-        languageCode,
-        storyId,
-        elevenLabsApiKey: elevenLabsApiKey || null,
+        async: false,
+        body: JSON.stringify({
+          text,
+          languageCode,
+          storyId,
+          elevenLabsApiKey: elevenLabsApiKey || null,
+        }),
       }),
     });
 
@@ -33,7 +35,15 @@ export async function generateAudio(
       return null;
     }
 
-    const data = await response.json();
+    const execution = await response.json();
+    const responseBody = execution.responseBody || execution.response || '';
+
+    let data: any = {};
+    try {
+      data = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
+    } catch {
+      return null;
+    }
 
     if (data.audioUrl) {
       return data.audioUrl;
