@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -17,9 +19,12 @@ import {
   Crown,
   Zap,
   BookOpen,
+  RotateCcw,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
+import { revenueCatService } from '@/services/revenueCatService';
+import { subscriptionService } from '@/services/subscriptionService';
 import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, FONTS, SHADOWS } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -36,9 +41,33 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
-  const { subscription } = useApp();
+  const { subscription, profile, refreshSubscription } = useApp();
+  const [isRestoring, setIsRestoring] = useState(false);
 
   const isPro = subscription?.plan !== 'free';
+
+  const handleRestorePurchases = async () => {
+    if (!profile) return;
+    setIsRestoring(true);
+    try {
+      const rcInfo = await revenueCatService.restorePurchases();
+      if (rcInfo.isActive) {
+        if (rcInfo.plan === 'family') {
+          await subscriptionService.upgradeToFamily(profile.$id);
+        } else {
+          await subscriptionService.upgradeToPro(profile.$id);
+        }
+        await refreshSubscription();
+        Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.');
+      } else {
+        Alert.alert('No Purchases Found', 'We could not find any active subscriptions linked to your account.');
+      }
+    } catch {
+      Alert.alert('Restore Failed', 'Please try again or contact support.');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
 
   const settingItems: SettingItem[] = [
     {
@@ -162,6 +191,24 @@ export default function SettingsScreen() {
           ))}
         </View>
 
+        {!isPro && (
+          <TouchableOpacity
+            style={[styles.restoreRow, { backgroundColor: COLORS.cardBackground, ...SHADOWS.xs }]}
+            onPress={handleRestorePurchases}
+            disabled={isRestoring}
+            activeOpacity={0.7}
+          >
+            {isRestoring ? (
+              <ActivityIndicator size="small" color={COLORS.text.light} />
+            ) : (
+              <RotateCcw size={18} color={COLORS.text.secondary} strokeWidth={2} />
+            )}
+            <Text style={[styles.restoreText, { color: COLORS.text.secondary }]}>
+              {isRestoring ? 'Restoring...' : 'Restore Purchases'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <View style={[styles.infoBox, { backgroundColor: COLORS.gradients.primary[0] + '15' }]}>
           <Info size={20} color={COLORS.primary} />
           <View style={styles.infoContent}>
@@ -229,6 +276,18 @@ const styles = StyleSheet.create({
   settingInfo: { flex: 1 },
   settingTitle: { fontSize: FONT_SIZES.lg, fontWeight: FONT_WEIGHTS.bold, marginBottom: SPACING.xs },
   settingDescription: { fontSize: FONT_SIZES.sm, lineHeight: 18 },
+  restoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    marginBottom: SPACING.lg,
+  },
+  restoreText: {
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONTS.medium,
+  },
   infoBox: {
     flexDirection: 'row', padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.lg, gap: SPACING.md, alignItems: 'center',

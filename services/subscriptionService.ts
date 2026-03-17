@@ -1,5 +1,6 @@
 import { databases, ID, Query, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite';
 import { SubscriptionStatus, Streak } from '@/types/database';
+import { revenueCatService, PlanType } from '@/services/revenueCatService';
 
 const PLAN_LIMITS: Record<string, number> = {
   free: 3,
@@ -66,14 +67,22 @@ async function upsertSubscription(
 export const subscriptionService = {
   async getStatus(profileId: string): Promise<SubscriptionStatus> {
     try {
-      const subResponse = await databases.listDocuments(
-        DATABASE_ID,
-        COLLECTIONS.SUBSCRIPTIONS,
-        [Query.equal('profile_id', profileId), Query.limit(1)]
-      );
+      let plan: PlanType = 'free';
 
-      const subDoc = subResponse.documents[0] ?? null;
-      const plan = subDoc?.plan || 'free';
+      const rcInfo = await revenueCatService.getCustomerInfo();
+      if (rcInfo.isActive) {
+        plan = rcInfo.plan;
+        await upsertSubscription(profileId, plan, PLAN_LIMITS[plan] ?? 9999, rcInfo.expiresAt ?? undefined);
+      } else {
+        const subResponse = await databases.listDocuments(
+          DATABASE_ID,
+          COLLECTIONS.SUBSCRIPTIONS,
+          [Query.equal('profile_id', profileId), Query.limit(1)]
+        );
+        const subDoc = subResponse.documents[0] ?? null;
+        plan = (subDoc?.plan || 'free') as PlanType;
+      }
+
       const storiesLimit = PLAN_LIMITS[plan] ?? 3;
 
       const startOfMonth = new Date();
@@ -108,6 +117,15 @@ export const subscriptionService = {
         stories_remaining: 3,
       };
     }
+  },
+
+  async syncFromRevenueCat(profileId: string): Promise<PlanType> {
+    const rcInfo = await revenueCatService.getCustomerInfo();
+    if (rcInfo.isActive) {
+      await upsertSubscription(profileId, rcInfo.plan, PLAN_LIMITS[rcInfo.plan] ?? 9999, rcInfo.expiresAt ?? undefined);
+      return rcInfo.plan;
+    }
+    return 'free';
   },
 
   async upgradeToPro(profileId: string): Promise<boolean> {
