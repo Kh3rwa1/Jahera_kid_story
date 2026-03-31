@@ -39,8 +39,8 @@ export default function Register() {
       setError('Please fill in all fields.');
       return;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
       return;
     }
 
@@ -52,11 +52,11 @@ export default function Register() {
       router.replace('/onboarding/language-selection');
     } catch (err: any) {
       const msg = err?.message || '';
-      if (msg.includes('already exists') || msg.includes('already registered') || msg.includes('user_already_exists')) {
+      if (msg.includes('already registered') || msg.includes('User already registered') || msg.includes('already exists')) {
         setError('An account with this email already exists. Try signing in.');
-      } else if (msg.includes('Invalid `password`') || msg.includes('password')) {
-        setError('Password must be at least 8 characters.');
-      } else if (msg.includes('Invalid `email`') || msg.includes('email')) {
+      } else if (msg.includes('Password should be') || msg.includes('password')) {
+        setError('Password must be at least 6 characters.');
+      } else if (msg.includes('valid email') || msg.includes('email')) {
         setError('Please enter a valid email address.');
       } else if (msg) {
         setError(msg);
@@ -134,7 +134,7 @@ export default function Register() {
               <Lock size={20} color={themeColors.text.light} strokeWidth={2} />
               <TextInput
                 style={[styles.input, { color: themeColors.text.primary }]}
-                placeholder="Password (8+ characters)"
+                placeholder="Password (6+ characters)"
                 placeholderTextColor={themeColors.text.light}
                 value={password}
                 onChangeText={setPassword}

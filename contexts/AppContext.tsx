@@ -53,9 +53,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       setError(null);
 
-      await revenueCatService.configure(user.$id);
+      await revenueCatService.configure(user.id);
 
-      const data = await profileService.getWithRelationsByUserId(user.$id);
+      const data = await profileService.getWithRelationsByUserId(user.id);
       if (!data) {
         setProfile(null);
         setStories([]);
