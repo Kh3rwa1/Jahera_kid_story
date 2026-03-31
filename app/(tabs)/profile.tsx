@@ -88,7 +88,7 @@ export default function ProfileScreen() {
   const streak = useMemo(() => {
     if (stories.length === 0) return 0;
     const uniqueDays = new Set(
-      stories.map(s => new Date(s.generated_at || s.$createdAt).toDateString())
+      stories.map(s => new Date(s.generated_at || s.created_at).toDateString())
     );
     const sortedDays = Array.from(uniqueDays)
       .map(d => new Date(d).getTime())
@@ -268,12 +268,12 @@ export default function ProfileScreen() {
                 const isPerfect = pct === 100;
                 const isGood = pct >= 70;
                 const scoreColor = isPerfect ? COLORS.success : isGood ? COLORS.primary : COLORS.error;
-                const matchingStory = stories.find(s => s.$id === attempt.story_id);
+                const matchingStory = stories.find(s => s.id === attempt.story_id);
                 const title = matchingStory?.title || 'Story Quiz';
                 const isLast = idx === recentQuizzes.length - 1;
 
                 return (
-                  <View key={attempt.$id}>
+                  <View key={attempt.id}>
                     <Animated.View
                       entering={FadeInUp.delay(240 + idx * 50).springify()}
                       style={styles.quizRow}
@@ -321,7 +321,7 @@ export default function ProfileScreen() {
                 const langCount = stories.filter(s => s.language_code === lang.language_code).length;
                 const pct = stories.length > 0 ? Math.round((langCount / stories.length) * 100) : 0;
                 return (
-                  <Animated.View key={lang.$id} entering={FadeInRight.delay(300 + langIdx * 70).springify()}>
+                  <Animated.View key={lang.id} entering={FadeInRight.delay(300 + langIdx * 70).springify()}>
                     <View style={[styles.langCard, { backgroundColor: COLORS.cardBackground }]}>
                       <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
                       <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
@@ -346,13 +346,13 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.charsWrap}>
               {profile.family_members?.map(m => (
-                <View key={m.$id} style={[styles.charChip, { backgroundColor: COLORS.primary + '14' }]}>
+                <View key={m.id} style={[styles.charChip, { backgroundColor: COLORS.primary + '14' }]}>
                   <Text style={styles.charEmoji}>👨‍👩‍👧</Text>
                   <Text style={[styles.charName, { color: COLORS.text.primary }]}>{m.name}</Text>
                 </View>
               ))}
               {profile.friends?.map(f => (
-                <View key={f.$id} style={[styles.charChip, { backgroundColor: COLORS.info + '14' }]}>
+                <View key={f.id} style={[styles.charChip, { backgroundColor: COLORS.info + '14' }]}>
                   <Text style={styles.charEmoji}>🧑‍🤝‍🧑</Text>
                   <Text style={[styles.charName, { color: COLORS.text.primary }]}>{f.name}</Text>
                 </View>

@@ -1,37 +1,38 @@
 export interface Profile {
-  $id: string;
-  userId: string;
+  id: string;
+  user_id: string;
   kid_name: string;
   primary_language: string;
   age: number | null;
   parent_pin: string | null;
   share_token: string | null;
   avatar_url: string | null;
-  $createdAt: string;
-  $updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface UserLanguage {
-  $id: string;
+  id: string;
   profile_id: string;
   language_code: string;
   language_name: string;
-  $createdAt: string;
+  created_at: string;
 }
 
 export interface FamilyMember {
-  $id: string;
+  id: string;
   profile_id: string;
   name: string;
-  $createdAt: string;
+  created_at: string;
 }
 
 export interface Friend {
-  $id: string;
+  id: string;
   profile_id: string;
   name: string;
-  $createdAt: string;
+  created_at: string;
 }
+
 export interface ProfileInterest {
   id: string;
   profile_id: string;
@@ -39,9 +40,8 @@ export interface ProfileInterest {
   created_at: string;
 }
 
-
 export interface Story {
-  $id: string;
+  id: string;
   profile_id: string;
   language_code: string;
   title: string;
@@ -55,7 +55,7 @@ export interface Story {
   like_count: number;
   time_of_day: string;
   generated_at: string;
-  $createdAt: string;
+  created_at: string;
   location_city: string | null;
   location_country: string | null;
 }
@@ -68,30 +68,30 @@ export interface ProfileWithRelations extends Profile {
 }
 
 export interface QuizQuestion {
-  $id: string;
+  id: string;
   story_id: string;
   question_text: string;
   question_order: number;
-  $createdAt: string;
+  created_at: string;
 }
 
 export interface QuizAnswer {
-  $id: string;
+  id: string;
   question_id: string;
   answer_text: string;
   is_correct: boolean;
   answer_order: string;
-  $createdAt: string;
+  created_at: string;
 }
 
 export interface QuizAttempt {
-  $id: string;
+  id: string;
   profile_id: string;
   story_id: string;
   score: number;
   total_questions: number;
   completed_at: string;
-  $createdAt: string;
+  created_at: string;
 }
 
 export interface QuizQuestionWithAnswers extends QuizQuestion {

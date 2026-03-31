@@ -268,7 +268,7 @@ export default function HomeScreen() {
 
   const handleGenerateStory = useCallback(() => {
     if (!profile) return;
-    router.push({ pathname: '/story/generate', params: { profileId: profile.$id, languageCode: profile.primary_language } });
+    router.push({ pathname: '/story/generate', params: { profileId: profile.id, languageCode: profile.primary_language } });
   }, [profile, router]);
 
   const handleStoryPress = useCallback((storyId: string) => {
@@ -276,11 +276,11 @@ export default function HomeScreen() {
   }, [router]);
 
   const handleLastStory = useCallback(() => {
-    if (stories.length > 0) handleStoryPress(stories[0].$id);
+    if (stories.length > 0) handleStoryPress(stories[0].id);
   }, [stories, handleStoryPress]);
 
   const handleRandomStory = useCallback(() => {
-    if (stories.length > 0) handleStoryPress(stories[Math.floor(Math.random() * stories.length)].$id);
+    if (stories.length > 0) handleStoryPress(stories[Math.floor(Math.random() * stories.length)].id);
   }, [stories, handleStoryPress]);
 
   const recentStories = useMemo(() => stories.slice(0, 10), [stories]);
@@ -491,10 +491,10 @@ export default function HomeScreen() {
                 const season = SEASON_CONFIG[story.season] || SEASON_CONFIG.spring;
                 const flag = getLanguageFlag(story.language_code);
                 return (
-                  <Animated.View key={story.$id} entering={FadeInRight.delay(280 + idx * 50).springify()}>
+                  <Animated.View key={story.id} entering={FadeInRight.delay(280 + idx * 50).springify()}>
                     <AnimatedPressable
                       style={[styles.storyCard, { width: CARD_W, backgroundColor: C.cardBackground }]}
-                      onPress={() => handleStoryPress(story.$id)}
+                      onPress={() => handleStoryPress(story.id)}
                       scaleDown={0.95}
                     >
                       {/* Artwork */}
@@ -525,7 +525,7 @@ export default function HomeScreen() {
                         <View style={styles.storyMeta}>
                           <Clock size={10} color={C.text.light} strokeWidth={2} />
                           <Text style={[styles.storyMetaText, { color: C.text.light }]}>
-                            {getRelativeTime(story.generated_at || story.$createdAt)}
+                            {getRelativeTime(story.generated_at || story.created_at)}
                           </Text>
                           {story.season && (
                             <View style={[styles.seasonTag, { backgroundColor: season.colors[0] }]}>
@@ -553,7 +553,7 @@ export default function HomeScreen() {
                 const count = stories.filter(s => s.language_code === lang.language_code).length;
                 const maxCount = Math.max(1, ...profile.languages.map(l => stories.filter(s => s.language_code === l.language_code).length));
                 return (
-                  <Animated.View key={lang.$id} entering={FadeInRight.delay(380 + i * 60).springify()}>
+                  <Animated.View key={lang.id} entering={FadeInRight.delay(380 + i * 60).springify()}>
                     <View style={[styles.langCard, { backgroundColor: C.cardBackground }]}>
                       <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
                       <Text style={[styles.langName, { color: C.text.primary }]}>{lang.language_name}</Text>
@@ -577,7 +577,7 @@ export default function HomeScreen() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hRow}>
               {profile.family_members?.map((m, i) => (
-                <Animated.View key={m.$id} entering={FadeInRight.delay(440 + i * 55).springify()}>
+                <Animated.View key={m.id} entering={FadeInRight.delay(440 + i * 55).springify()}>
                   <View style={[styles.charCard, { backgroundColor: C.cardBackground }]}>
                     <LinearGradient colors={[C.primary + '30', C.primary + '10']} style={styles.charAvatar}>
                       <Text style={[styles.charInitial, { color: C.primary }]}>{m.name.charAt(0).toUpperCase()}</Text>
@@ -590,7 +590,7 @@ export default function HomeScreen() {
                 </Animated.View>
               ))}
               {profile.friends?.map((f, i) => (
-                <Animated.View key={f.$id} entering={FadeInRight.delay(480 + i * 55).springify()}>
+                <Animated.View key={f.id} entering={FadeInRight.delay(480 + i * 55).springify()}>
                   <View style={[styles.charCard, { backgroundColor: C.cardBackground }]}>
                     <LinearGradient colors={['#10B98130', '#10B98110']} style={styles.charAvatar}>
                       <Text style={[styles.charInitial, { color: '#10B981' }]}>{f.name.charAt(0).toUpperCase()}</Text>

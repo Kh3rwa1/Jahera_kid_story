@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
+  ScrollView,
   Platform,
   StatusBar,
 } from 'react-native';
@@ -52,6 +53,12 @@ export default function KidName() {
     <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         <LinearGradient
           colors={['#0F0F1A', '#1A0826', '#0A1628']}
           style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}
@@ -95,6 +102,7 @@ export default function KidName() {
         </LinearGradient>
 
         <View style={styles.body}>
+
           <Animated.View entering={FadeInDown.delay(320).springify()} style={styles.inputSection}>
             <View style={[styles.inputCard, { borderColor: canContinue ? themeColors.primary : '#E8E8F0' }]}>
               <TextInput
@@ -141,6 +149,7 @@ export default function KidName() {
             This name will appear throughout all stories
           </Animated.Text>
         </View>
+        </ScrollView>
 
         <Animated.View
           entering={FadeInUp.delay(340).springify()}
@@ -168,6 +177,8 @@ export default function KidName() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F7F8FA' },
   kav: { flex: 1 },
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
   header: {
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxxl,

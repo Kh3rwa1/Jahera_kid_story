@@ -135,7 +135,7 @@ function AnimatedStoryGridCard({ story, idx, palette, onPress, onLongPress, COLO
             <View style={styles.gridMeta}>
               <Clock size={10} color={COLORS.text.light} />
               <Text style={[styles.gridMetaText, { color: COLORS.text.light }]}>
-                {getRelativeTime(story.generated_at || story.$createdAt)}
+                {getRelativeTime(story.generated_at || story.created_at)}
               </Text>
             </View>
           </View>
@@ -167,7 +167,7 @@ export default function HistoryScreen() {
   const confirmDelete = useCallback(async () => {
     if (!deleteId) return;
     const success = await storyService.delete(deleteId);
-    if (success) setStories(prev => prev.filter(s => s.$id !== deleteId));
+    if (success) setStories(prev => prev.filter(s => s.id !== deleteId));
     setDeleteId(null);
   }, [deleteId, setStories]);
 
@@ -243,7 +243,7 @@ export default function HistoryScreen() {
         {featuredStory && !searchQuery && !selectedLanguage && (
           <Animated.View entering={FadeInDown.delay(80).springify()}>
             <AnimatedPressable
-              onPress={() => handlePlayStory(featuredStory.$id)}
+              onPress={() => handlePlayStory(featuredStory.id)}
               scaleDown={0.97}
               style={styles.featuredWrap}
             >
@@ -282,7 +282,7 @@ export default function HistoryScreen() {
                       <View style={styles.featuredMetaLeft}>
                         <Text style={styles.featuredLangFlag}>{getLanguageFlag(featuredStory.language_code)}</Text>
                         <Text style={[styles.featuredMetaText, { color: palette.accent + 'CC' }]}>
-                          {getRelativeTime(featuredStory.generated_at || featuredStory.$createdAt)}
+                          {getRelativeTime(featuredStory.generated_at || featuredStory.created_at)}
                         </Text>
                       </View>
                       <View style={[styles.featuredPlayBtn, { backgroundColor: palette.accent }]}>
@@ -394,12 +394,12 @@ export default function HistoryScreen() {
               const palette = getSeasonPalette(story.season);
               return (
                 <AnimatedStoryGridCard
-                  key={story.$id}
+                  key={story.id}
                   story={story}
                   idx={idx}
                   palette={palette}
-                  onPress={() => handlePlayStory(story.$id)}
-                  onLongPress={() => setDeleteId(story.$id)}
+                  onPress={() => handlePlayStory(story.id)}
+                  onLongPress={() => setDeleteId(story.id)}
                   COLORS={COLORS}
                 />
               );
@@ -410,11 +410,11 @@ export default function HistoryScreen() {
             {filteredStories.map((story, idx) => {
               const palette = getSeasonPalette(story.season);
               return (
-                <Animated.View key={story.$id} entering={FadeInUp.delay(60 + idx * 30).springify()}>
+                <Animated.View key={story.id} entering={FadeInUp.delay(60 + idx * 30).springify()}>
                   <AnimatedPressable
                     style={styles.listCard}
-                    onPress={() => handlePlayStory(story.$id)}
-                    onLongPress={() => setDeleteId(story.$id)}
+                    onPress={() => handlePlayStory(story.id)}
+                    onLongPress={() => setDeleteId(story.id)}
                     scaleDown={0.97}
                     delayLongPress={500}
                   >
@@ -440,7 +440,7 @@ export default function HistoryScreen() {
                         <View style={[styles.listDot, { backgroundColor: COLORS.text.light }]} />
                         <Clock size={10} color={COLORS.text.light} />
                         <Text style={[styles.listMetaText, { color: COLORS.text.light }]}>
-                          {getRelativeTime(story.generated_at || story.$createdAt)}
+                          {getRelativeTime(story.generated_at || story.created_at)}
                         </Text>
                         {story.audio_url && (
                           <>

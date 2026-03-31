@@ -96,117 +96,119 @@ export default function LanguageSelection() {
     <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <LinearGradient
-        colors={['#0F0F1A', '#1A0826', '#0A1628']}
-        style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.progressWrap}>
-          <View style={styles.progressTrack}>
-            <Animated.View
-              entering={FadeInDown.delay(100)}
-              style={[styles.progressFill, { width: '25%', backgroundColor: themeColors.primary }]}
-            />
+        <LinearGradient
+          colors={['#0F0F1A', '#1A0826', '#0A1628']}
+          style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}
+        >
+          <View style={styles.progressWrap}>
+            <View style={styles.progressTrack}>
+              <Animated.View
+                entering={FadeInDown.delay(100)}
+                style={[styles.progressFill, { width: '25%', backgroundColor: themeColors.primary }]}
+              />
+            </View>
+            <Text style={styles.stepBadge}>1 / 4</Text>
           </View>
-          <Text style={styles.stepBadge}>1 / 4</Text>
-        </View>
 
-        <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.iconZone}>
-          <Animated.View style={[styles.ring, ring1Style, { borderColor: themeColors.primary + '60' }]} />
-          <Animated.View style={[styles.ring, styles.ringInner, ring2Style, { borderColor: themeColors.primary + '80' }]} />
-          <LinearGradient
-            colors={[themeColors.primary, themeColors.primaryDark]}
-            style={styles.iconCircle}
-          >
-            <Globe2 size={32} color="#FFFFFF" strokeWidth={1.8} />
-          </LinearGradient>
-        </Animated.View>
+          <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.iconZone}>
+            <Animated.View style={[styles.ring, ring1Style, { borderColor: themeColors.primary + '60' }]} />
+            <Animated.View style={[styles.ring, styles.ringInner, ring2Style, { borderColor: themeColors.primary + '80' }]} />
+            <LinearGradient
+              colors={[themeColors.primary, themeColors.primaryDark]}
+              style={styles.iconCircle}
+            >
+              <Globe2 size={32} color="#FFFFFF" strokeWidth={1.8} />
+            </LinearGradient>
+          </Animated.View>
 
-        <Animated.Text entering={FadeInDown.delay(260).springify()} style={styles.headerTitle}>
-          Choose Your Languages
-        </Animated.Text>
-        <Animated.Text entering={FadeInDown.delay(310).springify()} style={styles.headerSubtitle}>
-          Stories will be crafted in the languages{'\n'}your child loves most
-        </Animated.Text>
+          <Animated.Text entering={FadeInDown.delay(260).springify()} style={styles.headerTitle}>
+            Choose Your Languages
+          </Animated.Text>
+          <Animated.Text entering={FadeInDown.delay(310).springify()} style={styles.headerSubtitle}>
+            Stories will be crafted in the languages{'\n'}your child loves most
+          </Animated.Text>
 
-        <Animated.View entering={FadeInDown.delay(360).springify()} style={styles.selectionRow}>
-          {Array.from({ length: MAX_LANGUAGES }).map((_, i) => {
-            const filled = i < selectedLanguages.length;
+          <Animated.View entering={FadeInDown.delay(360).springify()} style={styles.selectionRow}>
+            {Array.from({ length: MAX_LANGUAGES }).map((_, i) => {
+              const filled = i < selectedLanguages.length;
+              return (
+                <View
+                  key={i}
+                  style={[
+                    styles.selDot,
+                    filled
+                      ? { backgroundColor: themeColors.primary }
+                      : { backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+                  ]}
+                >
+                  {filled && <Check size={10} color="#FFFFFF" strokeWidth={3.5} />}
+                </View>
+              );
+            })}
+            <Text style={styles.selText}>
+              {selectedLanguages.length === 0
+                ? 'Select up to 3'
+                : selectedLanguages.length === 1
+                  ? '1 selected'
+                  : `${selectedLanguages.length} selected`}
+            </Text>
+          </Animated.View>
+        </LinearGradient>
+
+        <View style={styles.listContent}>
+          {SUPPORTED_LANGUAGES.map((language, index) => {
+            const isSelected = selectedLanguages.some(l => l.code === language.code);
             return (
-              <View
-                key={i}
-                style={[
-                  styles.selDot,
-                  filled
-                    ? { backgroundColor: themeColors.primary }
-                    : { backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-                ]}
+              <Animated.View
+                key={language.code}
+                entering={FadeInDown.delay(60 + index * 35).springify()}
               >
-                {filled && <Check size={10} color="#FFFFFF" strokeWidth={3.5} />}
-              </View>
+                <TouchableOpacity
+                  onPress={() => toggleLanguage(language)}
+                  activeOpacity={0.75}
+                >
+                  <View style={[
+                    styles.langCard,
+                    isSelected
+                      ? { backgroundColor: themeColors.primary + '10', borderColor: themeColors.primary, borderWidth: 1.5 }
+                      : { backgroundColor: '#FFFFFF', borderColor: '#F0F0F5', borderWidth: 1 },
+                  ]}>
+                    {isSelected && (
+                      <View style={[styles.cardBar, { backgroundColor: themeColors.primary }]} />
+                    )}
+                    <View style={[
+                      styles.flagWrap,
+                      { backgroundColor: isSelected ? themeColors.primary + '15' : '#F7F8FA' },
+                    ]}>
+                      <Text style={styles.flagEmoji}>{language.flag}</Text>
+                    </View>
+                    <View style={styles.langDetails}>
+                      <Text style={[styles.langName, { color: isSelected ? themeColors.primary : '#1A1A2E' }]}>
+                        {language.name}
+                      </Text>
+                      <Text style={[styles.langNative, { color: isSelected ? themeColors.primary + 'AA' : '#9CA3AF' }]}>
+                        {language.nativeName}
+                      </Text>
+                    </View>
+                    {isSelected ? (
+                      <Animated.View entering={ZoomIn.springify()} style={[styles.checkBubble, { backgroundColor: themeColors.primary }]}>
+                        <Check size={13} color="#FFFFFF" strokeWidth={3} />
+                      </Animated.View>
+                    ) : (
+                      <View style={[styles.emptyCheck, { borderColor: '#E5E7EB' }]} />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
             );
           })}
-          <Text style={styles.selText}>
-            {selectedLanguages.length === 0
-              ? 'Select up to 3'
-              : selectedLanguages.length === 1
-                ? '1 selected'
-                : `${selectedLanguages.length} selected`}
-          </Text>
-        </Animated.View>
-      </LinearGradient>
-
-      <ScrollView
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {SUPPORTED_LANGUAGES.map((language, index) => {
-          const isSelected = selectedLanguages.some(l => l.code === language.code);
-          return (
-            <Animated.View
-              key={language.code}
-              entering={FadeInDown.delay(60 + index * 35).springify()}
-            >
-              <TouchableOpacity
-                onPress={() => toggleLanguage(language)}
-                activeOpacity={0.75}
-              >
-                <View style={[
-                  styles.langCard,
-                  isSelected
-                    ? { backgroundColor: themeColors.primary + '10', borderColor: themeColors.primary, borderWidth: 1.5 }
-                    : { backgroundColor: '#FFFFFF', borderColor: '#F0F0F5', borderWidth: 1 },
-                ]}>
-                  {isSelected && (
-                    <View style={[styles.cardBar, { backgroundColor: themeColors.primary }]} />
-                  )}
-                  <View style={[
-                    styles.flagWrap,
-                    { backgroundColor: isSelected ? themeColors.primary + '15' : '#F7F8FA' },
-                  ]}>
-                    <Text style={styles.flagEmoji}>{language.flag}</Text>
-                  </View>
-                  <View style={styles.langDetails}>
-                    <Text style={[styles.langName, { color: isSelected ? themeColors.primary : '#1A1A2E' }]}>
-                      {language.name}
-                    </Text>
-                    <Text style={[styles.langNative, { color: isSelected ? themeColors.primary + 'AA' : '#9CA3AF' }]}>
-                      {language.nativeName}
-                    </Text>
-                  </View>
-                  {isSelected ? (
-                    <Animated.View entering={ZoomIn.springify()} style={[styles.checkBubble, { backgroundColor: themeColors.primary }]}>
-                      <Check size={13} color="#FFFFFF" strokeWidth={3} />
-                    </Animated.View>
-                  ) : (
-                    <View style={[styles.emptyCheck, { borderColor: '#E5E7EB' }]} />
-                  )}
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
-          );
-        })}
-        <View style={{ height: 110 }} />
+        </View>
       </ScrollView>
 
       <Animated.View
@@ -237,6 +239,8 @@ export default function LanguageSelection() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F7F8FA' },
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
   header: {
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxl,
@@ -338,7 +342,6 @@ const styles = StyleSheet.create({
     marginLeft: 2,
     letterSpacing: 0.3,
   },
-  list: { flex: 1 },
   listContent: {
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.lg,

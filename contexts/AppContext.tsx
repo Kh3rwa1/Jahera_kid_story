@@ -66,13 +66,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
 
       setProfile(data);
-      profileIdRef.current = data.$id;
+      profileIdRef.current = data.id;
 
       const [storiesData, attemptsData, subData, streakData] = await Promise.all([
-        storyService.getByProfileId(data.$id),
-        quizService.getAttemptsByProfileId(data.$id),
-        subscriptionService.getStatus(data.$id),
-        streakService.getStreak(data.$id),
+        storyService.getByProfileId(data.id),
+        quizService.getAttemptsByProfileId(data.id),
+        subscriptionService.getStatus(data.id),
+        streakService.getStreak(data.id),
       ]);
 
       setStories(storiesData || []);
@@ -131,7 +131,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const refreshStories = useCallback(async () => {
     if (!profile) return;
     try {
-      const data = await storyService.getByProfileId(profile.$id);
+      const data = await storyService.getByProfileId(profile.id);
       setStories(data || []);
     } catch (err) {
       handleError(err, 'AppContext.refreshStories');
@@ -141,7 +141,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const refreshQuizAttempts = useCallback(async () => {
     if (!profile) return;
     try {
-      const data = await quizService.getAttemptsByProfileId(profile.$id);
+      const data = await quizService.getAttemptsByProfileId(profile.id);
       setQuizAttempts(data || []);
     } catch (err) {
       handleError(err, 'AppContext.refreshQuizAttempts');
@@ -152,8 +152,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!profile) return;
     try {
       const [subData, streakData] = await Promise.all([
-        subscriptionService.getStatus(profile.$id),
-        streakService.getStreak(profile.$id),
+        subscriptionService.getStatus(profile.id),
+        streakService.getStreak(profile.id),
       ]);
       setSubscription(subData);
       setStreak(streakData);

@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
-import { storage, ID, APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, STORAGE_BUCKETS } from '@/lib/appwrite';
+import { supabase } from '@/lib/supabase';
 
 export type ImageSource = 'camera' | 'library';
 
@@ -43,49 +43,67 @@ export async function uploadAvatar(
   imageUri: string
 ): Promise<string | null> {
   try {
-    if (Platform.OS === 'web') {
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-      const mimeType = blob.type || 'image/jpeg';
-      const ext = mimeType.split('/')[1] || 'jpg';
-      const fileName = `${profileId}_avatar.${ext}`;
-
-      const uploaded = await storage.createFile(
-        STORAGE_BUCKETS.AVATARS,
-        ID.unique(),
-        new File([blob], fileName, { type: mimeType }) as any
-      );
-      return `${APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKETS.AVATARS}/files/${uploaded.$id}/view?project=${APPWRITE_PROJECT_ID}`;
-    }
-
-    const fileInfo = await FileSystem.getInfoAsync(imageUri);
-    const size = fileInfo.exists ? (fileInfo as FileSystem.FileInfo & { size?: number }).size ?? 0 : 0;
-
     const uriParts = imageUri.split('.');
     const ext = uriParts[uriParts.length - 1]?.split('?')[0] || 'jpg';
     const mimeType = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
-    const fileName = `${profileId}_avatar.${ext}`;
+    const filePath = `${profileId}/avatar.${ext}`;
 
-    const file = {
-      uri: imageUri,
-      name: fileName,
-      type: mimeType,
-      size,
-    };
+    if (Platform.OS === 'web') {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
 
-    const uploaded = await storage.createFile(
-      STORAGE_BUCKETS.AVATARS,
-      ID.unique(),
-      file as any
-    );
+      const { error } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, { upsert: true, contentType: mimeType });
 
-    return `${APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKETS.AVATARS}/files/${uploaded.$id}/view?project=${APPWRITE_PROJECT_ID}`;
+      if (error) {
+        console.error('Error uploading avatar:', error);
+        return null;
+      }
+    } else {
+      const fileInfo = await FileSystem.getInfoAsync(imageUri);
+      const size = fileInfo.exists ? (fileInfo as FileSystem.FileInfo & { size?: number }).size ?? 0 : 0;
+
+      const file = {
+        uri: imageUri,
+        name: `avatar.${ext}`,
+        type: mimeType,
+        size,
+      };
+
+      const { error } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file as any, { upsert: true, contentType: mimeType });
+
+      if (error) {
+        console.error('Error uploading avatar:', error);
+        return null;
+      }
+    }
+
+    const { data } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl ?? null;
   } catch (error) {
     console.error('Error uploading avatar:', error);
     return null;
   }
 }
 
-export async function deleteAvatar(_profileId: string): Promise<boolean> {
-  return true;
+export async function deleteAvatar(profileId: string): Promise<boolean> {
+  try {
+    const { data: files } = await supabase.storage
+      .from('avatars')
+      .list(profileId);
+
+    if (files && files.length > 0) {
+      const paths = files.map(f => `${profileId}/${f.name}`);
+      await supabase.storage.from('avatars').remove(paths);
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
