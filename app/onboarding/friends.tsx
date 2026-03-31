@@ -73,7 +73,7 @@ export default function Friends() {
       const kidName = params.kidName as string;
       const familyMembers = JSON.parse((params.familyMembers as string) || '[]');
       const primaryLanguage = languages[0]?.code || 'en';
-      const profile = await profileService.create(user.$id, kidName, primaryLanguage);
+      const profile = await profileService.create(user.id, kidName, primaryLanguage);
       if (!profile) {
         setErrorMsg('Failed to create profile. Please try again.');
         setIsLoading(false);
