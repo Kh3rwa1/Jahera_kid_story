@@ -1,7 +1,9 @@
 import { ProfileWithRelations } from '@/types/database';
 import { StoryContext } from '@/utils/contextUtils';
-import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID } from '@/lib/appwrite';
 import { LocationContext } from '@/services/locationService';
+
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 export class QuotaExceededError extends Error {
   constructor(message: string) {
@@ -41,30 +43,25 @@ export async function generateAdventureStory(
   options?: StoryOptions
 ): Promise<GeneratedStory | null> {
   try {
-    const functionUrl = `${APPWRITE_ENDPOINT}/functions/generate-story/executions`;
+    const functionUrl = `${SUPABASE_URL}/functions/v1/generate-story`;
 
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Appwrite-Project': APPWRITE_PROJECT_ID,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Apikey': SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({
-        async: false,
-        body: JSON.stringify({ profile, languageCode, context, options }),
-      }),
+      body: JSON.stringify({ profile, languageCode, context, options }),
     });
 
     if (!response.ok) {
       throw new Error(`Story generation service error: ${response.status}`);
     }
 
-    const execution = await response.json();
-    const responseBody = execution.responseBody || execution.response || '';
-
     let data: any = {};
     try {
-      data = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
+      data = await response.json();
     } catch {
       throw new Error('Invalid response from story generation service');
     }
