@@ -114,6 +114,21 @@ function countTotalChars(words: string[]): number {
   return words.reduce((sum, w) => sum + w.length + 1, 0);
 }
 
+function buildSentences(words: string[]): Array<{ start: number; end: number; text: string }> {
+  const sentences: Array<{ start: number; end: number; text: string }> = [];
+  let start = 0;
+  let current: string[] = [];
+  for (let i = 0; i < words.length; i++) {
+    current.push(words[i]);
+    if (/[.!?]["']?$/.test(words[i]) || i === words.length - 1) {
+      sentences.push({ start, end: i, text: current.join(' ') });
+      start = i + 1;
+      current = [];
+    }
+  }
+  return sentences;
+}
+
 function formatTime(millis: number): string {
   const s = Math.floor(millis / 1000);
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
@@ -131,7 +146,11 @@ export default function StoryPlayback() {
   const C = currentTheme.colors;
   const { prefs, setFontSize, setFontFamily, setLineSpacing, setTextAlign } = useReadingPreferences();
   const scrollRef = useRef<ScrollView>(null);
+  const lyricsScrollRef = useRef<ScrollView>(null);
   const lastPositionRef = useRef<number>(0);
+  const lastSentenceRef = useRef<number>(-1);
+  const lastActiveParaRef = useRef<number>(-1);
+  const paraOffsets = useRef<number[]>([]);
   const insets = useSafeAreaInsets();
 
   const [story, setStory] = useState<Story | null>(null);
@@ -229,6 +248,44 @@ export default function StoryPlayback() {
     return best;
   }, [position, duration, wordTimings]);
 
+  const sentences = useMemo(() => buildSentences(allWords), [allWords]);
+
+  const activeSentenceIndex = useMemo(() => {
+    if (activeWordIndex < 0) return -1;
+    for (let i = 0; i < sentences.length; i++) {
+      if (activeWordIndex >= sentences[i].start && activeWordIndex <= sentences[i].end) return i;
+    }
+    return -1;
+  }, [activeWordIndex, sentences]);
+
+  useEffect(() => {
+    if (activeSentenceIndex >= 0 && activeSentenceIndex !== lastSentenceRef.current) {
+      lastSentenceRef.current = activeSentenceIndex;
+      lyricsScrollRef.current?.scrollTo({ y: activeSentenceIndex * 72, animated: true });
+    }
+  }, [activeSentenceIndex]);
+
+  const activeParaIndex = useMemo(() => {
+    if (activeWordIndex < 0) return -1;
+    let count = 0;
+    for (let pi = 0; pi < paragraphs.length; pi++) {
+      const words = buildWordIndex([paragraphs[pi]]);
+      if (activeWordIndex < count + words.length) return pi;
+      count += words.length;
+    }
+    return -1;
+  }, [activeWordIndex, paragraphs]);
+
+  useEffect(() => {
+    if (tab === 'text' && activeParaIndex >= 0 && activeParaIndex !== lastActiveParaRef.current) {
+      lastActiveParaRef.current = activeParaIndex;
+      const offset = paraOffsets.current[activeParaIndex];
+      if (offset !== undefined) {
+        scrollRef.current?.scrollTo({ y: Math.max(0, offset - 80), animated: true });
+      }
+    }
+  }, [activeParaIndex, tab]);
+
   useEffect(() => { loadStory(); }, []);
   useEffect(() => () => { if (sound) sound.unloadAsync().catch(() => {}); }, [sound]);
 
@@ -257,7 +314,9 @@ export default function StoryPlayback() {
     try {
       await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: true });
       const { sound: audioSound } = await Audio.Sound.createAsync(
-        { uri: audioPath }, { shouldPlay: false }, onPlaybackStatusUpdate
+        { uri: audioPath },
+        { shouldPlay: false, progressUpdateIntervalMillis: 100 },
+        onPlaybackStatusUpdate
       );
       setSound(audioSound);
       setAudioError(false);
@@ -270,7 +329,7 @@ export default function StoryPlayback() {
   const onPlaybackStatusUpdate = (status: any) => {
     if (status.isLoaded) {
       const newPos: number = status.positionMillis ?? 0;
-      if (Math.abs(newPos - lastPositionRef.current) >= 250 || status.didJustFinish) {
+      if (Math.abs(newPos - lastPositionRef.current) >= 80 || status.didJustFinish) {
         lastPositionRef.current = newPos;
         setPosition(newPos);
       }
@@ -594,6 +653,7 @@ export default function StoryPlayback() {
             return (
               <Text
                 key={`para-${paraIdx}`}
+                onLayout={(e) => { paraOffsets.current[paraIdx] = e.nativeEvent.layout.y; }}
                 style={[
                   styles.paragraph,
                   { marginBottom: prefs.fontSize * 1.2 },
@@ -767,6 +827,56 @@ export default function StoryPlayback() {
               }]}
             />
           ))}
+        </View>
+
+        {/* Live lyrics sync strip */}
+        <View style={[styles.lyricsStrip, { borderColor: '#00000008', backgroundColor: '#F8F8F8' }]}>
+          <ScrollView
+            ref={lyricsScrollRef}
+            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
+            style={styles.lyricsScroll}
+            contentContainerStyle={styles.lyricsContent}
+          >
+            {sentences.map((sentence, si) => {
+              const isCurrentSentence = si === activeSentenceIndex;
+              const isPastSentence = si < activeSentenceIndex;
+              const sentenceWords = allWords.slice(sentence.start, sentence.end + 1);
+              return (
+                <View key={si} style={[styles.lyricsSentenceRow, { height: 72, justifyContent: 'center' }]}>
+                  <Text style={[
+                    styles.lyricsSentenceText,
+                    { fontFamily: FONTS.medium },
+                    isPastSentence && { opacity: 0.3 },
+                    !isCurrentSentence && !isPastSentence && { opacity: 0.25 },
+                  ]} numberOfLines={2}>
+                    {sentenceWords.map((word, wi) => {
+                      const globalIdx = sentence.start + wi;
+                      const isActive = globalIdx === activeWordIndex;
+                      const isPastWord = globalIdx < activeWordIndex && isCurrentSentence;
+                      return (
+                        <Text
+                          key={wi}
+                          style={[
+                            styles.lyricsWord,
+                            { fontFamily: FONTS.medium },
+                            isCurrentSentence && { color: '#333' },
+                            isPastWord && { color: '#111', fontFamily: FONTS.bold },
+                            isActive && {
+                              color: accentColor,
+                              fontFamily: FONTS.extrabold,
+                            },
+                          ]}
+                        >
+                          {word}{wi < sentenceWords.length - 1 ? ' ' : ''}
+                        </Text>
+                      );
+                    })}
+                  </Text>
+                </View>
+              );
+            })}
+          </ScrollView>
         </View>
 
         <Pressable onPress={handleProgressPress} style={styles.progressArea} hitSlop={12}>
@@ -1120,4 +1230,17 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.xl, borderWidth: 1.5,
   },
   outlineBtnText: { fontSize: FONT_SIZES.sm },
+
+  lyricsStrip: {
+    height: 72, borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1, overflow: 'hidden',
+    marginBottom: SPACING.sm,
+  },
+  lyricsScroll: { flex: 1 },
+  lyricsContent: { paddingHorizontal: SPACING.lg },
+  lyricsSentenceRow: { paddingVertical: SPACING.xs },
+  lyricsSentenceText: {
+    fontSize: 14, color: '#111', lineHeight: 22, textAlign: 'center',
+  },
+  lyricsWord: { fontSize: 14, color: '#666' },
 });
