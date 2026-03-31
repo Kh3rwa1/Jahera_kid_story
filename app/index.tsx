@@ -36,11 +36,14 @@ const { width, height } = Dimensions.get('window');
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const GOLD = '#F5A623';
-const GOLD_DIM = '#C8862A';
-const CREAM = '#FFF8ED';
-const DARK_BASE = '#0A0805';
-const DARK_MID = '#110E08';
+const TEAL = '#00C4B4';
+const TEAL_DARK = '#009E92';
+const TEAL_DEEP = '#007A70';
+const BG_BASE = '#D6F5F2';
+const BG_MID = '#E8FAF8';
+const BG_LIGHT = '#F0FFFE';
+const DARK_TEXT = '#0D2926';
+const BODY_TEXT = '#2A5550';
 
 export default function Welcome() {
   const router = useRouter();
@@ -49,14 +52,14 @@ export default function Welcome() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading } = useApp();
 
-  const glowPulse = useSharedValue(0.5);
+  const glowPulse = useSharedValue(0.3);
   const orbFloat = useSharedValue(0);
   const blob1Float = useSharedValue(0);
   const blob2Float = useSharedValue(0);
   const logoScale = useSharedValue(0.8);
   const logoOpacity = useSharedValue(0);
   const tapScale = useSharedValue(1);
-  const ctaGlow = useSharedValue(0.7);
+  const ctaGlow = useSharedValue(0.6);
   const shimmer = useSharedValue(0);
 
   const badge1Float = useSharedValue(0);
@@ -152,10 +155,10 @@ export default function Welcome() {
   if (authLoading || profileLoading || themeLoading) {
     return (
       <View style={styles.loadingScreen}>
-        <LinearGradient colors={[DARK_BASE, DARK_MID, '#1A1206']} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={[BG_BASE, BG_MID, BG_LIGHT]} style={StyleSheet.absoluteFill} />
         <Animated.View entering={FadeIn.duration(600)}>
           <LinearGradient
-            colors={[GOLD, GOLD_DIM]}
+            colors={[TEAL, TEAL_DARK]}
             style={styles.loadingOrb}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -172,31 +175,31 @@ export default function Welcome() {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <LinearGradient
-        colors={[DARK_BASE, '#110D06', '#0E0B04', '#1A1206']}
-        locations={[0, 0.35, 0.65, 1]}
+        colors={[BG_MID, BG_BASE, '#C8EFEC', BG_MID]}
+        locations={[0, 0.3, 0.7, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Warm amber glow — top right */}
+      {/* Teal glow — top right */}
       <Animated.View style={[styles.ambientBlob, styles.ambientTopRight, blob1Style]}>
         <LinearGradient
-          colors={[GOLD + '28', GOLD + '00']}
+          colors={[TEAL + '30', TEAL + '00']}
           style={{ flex: 1 }}
         />
       </Animated.View>
 
-      {/* Warm glow — bottom left */}
+      {/* Soft teal wash — bottom left */}
       <Animated.View style={[styles.ambientBlob, styles.ambientBottomLeft, blob2Style]}>
         <LinearGradient
-          colors={[GOLD_DIM + '1A', '#C86B0010']}
+          colors={[TEAL_DARK + '20', TEAL + '00']}
           style={{ flex: 1 }}
         />
       </Animated.View>
 
-      {/* Subtle red accent — mid right */}
+      {/* Accent glow — mid right */}
       <Animated.View style={[styles.ambientBlob, styles.ambientMidRight]}>
         <LinearGradient
-          colors={['#8B3A0C14', '#8B3A0C00']}
+          colors={[TEAL + '18', TEAL + '00']}
           style={{ flex: 1 }}
         />
       </Animated.View>
@@ -204,21 +207,21 @@ export default function Welcome() {
       {/* Floating feature badges */}
       <Animated.View style={[styles.floatingBadge, styles.badge1, badge1Style]}>
         <Animated.View entering={FadeInDown.delay(1100).springify()} style={styles.badgeInner}>
-          <BookOpen size={13} color={GOLD} strokeWidth={2} />
+          <BookOpen size={13} color={TEAL_DARK} strokeWidth={2} />
           <Text style={styles.badgeText}>100+ Languages</Text>
         </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.floatingBadge, styles.badge2, badge2Style]}>
         <Animated.View entering={FadeInDown.delay(1350).springify()} style={styles.badgeInner}>
-          <Mic2 size={13} color={GOLD} strokeWidth={2} />
+          <Mic2 size={13} color={TEAL_DARK} strokeWidth={2} />
           <Text style={styles.badgeText}>AI Narration</Text>
         </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.floatingBadge, styles.badge3, badge3Style]}>
         <Animated.View entering={FadeIn.delay(1600)} style={styles.badgeInner}>
-          <Zap size={13} color={GOLD} strokeWidth={2} />
+          <Zap size={13} color={TEAL_DARK} strokeWidth={2} />
           <Text style={styles.badgeText}>Daily Quizzes</Text>
         </Animated.View>
       </Animated.View>
@@ -230,7 +233,7 @@ export default function Welcome() {
           {/* Outer glow halo */}
           <Animated.View style={[styles.halo, glowStyle]}>
             <LinearGradient
-              colors={[GOLD + '30', GOLD + '00']}
+              colors={[TEAL + '40', TEAL + '00']}
               style={{ flex: 1, borderRadius: 160 }}
             />
           </Animated.View>
@@ -240,13 +243,13 @@ export default function Welcome() {
 
           {/* Main orb */}
           <LinearGradient
-            colors={['#2A1F08', '#1A1206']}
+            colors={['#FFFFFF', '#E8FDFB']}
             style={styles.orbContainer}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <LinearGradient
-              colors={[GOLD, GOLD_DIM, '#A0621E']}
+              colors={[TEAL, TEAL_DARK, TEAL_DEEP]}
               style={styles.orbGold}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -263,7 +266,7 @@ export default function Welcome() {
             {/* Shimmer overlay */}
             <Animated.View style={[styles.shimmerStripe, shimmerStyle]}>
               <LinearGradient
-                colors={['transparent', 'rgba(255,255,255,0.07)', 'transparent']}
+                colors={['transparent', 'rgba(255,255,255,0.25)', 'transparent']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{ flex: 1 }}
@@ -278,7 +281,7 @@ export default function Welcome() {
         <Animated.View entering={FadeIn.delay(700)} style={styles.dividerRow}>
           <View style={styles.dividerLine} />
           <LinearGradient
-            colors={[GOLD + '00', GOLD + '80', GOLD + '00']}
+            colors={[TEAL + '00', TEAL + '90', TEAL + '00']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.dividerGold}
@@ -310,12 +313,12 @@ export default function Welcome() {
         <View style={styles.ctaWrapper}>
           <Animated.View style={[styles.ctaGlowHalo, ctaGlowStyle]}>
             <LinearGradient
-              colors={[GOLD + '25', GOLD + '00']}
+              colors={[TEAL + '30', TEAL + '00']}
               style={{ flex: 1, borderRadius: 48 }}
             />
           </Animated.View>
           <LinearGradient
-            colors={[GOLD, GOLD_DIM, '#C07218']}
+            colors={[TEAL, TEAL_DARK, TEAL_DEEP]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.ctaButton}
@@ -341,7 +344,7 @@ export default function Welcome() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: DARK_BASE,
+    backgroundColor: BG_BASE,
   },
   loadingScreen: {
     flex: 1,
@@ -358,7 +361,7 @@ const styles = StyleSheet.create({
   loadingOrbText: {
     fontSize: 36,
     fontFamily: FONTS.extrabold,
-    color: DARK_BASE,
+    color: '#FFFFFF',
     letterSpacing: -1,
   },
 
@@ -411,16 +414,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: BORDER_RADIUS.pill,
-    backgroundColor: 'rgba(30, 22, 6, 0.82)',
+    backgroundColor: 'rgba(255,255,255,0.75)',
     borderWidth: 1,
-    borderColor: GOLD + '30',
+    borderColor: TEAL + '40',
   },
   badgeText: {
     fontSize: 11,
     fontFamily: FONTS.semibold,
-    color: CREAM,
+    color: BODY_TEXT,
     letterSpacing: 0.4,
-    opacity: 0.9,
   },
 
   // Center layout
@@ -451,7 +453,7 @@ const styles = StyleSheet.create({
     height: 158,
     borderRadius: 79,
     borderWidth: 1,
-    borderColor: GOLD + '20',
+    borderColor: TEAL + '30',
   },
   orbContainer: {
     width: 130,
@@ -459,13 +461,13 @@ const styles = StyleSheet.create({
     borderRadius: 65,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: GOLD + '28',
-    shadowColor: GOLD,
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.45,
-    shadowRadius: 40,
-    elevation: 30,
+    borderWidth: 2,
+    borderColor: TEAL + '35',
+    shadowColor: TEAL,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.4,
+    shadowRadius: 36,
+    elevation: 28,
   },
   orbGold: {
     width: 110,
@@ -477,7 +479,7 @@ const styles = StyleSheet.create({
   orbLetter: {
     fontSize: 56,
     fontFamily: FONTS.extrabold,
-    color: DARK_BASE,
+    color: '#FFFFFF',
     letterSpacing: -2,
     lineHeight: 62,
   },
@@ -495,13 +497,13 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 72,
     fontFamily: FONTS.extrabold,
-    color: CREAM,
+    color: DARK_TEXT,
     letterSpacing: -3,
     textAlign: 'center',
     lineHeight: 78,
-    textShadowColor: GOLD + '40',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 24,
+    textShadowColor: TEAL + '30',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 16,
   },
   shimmerStripe: {
     position: 'absolute',
@@ -512,10 +514,11 @@ const styles = StyleSheet.create({
   tagline: {
     fontSize: FONT_SIZES.md,
     fontFamily: FONTS.medium,
-    color: 'rgba(255, 248, 237, 0.42)',
+    color: BODY_TEXT,
     textAlign: 'center',
     lineHeight: 27,
     letterSpacing: 0.1,
+    opacity: 0.65,
   },
 
   // Divider
@@ -528,7 +531,7 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(0, 100, 90, 0.08)',
   },
   dividerGold: {
     width: 60,
@@ -546,9 +549,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(245, 166, 35, 0.06)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 1,
-    borderColor: GOLD + '1C',
+    borderColor: TEAL + '25',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: BORDER_RADIUS.pill,
@@ -559,8 +562,9 @@ const styles = StyleSheet.create({
   pillText: {
     fontSize: 12,
     fontFamily: FONTS.semibold,
-    color: 'rgba(255, 248, 237, 0.55)',
+    color: BODY_TEXT,
     letterSpacing: 0.3,
+    opacity: 0.8,
   },
 
   // Bottom section
@@ -586,16 +590,16 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 48,
     alignItems: 'center',
-    shadowColor: GOLD,
+    shadowColor: TEAL_DARK,
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.4,
     shadowRadius: 24,
     elevation: 20,
   },
   ctaText: {
     fontSize: FONT_SIZES.md,
     fontFamily: FONTS.bold,
-    color: DARK_BASE,
+    color: '#FFFFFF',
     letterSpacing: 0.4,
   },
   signInRow: {
@@ -606,13 +610,14 @@ const styles = StyleSheet.create({
   signInLabel: {
     fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.regular,
-    color: 'rgba(255, 248, 237, 0.3)',
+    color: BODY_TEXT,
     letterSpacing: 0.2,
+    opacity: 0.6,
   },
   signInLink: {
     fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.semibold,
-    color: GOLD,
+    color: TEAL_DARK,
     letterSpacing: 0.2,
   },
 });
