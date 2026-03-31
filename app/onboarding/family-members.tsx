@@ -85,6 +85,13 @@ export default function FamilyMembers() {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
+        <ScrollView
+          style={styles.outerScroll}
+          contentContainerStyle={[styles.outerScrollContent, { paddingBottom: insets.bottom + 120 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+        >
         <LinearGradient
           colors={['#0F0F1A', '#1A0826', '#0A1628']}
           style={[styles.hero, { paddingTop: insets.top + SPACING.lg }]}
@@ -161,7 +168,7 @@ export default function FamilyMembers() {
         </Animated.View>
 
         {/* Members list */}
-        <ScrollView style={styles.list} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.listContent}>
           {familyMembers.length === 0 ? (
             <Animated.View entering={FadeInDown.delay(320).springify()} style={styles.emptyState}>
               <View style={[styles.emptyIconRow]}>
@@ -208,6 +215,7 @@ export default function FamilyMembers() {
               </Animated.View>
             ))
           )}
+        </View>
         </ScrollView>
 
         {/* Footer */}
@@ -240,6 +248,8 @@ export default function FamilyMembers() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F7F8FA' },
   kav: { flex: 1 },
+  outerScroll: { flex: 1 },
+  outerScrollContent: { flexGrow: 1 },
   hero: {
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxl,
@@ -353,7 +363,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  list: { flex: 1 },
   listContent: {
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,

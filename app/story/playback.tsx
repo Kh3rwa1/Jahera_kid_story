@@ -389,7 +389,7 @@ export default function StoryPlayback() {
   const handleGoToQuiz = useCallback(() => {
     hapticFeedback.medium();
     if (sound) sound.stopAsync().catch(() => {});
-    router.push({ pathname: '/story/quiz', params: { storyId: story!.$id } });
+    router.push({ pathname: '/story/quiz', params: { storyId: story!.id } });
   }, [sound, story, router]);
 
   const handleNewStory = useCallback(() => {

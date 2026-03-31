@@ -47,9 +47,9 @@ export default function EditProfileScreen() {
 
     setIsUploadingAvatar(true);
     try {
-      const publicUrl = await uploadAvatar(profile.$id, uri);
+      const publicUrl = await uploadAvatar(profile.id, uri);
       if (publicUrl) {
-        await profileService.updateAvatarUrl(profile.$id, publicUrl);
+        await profileService.updateAvatarUrl(profile.id, publicUrl);
         updateProfile({ avatar_url: publicUrl });
         setSaveMessage('Photo updated!');
         setTimeout(() => setSaveMessage(null), 2000);
@@ -72,8 +72,8 @@ export default function EditProfileScreen() {
     setIsUploadingAvatar(true);
 
     try {
-      await deleteAvatar(profile.$id);
-      await profileService.updateAvatarUrl(profile.$id, null);
+      await deleteAvatar(profile.id);
+      await profileService.updateAvatarUrl(profile.id, null);
       updateProfile({ avatar_url: null });
       setSaveMessage('Photo removed');
       setTimeout(() => setSaveMessage(null), 2000);
@@ -88,7 +88,7 @@ export default function EditProfileScreen() {
   const handleSaveName = useCallback(async () => {
     if (!profile || kidName.trim().length < 2) return;
     setIsSaving(true);
-    const updated = await profileService.update(profile.$id, { kid_name: kidName.trim() });
+    const updated = await profileService.update(profile.id, { kid_name: kidName.trim() });
     if (updated) {
       updateProfile({ kid_name: kidName.trim() });
       setSaveMessage('Name updated!');
@@ -101,7 +101,7 @@ export default function EditProfileScreen() {
     if (!profile) return;
     const existing = profile.languages?.find(l => l.language_code === langCode);
     if (existing) return;
-    const result = await languageService.add(profile.$id, langCode, langName);
+    const result = await languageService.add(profile.id, langCode, langName);
     if (result) {
       updateProfile({ languages: [...(profile.languages || []), result] });
     }
@@ -110,7 +110,7 @@ export default function EditProfileScreen() {
 
   const handleRemoveLanguage = useCallback(async (langCode: string) => {
     if (!profile || (profile.languages?.length || 0) <= 1) return;
-    const success = await languageService.deleteByProfileAndCode(profile.$id, langCode);
+    const success = await languageService.deleteByProfileAndCode(profile.id, langCode);
     if (success) {
       updateProfile({ languages: profile.languages?.filter(l => l.language_code !== langCode) || [] });
     }
@@ -118,7 +118,7 @@ export default function EditProfileScreen() {
 
   const handleAddFamilyMember = useCallback(async () => {
     if (!profile || familyInput.trim().length < 2) return;
-    const result = await familyMemberService.add(profile.$id, familyInput.trim());
+    const result = await familyMemberService.add(profile.id, familyInput.trim());
     if (result) {
       updateProfile({ family_members: [...(profile.family_members || []), result] });
       setFamilyInput('');
@@ -129,13 +129,13 @@ export default function EditProfileScreen() {
     if (!profile) return;
     const success = await familyMemberService.delete(id);
     if (success) {
-      updateProfile({ family_members: profile.family_members?.filter(m => m.$id !== id) || [] });
+      updateProfile({ family_members: profile.family_members?.filter(m => m.id !== id) || [] });
     }
   }, [profile, updateProfile]);
 
   const handleAddFriend = useCallback(async () => {
     if (!profile || friendInput.trim().length < 2) return;
-    const result = await friendService.add(profile.$id, friendInput.trim());
+    const result = await friendService.add(profile.id, friendInput.trim());
     if (result) {
       updateProfile({ friends: [...(profile.friends || []), result] });
       setFriendInput('');
@@ -146,7 +146,7 @@ export default function EditProfileScreen() {
     if (!profile) return;
     const success = await friendService.delete(id);
     if (success) {
-      updateProfile({ friends: profile.friends?.filter(f => f.$id !== id) || [] });
+      updateProfile({ friends: profile.friends?.filter(f => f.id !== id) || [] });
     }
   }, [profile, updateProfile]);
 
@@ -235,7 +235,7 @@ export default function EditProfileScreen() {
             </View>
             <View style={styles.chipGrid}>
               {profile.languages?.map(lang => (
-                <View key={lang.$id} style={[styles.langChip, { backgroundColor: COLORS.primary + '12' }]}>
+                <View key={lang.id} style={[styles.langChip, { backgroundColor: COLORS.primary + '12' }]}>
                   <Text style={styles.langChipFlag}>{getLanguageFlag(lang.language_code)}</Text>
                   <Text style={[styles.langChipText, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
                   {(profile.languages?.length || 0) > 1 && (
@@ -280,9 +280,9 @@ export default function EditProfileScreen() {
             </View>
             <View style={styles.chipGrid}>
               {profile.family_members?.map(m => (
-                <View key={m.$id} style={[styles.personChip, { backgroundColor: COLORS.primary + '12' }]}>
+                <View key={m.id} style={[styles.personChip, { backgroundColor: COLORS.primary + '12' }]}>
                   <Text style={[styles.personName, { color: COLORS.text.primary }]}>{m.name}</Text>
-                  <TouchableOpacity onPress={() => handleRemoveFamilyMember(m.$id)}>
+                  <TouchableOpacity onPress={() => handleRemoveFamilyMember(m.id)}>
                     <X size={14} color={COLORS.text.light} />
                   </TouchableOpacity>
                 </View>
@@ -316,9 +316,9 @@ export default function EditProfileScreen() {
             </View>
             <View style={styles.chipGrid}>
               {profile.friends?.map(f => (
-                <View key={f.$id} style={[styles.personChip, { backgroundColor: COLORS.info + '12' }]}>
+                <View key={f.id} style={[styles.personChip, { backgroundColor: COLORS.info + '12' }]}>
                   <Text style={[styles.personName, { color: COLORS.text.primary }]}>{f.name}</Text>
-                  <TouchableOpacity onPress={() => handleRemoveFriend(f.$id)}>
+                  <TouchableOpacity onPress={() => handleRemoveFriend(f.id)}>
                     <X size={14} color={COLORS.text.light} />
                   </TouchableOpacity>
                 </View>

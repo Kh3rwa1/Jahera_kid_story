@@ -424,11 +424,11 @@ export default function GenerateStory() {
       let quizCreatedCount = 0;
       for (let i = 0; i < story.quiz.length; i++) {
         const quizQuestion = story.quiz[i];
-        const question = await quizService.createQuestion(storyRecord.$id, quizQuestion.question, i + 1);
+        const question = await quizService.createQuestion(storyRecord.id, quizQuestion.question, i + 1);
         if (question) {
-          await quizService.createAnswer(question.$id, quizQuestion.options.A, quizQuestion.correct_answer === 'A', 'A');
-          await quizService.createAnswer(question.$id, quizQuestion.options.B, quizQuestion.correct_answer === 'B', 'B');
-          await quizService.createAnswer(question.$id, quizQuestion.options.C, quizQuestion.correct_answer === 'C', 'C');
+          await quizService.createAnswer(question.id, quizQuestion.options.A, quizQuestion.correct_answer === 'A', 'A');
+          await quizService.createAnswer(question.id, quizQuestion.options.B, quizQuestion.correct_answer === 'B', 'B');
+          await quizService.createAnswer(question.id, quizQuestion.options.C, quizQuestion.correct_answer === 'C', 'C');
           quizCreatedCount++;
         }
       }
@@ -445,9 +445,9 @@ export default function GenerateStory() {
       setProgress(85);
 
       try {
-        const audioPath = await generateAudio(story.content, languageCode, storyRecord.$id);
+        const audioPath = await generateAudio(story.content, languageCode, storyRecord.id);
         if (audioPath) {
-          await storyService.update(storyRecord.$id, { audio_url: audioPath });
+          await storyService.update(storyRecord.id, { audio_url: audioPath });
           completeStep('audio');
           setStatus('Story ready with audio narration!');
         } else {
@@ -464,7 +464,7 @@ export default function GenerateStory() {
       if (!isMountedRef.current) return;
       setTimeout(() => {
         if (isMountedRef.current) {
-          router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.$id } });
+          router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.id } });
         }
       }, 800);
     } catch (err) {

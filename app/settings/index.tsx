@@ -55,7 +55,7 @@ export default function SettingsScreen() {
 
     if (rcUIAvailable) {
       await revenueCatService.presentCustomerCenter(async (plan) => {
-        await subscriptionService.syncFromRevenueCat(profile.$id);
+        await subscriptionService.syncFromRevenueCat(profile.id);
         await refreshSubscription();
         if (plan !== 'free') {
           Alert.alert('Subscription Restored', 'Your subscription has been restored successfully.');
@@ -79,7 +79,7 @@ export default function SettingsScreen() {
       try {
         const result = await revenueCatService.presentPaywallIfNeeded(ENTITLEMENT_PRO);
         if (result.purchased || result.restored) {
-          await subscriptionService.syncFromRevenueCat(profile.$id);
+          await subscriptionService.syncFromRevenueCat(profile.id);
           await refreshSubscription();
           if (result.restored) {
             Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.');
@@ -98,9 +98,9 @@ export default function SettingsScreen() {
       const rcInfo = await revenueCatService.restorePurchases();
       if (rcInfo.isActive) {
         if (rcInfo.plan === 'family') {
-          await subscriptionService.upgradeToFamily(profile.$id);
+          await subscriptionService.upgradeToFamily(profile.id);
         } else {
-          await subscriptionService.upgradeToPro(profile.$id);
+          await subscriptionService.upgradeToPro(profile.id);
         }
         await refreshSubscription();
         Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.');

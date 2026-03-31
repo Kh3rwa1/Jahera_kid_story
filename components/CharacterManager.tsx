@@ -126,7 +126,7 @@ export function CharacterManager({
       if (ok) {
         const newMember = await familyMemberService.add(profileId, trimmed);
         if (newMember) {
-          onFamilyMembersChange(familyMembers.filter(m => m.$id !== editModal.id).concat(newMember));
+          onFamilyMembersChange(familyMembers.filter(m => m.id !== editModal.id).concat(newMember));
           hapticFeedback.success();
           closeEdit();
           return;
@@ -138,7 +138,7 @@ export function CharacterManager({
       if (ok) {
         const newFriend = await friendService.add(profileId, trimmed);
         if (newFriend) {
-          onFriendsChange(friends.filter(f => f.$id !== editModal.id).concat(newFriend));
+          onFriendsChange(friends.filter(f => f.id !== editModal.id).concat(newFriend));
           hapticFeedback.success();
           closeEdit();
           return;
@@ -152,16 +152,16 @@ export function CharacterManager({
     hapticFeedback.medium();
     if (type === 'family') {
       const ok = await familyMemberService.delete(id);
-      if (ok) onFamilyMembersChange(familyMembers.filter(m => m.$id !== id));
+      if (ok) onFamilyMembersChange(familyMembers.filter(m => m.id !== id));
     } else {
       const ok = await friendService.delete(id);
-      if (ok) onFriendsChange(friends.filter(f => f.$id !== id));
+      if (ok) onFriendsChange(friends.filter(f => f.id !== id));
     }
   };
 
   const allCharacters = [
-    ...familyMembers.map(m => ({ id: m.$id, name: m.name, type: 'family' as CharacterType })),
-    ...friends.map(f => ({ id: f.$id, name: f.name, type: 'friend' as CharacterType })),
+    ...familyMembers.map(m => ({ id: m.id, name: m.name, type: 'family' as CharacterType })),
+    ...friends.map(f => ({ id: f.id, name: f.name, type: 'friend' as CharacterType })),
   ];
 
   return (

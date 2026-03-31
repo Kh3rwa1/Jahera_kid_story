@@ -162,7 +162,7 @@ export default function QuizScreen() {
       const computed = scoreRef.current;
       setFinalScore(computed);
       if (profile && story) {
-        await quizService.createAttempt(profile.$id, story.$id, computed, questions.length);
+        await quizService.createAttempt(profile.id, story.id, computed, questions.length);
         await refreshQuizAttempts();
       }
       setShowCelebration(true);
@@ -408,7 +408,7 @@ export default function QuizScreen() {
 
                 return (
                   <Animated.View
-                    key={answer.$id}
+                    key={answer.id}
                     entering={FadeInDown.delay(120 + idx * 70).springify()}
                     style={{ opacity: isDisabledFaded ? 0.38 : 1 }}>
                     <Pressable

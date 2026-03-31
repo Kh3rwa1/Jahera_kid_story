@@ -384,7 +384,7 @@ export default function PaywallScreen() {
       if (rcUIAvailable) {
         const result = await revenueCatService.presentPaywall(offerings.raw);
         if (result.purchased || result.restored) {
-          await subscriptionService.syncFromRevenueCat(profile.$id);
+          await subscriptionService.syncFromRevenueCat(profile.id);
           await refreshSubscription();
           hapticFeedback.success();
           Alert.alert(
@@ -402,7 +402,7 @@ export default function PaywallScreen() {
         const result = await revenueCatService.purchasePackage(selectedPlanData.rcPackage);
         if (result.cancelled) return;
         if (result.success) {
-          await subscriptionService.syncFromRevenueCat(profile.$id);
+          await subscriptionService.syncFromRevenueCat(profile.id);
           await refreshSubscription();
           hapticFeedback.success();
           Alert.alert(
@@ -415,9 +415,9 @@ export default function PaywallScreen() {
         }
       } else {
         if (selectedPlan === 'family') {
-          await subscriptionService.upgradeToFamily(profile.$id);
+          await subscriptionService.upgradeToFamily(profile.id);
         } else {
-          await subscriptionService.startTrial(profile.$id);
+          await subscriptionService.startTrial(profile.id);
         }
         await refreshSubscription();
         hapticFeedback.success();
@@ -444,7 +444,7 @@ export default function PaywallScreen() {
         const result = await revenueCatService.purchasePackage(selectedPlanData.rcPackage);
         if (result.cancelled) return;
         if (result.success) {
-          await subscriptionService.syncFromRevenueCat(profile.$id);
+          await subscriptionService.syncFromRevenueCat(profile.id);
           await refreshSubscription();
           hapticFeedback.success();
           Alert.alert(
@@ -457,9 +457,9 @@ export default function PaywallScreen() {
         }
       } else {
         if (selectedPlan === 'family') {
-          await subscriptionService.upgradeToFamily(profile.$id);
+          await subscriptionService.upgradeToFamily(profile.id);
         } else {
-          await subscriptionService.upgradeToPro(profile.$id);
+          await subscriptionService.upgradeToPro(profile.id);
         }
         await refreshSubscription();
         hapticFeedback.success();
@@ -485,7 +485,7 @@ export default function PaywallScreen() {
       try {
         const result = await revenueCatService.presentPaywallIfNeeded(ENTITLEMENT_PRO);
         if (result.purchased || result.restored) {
-          await subscriptionService.syncFromRevenueCat(profile.$id);
+          await subscriptionService.syncFromRevenueCat(profile.id);
           await refreshSubscription();
           hapticFeedback.success();
           if (result.restored) {
@@ -508,9 +508,9 @@ export default function PaywallScreen() {
       const rcInfo = await revenueCatService.restorePurchases();
       if (rcInfo.isActive) {
         if (rcInfo.plan === 'family') {
-          await subscriptionService.upgradeToFamily(profile.$id);
+          await subscriptionService.upgradeToFamily(profile.id);
         } else {
-          await subscriptionService.upgradeToPro(profile.$id);
+          await subscriptionService.upgradeToPro(profile.id);
         }
         await refreshSubscription();
         hapticFeedback.success();

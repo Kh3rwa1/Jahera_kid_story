@@ -73,7 +73,7 @@ export default function ParentDashboard() {
     }
     if (!profile) return;
 
-    await profileService.update(profile.$id, { parent_pin: newPin });
+    await profileService.update(profile.id, { parent_pin: newPin });
     setIsSettingPin(false);
     setNewPin('');
     setConfirmPin('');
@@ -87,7 +87,7 @@ export default function ParentDashboard() {
       ? Math.round(quizAttempts.reduce((sum, a) => sum + (a.score / a.total_questions) * 100, 0) / totalQuizzes)
       : 0;
     const thisWeek = stories.filter(s => {
-      const d = new Date(s.generated_at || s.$createdAt);
+      const d = new Date(s.generated_at || s.created_at);
       const weekAgo = new Date(Date.now() - 7 * 86400000);
       return d > weekAgo;
     }).length;
@@ -104,7 +104,7 @@ export default function ParentDashboard() {
 
   const recentActivity = useMemo(() => {
     return stories.slice(0, 7).map(story => {
-      const attempt = quizAttempts.find(a => a.story_id === story.$id);
+      const attempt = quizAttempts.find(a => a.story_id === story.id);
       return { story, attempt };
     });
   }, [stories, quizAttempts]);
@@ -339,7 +339,7 @@ export default function ParentDashboard() {
                   stories.filter(s => s.language_code === l.language_code).length
                 ));
                 return (
-                  <View key={lang.$id} style={[styles.langRow, idx > 0 && { borderTopWidth: 1, borderTopColor: COLORS.text.light + '15' }]}>
+                  <View key={lang.id} style={[styles.langRow, idx > 0 && { borderTopWidth: 1, borderTopColor: COLORS.text.light + '15' }]}>
                     <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
                     <View style={styles.langInfo}>
                       <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
@@ -364,7 +364,7 @@ export default function ParentDashboard() {
             <View style={styles.activityList}>
               {recentActivity.map(({ story, attempt }, idx) => (
                 <View
-                  key={story.$id}
+                  key={story.id}
                   style={[styles.activityRow, { backgroundColor: COLORS.cardBackground }]}
                 >
                   <View style={[styles.activityEmoji]}>

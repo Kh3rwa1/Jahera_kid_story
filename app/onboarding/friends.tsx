@@ -81,10 +81,10 @@ export default function Friends() {
       }
       await Promise.all([
         ...languages.map((lang: { code: string; name: string }) =>
-          languageService.add(profile.$id, lang.code, lang.name)
+          languageService.add(profile.id, lang.code, lang.name)
         ),
-        ...familyMembers.map((name: string) => familyMemberService.add(profile.$id, name)),
-        ...friends.map(name => friendService.add(profile.$id, name)),
+        ...familyMembers.map((name: string) => familyMemberService.add(profile.id, name)),
+        ...friends.map(name => friendService.add(profile.id, name)),
       ]);
       await loadProfile();
       if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -106,6 +106,13 @@ export default function Friends() {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
+        <ScrollView
+          style={styles.outerScroll}
+          contentContainerStyle={[styles.outerScrollContent, { paddingBottom: insets.bottom + 120 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+        >
         <LinearGradient
           colors={['#0F0F1A', '#1A0826', '#0A1628']}
           style={[styles.hero, { paddingTop: insets.top + SPACING.lg }]}
@@ -194,7 +201,7 @@ export default function Friends() {
         </Animated.View>
 
         {/* Friends list */}
-        <ScrollView style={styles.list} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.listContent}>
           {friends.length === 0 ? (
             <Animated.View entering={FadeInDown.delay(340).springify()} style={styles.emptyState}>
               <View style={styles.emptyIconRow}>
@@ -242,6 +249,7 @@ export default function Friends() {
               </Animated.View>
             ))
           )}
+        </View>
         </ScrollView>
 
         {/* Footer */}
@@ -289,6 +297,8 @@ export default function Friends() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F7F8FA' },
   kav: { flex: 1 },
+  outerScroll: { flex: 1 },
+  outerScrollContent: { flexGrow: 1 },
   hero: {
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxl,
@@ -421,7 +431,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.sm,
     fontFamily: FONTS.semibold,
   },
-  list: { flex: 1 },
   listContent: {
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
