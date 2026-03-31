@@ -1,23 +1,23 @@
-import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID } from '@/lib/appwrite';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 export async function generateAudio(
   text: string,
   languageCode: string,
-  storyId: string
+  storyId: string,
+  elevenLabsApiKey?: string
 ): Promise<string | null> {
   try {
-    const functionUrl = `${APPWRITE_ENDPOINT}/functions/generate-audio/executions`;
+    const functionUrl = `${SUPABASE_URL}/functions/v1/generate-audio`;
 
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Appwrite-Project': APPWRITE_PROJECT_ID,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Apikey': SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({
-        async: false,
-        body: JSON.stringify({ text, languageCode, storyId }),
-      }),
+      body: JSON.stringify({ text, languageCode, storyId, elevenLabsApiKey }),
     });
 
     if (!response.ok) {
@@ -25,19 +25,15 @@ export async function generateAudio(
       return null;
     }
 
-    const execution = await response.json();
-    const responseBody = execution.responseBody || execution.response || '';
-
     let data: any = {};
     try {
-      data = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
+      data = await response.json();
     } catch {
       return null;
     }
 
     if (data.audioUrl) return data.audioUrl;
-
-    if (data.error) console.warn('generate-audio function error:', data.error);
+    if (data.error) console.warn('generate-audio function error:', data.error, data.detail ?? '');
 
     return null;
   } catch (error) {

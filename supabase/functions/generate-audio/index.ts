@@ -51,7 +51,10 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    let elevenLabsApiKey = clientKey as string | null;
+    let elevenLabsApiKey: string | null =
+      (clientKey as string | null) ||
+      Deno.env.get("ELEVENLABS_API_KEY") ||
+      null;
 
     if (!elevenLabsApiKey) {
       const { data: keyRow } = await supabase
