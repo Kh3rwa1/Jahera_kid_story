@@ -1,6 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const STORAGE_PREFIX = 'jahera_api_key_';
+import { supabase } from '@/lib/supabase';
 
 export const API_KEY_NAMES = {
   OPENAI: 'openai_api_key',
@@ -13,8 +11,13 @@ export type ApiProvider = 'openai' | 'openrouter';
 export const apiKeysService = {
   async getApiKey(keyName: string): Promise<string | null> {
     try {
-      const value = await AsyncStorage.getItem(`${STORAGE_PREFIX}${keyName}`);
-      return value;
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('key_value')
+        .eq('key_name', keyName)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.key_value ?? null;
     } catch (error) {
       console.error('Error getting API key:', error);
       return null;
@@ -23,7 +26,13 @@ export const apiKeysService = {
 
   async setApiKey(keyName: string, keyValue: string): Promise<void> {
     try {
-      await AsyncStorage.setItem(`${STORAGE_PREFIX}${keyName}`, keyValue.trim());
+      const { error } = await supabase
+        .from('api_keys')
+        .upsert(
+          { key_name: keyName, key_value: keyValue.trim(), is_active: true, updated_at: new Date().toISOString() },
+          { onConflict: 'key_name' }
+        );
+      if (error) throw error;
     } catch (error) {
       console.error('Error setting API key:', error);
       throw error;
@@ -32,7 +41,11 @@ export const apiKeysService = {
 
   async removeApiKey(keyName: string): Promise<void> {
     try {
-      await AsyncStorage.removeItem(`${STORAGE_PREFIX}${keyName}`);
+      const { error } = await supabase
+        .from('api_keys')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('key_name', keyName);
+      if (error) throw error;
     } catch (error) {
       console.error('Error removing API key:', error);
     }
