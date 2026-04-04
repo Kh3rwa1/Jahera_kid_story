@@ -1,0 +1,7 @@
+{
+  "name": "generate-story",
+  "version": "1.0.0",
+  "description": "Appwrite function to generate story via AgentRouter",
+  "main": "index.js",
+  "dependencies": {}
+}

@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { Dimensions, ScaledSize } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { BREAKPOINTS } from '@/constants/theme';
 
 export type DeviceType = 'mobile' | 'tablet' | 'desktop' | 'wide';
@@ -18,17 +17,7 @@ interface ResponsiveHook {
 }
 
 export const useResponsive = (): ResponsiveHook => {
-  const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
-
-  useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }: { window: ScaledSize }) => {
-      setDimensions(window);
-    });
-
-    return () => subscription?.remove();
-  }, []);
-
-  const { width, height } = dimensions;
+  const { width, height } = useWindowDimensions();
 
   const getDeviceType = (): DeviceType => {
     if (width >= BREAKPOINTS.wide) return 'wide';

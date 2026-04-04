@@ -60,26 +60,40 @@ export const Container: React.FC<ContainerProps> = ({
     : {};
 
   const renderContent = () => {
-    const content = maxWidth ? <View style={contentStyle}>{children}</View> : children;
-
     if (scroll) {
       return (
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={[containerStyle, { flexGrow: 1 }]}
+          contentContainerStyle={[
+            containerStyle, 
+            { flexGrow: 1 },
+            maxWidth && { alignItems: 'center' } // Centering the content wrapper
+          ]}
           showsVerticalScrollIndicator={false}
           {...scrollProps}
           accessibilityLabel={accessibilityLabel}
           testID={testID}
         >
-          {content}
+          <View style={[contentStyle, maxWidth && { flex: 0, width: '100%' }]}>
+            {children}
+          </View>
         </ScrollView>
       );
     }
 
     return (
-      <View style={[containerStyle, style]} accessibilityLabel={accessibilityLabel} testID={testID}>
-        {content}
+      <View 
+        style={[
+          containerStyle, 
+          style, 
+          maxWidth && { alignItems: 'center' }
+        ]} 
+        accessibilityLabel={accessibilityLabel} 
+        testID={testID}
+      >
+        <View style={[contentStyle, maxWidth && { flex: 1, width: '100%' }]}>
+          {children}
+        </View>
       </View>
     );
   };

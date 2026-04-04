@@ -43,7 +43,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
-import { KidsBubbleBackground } from '@/components/KidsBubbleBackground';
+import { MeshBackground } from '@/components/MeshBackground';
+import { hapticFeedback } from '@/utils/haptics';
+import { Gift, Heart, HelpCircle, MessageCircle, Share2, Sparkles, Trophy } from 'lucide-react-native';
 
 interface SettingRow {
   id: string;
@@ -71,7 +73,8 @@ function RowItem({ row, COLORS, onPress, rowIndex }: { row: SettingRow; COLORS: 
   const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: iconScale.value }] }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.975, { damping: 18 });
+    hapticFeedback.selection();
+    scale.value = withSpring(0.97, { damping: 18 });
     iconScale.value = withSequence(
       withSpring(0.85, { damping: 10, stiffness: 200 }),
       withSpring(1.1, { damping: 8, stiffness: 180 })
@@ -86,7 +89,10 @@ function RowItem({ row, COLORS, onPress, rowIndex }: { row: SettingRow; COLORS: 
   return (
     <Animated.View style={rowStyle}>
       <TouchableOpacity
-        onPress={onPress}
+        onPress={() => {
+          hapticFeedback.medium();
+          onPress();
+        }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={1}
@@ -94,7 +100,7 @@ function RowItem({ row, COLORS, onPress, rowIndex }: { row: SettingRow; COLORS: 
       >
         <Animated.View style={iconStyle}>
           <LinearGradient
-            colors={row.destructive ? [COLORS.error + '30', COLORS.error + '15'] : row.iconGradient}
+            colors={row.destructive ? [COLORS.error + '40', COLORS.error + '20'] : row.iconGradient}
             style={styles.rowIcon}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -119,7 +125,7 @@ function RowItem({ row, COLORS, onPress, rowIndex }: { row: SettingRow; COLORS: 
             </View>
           ) : null}
           {!row.destructive && (
-            <ChevronRight size={15} color={COLORS.text.light} strokeWidth={2.5} />
+            <ChevronRight size={14} color={COLORS.text.light} strokeWidth={3} />
           )}
         </View>
       </TouchableOpacity>
@@ -136,6 +142,7 @@ export default function SettingsTab() {
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = () => {
+    hapticFeedback.warning();
     if (Platform.OS === 'web') {
       if (window.confirm('Are you sure you want to sign out?')) {
         setSigningOut(true);
@@ -150,6 +157,7 @@ export default function SettingsTab() {
         text: 'Sign Out',
         style: 'destructive',
         onPress: async () => {
+          hapticFeedback.success();
           setSigningOut(true);
           clearProfile();
           await signOut();
@@ -168,7 +176,7 @@ export default function SettingsTab() {
           id: 'edit-profile',
           label: 'Edit Profile',
           sublabel: profile?.kid_name ? `${profile.kid_name}'s profile` : 'Update name & avatar',
-          icon: <UserCog size={17} color="#FFFFFF" strokeWidth={2} />,
+          icon: <UserCog size={17} color="#FFFFFF" strokeWidth={2.5} />,
           iconGradient: ['#3B82F6', '#2563EB'],
           route: '/settings/edit-profile',
         },
@@ -176,9 +184,9 @@ export default function SettingsTab() {
           id: 'languages',
           label: 'Languages',
           sublabel: profile?.languages?.length
-            ? `${profile.languages.length} language${profile.languages.length !== 1 ? 's' : ''} active`
+            ? `${profile.languages.length} active`
             : 'Add learning languages',
-          icon: <Globe size={17} color="#FFFFFF" strokeWidth={2} />,
+          icon: <Globe size={17} color="#FFFFFF" strokeWidth={2.5} />,
           iconGradient: ['#10B981', '#059669'],
           route: '/settings/edit-profile',
         },
@@ -191,24 +199,10 @@ export default function SettingsTab() {
         {
           id: 'customization',
           label: 'Themes & Colors',
-          sublabel: 'Personalize your experience',
-          icon: <Palette size={17} color="#FFFFFF" strokeWidth={2} />,
+          sublabel: 'Personalize your world',
+          icon: <Palette size={17} color="#FFFFFF" strokeWidth={2.5} />,
           iconGradient: ['#F59E0B', '#D97706'],
           route: '/settings/customization',
-        },
-      ],
-    },
-    {
-      title: 'Developer',
-      emoji: '🔧',
-      rows: [
-        {
-          id: 'api-keys',
-          label: 'API Keys',
-          sublabel: 'OpenAI & ElevenLabs',
-          icon: <Key size={17} color="#FFFFFF" strokeWidth={2} />,
-          iconGradient: ['#8B5CF6', '#7C3AED'],
-          route: '/settings/api-keys',
         },
       ],
     },
@@ -219,7 +213,7 @@ export default function SettingsTab() {
         {
           id: 'signout',
           label: signingOut ? 'Signing out…' : 'Sign Out',
-          icon: <LogOut size={17} color={COLORS.error} strokeWidth={2} />,
+          icon: <LogOut size={17} color={COLORS.error} strokeWidth={2.5} />,
           iconGradient: [COLORS.error + '30', COLORS.error + '15'],
           destructive: true,
           onPress: handleSignOut,
@@ -231,26 +225,28 @@ export default function SettingsTab() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
-      <KidsBubbleBackground bubbleCount={6} cloudCount={2} />
-
+      <MeshBackground primaryColor={COLORS.primary} />
+      
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* Page header */}
-        <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.pageHeader}>
+        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.pageHeader}>
           <View style={styles.pageTitleRow}>
             <Text style={styles.pageTitleEmoji}>⚙️</Text>
             <Text style={[styles.pageTitle, { color: COLORS.text.primary }]}>Settings</Text>
           </View>
         </Animated.View>
 
-        {/* ── Profile hero ── */}
-        <Animated.View entering={FadeInDown.delay(60).springify()}>
-          <LinearGradient
-            colors={[...COLORS.gradients.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroCard}
-          >
+        {/* ── Hero Glasmorphic Card ── */}
+        <Animated.View entering={FadeInDown.delay(200).springify()}>
+          <View style={[styles.heroGlass, { backgroundColor: 'rgba(255,255,255,0.4)', borderColor: 'rgba(255,255,255,0.3)' }]}>
+            <LinearGradient
+              colors={[COLORS.primary + '15', COLORS.primary + '05']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            
             <View style={styles.heroTop}>
               <View style={styles.heroAvatarWrap}>
                 <ProfileAvatar
@@ -259,89 +255,121 @@ export default function SettingsTab() {
                   size="medium"
                   editable={false}
                 />
-                <View style={styles.crownBadge}>
-                  <Crown size={9} color="#FFFFFF" fill="#FFFFFF" />
+                <View style={[styles.crownBadge, { backgroundColor: COLORS.primary }]}>
+                   <Crown size={10} color="#FFFFFF" fill="#FFFFFF" />
                 </View>
               </View>
 
               <View style={styles.heroInfo}>
-                <Text style={styles.heroName} numberOfLines={1}>
+                <Text style={[styles.heroName, { color: COLORS.text.primary }]} numberOfLines={1}>
                   {profile?.kid_name || 'Your Profile'}
                 </Text>
-                <Text style={styles.heroEmail} numberOfLines={1}>
+                <Text style={[styles.heroEmail, { color: COLORS.text.secondary }]} numberOfLines={1}>
                   {user?.email || ''}
                 </Text>
-                <View style={styles.heroPlanPill}>
-                  <Zap size={10} color="#F59E0B" fill="#F59E0B" />
-                  <Text style={styles.heroPlanText}>Free plan</Text>
+                <View style={[styles.heroPlanPill, { backgroundColor: COLORS.primary + '15' }]}>
+                  <Zap size={10} color={COLORS.primary} fill={COLORS.primary} />
+                  <Text style={[styles.heroPlanText, { color: COLORS.primary }]}>Explorer Plan</Text>
                 </View>
               </View>
 
               <TouchableOpacity
-                style={styles.heroEditBtn}
-                onPress={() => router.push('/settings/edit-profile')}
-                activeOpacity={0.75}
+                style={[styles.heroEditBtn, { backgroundColor: COLORS.primary }]}
+                onPress={() => {
+                  hapticFeedback.light();
+                  router.push('/settings/edit-profile');
+                }}
+                activeOpacity={0.8}
               >
                 <Text style={styles.heroEditText}>Edit</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.heroStats}>
+            <View style={[styles.heroStats, { borderTopColor: 'rgba(0,0,0,0.06)' }]}>
               {[
-                { icon: <BookOpen size={13} color="rgba(255,255,255,0.9)" />, value: String(stories.length), label: 'Stories' },
-                { icon: <Star size={13} color="rgba(255,255,255,0.9)" />, value: String(profile?.languages?.length ?? 0), label: 'Languages' },
-                { icon: <Zap size={13} color="rgba(255,255,255,0.9)" />, value: 'Free', label: 'Plan' },
+                { icon: <BookOpen size={13} color={COLORS.primary} />, value: String(stories.length), label: 'Stories' },
+                { icon: <Star size={13} color={COLORS.primary} />, value: String(profile?.languages?.length ?? 0), label: 'Active' },
+                { icon: <Zap size={13} color={COLORS.primary} />, value: 'Free', label: 'Plan' },
               ].map((stat, i, arr) => (
                 <React.Fragment key={stat.label}>
                   <View style={styles.heroStat}>
-                    <View style={styles.heroStatIcon}>{stat.icon}</View>
-                    <Text style={styles.heroStatVal}>{stat.value}</Text>
-                    <Text style={styles.heroStatLbl}>{stat.label}</Text>
+                    <View style={[styles.heroStatIcon, { backgroundColor: COLORS.primary + '12' }]}>{stat.icon}</View>
+                    <Text style={[styles.heroStatVal, { color: COLORS.text.primary }]}>{stat.value}</Text>
+                    <Text style={[styles.heroStatLbl, { color: COLORS.text.light }]}>{stat.label}</Text>
                   </View>
-                  {i < arr.length - 1 && <View style={styles.heroStatDiv} />}
+                  {i < arr.length - 1 && <View style={[styles.heroStatDiv, { backgroundColor: 'rgba(0,0,0,0.08)' }]} />}
                 </React.Fragment>
               ))}
             </View>
-          </LinearGradient>
+          </View>
         </Animated.View>
 
-        {/* ── Upgrade banner ── */}
-        <Animated.View entering={FadeInDown.delay(140).springify()}>
-          <TouchableOpacity onPress={() => router.push('/paywall')} activeOpacity={0.88}>
+        {/* ── Upgrade Premium Card ── */}
+        <Animated.View entering={FadeInDown.delay(250).springify()}>
+          <TouchableOpacity 
+            onPress={() => {
+              hapticFeedback.medium();
+              router.push('/paywall');
+            }} 
+            activeOpacity={0.9}
+          >
             <LinearGradient
               colors={['#F59E0B', '#EF4444']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={styles.upgradeBanner}
+              style={styles.premiumBanner}
             >
-              <View style={styles.upgradeIconBox}>
-                <Crown size={22} color="#F59E0B" fill="#F59E0B" />
+              <View style={styles.premiumIconBox}>
+                <Crown size={24} color="#F59E0B" fill="#F59E0B" />
               </View>
-              <View style={styles.upgradeBody}>
-                <Text style={styles.upgradeTitle}>Unlock Premium ✨</Text>
-                <Text style={styles.upgradeSub}>Unlimited stories · More voices</Text>
+              <View style={styles.premiumBody}>
+                <Text style={styles.premiumTitle}>Unlock Premium Magic ✨</Text>
+                <Text style={styles.premiumDesc}>Unlimited worlds · High-fidelity voices</Text>
               </View>
-              <View style={styles.upgradeArrow}>
-                <ChevronRight size={17} color="#FFFFFF" strokeWidth={2.5} />
+              <View style={styles.premiumAction}>
+                <Text style={styles.premiumActionText}>UPGRADE</Text>
               </View>
             </LinearGradient>
           </TouchableOpacity>
+        </Animated.View>
+
+        {/* ── Referral Card ── */}
+        <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.referralCard}>
+          <View style={[styles.referralInner, { backgroundColor: '#FFF', borderColor: 'rgba(0,0,0,0.05)' }]}>
+            <LinearGradient
+              colors={['#DB2777' + '15', '#DB2777' + '05']}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[styles.referralIcon, { backgroundColor: '#DB2777' + '20' }]}>
+              <Gift size={22} color="#DB2777" />
+            </View>
+            <View style={styles.referralContent}>
+              <Text style={[styles.referralTitle, { color: COLORS.text.primary }]}>Spread the Magic</Text>
+              <Text style={[styles.referralSub, { color: COLORS.text.secondary }]}>Invite a friend and unlock 2 bonus stories!</Text>
+            </View>
+            <TouchableOpacity 
+              style={[styles.referralBtn, { backgroundColor: '#DB2777' }]}
+              onPress={() => hapticFeedback.selection()}
+            >
+              <Share2 size={16} color="#FFFFFF" strokeWidth={3} />
+            </TouchableOpacity>
+          </View>
         </Animated.View>
 
         {/* ── Setting groups ── */}
         {groups.map((group, gIdx) => (
           <Animated.View
             key={group.title}
-            entering={FadeInDown.delay(200 + gIdx * 65).springify()}
+            entering={FadeInDown.delay(350 + gIdx * 100).springify()}
             style={styles.group}
           >
             <View style={styles.groupLabelRow}>
               <Text style={styles.groupEmoji}>{group.emoji}</Text>
-              <Text style={[styles.groupLabel, { color: COLORS.text.secondary }]}>
+              <Text style={[styles.groupLabel, { color: COLORS.text.light }]}>
                 {group.title.toUpperCase()}
               </Text>
             </View>
-            <View style={[styles.groupCard, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={[styles.groupCard, { backgroundColor: '#FFF', borderColor: 'rgba(0,0,0,0.05)', borderWidth: 1 }]}>
               {group.rows.map((row, rIdx) => (
                 <View key={row.id}>
                   <RowItem
@@ -351,7 +379,7 @@ export default function SettingsTab() {
                     rowIndex={rIdx}
                   />
                   {rIdx < group.rows.length - 1 && (
-                    <View style={[styles.divider, { backgroundColor: COLORS.text.primary + '09' }]} />
+                    <View style={[styles.divider, { backgroundColor: 'rgba(0,0,0,0.05)' }]} />
                   )}
                 </View>
               ))}
@@ -359,12 +387,48 @@ export default function SettingsTab() {
           </Animated.View>
         ))}
 
+        {/* ── Support & Love Card ── */}
+        <Animated.View entering={FadeInDown.delay(550).springify()} style={styles.supportCard}>
+          <View style={[styles.supportInner, { backgroundColor: 'rgba(255,255,255,0.5)', borderColor: 'rgba(0,0,0,0.05)' }]}>
+            <View style={styles.supportHeader}>
+              <View style={[styles.supportIconWrap, { backgroundColor: COLORS.primary }]}>
+                 <MessageCircle size={18} color="#FFFFFF" strokeWidth={2.5} />
+              </View>
+              <Text style={[styles.supportTitle, { color: COLORS.text.primary }]}>Need help?</Text>
+            </View>
+            <Text style={[styles.supportDesc, { color: COLORS.text.secondary }]}>
+              Have a suggestion or found a bug? We'd love to hear from you!
+            </Text>
+            <TouchableOpacity 
+              style={[styles.supportBtn, { backgroundColor: COLORS.primary }]}
+              onPress={() => hapticFeedback.light()}
+            >
+              <Text style={styles.supportBtnText}>Chat with us</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        {/* ── Wisdom Chip ── */}
+        <Animated.View entering={FadeInDown.delay(600).springify()} style={styles.wisdomCard}>
+          <View style={[styles.wisdomBubble, { backgroundColor: '#FFF', borderColor: 'rgba(0,0,0,0.05)' }]}>
+            <Heart size={20} color="#EF4444" fill="#EF4444" />
+            <Text style={[styles.wisdomText, { color: COLORS.text.secondary }]}>
+              "Daily reading for 15 minutes boosts vocabulary by 50% in children."
+            </Text>
+            <View style={[styles.wisdomTail, { borderTopColor: '#FFF' }]} />
+          </View>
+          <View style={styles.wisdomAuthor}>
+            <Sparkles size={12} color="#F59E0B" />
+            <Text style={styles.wisdomAuthorText}>PARENTHOOD TIP</Text>
+          </View>
+        </Animated.View>
+
         {/* ── Footer ── */}
-        <Animated.View entering={FadeIn.delay(580)} style={styles.footer}>
-          <View style={[styles.footerPill, { backgroundColor: COLORS.cardBackground }]}>
-            <Shield size={11} color={COLORS.text.light} />
+        <Animated.View entering={FadeIn.delay(700)} style={styles.footer}>
+          <View style={[styles.footerPill, { backgroundColor: 'rgba(255,255,255,0.4)', borderColor: 'rgba(0,0,0,0.05)', borderWidth: 1 }]}>
+            <Shield size={12} color={COLORS.text.light} />
             <Text style={[styles.footerTxt, { color: COLORS.text.light }]}>
-              Jahera · v1.0.0 · End-to-end encrypted
+              Jahera Kid Adventure · v1.0.0
             </Text>
           </View>
         </Animated.View>
@@ -378,201 +442,215 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.sm,
-    paddingBottom: 120,
-    gap: SPACING.md,
+    paddingBottom: 140,
+    gap: SPACING.xl,
   },
 
-  pageHeader: { paddingTop: SPACING.xs, paddingBottom: SPACING.xs },
+  pageHeader: { paddingTop: SPACING.xs, paddingBottom: 0 },
   pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  pageTitleEmoji: { fontSize: 22 },
+  pageTitleEmoji: { fontSize: 24 },
   pageTitle: {
-    fontSize: 32,
+    fontSize: 34,
     fontFamily: FONTS.display,
-    letterSpacing: -0.4,
+    letterSpacing: -0.6,
   },
 
-  heroCard: {
-    borderRadius: BORDER_RADIUS.xxl,
+  heroGlass: {
+    borderRadius: BORDER_RADIUS.xxl + 4,
     overflow: 'hidden',
-    ...SHADOWS.lg,
+    borderWidth: 1,
+    ...SHADOWS.md,
   },
   heroTop: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: SPACING.xl,
     paddingBottom: SPACING.lg,
-    gap: SPACING.md,
+    gap: SPACING.lg,
   },
   heroAvatarWrap: { position: 'relative' },
   crownBadge: {
     position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#F59E0B',
+    bottom: -2,
+    right: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
+    ...SHADOWS.sm,
   },
-  heroInfo: { flex: 1, gap: 3 },
+  heroInfo: { flex: 1, gap: 2 },
   heroName: {
-    fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.extrabold,
-    color: '#FFFFFF',
-    letterSpacing: -0.3,
+    fontSize: 22,
+    fontFamily: FONTS.display,
+    letterSpacing: -0.4,
   },
   heroEmail: {
     fontSize: 12,
     fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.65)',
+    opacity: 0.8,
   },
   heroPlanPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: BORDER_RADIUS.pill,
-    marginTop: 2,
+    marginTop: 4,
   },
   heroPlanText: {
     fontSize: 10,
-    fontFamily: FONTS.semibold,
-    color: '#F59E0B',
-    letterSpacing: 0.2,
+    fontFamily: FONTS.extrabold,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   heroEditBtn: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: BORDER_RADIUS.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
+    ...SHADOWS.sm,
   },
   heroEditText: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.bold,
+    fontSize: 13,
+    fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
   },
   heroStats: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.12)',
     marginHorizontal: SPACING.xl,
-    paddingVertical: SPACING.lg,
+    paddingVertical: SPACING.xl,
   },
-  heroStat: { flex: 1, alignItems: 'center', gap: 2 },
+  heroStat: { flex: 1, alignItems: 'center', gap: 4 },
   heroStatIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
   },
   heroStatVal: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.extrabold,
-    color: '#FFFFFF',
+    fontSize: 18,
+    fontFamily: FONTS.display,
+    letterSpacing: -0.2,
   },
   heroStatLbl: {
     fontSize: 10,
-    fontFamily: FONTS.semibold,
-    color: 'rgba(255,255,255,0.55)',
+    fontFamily: FONTS.extrabold,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 1,
   },
   heroStatDiv: {
     width: 1,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    marginVertical: 4,
+    marginVertical: 8,
+    borderRadius: 0.5,
   },
 
-  upgradeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xxl,
-    gap: SPACING.md,
-    ...SHADOWS.md,
+  premiumBanner: {
+    padding: SPACING.xl, 
+    borderRadius: BORDER_RADIUS.xxl + 4,
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: SPACING.lg,
+    ...SHADOWS.lg,
   },
-  upgradeIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  premiumIconBox: {
+    width: 48, height: 48, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  upgradeBody: { flex: 1 },
-  upgradeTitle: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.extrabold,
-    color: '#FFFFFF',
-    letterSpacing: -0.2,
+  premiumBody: { flex: 1, gap: 2 },
+  premiumTitle: {
+    fontSize: 17, fontFamily: FONTS.display,
+    color: '#FFFFFF', letterSpacing: -0.3,
   },
-  upgradeSub: {
-    fontSize: 12,
-    fontFamily: FONTS.semibold,
-    color: 'rgba(255,255,255,0.82)',
+  premiumDesc: { fontSize: 13, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.9)' },
+  premiumAction: {
+    paddingHorizontal: 12, paddingVertical: 8,
+    backgroundColor: '#FFF', borderRadius: BORDER_RADIUS.pill,
+    ...SHADOWS.sm,
   },
-  upgradeArrow: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  premiumActionText: { fontSize: 10, fontFamily: FONTS.extrabold, color: '#F59E0B' },
+
+  referralCard: { width: '100%' },
+  referralInner: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.lg,
+    padding: SPACING.xl, borderRadius: 28,
+    overflow: 'hidden', borderWidth: 1, ...SHADOWS.md,
+  },
+  referralIcon: {
+    width: 48, height: 48, borderRadius: 24,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  referralContent: { flex: 1, gap: 2 },
+  referralTitle: { fontSize: 18, fontFamily: FONTS.display, letterSpacing: -0.3 },
+  referralSub: { fontSize: 13, fontFamily: FONTS.medium, lineHeight: 18 },
+  referralBtn: {
+    width: 42, height: 42, borderRadius: 21,
+    alignItems: 'center', justifyContent: 'center', ...SHADOWS.sm,
   },
 
-  group: { gap: 6 },
-  groupLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: SPACING.sm },
-  groupEmoji: { fontSize: 14 },
+  wisdomCard: { alignItems: 'center', marginVertical: SPACING.lg, gap: SPACING.sm },
+  wisdomBubble: {
+    padding: 20,
+    borderRadius: 24, width: '100%',
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.lg,
+    borderWidth: 1, ...SHADOWS.sm,
+  },
+  wisdomText: { flex: 1, fontSize: 14, fontFamily: FONTS.medium, lineHeight: 22 },
+  wisdomTail: {
+    position: 'absolute', bottom: -10, left: '50%', marginLeft: -10,
+    width: 0, height: 0, borderLeftWidth: 10, borderRightWidth: 10,
+    borderTopWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent',
+  },
+  wisdomAuthor: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  wisdomAuthorText: { fontSize: 10, fontFamily: FONTS.extrabold, color: '#94A3B8', letterSpacing: 1.2 },
+
+  group: { gap: 8 },
+  groupLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: SPACING.md },
+  groupEmoji: { fontSize: 16 },
   groupLabel: {
     fontSize: 11,
     fontFamily: FONTS.extrabold,
-    letterSpacing: 1.1,
+    letterSpacing: 1.2,
   },
   groupCard: {
-    borderRadius: BORDER_RADIUS.xxl,
+    borderRadius: 28,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    ...SHADOWS.sm,
   },
 
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 14,
-    gap: SPACING.md,
-    minHeight: 60,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: 18,
+    gap: SPACING.lg,
+    minHeight: 70,
   },
   rowIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: BORDER_RADIUS.md,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rowBody: { flex: 1, gap: 1 },
   rowLabel: {
-    fontSize: FONT_SIZES.md,
+    fontSize: 16,
     fontFamily: FONTS.bold,
-    letterSpacing: -0.1,
+    letterSpacing: -0.2,
   },
   rowSub: {
-    fontSize: 12,
-    fontFamily: FONTS.regular,
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+    opacity: 0.7,
   },
   rowTrailing: {
     flexDirection: 'row',
@@ -581,32 +659,52 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    marginLeft: 38 + SPACING.md + SPACING.lg,
+    marginHorizontal: SPACING.xl,
   },
   badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2.5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: BORDER_RADIUS.pill,
   },
   badgeText: {
     fontSize: 10,
     fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
-    letterSpacing: 0.2,
+    letterSpacing: 0.5,
   },
 
-  footer: { alignItems: 'center', paddingTop: SPACING.md },
+  footer: { alignItems: 'center', paddingVertical: SPACING.xl },
   footerPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: BORDER_RADIUS.pill,
   },
   footerTxt: {
     fontSize: 11,
-    fontFamily: FONTS.medium,
-    letterSpacing: 0.2,
+    fontFamily: FONTS.extrabold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
+
+  supportCard: { width: '100%' },
+  supportInner: {
+    padding: 24, borderRadius: 28,
+    gap: 16, borderWidth: 1,
+  },
+  supportHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  supportIconWrap: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+    ...SHADOWS.sm,
+  },
+  supportTitle: { fontSize: 18, fontFamily: FONTS.display, letterSpacing: -0.4 },
+  supportDesc: { fontSize: 14, fontFamily: FONTS.medium, lineHeight: 22 },
+  supportBtn: {
+    paddingVertical: 14, borderRadius: BORDER_RADIUS.pill,
+    alignItems: 'center', justifyContent: 'center', ...SHADOWS.md,
+  },
+  supportBtnText: { fontSize: 15, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
 });

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,8 +11,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 interface Particle {
   id: number;
   size: number;
@@ -23,7 +21,7 @@ interface Particle {
   colors: readonly [string, string, ...string[]];
 }
 
-const FloatingParticle: React.FC<{ particle: Particle }> = ({ particle }) => {
+const FloatingParticle: React.FC<{ particle: Particle; winHeight: number }> = ({ particle, winHeight }) => {
   const translateY = useSharedValue(particle.startY);
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(0);
@@ -44,7 +42,7 @@ const FloatingParticle: React.FC<{ particle: Particle }> = ({ particle }) => {
     translateY.value = withDelay(
       particle.delay,
       withRepeat(
-        withTiming(-SCREEN_HEIGHT - 100, {
+        withTiming(-winHeight - 100, {
           duration: particle.duration,
           easing: Easing.linear,
         }),
@@ -66,7 +64,7 @@ const FloatingParticle: React.FC<{ particle: Particle }> = ({ particle }) => {
         false
       )
     );
-  }, []);
+  }, [winHeight, particle.delay, particle.duration]);
 
   const animatedStyle = useAnimatedStyle(() => {
     'worklet';
@@ -118,20 +116,25 @@ export const FloatingParticles: React.FC<FloatingParticlesProps> = ({
     ['rgba(152, 255, 224, 0.3)', 'rgba(152, 255, 224, 0)'],
   ],
 }) => {
-  const particles: Particle[] = Array.from({ length: count }, (_, i) => ({
-    id: i,
-    size: Math.random() * 40 + 20, // 20-60px
-    startX: Math.random() * SCREEN_WIDTH,
-    startY: SCREEN_HEIGHT + Math.random() * 200,
-    delay: Math.random() * 3000,
-    duration: Math.random() * 8000 + 12000, // 12-20 seconds
-    colors: colors[Math.floor(Math.random() * colors.length)],
-  }));
+  const { width: winWidth, height: winHeight } = useWindowDimensions();
+  
+  const particles: Particle[] = React.useMemo(() => 
+    Array.from({ length: count }, (_, i) => ({
+      id: i,
+      size: Math.random() * 40 + 20, // 20-60px
+      startX: Math.random() * winWidth,
+      startY: winHeight + Math.random() * 200,
+      delay: Math.random() * 3000,
+      duration: Math.random() * 8000 + 12000, // 12-20 seconds
+      colors: colors[Math.floor(Math.random() * colors.length)],
+    })),
+    [count, winWidth, winHeight, colors]
+  );
 
   return (
     <View style={styles.container} pointerEvents="none">
       {particles.map((particle) => (
-        <FloatingParticle key={particle.id} particle={particle} />
+        <FloatingParticle key={particle.id} particle={particle} winHeight={winHeight} />
       ))}
     </View>
   );

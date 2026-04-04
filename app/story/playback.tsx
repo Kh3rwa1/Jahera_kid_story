@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
-  Dimensions,
   StatusBar,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
@@ -29,6 +29,7 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 import { storyService, quizService } from '@/services/database';
+import { generateAudio } from '@/services/audioService';
 import { Story } from '@/types/database';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Play, Pause, Award, RefreshCw, VolumeX, ArrowLeft, BookOpen, Share2, Minus, Plus, Headphones, SkipBack, SkipForward, BookMarked, Sparkles, Type, ChevronLeft as AlignLeft, TextAlignJustify as AlignJustify } from 'lucide-react-native';
@@ -45,7 +46,6 @@ import { hapticFeedback } from '@/utils/haptics';
 import { shareStory } from '@/utils/sharing';
 import { MarqueeText } from '@/components/MarqueeText';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const THEME_GRADIENTS: Record<string, readonly [string, string, string]> = {
   adventure:   ['#FF6B35', '#D94F1C', '#A83000'],
@@ -140,6 +140,7 @@ const FONT_FAMILIES: FontFamily[] = ['nunito', 'merriweather', 'comic-neue', 'at
 const LINE_SPACINGS: LineSpacing[] = ['compact', 'normal', 'relaxed'];
 
 export default function StoryPlayback() {
+  const { width: winWidth, height: winHeight } = useWindowDimensions();
   const router = useRouter();
   const params = useLocalSearchParams();
   const { currentTheme } = useTheme();
@@ -153,6 +154,8 @@ export default function StoryPlayback() {
   const paraOffsets = useRef<number[]>([]);
   const insets = useSafeAreaInsets();
 
+  const styles = useStyles(C, insets, winWidth, winHeight);
+
   const [story, setStory] = useState<Story | null>(null);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -160,10 +163,13 @@ export default function StoryPlayback() {
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [audioError, setAudioError] = useState(false);
+  const [audioPolling, setAudioPolling] = useState(false);
   const [hasQuiz, setHasQuiz] = useState(false);
   const [tab, setTab] = useState<TabMode>('audio');
   const [isBuffering, setIsBuffering] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isPlayingRequested, setIsPlayingRequested] = useState(true); // Auto-play by default
+  const audioPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const playScale = useSharedValue(1);
   const vinylRotation = useSharedValue(0);
@@ -236,6 +242,18 @@ export default function StoryPlayback() {
   const totalChars = useMemo(() => countTotalChars(allWords), [allWords]);
   const wordTimings = useMemo(() => buildWordTimings(allWords, totalChars), [allWords, totalChars]);
 
+  // Pre-compute paragraph word ranges to avoid recomputation during render
+  const paragraphWordRanges = useMemo(() => {
+    const ranges: Array<{ start: number; end: number }> = [];
+    let count = 0;
+    for (const para of paragraphs) {
+      const words = buildWordIndex([para]);
+      ranges.push({ start: count, end: count + words.length - 1 });
+      count += words.length;
+    }
+    return ranges;
+  }, [paragraphs]);
+
   const activeWordIndex = useMemo(() => {
     if (duration <= 0 || allWords.length === 0 || position === 0) return -1;
     const progress = Math.min(position / duration, 1);
@@ -267,14 +285,12 @@ export default function StoryPlayback() {
 
   const activeParaIndex = useMemo(() => {
     if (activeWordIndex < 0) return -1;
-    let count = 0;
-    for (let pi = 0; pi < paragraphs.length; pi++) {
-      const words = buildWordIndex([paragraphs[pi]]);
-      if (activeWordIndex < count + words.length) return pi;
-      count += words.length;
+    for (let pi = 0; pi < paragraphWordRanges.length; pi++) {
+      const { start, end } = paragraphWordRanges[pi];
+      if (activeWordIndex >= start && activeWordIndex <= end) return pi;
     }
     return -1;
-  }, [activeWordIndex, paragraphs]);
+  }, [activeWordIndex, paragraphWordRanges]);
 
   useEffect(() => {
     if (tab === 'text' && activeParaIndex >= 0 && activeParaIndex !== lastActiveParaRef.current) {
@@ -287,7 +303,10 @@ export default function StoryPlayback() {
   }, [activeParaIndex, tab]);
 
   useEffect(() => { loadStory(); }, []);
-  useEffect(() => () => { if (sound) sound.unloadAsync().catch(() => {}); }, [sound]);
+  useEffect(() => () => {
+    if (sound) sound.unloadAsync().catch(() => {});
+    if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+  }, [sound]);
 
   const loadStory = async () => {
     try {
@@ -298,11 +317,43 @@ export default function StoryPlayback() {
       setStory(storyData);
       const quizData = await quizService.getQuestionsByStoryId(storyId);
       setHasQuiz(!!quizData && quizData.length > 0);
+
       if (storyData.audio_url) {
         await loadAudio(storyData.audio_url);
       } else {
-        setAudioError(true);
-        setTab('text');
+        // Audio is missing. Trigger generation immediately and poll.
+        setAudioPolling(true);
+        setTab('audio'); // Audio-first: Stay on audio tab even while generating
+        
+        // Trigger generation — server writes audio_url directly to DB
+        generateAudio(storyData.content, storyData.language_code || 'en', storyData.id).catch(err => {
+          console.error('[playback] Failed to trigger audio generation:', err);
+        });
+
+        let polls = 0;
+        const MAX_POLLS = 25; // 25 × 3s = 75s
+        audioPollingRef.current = setInterval(async () => {
+          polls++;
+          try {
+            const fresh = await storyService.getById(storyId);
+            if (fresh?.audio_url) {
+              if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+              setAudioPolling(false);
+              await loadAudio(fresh.audio_url);
+              setTab('audio');
+            } else if (polls >= MAX_POLLS) {
+              if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+              setAudioPolling(false);
+              setAudioError(true);
+            }
+          } catch {
+            if (polls >= MAX_POLLS) {
+              if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+              setAudioPolling(false);
+              setAudioError(true);
+            }
+          }
+        }, 3000);
       }
       setIsLoading(false);
     } catch {
@@ -312,15 +363,30 @@ export default function StoryPlayback() {
 
   const loadAudio = async (audioPath: string) => {
     try {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: true });
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false
+      });
       const { sound: audioSound } = await Audio.Sound.createAsync(
         { uri: audioPath },
-        { shouldPlay: false, progressUpdateIntervalMillis: 100 },
+        { shouldPlay: true, progressUpdateIntervalMillis: 50 }, // Force shouldPlay to true for audio-first
         onPlaybackStatusUpdate
       );
       setSound(audioSound);
       setAudioError(false);
-    } catch {
+      
+      // Explicitly trigger play to ensure autoplay in all environments
+      try {
+        await audioSound.playAsync();
+        setIsPlaying(true);
+        hapticFeedback.light();
+      } catch (err) {
+        console.warn('[playback] Autoplay blocked or failed:', err);
+      }
+    } catch (err) {
+      console.error('Failed to load audio:', err);
       setAudioError(true);
       setTab('text');
     }
@@ -380,7 +446,7 @@ export default function StoryPlayback() {
   const handleProgressPress = useCallback(async (event: any) => {
     if (!sound || !duration) return;
     const { locationX } = event.nativeEvent;
-    const barWidth = SCREEN_WIDTH - SPACING.xxl * 2;
+    const barWidth = winWidth - SPACING.xxl * 2;
     const pct = Math.max(0, Math.min(1, locationX / barWidth));
     progressThumbScale.value = withSequence(withSpring(1.4, { damping: 6 }), withSpring(1, { damping: 10 }));
     try { hapticFeedback.light(); await sound.setPositionAsync(duration * pct); } catch {}
@@ -398,11 +464,72 @@ export default function StoryPlayback() {
     router.push({ pathname: '/story/generate', params: { profileId: story!.profile_id, languageCode: story!.language_code } });
   }, [sound, story, router]);
 
+  const handleRetryAudio = useCallback(async () => {
+    if (!story) return;
+    hapticFeedback.medium();
+    setAudioError(false);
+    setAudioPolling(true);
+    
+    try {
+      await generateAudio(story.content, story.language_code || 'en', story.id);
+      // After triggering, loadStory logic for polling will be handled by re-mounting or manual call
+      // But here we can just wait for a moment and then the polling in loadStory (if active) would pick it up
+      // Or we can manually start a new poll here for better UX
+      let polls = 0;
+      const MAX_POLLS = 20;
+      const interval = setInterval(async () => {
+        polls++;
+        const fresh = await storyService.getById(story.id);
+        if (fresh?.audio_url) {
+          clearInterval(interval);
+          setAudioPolling(false);
+          await loadAudio(fresh.audio_url);
+          setTab('audio');
+        } else if (polls >= MAX_POLLS) {
+          clearInterval(interval);
+          setAudioPolling(false);
+          setAudioError(true);
+        }
+      }, 3000);
+    } catch (err) {
+      setAudioError(true);
+      setAudioPolling(false);
+    }
+  }, [story, loadAudio]);
+
+  const lineHeight = prefs.fontSize * LINE_SPACING_VALUES[prefs.lineSpacing];
+  const activeFontDef = FONT_FAMILY_VALUES[prefs.fontFamily ?? 'nunito'];
+
+  // Pre-compute styles for active/past words to avoid inline object creation
+  // These useMemo hooks MUST be before any early returns to satisfy React's Rules of Hooks
+  const activeWordStyle = useMemo(() => ({
+    color: accentColor,
+    backgroundColor: accentColor + '20',
+    borderRadius: 3,
+    fontFamily: activeFontDef.bold,
+    overflow: 'hidden' as const,
+  }), [accentColor, activeFontDef.bold]);
+
+  const pastWordColor = useMemo(() => ({ color: C.text.primary }), [C.text.primary]);
+  const baseWordStyle = useMemo(() => ({
+    fontSize: prefs.fontSize,
+    lineHeight,
+    fontFamily: activeFontDef.regular,
+    color: C.text.secondary,
+  }), [prefs.fontSize, lineHeight, activeFontDef.regular, C.text.secondary]);
+
   if (isLoading) {
     return (
       <View style={{ flex: 1 }}>
         <StatusBar barStyle="light-content" />
-        <LinearGradient colors={['#134E4A', '#0F766E', '#042F2E']} style={StyleSheet.absoluteFill} />
+        <LinearGradient 
+          colors={[
+            C.primaryDark,
+            C.primaryDark + 'E6', // slightly transparent mid
+            '#000000' + 'CC'      // Fade to near-black
+          ]} 
+          style={StyleSheet.absoluteFill} 
+        />
         <SafeAreaView style={[styles.fill, styles.center]}>
           <Animated.View entering={FadeIn.duration(600)} style={styles.loadingBox}>
             <View style={styles.loadingRing}>
@@ -429,8 +556,6 @@ export default function StoryPlayback() {
     );
   }
 
-  const lineHeight = prefs.fontSize * LINE_SPACING_VALUES[prefs.lineSpacing];
-  const activeFontDef = FONT_FAMILY_VALUES[prefs.fontFamily ?? 'nunito'];
   let globalWordCounter = 0;
 
   if (tab === 'text' || audioError) {
@@ -628,20 +753,9 @@ export default function StoryPlayback() {
                   <Text
                     key={`w-${paraIdx}-${ti}`}
                     style={[
-                      {
-                        fontSize: prefs.fontSize,
-                        lineHeight,
-                        fontFamily: activeFontDef.regular,
-                        color: C.text.secondary,
-                      },
-                      isPast && { color: C.text.primary },
-                      isActive && {
-                        color: accentColor,
-                        backgroundColor: accentColor + '20',
-                        borderRadius: 3,
-                        fontFamily: activeFontDef.bold,
-                        overflow: 'hidden' as const,
-                      },
+                      baseWordStyle,
+                      isPast && pastWordColor,
+                      isActive && activeWordStyle,
                     ]}
                   >
                     {word}
@@ -705,12 +819,26 @@ export default function StoryPlayback() {
           </View>
         </ScrollView>
 
-        {audioError && (
-          <SafeAreaView edges={['bottom']} style={styles.errorBanner}>
-            <VolumeX size={13} color="#D97706" />
-            <Text style={[styles.errorBannerText, { fontFamily: FONTS.medium }]}>
-              Audio unavailable — reading mode active
-            </Text>
+        {(audioError || audioPolling) && (
+          <SafeAreaView edges={['bottom']} style={[styles.errorBanner, { backgroundColor: audioPolling ? '#ECFDF5' : '#FFF7ED' }]}>
+            <View style={styles.errorBannerContent}>
+              <View style={styles.errorBannerLeft}>
+                <VolumeX size={14} color={audioPolling ? '#10B981' : '#D97706'} />
+                <Text style={[styles.errorBannerText, { fontFamily: FONTS.medium, color: audioPolling ? '#10B981' : '#D97706' }]}>
+                  {audioPolling ? '🎙️ Narration generating...' : 'Audio unavailable'}
+                </Text>
+              </View>
+              {audioError && (
+                <TouchableOpacity 
+                  onPress={handleRetryAudio} 
+                  style={[styles.retryBtn, { backgroundColor: '#FFEDD5' }]}
+                  activeOpacity={0.7}
+                >
+                  <RefreshCw size={12} color="#D97706" />
+                  <Text style={[styles.retryBtnText, { color: '#D97706', fontFamily: FONTS.bold }]}>Retry</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </SafeAreaView>
         )}
       </View>
@@ -759,7 +887,7 @@ export default function StoryPlayback() {
         </View>
       </SafeAreaView>
 
-      <View style={styles.heroSection}>
+      <View style={[styles.heroSection, { paddingBottom: winHeight * 0.46 }]}>
         <Animated.View entering={FadeInUp.delay(100).duration(600)} style={styles.albumWrapper}>
           <Animated.View style={[styles.albumOuter, vinylStyle]}>
             <LinearGradient
@@ -804,7 +932,7 @@ export default function StoryPlayback() {
 
       <Animated.View
         entering={SlideInDown.delay(80).springify().damping(22).stiffness(200)}
-        style={styles.playerSheet}
+        style={[styles.playerSheet, { height: winHeight * 0.54 }]}
       >
         <View style={styles.sheetHandle} />
 
@@ -813,8 +941,9 @@ export default function StoryPlayback() {
             <Animated.View
               key={i}
               style={[styles.waveBar, ws, {
-                backgroundColor: isPlaying ? accentColor : '#33333330',
-                height: 28 + (i % 3) * 4,
+                backgroundColor: isPlaying ? (accentColor + 'E5') : '#1E293B20',
+                height: 32 + (i % 3) * 6,
+                marginHorizontal: 2,
               }]}
             />
           ))}
@@ -822,15 +951,16 @@ export default function StoryPlayback() {
             <Animated.View
               key={`r${i}`}
               style={[styles.waveBar, ws, {
-                backgroundColor: isPlaying ? accentColor : '#33333330',
-                height: 28 + ((5 - i) % 3) * 4,
+                backgroundColor: isPlaying ? (accentColor + 'E5') : '#1E293B20',
+                height: 32 + ((5 - i) % 3) * 6,
+                marginHorizontal: 2,
               }]}
             />
           ))}
         </View>
 
         {/* Live lyrics sync strip */}
-        <View style={[styles.lyricsStrip, { borderColor: '#00000008', backgroundColor: '#F8F8F8' }]}>
+        <View style={[styles.lyricsStrip, { borderColor: C.text.light + '08', backgroundColor: C.cardBackground }]}>
           <ScrollView
             ref={lyricsScrollRef}
             scrollEnabled={false}
@@ -892,30 +1022,30 @@ export default function StoryPlayback() {
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { fontFamily: FONTS.bold, color: '#111' }]}>
+            <Text style={[styles.statValue, { fontFamily: FONTS.bold, color: C.text.primary }]}>
               {story.word_count ?? allWords.length}
             </Text>
-            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: '#777' }]}>words</Text>
+            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: C.text.secondary }]}>words</Text>
           </View>
-          <View style={[styles.statDot, { backgroundColor: '#00000015' }]} />
+          <View style={[styles.statDot, { backgroundColor: C.text.light + '15' }]} />
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { fontFamily: FONTS.bold, color: '#111' }]}>{formatTime(duration)}</Text>
-            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: '#777' }]}>length</Text>
+            <Text style={[styles.statValue, { fontFamily: FONTS.bold, color: C.text.primary }]}>{formatTime(duration)}</Text>
+            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: C.text.secondary }]}>length</Text>
           </View>
-          <View style={[styles.statDot, { backgroundColor: '#00000015' }]} />
+          <View style={[styles.statDot, { backgroundColor: C.text.light + '15' }]} />
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { fontFamily: FONTS.bold, color: '#111' }]}>
+            <Text style={[styles.statValue, { fontFamily: FONTS.bold, color: C.text.primary }]}>
               {story.language_code?.toUpperCase() ?? 'EN'}
             </Text>
-            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: '#777' }]}>lang</Text>
+            <Text style={[styles.statLabel, { fontFamily: FONTS.medium, color: C.text.secondary }]}>lang</Text>
           </View>
         </View>
 
         <View style={styles.controlsRow}>
           <Animated.View style={skipBackStyle}>
             <TouchableOpacity onPress={handleSkipBack} disabled={!sound} style={[styles.skipBtn, !sound && { opacity: 0.3 }]} activeOpacity={0.7}>
-              <SkipBack size={26} color="#1A1A2E" strokeWidth={2} />
-              <Text style={[styles.skipSec, { color: '#777', fontFamily: FONTS.bold }]}>10</Text>
+              <SkipBack size={26} color={C.text.primary} strokeWidth={2} />
+              <Text style={[styles.skipSec, { color: C.text.secondary, fontFamily: FONTS.bold }]}>10</Text>
             </TouchableOpacity>
           </Animated.View>
 
@@ -946,8 +1076,8 @@ export default function StoryPlayback() {
 
           <Animated.View style={skipFwdStyle}>
             <TouchableOpacity onPress={handleSkipForward} disabled={!sound} style={[styles.skipBtn, !sound && { opacity: 0.3 }]} activeOpacity={0.7}>
-              <SkipForward size={26} color="#1A1A2E" strokeWidth={2} />
-              <Text style={[styles.skipSec, { color: '#777', fontFamily: FONTS.bold }]}>15</Text>
+              <SkipForward size={26} color={C.text.primary} strokeWidth={2} />
+              <Text style={[styles.skipSec, { color: C.text.secondary, fontFamily: FONTS.bold }]}>15</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -967,11 +1097,11 @@ export default function StoryPlayback() {
           )}
           <TouchableOpacity
             onPress={handleNewStory}
-            style={[styles.outlineBtn, { borderColor: '#DDDDDD' }]}
+            style={[styles.outlineBtn, { borderColor: C.text.light + '30' }]}
             activeOpacity={0.7}
           >
-            <RefreshCw size={14} color="#888" />
-            <Text style={[styles.outlineBtnText, { color: '#888', fontFamily: FONTS.semibold }]}>New Story</Text>
+            <RefreshCw size={14} color={C.text.secondary} />
+            <Text style={[styles.outlineBtnText, { color: C.text.secondary, fontFamily: FONTS.semibold }]}>New Story</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -979,268 +1109,272 @@ export default function StoryPlayback() {
   );
 }
 
-const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  center: { justifyContent: 'center', alignItems: 'center' },
-
-  loadingBox: { alignItems: 'center', gap: SPACING.lg },
-  loadingRing: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: SPACING.sm,
-  },
-  loadingTitle: { fontSize: FONT_SIZES.xl, color: '#FFF', letterSpacing: -0.3 },
-  loadingSubtitle: { fontSize: FONT_SIZES.sm, color: 'rgba(255,255,255,0.55)' },
-
-  errorTitle: { fontSize: FONT_SIZES.xxl, marginBottom: SPACING.xl },
-  errorBtn: { paddingHorizontal: SPACING.xxl, paddingVertical: SPACING.md, borderRadius: BORDER_RADIUS.pill },
-  errorBtnText: { color: '#FFF', fontSize: FONT_SIZES.md },
-
-  readNavBar: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: SPACING.lg, paddingVertical: 10,
-    borderBottomWidth: 1, backgroundColor: '#FAFAF8',
-    gap: SPACING.sm,
-  },
-  readNavBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#11111108',
-  },
-  readNavCenter: { flex: 1, alignItems: 'center', position: 'relative' },
-  readNavTitle: { fontSize: 14, color: '#111', letterSpacing: -0.2 },
-  readNavAccent: { width: 24, height: 2.5, borderRadius: 2, marginTop: 3 },
-  readNavRight: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-  readNavChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: BORDER_RADIUS.pill, borderWidth: 1,
-  },
-  readNavChipText: { fontSize: 11 },
-  readNavIconBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  settingsPanel: {
-    backgroundColor: '#FAFAF8',
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1, borderBottomColor: '#E8E8E4',
-    gap: SPACING.sm,
-  },
-  settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  settingsLabel: { fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.6 },
-  settingsDivider: { height: 1 },
-  fontSizeRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  fontSizeBtn: {
-    width: 30, height: 30, borderRadius: 15,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#11111108',
-  },
-  fontSizeNum: { fontSize: 15, minWidth: 24, textAlign: 'center' },
-  settingsFontSection: { paddingVertical: 2, gap: SPACING.xs },
-  fontFamilyScroll: { marginTop: 6 },
-  fontFamilyRow: { flexDirection: 'row', gap: SPACING.xs, paddingRight: SPACING.sm },
-  fontChip: {
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#DDD',
-    backgroundColor: '#FFF',
-  },
-  fontChipText: { fontSize: 11 },
-  spacingRow: { flexDirection: 'row', gap: SPACING.xs },
-  spacingChip: {
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#DDD',
-    backgroundColor: '#FFF',
-  },
-  spacingChipText: { fontSize: 11 },
-  alignRow: { flexDirection: 'row', gap: SPACING.xs },
-  alignBtn: {
-    width: 34, height: 34, borderRadius: BORDER_RADIUS.md,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: '#DDD', backgroundColor: '#FFF',
-  },
-
-  readContent: { paddingHorizontal: SPACING.xxl, paddingTop: SPACING.xl },
-  readStoryMeta: {
-    flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap',
-    gap: SPACING.sm, marginBottom: SPACING.xxl,
-    paddingLeft: SPACING.md,
-    borderLeftWidth: 3,
-  },
-  readMetaBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.pill, borderWidth: 1,
-  },
-  readMetaBadgeText: { fontSize: 11, textTransform: 'capitalize' },
-  readMetaWords: { fontSize: 11 },
-  paragraph: { flexDirection: 'row', flexWrap: 'wrap' },
-  readEndDivider: { height: 1, marginVertical: SPACING.xxl },
-  readEndActions: { gap: SPACING.md, paddingBottom: SPACING.xl },
-  readEndBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: SPACING.sm, paddingVertical: 13,
-    borderRadius: BORDER_RADIUS.xl, borderWidth: 1.5,
-  },
-  readEndBtnText: { fontSize: FONT_SIZES.sm },
-
-  errorBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-    backgroundColor: '#FFFBEB', paddingHorizontal: SPACING.xl, paddingTop: 8,
-    borderTopWidth: 1, borderTopColor: '#FEF3C7',
-  },
-  errorBannerText: { color: '#92400E', fontSize: FONT_SIZES.xs },
-
-  audioTopBar: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 },
-  audioTopRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md,
-  },
-  audioTopBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.28)',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-  },
-  audioTabPill: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderRadius: BORDER_RADIUS.pill,
-    padding: 3, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-  },
-  audioTabBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: SPACING.md, paddingVertical: 7,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  audioTabText: { fontSize: 12 },
-
-  heroSection: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingTop: 80, paddingBottom: SCREEN_HEIGHT * 0.49,
-    paddingHorizontal: SPACING.xxl,
-  },
-  albumWrapper: { alignItems: 'center', marginBottom: SPACING.xxl },
-  albumOuter: {
-    width: 160, height: 160, borderRadius: 80,
-    borderWidth: 2.5, borderColor: 'rgba(255,255,255,0.15)',
-    overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.4, shadowRadius: 30, elevation: 20,
-  },
-  albumInner: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  albumRing: {
-    width: 100, height: 100, borderRadius: 50,
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
-  albumCore: {
-    width: 52, height: 52, borderRadius: 26,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)',
-  },
-  heroMeta: { alignItems: 'center', gap: SPACING.md },
-  heroTitle: {
-    fontSize: 22, color: '#FFF', textAlign: 'center',
-    lineHeight: 28, letterSpacing: -0.4,
-    textShadowColor: 'rgba(0,0,0,0.35)',
-    textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6,
-  },
-  heroBadges: { flexDirection: 'row', gap: SPACING.sm, flexWrap: 'wrap', justifyContent: 'center' },
-  heroBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderRadius: BORDER_RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1,
-  },
-  heroBadgeText: { fontSize: 11, textTransform: 'capitalize' },
-
-  playerSheet: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    height: SCREEN_HEIGHT * 0.56,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32, borderTopRightRadius: 32,
-    paddingHorizontal: SPACING.xxl, paddingTop: SPACING.md,
-    shadowColor: '#000', shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.15, shadowRadius: 24, elevation: 20,
-  },
-  sheetHandle: {
-    width: 36, height: 4, borderRadius: 2,
-    backgroundColor: '#00000012', alignSelf: 'center', marginBottom: SPACING.lg,
-  },
-
-  waveRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 3, height: 40, marginBottom: SPACING.lg,
-  },
-  waveBar: { width: 3.5, borderRadius: 2 },
-
-  progressArea: { marginBottom: SPACING.sm },
-  progressTrack: { height: 4, borderRadius: 2, overflow: 'visible', position: 'relative' },
-  progressFilled: { height: '100%', borderRadius: 2 },
-  progressThumb: {
-    position: 'absolute', top: -6, width: 16, height: 16,
-    borderRadius: 8, marginLeft: -8,
-    borderWidth: 2.5, borderColor: '#FFF',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2, shadowRadius: 4, elevation: 4,
-  },
-  timeLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: SPACING.sm },
-  timeLabel: { fontSize: 11 },
-
-  statsRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: SPACING.xl, marginBottom: SPACING.lg, paddingVertical: SPACING.xs,
-  },
-  statItem: { alignItems: 'center', gap: 1 },
-  statValue: { fontSize: 16 },
-  statLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
-  statDot: { width: 4, height: 4, borderRadius: 2 },
-
-  controlsRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: SPACING.xxxl + 8, marginBottom: SPACING.lg,
-  },
-  skipBtn: { alignItems: 'center', gap: 2, minWidth: 44 },
-  skipSec: { fontSize: 9, letterSpacing: 0.5 },
-  playBtnWrap: {
-    shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.38, shadowRadius: 20, elevation: 12,
-  },
-  playBtn: {
-    width: 72, height: 72, borderRadius: 36,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  bufferRow: { flexDirection: 'row', gap: 4, alignItems: 'center' },
-  bufferDot: { width: 6, height: 6, borderRadius: 3 },
-
-  actionStack: { gap: SPACING.sm },
-  quizBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: SPACING.sm, paddingVertical: 14, borderRadius: BORDER_RADIUS.xl,
-    shadowColor: '#F59E0B', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28, shadowRadius: 10, elevation: 6,
-  },
-  quizBtnText: { color: '#FFF', fontSize: FONT_SIZES.md },
-  outlineBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: SPACING.sm, paddingVertical: 12,
-    borderRadius: BORDER_RADIUS.xl, borderWidth: 1.5,
-  },
-  outlineBtnText: { fontSize: FONT_SIZES.sm },
-
-  lyricsStrip: {
-    height: 72, borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1, overflow: 'hidden',
-    marginBottom: SPACING.sm,
-  },
-  lyricsScroll: { flex: 1 },
-  lyricsContent: { paddingHorizontal: SPACING.lg },
-  lyricsSentenceRow: { paddingVertical: SPACING.xs },
-  lyricsSentenceText: {
-    fontSize: 14, color: '#111', lineHeight: 22, textAlign: 'center',
-  },
-  lyricsWord: { fontSize: 14, color: '#666' },
-});
+const useStyles = (C: any, insets: any, winWidth: number, winHeight: number) => {
+  return useMemo(() => StyleSheet.create({
+    fill: { flex: 1 },
+    center: { justifyContent: 'center', alignItems: 'center' },
+  
+    loadingBox: { alignItems: 'center', gap: SPACING.lg },
+    loadingRing: {
+      width: 80, height: 80, borderRadius: 40,
+      backgroundColor: C.text.primary + '18',
+      borderWidth: 1.5, borderColor: C.text.primary + '25',
+      alignItems: 'center', justifyContent: 'center',
+      marginBottom: SPACING.sm,
+    },
+    loadingTitle: { fontSize: FONT_SIZES.xl, color: '#FFF', letterSpacing: -0.3 },
+    loadingSubtitle: { fontSize: FONT_SIZES.sm, color: 'rgba(255,255,255,0.55)' },
+  
+    errorTitle: { fontSize: FONT_SIZES.xxl, marginBottom: SPACING.xl },
+    errorBtn: { paddingHorizontal: SPACING.xxl, paddingVertical: SPACING.md, borderRadius: BORDER_RADIUS.pill },
+    errorBtnText: { color: '#FFF', fontSize: FONT_SIZES.md },
+  
+    readNavBar: {
+      flexDirection: 'row', alignItems: 'center',
+      paddingHorizontal: SPACING.lg, paddingVertical: 10,
+      borderBottomWidth: 1, backgroundColor: C.cardBackground,
+      gap: SPACING.sm,
+    },
+    readNavBtn: {
+      width: 36, height: 36, borderRadius: 18,
+      alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.text.primary + '08',
+    },
+    readNavCenter: { flex: 1, alignItems: 'center', position: 'relative' },
+    readNavTitle: { fontSize: 14, color: C.text.primary, letterSpacing: -0.2 },
+    readNavAccent: { width: 24, height: 2.5, borderRadius: 2, marginTop: 3 },
+    readNavRight: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
+    readNavChip: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      paddingHorizontal: 10, paddingVertical: 5,
+      borderRadius: BORDER_RADIUS.pill, borderWidth: 1,
+    },
+    readNavChipText: { fontSize: 11 },
+    readNavIconBtn: {
+      width: 34, height: 34, borderRadius: 17,
+      alignItems: 'center', justifyContent: 'center',
+    },
+  
+    settingsPanel: {
+      backgroundColor: C.cardBackground,
+      paddingHorizontal: SPACING.xl,
+      paddingVertical: SPACING.md,
+      borderBottomWidth: 1, borderBottomColor: C.text.light + '20',
+      gap: SPACING.sm,
+    },
+    settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    settingsLabel: { fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.6 },
+    settingsDivider: { height: 1 },
+    fontSizeRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+    fontSizeBtn: {
+      width: 30, height: 30, borderRadius: 15,
+      alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.text.primary + '08',
+    },
+    fontSizeNum: { fontSize: 15, minWidth: 24, textAlign: 'center' },
+    settingsFontSection: { paddingVertical: 2, gap: SPACING.xs },
+    fontFamilyScroll: { marginTop: 6 },
+    fontFamilyRow: { flexDirection: 'row', gap: SPACING.xs, paddingRight: SPACING.sm },
+    fontChip: {
+      paddingHorizontal: 10, paddingVertical: 5,
+      borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: C.text.light + '40',
+      backgroundColor: C.cardBackground,
+    },
+    fontChipText: { fontSize: 11 },
+    spacingRow: { flexDirection: 'row', gap: SPACING.xs },
+    spacingChip: {
+      paddingHorizontal: 10, paddingVertical: 5,
+      borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: C.text.light + '40',
+      backgroundColor: C.cardBackground,
+    },
+    spacingChipText: { fontSize: 11 },
+    alignRow: { flexDirection: 'row', gap: SPACING.xs },
+    alignBtn: {
+      width: 34, height: 34, borderRadius: BORDER_RADIUS.md,
+      alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1, borderColor: C.text.light + '40', backgroundColor: C.cardBackground,
+    },
+  
+    readContent: { paddingHorizontal: SPACING.xxl, paddingTop: SPACING.xl },
+    readStoryMeta: {
+      flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap',
+      gap: SPACING.sm, marginBottom: SPACING.xxl,
+      paddingLeft: SPACING.md,
+      borderLeftWidth: 3,
+    },
+    readMetaBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      paddingHorizontal: 10, paddingVertical: 4,
+      borderRadius: BORDER_RADIUS.pill, borderWidth: 1,
+    },
+    readMetaBadgeText: { fontSize: 11, textTransform: 'capitalize' },
+    readMetaWords: { fontSize: 11 },
+    paragraph: { flexDirection: 'row', flexWrap: 'wrap' },
+    readEndDivider: { height: 1, marginVertical: SPACING.xxl },
+    readEndActions: { gap: SPACING.md, paddingBottom: SPACING.xl },
+    readEndBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: SPACING.sm, paddingVertical: 13,
+      borderRadius: BORDER_RADIUS.xl, borderWidth: 1.5,
+    },
+    readEndBtnText: { fontSize: FONT_SIZES.sm },
+  
+    errorBanner: {
+      paddingVertical: 10, paddingHorizontal: SPACING.xl,
+      borderTopWidth: 1, borderTopColor: C.text.light + '12',
+    },
+    errorBannerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    errorBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    errorBannerText: { fontSize: 13 },
+    retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+    retryBtnText: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
+  
+    audioTopBar: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 },
+    audioTopRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md,
+    },
+    audioTopBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: 'rgba(0,0,0,0.28)',
+      alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+    },
+    audioTabPill: {
+      flexDirection: 'row',
+      backgroundColor: 'rgba(0,0,0,0.35)',
+      borderRadius: BORDER_RADIUS.pill,
+      padding: 3, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    },
+    audioTabBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 5,
+      paddingHorizontal: SPACING.md, paddingVertical: 7,
+      borderRadius: BORDER_RADIUS.pill,
+    },
+    audioTabText: { fontSize: 12 },
+  
+    heroSection: {
+      flex: 1, alignItems: 'center', justifyContent: 'center',
+      paddingTop: 80,
+      paddingHorizontal: SPACING.xxl,
+    },
+    albumWrapper: { alignItems: 'center', marginBottom: SPACING.xxl },
+    albumOuter: {
+      width: 160, height: 160, borderRadius: 80,
+      borderWidth: 2.5, borderColor: 'rgba(255,255,255,0.15)',
+      overflow: 'hidden',
+      shadowColor: '#000', shadowOffset: { width: 0, height: 20 },
+      shadowOpacity: 0.4, shadowRadius: 30, elevation: 20,
+    },
+    albumInner: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    albumRing: {
+      width: 100, height: 100, borderRadius: 50,
+      borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.15)',
+      alignItems: 'center', justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.2)',
+    },
+    albumCore: {
+      width: 52, height: 52, borderRadius: 26,
+      alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)',
+    },
+    heroMeta: { alignItems: 'center', gap: SPACING.md },
+    heroTitle: {
+      fontSize: 22, color: '#FFF', textAlign: 'center',
+      lineHeight: 28, letterSpacing: -0.4,
+      textShadowColor: 'rgba(0,0,0,0.35)',
+      textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6,
+    },
+    heroBadges: { flexDirection: 'row', gap: SPACING.sm, flexWrap: 'wrap', justifyContent: 'center' },
+    heroBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      borderRadius: BORDER_RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1,
+    },
+    heroBadgeText: { fontSize: 11, textTransform: 'capitalize' },
+  
+    playerSheet: {
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      backgroundColor: C.cardBackground,
+      borderTopLeftRadius: 32, borderTopRightRadius: 32,
+      paddingHorizontal: SPACING.xxl, paddingTop: SPACING.md,
+      shadowColor: '#000', shadowOffset: { width: 0, height: -8 },
+      shadowOpacity: 0.15, shadowRadius: 24, elevation: 20,
+    },
+    sheetHandle: {
+      width: 36, height: 4, borderRadius: 2,
+      backgroundColor: C.text.primary + '12', alignSelf: 'center', marginBottom: SPACING.lg,
+    },
+  
+    waveRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: 3, height: 40, marginBottom: SPACING.lg,
+    },
+    waveBar: { width: 3.5, borderRadius: 2 },
+  
+    progressArea: { marginBottom: SPACING.sm },
+    progressTrack: { height: 4, borderRadius: 2, overflow: 'visible', position: 'relative' },
+    progressFilled: { height: '100%', borderRadius: 2 },
+    progressThumb: {
+      position: 'absolute', top: -6, width: 16, height: 16,
+      borderRadius: 8, marginLeft: -8,
+      borderWidth: 2.5, borderColor: '#FFF',
+      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2, shadowRadius: 4, elevation: 4,
+    },
+    timeLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: SPACING.sm },
+    timeLabel: { fontSize: 11 },
+  
+    statsRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: SPACING.xl, marginBottom: SPACING.lg, paddingVertical: SPACING.xs,
+    },
+    statItem: { alignItems: 'center', gap: 1 },
+    statValue: { fontSize: 16 },
+    statLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+    statDot: { width: 4, height: 4, borderRadius: 2 },
+  
+    controlsRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: SPACING.xxxl + 8, marginBottom: SPACING.lg,
+    },
+    skipBtn: { alignItems: 'center', gap: 2, minWidth: 44 },
+    skipSec: { fontSize: 9, letterSpacing: 0.5 },
+    playBtnWrap: {
+      shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.38, shadowRadius: 20, elevation: 12,
+    },
+    playBtn: {
+      width: 72, height: 72, borderRadius: 36,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    bufferRow: { flexDirection: 'row', gap: 4, alignItems: 'center' },
+    bufferDot: { width: 6, height: 6, borderRadius: 3 },
+  
+    actionStack: { gap: SPACING.sm },
+    quizBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: SPACING.sm, paddingVertical: 14, borderRadius: BORDER_RADIUS.xl,
+      shadowColor: '#F59E0B', shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.28, shadowRadius: 10, elevation: 6,
+    },
+    quizBtnText: { color: '#FFF', fontSize: FONT_SIZES.md },
+    outlineBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: SPACING.sm, paddingVertical: 12,
+      borderRadius: BORDER_RADIUS.xl, borderWidth: 1.5,
+    },
+    outlineBtnText: { fontSize: FONT_SIZES.sm },
+  
+    lyricsStrip: {
+      height: 72, borderRadius: BORDER_RADIUS.lg,
+      borderWidth: 1, overflow: 'hidden',
+      marginBottom: SPACING.sm,
+    },
+    lyricsScroll: { flex: 1 },
+    lyricsContent: { paddingHorizontal: SPACING.lg },
+    lyricsSentenceRow: { paddingVertical: SPACING.xs },
+    lyricsSentenceText: {
+      fontSize: 14, color: C.text.primary, lineHeight: 22, textAlign: 'center',
+    },
+    lyricsWord: { fontSize: 14, color: C.text.secondary },
+  }), [C, insets, winWidth, winHeight]);
+};

@@ -16,6 +16,7 @@ import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { FamilyMember, Friend } from '@/types/database';
 import { familyMemberService, friendService } from '@/services/database';
 import { hapticFeedback } from '@/utils/haptics';
+import { useTheme } from '@/contexts/ThemeContext';
 
 type CharacterType = 'family' | 'friend';
 
@@ -51,6 +52,8 @@ export function CharacterManager({
   onFamilyMembersChange,
   onFriendsChange,
 }: CharacterManagerProps) {
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
   const [addModal, setAddModal] = useState<AddModalState>({
     visible: false,
     type: 'family',
@@ -168,42 +171,58 @@ export function CharacterManager({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Users size={16} color="#475569" strokeWidth={2} />
-          <Text style={styles.sectionLabel}>Characters in Story</Text>
+          <Users size={16} color={COLORS.text.secondary} strokeWidth={2} />
+          <Text style={[styles.sectionLabel, { color: COLORS.text.secondary }]}>Characters in Story</Text>
         </View>
         <View style={styles.addButtons}>
-          <TouchableOpacity style={styles.addBtn} onPress={() => openAdd('family')} activeOpacity={0.8}>
-            <UserPlus size={13} color="#0EA5E9" strokeWidth={2.5} />
-            <Text style={[styles.addBtnText, { color: '#0EA5E9' }]}>Family</Text>
+          <TouchableOpacity
+            style={[styles.addBtn, { backgroundColor: COLORS.info + '15', borderColor: COLORS.info + '30' }]}
+            onPress={() => openAdd('family')}
+            activeOpacity={0.8}
+          >
+            <UserPlus size={13} color={COLORS.info} strokeWidth={2.5} />
+            <Text style={[styles.addBtnText, { color: COLORS.info }]}>Family</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.addBtn, styles.addBtnFriend]} onPress={() => openAdd('friend')} activeOpacity={0.8}>
-            <UserPlus size={13} color="#10B981" strokeWidth={2.5} />
-            <Text style={[styles.addBtnText, { color: '#10B981' }]}>Friend</Text>
+          <TouchableOpacity
+            style={[styles.addBtn, { backgroundColor: COLORS.success + '15', borderColor: COLORS.success + '30' }]}
+            onPress={() => openAdd('friend')}
+            activeOpacity={0.8}
+          >
+            <UserPlus size={13} color={COLORS.success} strokeWidth={2.5} />
+            <Text style={[styles.addBtnText, { color: COLORS.success }]}>Friend</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {allCharacters.length === 0 ? (
-        <View style={styles.emptyWrap}>
-          <Text style={styles.emptyText}>No characters yet — add family or friends to include them in the story</Text>
+        <View style={[styles.emptyWrap, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '30' }]}>
+          <Text style={[styles.emptyText, { color: COLORS.text.light }]}>No characters yet — add family or friends to include them in the story</Text>
         </View>
       ) : (
         <View style={styles.chipsWrap}>
           {allCharacters.map((char, i) => (
             <ReAnimated.View key={char.id} entering={FadeInUp.delay(i * 40).springify()}>
-              <View style={[styles.chip, char.type === 'family' ? styles.chipFamily : styles.chipFriend]}>
-                <TouchableOpacity onPress={() => openEdit(char.id, char.type, char.name)} activeOpacity={0.7}>
-                  <View style={styles.chipInner}>
-                    <Text style={[styles.chipText, char.type === 'family' ? styles.chipTextFamily : styles.chipTextFriend]}>
-                      {char.name}
-                    </Text>
-                    <Edit2 size={10} color={char.type === 'family' ? '#0EA5E9' : '#10B981'} strokeWidth={2.5} />
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDelete(char.id, char.type)} style={styles.chipDelete} activeOpacity={0.7}>
-                  <X size={12} color={char.type === 'family' ? '#0EA5E9' : '#10B981'} strokeWidth={2.5} />
-                </TouchableOpacity>
-              </View>
+                <View style={[
+                  styles.chip,
+                  char.type === 'family'
+                    ? { backgroundColor: COLORS.info + '12', borderColor: COLORS.info + '25' }
+                    : { backgroundColor: COLORS.success + '12', borderColor: COLORS.success + '25' }
+                ]}>
+                  <TouchableOpacity onPress={() => openEdit(char.id, char.type, char.name)} activeOpacity={0.7}>
+                    <View style={styles.chipInner}>
+                      <Text style={[
+                        styles.chipText,
+                        { color: char.type === 'family' ? COLORS.info : COLORS.success }
+                      ]}>
+                        {char.name}
+                      </Text>
+                      <Edit2 size={10} color={char.type === 'family' ? COLORS.info : COLORS.success} strokeWidth={2.5} />
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDelete(char.id, char.type)} style={styles.chipDelete} activeOpacity={0.7}>
+                    <X size={12} color={char.type === 'family' ? COLORS.info : COLORS.success} strokeWidth={2.5} />
+                  </TouchableOpacity>
+                </View>
             </ReAnimated.View>
           ))}
         </View>
@@ -212,17 +231,21 @@ export function CharacterManager({
       <Modal visible={addModal.visible} transparent animationType="fade" onRequestClose={closeAdd}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
           <TouchableOpacity style={StyleSheet.absoluteFill} onPress={closeAdd} activeOpacity={1} />
-          <ReAnimated.View entering={ZoomIn.springify()} style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
+          <ReAnimated.View entering={ZoomIn.springify()} style={[styles.modalCard, { backgroundColor: COLORS.cardBackground }]}>
+            <Text style={[styles.modalTitle, { color: COLORS.text.primary }]}>
               Add {addModal.type === 'family' ? 'Family Member' : 'Friend'}
             </Text>
-            <Text style={styles.modalSubtitle}>
+            <Text style={[styles.modalSubtitle, { color: COLORS.text.secondary }]}>
               They'll appear as a character in the story
             </Text>
             <TextInput
-              style={[styles.modalInput, addModal.error ? styles.modalInputError : null]}
+              style={[
+                styles.modalInput,
+                { color: COLORS.text.primary, borderColor: COLORS.text.light + '40', backgroundColor: COLORS.background },
+                addModal.error ? { borderColor: COLORS.error } : null
+              ]}
               placeholder="Enter name..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={COLORS.text.light}
               value={addModal.name}
               onChangeText={t => setAddModal(prev => ({ ...prev, name: t, error: null }))}
               autoFocus
@@ -230,13 +253,16 @@ export function CharacterManager({
               returnKeyType="done"
               onSubmitEditing={handleAdd}
             />
-            {addModal.error && <Text style={styles.inputError}>{addModal.error}</Text>}
+            {addModal.error && <Text style={[styles.inputError, { color: COLORS.error }]}>{addModal.error}</Text>}
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={closeAdd} activeOpacity={0.8}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+              <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: COLORS.text.light + '15' }]} onPress={closeAdd} activeOpacity={0.8}>
+                <Text style={[styles.cancelBtnText, { color: COLORS.text.secondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.confirmBtn, addModal.type === 'family' ? styles.confirmFamily : styles.confirmFriend]}
+                style={[
+                  styles.confirmBtn,
+                  { backgroundColor: addModal.type === 'family' ? COLORS.info : COLORS.success }
+                ]}
                 onPress={handleAdd}
                 disabled={addModal.saving}
                 activeOpacity={0.85}
@@ -252,13 +278,17 @@ export function CharacterManager({
       <Modal visible={editModal.visible} transparent animationType="fade" onRequestClose={closeEdit}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
           <TouchableOpacity style={StyleSheet.absoluteFill} onPress={closeEdit} activeOpacity={1} />
-          <ReAnimated.View entering={ZoomIn.springify()} style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Edit Character</Text>
-            <Text style={styles.modalSubtitle}>Update the name for this character</Text>
+          <ReAnimated.View entering={ZoomIn.springify()} style={[styles.modalCard, { backgroundColor: COLORS.cardBackground }]}>
+            <Text style={[styles.modalTitle, { color: COLORS.text.primary }]}>Edit Character</Text>
+            <Text style={[styles.modalSubtitle, { color: COLORS.text.secondary }]}>Update the name for this character</Text>
             <TextInput
-              style={[styles.modalInput, editModal.error ? styles.modalInputError : null]}
+              style={[
+                styles.modalInput,
+                { color: COLORS.text.primary, borderColor: COLORS.text.light + '40', backgroundColor: COLORS.background },
+                editModal.error ? { borderColor: COLORS.error } : null
+              ]}
               placeholder="Enter name..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={COLORS.text.light}
               value={editModal.name}
               onChangeText={t => setEditModal(prev => ({ ...prev, name: t, error: null }))}
               autoFocus
@@ -266,13 +296,16 @@ export function CharacterManager({
               returnKeyType="done"
               onSubmitEditing={handleEdit}
             />
-            {editModal.error && <Text style={styles.inputError}>{editModal.error}</Text>}
+            {editModal.error && <Text style={[styles.inputError, { color: COLORS.error }]}>{editModal.error}</Text>}
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={closeEdit} activeOpacity={0.8}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+              <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: COLORS.text.light + '15' }]} onPress={closeEdit} activeOpacity={0.8}>
+                <Text style={[styles.cancelBtnText, { color: COLORS.text.secondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.confirmBtn, editModal.type === 'family' ? styles.confirmFamily : styles.confirmFriend]}
+                style={[
+                  styles.confirmBtn,
+                  { backgroundColor: editModal.type === 'family' ? COLORS.info : COLORS.success }
+                ]}
                 onPress={handleEdit}
                 disabled={editModal.saving}
                 activeOpacity={0.85}

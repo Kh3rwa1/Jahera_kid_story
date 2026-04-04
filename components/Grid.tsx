@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ViewStyle, Dimensions } from 'react-native';
+import { View, ViewStyle, useWindowDimensions } from 'react-native';
 import { SPACING } from '@/constants/theme';
 
 interface GridProps {
@@ -19,12 +19,12 @@ export const Grid: React.FC<GridProps> = ({
   itemMinWidth,
   accessibilityLabel,
 }) => {
-  const screenWidth = Dimensions.get('window').width;
+  const { width: winWidth } = useWindowDimensions();
   const gapValue = SPACING[gap];
 
   // Calculate responsive columns based on min width
   const calculatedColumns = itemMinWidth
-    ? Math.max(1, Math.floor(screenWidth / (itemMinWidth + gapValue)))
+    ? Math.max(1, Math.floor(winWidth / (itemMinWidth + gapValue)))
     : columns;
 
   const gridStyle: ViewStyle = {
@@ -39,7 +39,7 @@ export const Grid: React.FC<GridProps> = ({
     <View style={[gridStyle, style]} accessibilityLabel={accessibilityLabel}>
       {childrenArray.map((child, index) => {
         const itemStyle: ViewStyle = {
-          width: `${(100 - (calculatedColumns - 1) * ((gapValue / screenWidth) * 100)) / calculatedColumns}%`,
+          width: `${(100 - (calculatedColumns - 1) * ((gapValue / winWidth) * 100)) / calculatedColumns}%`,
         };
 
         return (

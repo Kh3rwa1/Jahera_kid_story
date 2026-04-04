@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,11 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -50,7 +50,6 @@ const ENTITLEMENT_PRO = 'pro';
 import { SPACING, BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
 import { hapticFeedback } from '@/utils/haptics';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const FREE_VS_PRO = [
   { label: 'Stories/month', free: '3', pro: 'Unlimited' },
@@ -147,11 +146,12 @@ function buildPlans(offerings: RCOffering): PlanDisplayItem[] {
   ];
 }
 
-function ShimmerCta({ onPress, isLoading, label, gradient }: {
+function ShimmerCta({ onPress, isLoading, label, gradient, styles }: {
   onPress: () => void;
   isLoading: boolean;
   label: string;
   gradient: readonly [string, string, ...string[]];
+  styles: any;
 }) {
   const shimmerX = useSharedValue(-1);
   const scale = useSharedValue(1);
@@ -207,11 +207,13 @@ function PlanCard({
   selected,
   onSelect,
   COLORS,
+  styles,
 }: {
   plan: PlanDisplayItem;
   selected: boolean;
   onSelect: () => void;
   COLORS: any;
+  styles: any;
 }) {
   const scale = useSharedValue(1);
 
@@ -352,11 +354,14 @@ export default function PaywallScreen() {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
+  const { width: winWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const styles = useStyles(COLORS, insets, winWidth);
   const { profile, refreshSubscription } = useApp();
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('yearly');
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
-  const [offerings, setOfferings] = useState<RCOffering>({ monthly: null, yearly: null, family: null, raw: null });
+  const [offerings, setOfferings] = useState<RCOffering>({ weekly: null, monthly: null, yearly: null, family: null, raw: null });
   const [offeringsLoading, setOfferingsLoading] = useState(true);
 
   const rcAvailable = revenueCatService.isAvailable();
@@ -598,7 +603,14 @@ export default function PaywallScreen() {
               return (
                 <View
                   key={index}
-                  style={[styles.featureChip, { backgroundColor: COLORS.cardBackground, ...SHADOWS.xs }]}
+                  style={[
+                    styles.featureChip,
+                    { 
+                      backgroundColor: COLORS.cardBackground, 
+                      width: (winWidth - SPACING.xl * 2 - SPACING.md) / 2,
+                      ...SHADOWS.xs 
+                    }
+                  ]}
                 >
                   <View style={[styles.featureIconBubble, { backgroundColor: feature.color + '18' }]}>
                     <Icon size={17} color={feature.color} strokeWidth={2} />
@@ -655,6 +667,7 @@ export default function PaywallScreen() {
                   selected={selectedPlan === plan.id}
                   onSelect={() => { setSelectedPlan(plan.id); hapticFeedback.light(); }}
                   COLORS={COLORS}
+                  styles={styles}
                 />
               ))}
             </View>
@@ -667,6 +680,7 @@ export default function PaywallScreen() {
             isLoading={isLoading}
             label="Start 7-Day Free Trial"
             gradient={COLORS.gradients.sunset}
+            styles={styles}
           />
 
           <TouchableOpacity
@@ -719,463 +733,452 @@ export default function PaywallScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, overflow: 'hidden' },
-  decorativeOrb1: {
-    position: 'absolute',
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    top: -100,
-    right: -100,
-    zIndex: 0,
-  },
-  decorativeOrb2: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(78,205,196,0.05)',
-    bottom: 120,
-    left: -60,
-    zIndex: 0,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 52 : 12,
-    right: SPACING.xl,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  scrollContent: { paddingBottom: 52 },
+const useStyles = (C: any, insets: any, winWidth: number) => {
+  return useMemo(() => StyleSheet.create({
+    container: { flex: 1, overflow: 'hidden' },
+    decorativeOrb1: {
+      position: 'absolute',
+      width: 320,
+      height: 320,
+      borderRadius: 160,
+      top: -100,
+      right: -100,
+      zIndex: 0,
+    },
+    decorativeOrb2: {
+      position: 'absolute',
+      width: 200,
+      height: 200,
+      borderRadius: 100,
+      backgroundColor: 'rgba(78,205,196,0.05)',
+      bottom: 120,
+      left: -60,
+      zIndex: 0,
+    },
+    closeButton: {
+      position: 'absolute',
+      top: Platform.OS === 'ios' ? 52 : 12,
+      right: SPACING.xl,
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10,
+    },
+    scrollContent: { paddingBottom: 52 },
 
-  heroSection: {
-    alignItems: 'center',
-    paddingTop: SPACING.xxxl + SPACING.xl + 12,
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.xxl,
-    gap: SPACING.md,
-  },
-  iconGlowOuter: {
-    width: 128,
-    height: 128,
-    borderRadius: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-  },
-  iconGlowMid: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.lg,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  ratingText: {
-    fontSize: 12,
-    fontFamily: FONTS.semibold,
-    marginLeft: 2,
-  },
-  heroTitle: {
-    fontSize: 32,
-    fontFamily: FONTS.display,
-    textAlign: 'center',
-    letterSpacing: -0.6,
-    lineHeight: 38,
-  },
-  heroSubtitle: {
-    fontSize: 15,
-    fontFamily: FONTS.medium,
-    textAlign: 'center',
-    lineHeight: 23,
-  },
-  trustRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginTop: SPACING.xs,
-  },
-  trustPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 7,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  trustPillText: {
-    fontSize: 12,
-    fontFamily: FONTS.semibold,
-  },
+    heroSection: {
+      alignItems: 'center',
+      paddingTop: SPACING.xxxl + SPACING.xl + 12,
+      paddingHorizontal: SPACING.xl,
+      paddingBottom: SPACING.xxl,
+      gap: SPACING.md,
+    },
+    iconGlowOuter: {
+      width: 128,
+      height: 128,
+      borderRadius: 64,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 2,
+    },
+    iconGlowMid: {
+      width: 104,
+      height: 104,
+      borderRadius: 52,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...SHADOWS.lg,
+    },
+    ratingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginTop: 4,
+    },
+    ratingText: {
+      fontSize: 12,
+      fontFamily: FONTS.medium,
+    },
+    heroTitle: {
+      fontSize: 32,
+      fontFamily: FONTS.extrabold,
+      textAlign: 'center',
+      letterSpacing: -1,
+    },
+    heroSubtitle: {
+      fontSize: 15,
+      fontFamily: FONTS.medium,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    trustRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+      marginTop: SPACING.sm,
+    },
+    trustPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: BORDER_RADIUS.pill,
+    },
+    trustPillText: {
+      fontSize: 11,
+      fontFamily: FONTS.bold,
+      letterSpacing: 0.3,
+      opacity: 0.8,
+    },
 
-  sectionWrap: {
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xxl,
-  },
-  sectionTitle: {
-    fontSize: 19,
-    fontFamily: FONTS.displayBold,
-    marginBottom: SPACING.lg,
-    letterSpacing: -0.3,
-  },
+    sectionWrap: {
+      paddingHorizontal: SPACING.xl,
+      marginBottom: SPACING.xxxl,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontFamily: FONTS.bold,
+      marginBottom: SPACING.lg,
+      paddingLeft: 2,
+    },
 
-  featuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  featureChip: {
-    width: (SCREEN_WIDTH - SPACING.xl * 2 - SPACING.sm) / 2,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    gap: 5,
-  },
-  featureIconBubble: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-  },
-  featureChipLabel: {
-    fontSize: 13,
-    fontFamily: FONTS.bold,
-    lineHeight: 17,
-  },
-  featureChipSub: {
-    fontSize: 11,
-    fontFamily: FONTS.regular,
-    lineHeight: 15,
-  },
+    featuresGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: SPACING.md,
+    },
+    featureChip: {
+      padding: SPACING.md,
+      borderRadius: BORDER_RADIUS.xl,
+      gap: 6,
+    },
+    featureIconBubble: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    featureChipLabel: {
+      fontSize: 13,
+      fontFamily: FONTS.bold,
+    },
+    featureChipSub: {
+      fontSize: 10,
+      fontFamily: FONTS.medium,
+      lineHeight: 14,
+    },
 
-  compareTable: {
-    borderRadius: BORDER_RADIUS.xl,
-    overflow: 'hidden',
-  },
-  compareHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  compareHeaderLabel: {
-    fontSize: 11,
-    fontFamily: FONTS.bold,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    width: 70,
-    textAlign: 'center',
-  },
-  compareProHeader: {
-    width: 70,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.pill,
-    alignItems: 'center',
-  },
-  compareProHeaderText: {
-    fontSize: 11,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  compareRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 14,
-  },
-  compareRowLabel: {
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-  },
-  compareRowFree: {
-    fontSize: 13,
-    fontFamily: FONTS.semibold,
-    width: 70,
-    textAlign: 'center',
-  },
-  compareRowPro: {
-    fontSize: 13,
-    fontFamily: FONTS.bold,
-    width: 70,
-    textAlign: 'center',
-  },
+    compareTable: {
+      borderRadius: BORDER_RADIUS.xl,
+      overflow: 'hidden',
+    },
+    compareHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: 14,
+      backgroundColor: 'rgba(0,0,0,0.02)',
+    },
+    compareHeaderLabel: {
+      flex: 1,
+      fontSize: 11,
+      fontFamily: FONTS.bold,
+      textAlign: 'center',
+      letterSpacing: 0.5,
+    },
+    compareProHeader: {
+      flex: 1,
+      paddingVertical: 6,
+      borderRadius: BORDER_RADIUS.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    compareProHeaderText: {
+      color: '#FFFFFF',
+      fontSize: 11,
+      fontFamily: FONTS.extrabold,
+    },
+    compareRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: 14,
+    },
+    compareRowLabel: {
+      fontSize: 13,
+      fontFamily: FONTS.medium,
+    },
+    compareRowFree: {
+      flex: 1,
+      fontSize: 12,
+      fontFamily: FONTS.bold,
+      textAlign: 'center',
+      opacity: 0.6,
+    },
+    compareRowPro: {
+      flex: 1,
+      fontSize: 13,
+      fontFamily: FONTS.bold,
+      textAlign: 'center',
+    },
 
-  offeringsLoader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.xxl,
-  },
-  offeringsLoaderText: {
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-  },
+    plansList: {
+      gap: SPACING.md,
+    },
+    planCard: {
+      borderRadius: BORDER_RADIUS.xl,
+      overflow: 'hidden',
+    },
+    planCardInner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: SPACING.lg,
+    },
+    planLeft: {
+      flex: 1,
+      gap: 4,
+    },
+    planLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+    },
+    planLabel: {
+      fontSize: 16,
+      fontFamily: FONTS.bold,
+    },
+    inlineBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    inlineBadgeText: {
+      fontSize: 10,
+      fontFamily: FONTS.extrabold,
+      letterSpacing: 0.5,
+    },
+    planDescription: {
+      fontSize: 12,
+      fontFamily: FONTS.medium,
+      opacity: 0.8,
+    },
+    planPerMonthChip: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: BORDER_RADIUS.pill,
+      marginTop: 6,
+    },
+    planPerMonthText: {
+      fontSize: 11,
+      fontFamily: FONTS.bold,
+    },
+    planRight: {
+      alignItems: 'flex-end',
+      marginRight: SPACING.lg,
+    },
+    planPrice: {
+      fontSize: 18,
+      fontFamily: FONTS.extrabold,
+    },
+    planPeriod: {
+      fontSize: 12,
+      fontFamily: FONTS.medium,
+    },
+    planCheckCircle: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyCircleInner: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: 'rgba(0,0,0,0.05)',
+    },
 
-  plansList: {
-    gap: SPACING.sm,
-  },
+    featuredPlanCard: {
+      borderRadius: BORDER_RADIUS.xl,
+      padding: SPACING.lg,
+      ...SHADOWS.md,
+    },
+    featuredPlanCardSelected: {
+      ...SHADOWS.lg,
+    },
+    featuredPlanBadgeRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.md,
+    },
+    featuredBadge: {
+      backgroundColor: '#FFFFFF',
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: BORDER_RADIUS.pill,
+    },
+    featuredBadgeText: {
+      fontSize: 10,
+      fontFamily: FONTS.extrabold,
+      color: '#FF8C42',
+      letterSpacing: 0.5,
+    },
+    featuredSaving: {
+      fontSize: 11,
+      fontFamily: FONTS.bold,
+    },
+    featuredPlanBody: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    featuredPlanLeft: {
+      flex: 1,
+      gap: 4,
+    },
+    featuredPlanLabel: {
+      fontSize: 20,
+      fontFamily: FONTS.extrabold,
+    },
+    featuredPlanDesc: {
+      fontSize: 12,
+      fontFamily: FONTS.medium,
+    },
+    perMonthChip: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: BORDER_RADIUS.pill,
+      marginTop: 8,
+    },
+    perMonthText: {
+      fontSize: 12,
+      fontFamily: FONTS.extrabold,
+    },
+    featuredPlanRight: {
+      alignItems: 'flex-end',
+      marginRight: SPACING.lg,
+    },
+    featuredPlanPrice: {
+      fontSize: 22,
+      fontFamily: FONTS.extrabold,
+    },
+    featuredPlanPeriod: {
+      fontSize: 13,
+      fontFamily: FONTS.medium,
+    },
 
-  featuredPlanCard: {
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    gap: SPACING.sm,
-    ...SHADOWS.md,
-  },
-  featuredPlanCardSelected: {
-    ...SHADOWS.lg,
-  },
-  featuredPlanBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  featuredBadge: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  featuredBadgeText: {
-    fontSize: 10,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-    letterSpacing: 1.2,
-  },
-  featuredSaving: {
-    fontSize: 12,
-    fontFamily: FONTS.bold,
-  },
-  featuredPlanBody: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
-  featuredPlanLeft: {
-    flex: 1,
-    gap: 4,
-  },
-  featuredPlanLabel: {
-    fontSize: 17,
-    fontFamily: FONTS.bold,
-    lineHeight: 21,
-  },
-  featuredPlanDesc: {
-    fontSize: 12,
-    fontFamily: FONTS.regular,
-  },
-  perMonthChip: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: BORDER_RADIUS.pill,
-    marginTop: 4,
-  },
-  perMonthText: {
-    fontSize: 11,
-    fontFamily: FONTS.bold,
-  },
-  featuredPlanRight: {
-    alignItems: 'flex-end',
-    gap: 1,
-  },
-  featuredPlanPrice: {
-    fontSize: 28,
-    fontFamily: FONTS.display,
-    lineHeight: 32,
-  },
-  featuredPlanPeriod: {
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-  },
+    offeringsLoader: {
+      height: 200,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: SPACING.md,
+    },
+    offeringsLoaderText: {
+      fontSize: 14,
+      fontFamily: FONTS.medium,
+    },
 
-  planCard: {
-    borderRadius: BORDER_RADIUS.xl,
-    overflow: 'hidden',
-    ...SHADOWS.xs,
-  },
-  planCardInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.lg,
-    gap: SPACING.md,
-  },
-  planLeft: {
-    flex: 1,
-    gap: 3,
-  },
-  planLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  planLabel: {
-    fontSize: 15,
-    fontFamily: FONTS.bold,
-    lineHeight: 19,
-  },
-  inlineBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  inlineBadgeText: {
-    fontSize: 9,
-    fontFamily: FONTS.bold,
-    letterSpacing: 0.5,
-  },
-  planDescription: {
-    fontSize: 12,
-    fontFamily: FONTS.regular,
-    lineHeight: 16,
-  },
-  planPerMonthChip: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: BORDER_RADIUS.pill,
-    marginTop: 3,
-  },
-  planPerMonthText: {
-    fontSize: 10,
-    fontFamily: FONTS.semibold,
-  },
-  planRight: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  planPrice: {
-    fontSize: 24,
-    fontFamily: FONTS.display,
-    lineHeight: 28,
-  },
-  planPeriod: {
-    fontSize: 11,
-    fontFamily: FONTS.medium,
-  },
-  planCheckCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 2,
-  },
-  emptyCircleInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,140,66,0.4)',
-  },
-
-  ctaSection: {
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.md,
-  },
-  ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: 18,
-    borderRadius: BORDER_RADIUS.pill,
-    overflow: 'hidden',
-    ...SHADOWS.lg,
-  },
-  ctaShimmer: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 70,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    transform: [{ skewX: '-20deg' }],
-  },
-  ctaButtonText: {
-    fontSize: 16,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-    letterSpacing: 0.2,
-  },
-  subscribeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 15,
-    borderRadius: BORDER_RADIUS.pill,
-    borderWidth: 1.5,
-  },
-  subscribeButtonText: {
-    fontSize: 14,
-    fontFamily: FONTS.semibold,
-  },
-
-  socialProofRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.xs,
-  },
-  avatarStack: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarBubble: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-  },
-  avatarInitials: {
-    fontSize: 10,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-  },
-  socialProofText: {
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-  },
-  restoreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-  },
-  restoreText: {
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-  },
-  disclaimer: {
-    fontSize: 11,
-    fontFamily: FONTS.regular,
-    textAlign: 'center',
-    lineHeight: 16,
-    paddingBottom: 4,
-  },
-});
+    ctaSection: {
+      paddingHorizontal: SPACING.xl,
+      alignItems: 'center',
+      gap: SPACING.md,
+    },
+    ctaButton: {
+      width: winWidth - SPACING.xl * 2,
+      paddingVertical: 18,
+      borderRadius: BORDER_RADIUS.pill,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: SPACING.sm,
+      ...SHADOWS.lg,
+    },
+    ctaShimmer: {
+      position: 'absolute',
+      width: 140,
+      height: '300%',
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      transform: [{ rotate: '25deg' }],
+    },
+    ctaButtonText: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontFamily: FONTS.bold,
+      letterSpacing: 0.5,
+    },
+    subscribeButton: {
+      width: winWidth - SPACING.xl * 2,
+      paddingVertical: 16,
+      borderRadius: BORDER_RADIUS.pill,
+      borderWidth: 1.5,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: SPACING.xs,
+    },
+    subscribeButtonText: {
+      fontSize: 15,
+      fontFamily: FONTS.bold,
+    },
+    socialProofRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginTop: SPACING.sm,
+    },
+    avatarStack: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    avatarBubble: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarInitials: {
+      fontSize: 8,
+      fontFamily: FONTS.bold,
+      color: '#FFFFFF',
+    },
+    socialProofText: {
+      fontSize: 12,
+      fontFamily: FONTS.medium,
+    },
+    restoreButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 8,
+      marginTop: 4,
+    },
+    restoreText: {
+      fontSize: 11,
+      fontFamily: FONTS.bold,
+      textDecorationLine: 'underline',
+    },
+    disclaimer: {
+      fontSize: 10,
+      fontFamily: FONTS.medium,
+      textAlign: 'center',
+      opacity: 0.6,
+      marginTop: SPACING.sm,
+    },
+  }), [C, insets, winWidth]);
+};

@@ -1,0 +1,33 @@
+◇ injecting env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+Initiating Appwrite scaffold...
+Database Already Exists (Skipping...)
+  Adding Attributes to Profiles...
+   Error adding String user_id in profiles: [409] Attribute with the requested key 'user_id' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String kid_name in profiles: [409] Attribute with the requested key 'kid_name' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String primary_language in profiles: [409] Attribute with the requested key 'primary_language' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding Integer age in profiles: [409] Attribute with the requested key 'age' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String parent_pin in profiles: [409] Attribute with the requested key 'parent_pin' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String share_token in profiles: [409] Attribute with the requested key 'share_token' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String avatar_url in profiles: [409] Attribute with the requested key 'avatar_url' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String created_at in profiles: [409] Attribute with the requested key 'created_at' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String updated_at in profiles: [409] Attribute with the requested key 'updated_at' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String profile_id in user_languages: [409] Attribute with the requested key 'profile_id' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String language_code in user_languages: [409] Attribute with the requested key 'language_code' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String language_name in user_languages: [409] Attribute with the requested key 'language_name' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String created_at in user_languages: [409] Attribute with the requested key 'created_at' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String profile_id in family_members: [409] Attribute with the requested key 'profile_id' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String name in family_members: [409] Attribute with the requested key 'name' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String created_at in family_members: [409] Attribute with the requested key 'created_at' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String profile_id in friends: [409] Attribute with the requested key 'profile_id' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String name in friends: [409] Attribute with the requested key 'name' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String created_at in friends: [409] Attribute with the requested key 'created_at' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String profile_id in profile_interests: [409] Attribute with the requested key 'profile_id' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String interest in profile_interests: [409] Attribute with the requested key 'interest' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String created_at in profile_interests: [409] Attribute with the requested key 'created_at' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String profile_id in stories: [409] Attribute with the requested key 'profile_id' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String language_code in stories: [409] Attribute with the requested key 'language_code' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String title in stories: [409] Attribute with the requested key 'title' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String content in stories: [409] Attribute with the requested key 'content' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String audio_url in stories: [409] Attribute with the requested key 'audio_url' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String season in stories: [409] Attribute with the requested key 'season' already exists. Attribute keys must be unique, try again with a different key.
+   Error adding String theme in stories: [409] Attribute with the requested key 'theme' already exists. Attribute keys must be unique, try again with a different key.

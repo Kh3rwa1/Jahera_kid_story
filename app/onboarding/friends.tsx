@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,47 +10,100 @@ import {
   Platform,
   ActivityIndicator,
   StatusBar,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { X, UserPlus, ArrowLeft, Plus, Sparkles } from 'lucide-react-native';
+import LottieView from 'lottie-react-native';
+import { X, UserPlus, ArrowLeft, Plus, Sparkles, Star } from 'lucide-react-native';
 import { profileService, languageService, familyMemberService, friendService } from '@/services/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
-import Animated, { FadeInDown, FadeInUp, FadeOutUp, ZoomIn } from 'react-native-reanimated';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp, 
+  FadeOutUp, 
+  ZoomIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Audio } from 'expo-av';
+import { generateAudio } from '@/services/audioService';
 
-const FRIEND_EMOJIS = ['🧒', '👦', '👧', '🧑', '👶', '🧓'];
+const FRIEND_EMOJIS = ['🧒', '👦', '👧', '🧑', '👶', '🧓', '🌟', '🌈'];
 
 export default function Friends() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const { currentTheme } = useTheme();
+  const { width: winWidth } = useWindowDimensions();
   const { user } = useAuth();
   const { loadProfile } = useApp();
-  const themeColors = currentTheme.colors;
+  const { currentTheme } = useTheme();
+  const C = currentTheme.colors;
+  const styles = useStyles(C, insets, winWidth);
   const [friends, setFriends] = useState<string[]>([]);
   const [currentName, setCurrentName] = useState('');
-  const [shake, setShake] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
 
-  const successColor = themeColors.success;
-  const successLight = themeColors.successLight;
+  const addBtnScale = useSharedValue(1);
+
+  useEffect(() => {
+    // Narration
+    const timer = setTimeout(() => {
+      let lang = 'en';
+      try {
+        const langs = JSON.parse(params.languages as string);
+        if (langs && langs.length > 0) lang = langs[0].code;
+      } catch {}
+      speak("Almost there! Finally, who are your best friends? We can invite them into the stories too!", lang);
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+      if (sound) {
+        sound.unloadAsync().catch(() => {});
+      }
+    };
+  }, []);
+
+  const speak = async (text: string, lang: string) => {
+    try {
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+        setSound(null);
+      }
+
+      const url = await generateAudio(text, lang);
+      if (!url) return;
+
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: url },
+        { shouldPlay: true }
+      );
+      setSound(newSound);
+    } catch (err) {
+      console.error('TTS Error (Friends):', err);
+    }
+  };
 
   const addFriend = async () => {
     const trimmed = currentName.trim();
     if (!trimmed.length) {
-      setShake(true);
       if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      setTimeout(() => setShake(false), 600);
       return;
     }
     if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    addBtnScale.value = withSequence(withSpring(1.2), withSpring(1));
     setFriends([...friends, trimmed]);
     setCurrentName('');
   };
@@ -73,7 +126,7 @@ export default function Friends() {
       const kidName = params.kidName as string;
       const familyMembers = JSON.parse((params.familyMembers as string) || '[]');
       const primaryLanguage = languages[0]?.code || 'en';
-      const profile = await profileService.create(user.id, kidName, primaryLanguage);
+      const profile = await profileService.create(user.$id, kidName, primaryLanguage);
       if (!profile) {
         setErrorMsg('Failed to create profile. Please try again.');
         setIsLoading(false);
@@ -101,192 +154,146 @@ export default function Friends() {
     router.back();
   };
 
+  const addBtnStyle = useAnimatedStyle(() => ({ transform: [{ scale: addBtnScale.value }] }));
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
         <ScrollView
-          style={styles.outerScroll}
-          contentContainerStyle={[styles.outerScrollContent, { paddingBottom: insets.bottom + 120 }]}
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 140 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          nestedScrollEnabled
         >
         <LinearGradient
-          colors={['#0F0F1A', '#1A0826', '#0A1628']}
-          style={[styles.hero, { paddingTop: insets.top + SPACING.lg }]}
+          colors={[C.primary, C.primaryDark]}
+          style={[styles.header, { paddingTop: insets.top + SPACING.md }]}
         >
-          <View style={styles.heroTop}>
-            <TouchableOpacity
-              onPress={handleBack}
-              style={styles.backBtn}
-              activeOpacity={0.7}
-              disabled={isLoading}
-            >
-              <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+          <View style={styles.topRow}>
+            <TouchableOpacity onPress={handleBack} style={styles.backButton} disabled={isLoading}>
+              <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: '100%', backgroundColor: successColor }]} />
+            <View style={styles.progressLine}>
+              <View style={[styles.progressFill, { width: '100%', backgroundColor: '#FFFFFF' }]} />
             </View>
-            <Text style={styles.stepLabelText}>4 / 4</Text>
+            <Text style={styles.stepLabel}>4 of 4</Text>
           </View>
 
-          {/* Overlapping friend emojis scene */}
-          <Animated.View entering={FadeInDown.delay(160).springify()} style={styles.emojiScene}>
-            <View style={[styles.emojiCircle, styles.emojiCircleMid]}>
-              <Text style={styles.emojiMid}>👦</Text>
-            </View>
-            <View style={[styles.emojiCircle, styles.emojiCircleLarge, styles.emojiOverlapLeft]}>
-              <Text style={styles.emojiLarge}>👧</Text>
-            </View>
-            <View style={[styles.emojiCircle, styles.emojiCircleMid, styles.emojiOverlapLeft]}>
-              <Text style={styles.emojiMid}>🧒</Text>
-            </View>
-          </Animated.View>
+          <View style={styles.heroSection}>
+            <LottieView
+              source={{ uri: 'https://lottie.host/9e4d6d63-7d84-484d-adb4-8d9e6ee0895c/H6uMNoOfZp.json' }}
+              autoPlay
+              loop
+              style={styles.lottieFriends}
+            />
+            <Animated.View entering={ZoomIn.delay(400)} style={styles.starOverlay}>
+              <Star size={28} color="#FFD700" fill="#FFD700" />
+            </Animated.View>
+          </View>
 
-          <Animated.Text entering={FadeInDown.delay(200).springify()} style={styles.heroTitle}>
-            Add Friends
+          <Animated.Text entering={FadeInDown.delay(200)} style={styles.title}>
+            Best Friends!
           </Animated.Text>
-          <Animated.Text entering={FadeInDown.delay(240).springify()} style={styles.heroSubtitle}>
-            Who are {params.kidName}'s awesome friends?
+          <Animated.Text entering={FadeInDown.delay(300)} style={styles.subtitle}>
+            Who are the partners in crime{'\n'}for your adventures?
           </Animated.Text>
-
-          {/* Final step badge */}
-          <Animated.View entering={FadeInDown.delay(280).springify()} style={styles.finalBadge}>
-            <Sparkles size={12} color="rgba(255,255,255,0.9)" strokeWidth={2} />
-            <Text style={styles.finalBadgeText}>Last step — almost done!</Text>
-          </Animated.View>
         </LinearGradient>
 
-        {/* Input row */}
-        <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.inputSection}>
-          <View style={[
-            styles.inputCard,
-            { backgroundColor: themeColors.cardBackground },
-            shake && { borderColor: themeColors.warning, borderWidth: 2 },
-          ]}>
-            <View style={[styles.inputIcon, { backgroundColor: successColor + '12' }]}>
-              <UserPlus size={18} color={successColor} strokeWidth={2} />
+        <View style={styles.body}>
+          <Animated.View entering={FadeInUp.delay(500)} style={styles.inputContainer}>
+            <View style={styles.inputCard}>
+              <TextInput
+                style={styles.input}
+                placeholder="Friend's Name"
+                placeholderTextColor="#CBD5E1"
+                value={currentName}
+                onChangeText={setCurrentName}
+                autoCapitalize="words"
+                returnKeyType="done"
+                onSubmitEditing={addFriend}
+                editable={!isLoading}
+              />
+              <TouchableOpacity onPress={addFriend} activeOpacity={0.8} disabled={isLoading}>
+                <Animated.View style={[styles.addButton, addBtnStyle, { backgroundColor: C.primary }]}>
+                  <Plus size={24} color="#FFFFFF" strokeWidth={3} />
+                </Animated.View>
+              </TouchableOpacity>
             </View>
-            <TextInput
-              style={[styles.input, { color: themeColors.text.primary }]}
-              placeholder="Enter a friend's name..."
-              placeholderTextColor={themeColors.text.light}
-              value={currentName}
-              onChangeText={setCurrentName}
-              autoCapitalize="words"
-              returnKeyType="done"
-              onSubmitEditing={addFriend}
-              editable={!isLoading}
-            />
-            <TouchableOpacity onPress={addFriend} activeOpacity={0.8} disabled={isLoading}>
-              <LinearGradient
-                colors={currentName.trim().length > 0
-                  ? [successColor, successLight]
-                  : [successColor + '40', successColor + '40']}
-                style={styles.addBtn}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Plus size={20} color="#FFFFFF" strokeWidth={3} />
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-          {errorMsg && (
-            <Animated.Text entering={FadeInDown.springify()} style={[styles.errorText, { color: themeColors.error }]}>
-              {errorMsg}
-            </Animated.Text>
-          )}
-        </Animated.View>
+            {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
+          </Animated.View>
 
-        {/* Friends list */}
-        <View style={styles.listContent}>
-          {friends.length === 0 ? (
-            <Animated.View entering={FadeInDown.delay(340).springify()} style={styles.emptyState}>
-              <View style={styles.emptyIconRow}>
-                <View style={[styles.emptyDot, { backgroundColor: successColor + '10' }]}>
-                  <Text style={styles.emptyDotEmoji}>👦</Text>
+          <View style={styles.listSection}>
+            {friends.length === 0 ? (
+              <Animated.View entering={FadeInDown.delay(600)} style={styles.emptyState}>
+                <View style={styles.emojiRow}>
+                  {['🧒', '👧', '🧑'].map((e, i) => (
+                    <Animated.Text 
+                      key={i} 
+                      entering={ZoomIn.delay(700 + i * 100)} 
+                      style={styles.emptyEmoji}
+                    >
+                      {e}
+                    </Animated.Text>
+                  ))}
                 </View>
-                <View style={[styles.emptyDot, styles.emptyDotLarge, { backgroundColor: successColor + '18' }]}>
-                  <Text style={styles.emptyDotEmojiLarge}>👫</Text>
-                </View>
-                <View style={[styles.emptyDot, { backgroundColor: successColor + '10' }]}>
-                  <Text style={styles.emptyDotEmoji}>👧</Text>
-                </View>
-              </View>
-              <Text style={[styles.emptyTitle, { color: themeColors.text.primary }]}>No friends added yet</Text>
-              <Text style={[styles.emptySubtitle, { color: themeColors.text.secondary }]}>
-                You can skip this step if you'd like
-              </Text>
-            </Animated.View>
-          ) : (
-            friends.map((friend, index) => (
-              <Animated.View
-                key={`${friend}-${index}`}
-                entering={ZoomIn.delay(index * 40).springify()}
-                exiting={FadeOutUp.duration(200)}
-              >
-                <View style={[styles.friendCard, { backgroundColor: themeColors.cardBackground }]}>
-                  <View style={[styles.friendAccent, { backgroundColor: successColor }]} />
-                  <View style={[styles.friendEmojiBadge, { backgroundColor: successColor + '12' }]}>
-                    <Text style={styles.friendEmoji}>
-                      {FRIEND_EMOJIS[index % FRIEND_EMOJIS.length]}
-                    </Text>
-                  </View>
-                  <Text style={[styles.friendName, { color: themeColors.text.primary }]} numberOfLines={1}>
-                    {friend}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => removeFriend(index)}
-                    style={[styles.removeBtn, { backgroundColor: themeColors.error + '12' }]}
-                    activeOpacity={0.7}
-                    disabled={isLoading}
-                  >
-                    <X size={14} color={themeColors.error} strokeWidth={2.5} />
-                  </TouchableOpacity>
-                </View>
+                <Text style={styles.emptyTitle}>Add your buddies!</Text>
+                <Text style={styles.emptySub}>Friends make stories better</Text>
               </Animated.View>
-            ))
-          )}
+            ) : (
+              <View style={styles.grid}>
+                {friends.map((friend, idx) => (
+                  <Animated.View 
+                    key={`${friend}-${idx}`} 
+                    entering={ZoomIn.springify()} 
+                    exiting={FadeOutUp}
+                    style={styles.stickerWrapper}
+                  >
+                    <View style={[styles.sticker, { borderColor: C.primary + '30' }]}>
+                      <View style={[styles.avatarCircle, { backgroundColor: C.primary + '10' }]}>
+                        <Text style={styles.avatarEmoji}>{FRIEND_EMOJIS[idx % FRIEND_EMOJIS.length]}</Text>
+                      </View>
+                      <Text style={styles.stickerName} numberOfLines={1}>{friend}</Text>
+                      <TouchableOpacity 
+                        onPress={() => removeFriend(idx)} 
+                        style={styles.removeCircle}
+                        disabled={isLoading}
+                      >
+                        <X size={12} color="#FFFFFF" strokeWidth={3} />
+                      </TouchableOpacity>
+                    </View>
+                  </Animated.View>
+                ))}
+              </View>
+            )}
+          </View>
         </View>
         </ScrollView>
 
-        {/* Footer */}
         <Animated.View
-          entering={FadeInUp.delay(300).springify()}
+          entering={FadeInUp.delay(300)}
           style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
         >
-          <TouchableOpacity
-            onPress={handleComplete}
-            activeOpacity={0.88}
-            disabled={isLoading}
-          >
+          <TouchableOpacity onPress={handleComplete} activeOpacity={0.8} disabled={isLoading}>
             <LinearGradient
-              colors={isLoading ? ['#D1D5DB', '#D1D5DB'] : [successColor, successLight]}
-              style={styles.ctaButton}
+              colors={[C.primary, C.primaryDark]}
+              style={styles.cta}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              end={{ x: 1, y: 0 }}
             >
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Text style={styles.ctaText}>
-                    {friends.length > 0 ? `Start Adventures (${friends.length} friends)` : 'Start Adventures'}
-                  </Text>
-                  <Sparkles size={20} color="#FFFFFF" strokeWidth={2.5} />
+                  <Text style={styles.ctaText}>Start Adventures!</Text>
+                  <Sparkles size={22} color="#FFFFFF" strokeWidth={3} />
                 </>
               )}
             </LinearGradient>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleComplete}
-            activeOpacity={0.7}
-            style={styles.skipLink}
-            disabled={isLoading}
-          >
-            <Text style={[styles.skipText, { color: themeColors.text.light }]}>Skip this step</Text>
+          <TouchableOpacity onPress={handleComplete} style={styles.skipButton} disabled={isLoading}>
+            <Text style={styles.skipText}>I'll add them later</Text>
           </TouchableOpacity>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -294,246 +301,218 @@ export default function Friends() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F7F8FA' },
-  kav: { flex: 1 },
-  outerScroll: { flex: 1 },
-  outerScrollContent: { flexGrow: 1 },
-  hero: {
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.xxl,
-    alignItems: 'center',
-  },
-  heroTop: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    marginBottom: SPACING.xxl,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressTrack: {
-    flex: 1,
-    height: 3,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  stepLabelText: {
-    fontSize: FONT_SIZES.xs,
-    fontFamily: FONTS.bold,
-    color: 'rgba(255,255,255,0.5)',
-    letterSpacing: 0.5,
-  },
-  emojiScene: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.lg,
-  },
-  emojiCircle: {
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-  emojiCircleLarge: { width: 64, height: 64 },
-  emojiCircleMid: { width: 52, height: 52 },
-  emojiOverlapLeft: { marginLeft: -14 },
-  emojiLarge: { fontSize: 30 },
-  emojiMid: { fontSize: 24 },
-  heroTitle: {
-    fontSize: 28,
-    fontFamily: FONTS.extrabold,
-    color: '#FFFFFF',
-    letterSpacing: -0.8,
-    textAlign: 'center',
-    lineHeight: 38,
-    marginBottom: SPACING.sm,
-  },
-  heroSubtitle: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.55)',
-    textAlign: 'center',
-    marginBottom: SPACING.md,
-  },
-  finalBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  finalBadgeText: {
-    fontSize: FONT_SIZES.xs,
-    fontFamily: FONTS.bold,
-    color: 'rgba(255,255,255,0.95)',
-    letterSpacing: 0.3,
-  },
-  inputSection: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.sm,
-  },
-  inputCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: BORDER_RADIUS.xl,
-    gap: SPACING.sm,
-    paddingLeft: SPACING.md,
-    paddingRight: SPACING.md,
-    paddingVertical: SPACING.sm,
-    ...SHADOWS.md,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  inputIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  input: {
-    flex: 1,
-    paddingVertical: SPACING.md,
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.medium,
-  },
-  addBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorText: {
-    marginTop: SPACING.sm,
-    marginLeft: SPACING.sm,
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.semibold,
-  },
-  listContent: {
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.lg,
-    paddingTop: SPACING.sm,
-    gap: SPACING.sm,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: SPACING.xxxl,
-    gap: SPACING.sm,
-  },
-  emptyIconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  emptyDot: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyDotLarge: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    marginHorizontal: -8,
-    zIndex: 1,
-  },
-  emptyDotEmoji: { fontSize: 22 },
-  emptyDotEmojiLarge: { fontSize: 30 },
-  emptyTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.bold,
-  },
-  emptySubtitle: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.medium,
-    textAlign: 'center',
-  },
-  friendCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: BORDER_RADIUS.xl,
-    gap: SPACING.md,
-    overflow: 'hidden',
-    ...SHADOWS.sm,
-    paddingVertical: SPACING.md,
-    paddingRight: SPACING.md,
-  },
-  friendAccent: {
-    width: 4,
-    alignSelf: 'stretch',
-  },
-  friendEmojiBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: BORDER_RADIUS.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  friendEmoji: { fontSize: 24 },
-  friendName: {
-    flex: 1,
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.semibold,
-  },
-  removeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  footer: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.md,
-    backgroundColor: '#F7F8FA',
-    borderTopWidth: 1,
-    borderTopColor: '#EEEEF2',
-  },
-  ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: 18,
-    borderRadius: BORDER_RADIUS.pill,
-    ...SHADOWS.xl,
-  },
-  ctaText: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.bold,
-    letterSpacing: 0.3,
-  },
-  skipLink: {
-    alignItems: 'center',
-    paddingVertical: SPACING.md,
-  },
-  skipText: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.medium,
-  },
-});
+const useStyles = (C: any, insets: any, winWidth: number) => {
+  return useMemo(() => StyleSheet.create({
+    root: { flex: 1, backgroundColor: C.background },
+    kav: { flex: 1 },
+    scroll: { flex: 1 },
+    scrollContent: { flexGrow: 1 },
+    header: {
+      paddingHorizontal: SPACING.xl,
+      paddingBottom: SPACING.xxxl,
+      borderBottomLeftRadius: 40,
+      borderBottomRightRadius: 40,
+      alignItems: 'center',
+      ...SHADOWS.md,
+    },
+    topRow: {
+      width: '100%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: SPACING.lg,
+    },
+    backButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    progressLine: {
+      flex: 1,
+      height: 6,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 3,
+    },
+    stepLabel: {
+      fontSize: 13,
+      fontFamily: FONTS.bold,
+      color: 'rgba(255,255,255,0.7)',
+    },
+    heroSection: {
+      width: 160,
+      height: 160,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    lottieFriends: {
+      width: 180,
+      height: 180,
+    },
+    starOverlay: {
+      position: 'absolute',
+      top: 10,
+      right: 10,
+    },
+    title: {
+      fontSize: 32,
+      fontFamily: 'Baloo2-Bold',
+      color: '#FFFFFF',
+      textAlign: 'center',
+      marginBottom: 6,
+    },
+    subtitle: {
+      fontSize: 17,
+      fontFamily: 'Baloo2-Medium',
+      color: 'rgba(255,255,255,0.85)',
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    body: {
+      flex: 1,
+      paddingHorizontal: SPACING.xl,
+      paddingTop: SPACING.xl,
+    },
+    inputContainer: {
+      marginBottom: 24,
+    },
+    inputCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FFFFFF',
+      borderRadius: 30,
+      paddingLeft: 24,
+      paddingRight: 8,
+      paddingVertical: 8,
+      borderWidth: 3,
+      borderColor: '#F1F5F9',
+      ...SHADOWS.md,
+    },
+    input: {
+      flex: 1,
+      fontSize: 18,
+      fontFamily: 'Baloo2-Bold',
+      color: C.text.primary,
+    },
+    addButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    errorText: {
+      color: '#FF6B6B',
+      fontSize: 14,
+      fontFamily: 'Baloo2-Medium',
+      marginTop: 8,
+      textAlign: 'center',
+    },
+    listSection: {
+      flex: 1,
+    },
+    emptyState: {
+      alignItems: 'center',
+      marginTop: 40,
+    },
+    emojiRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 16,
+    },
+    emptyEmoji: {
+      fontSize: 32,
+    },
+    emptyTitle: {
+      fontSize: 20,
+      fontFamily: 'Baloo2-Bold',
+      color: C.text.primary,
+    },
+    emptySub: {
+      fontSize: 15,
+      fontFamily: 'Baloo2-Medium',
+      color: C.text.light,
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    stickerWrapper: {
+      width: (winWidth - SPACING.xl * 2 - 12) / 2,
+    },
+    sticker: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 24,
+      padding: 12,
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: '#F1F5F9',
+      ...SHADOWS.sm,
+      position: 'relative',
+    },
+    avatarCircle: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    avatarEmoji: { fontSize: 32 },
+    stickerName: {
+      fontSize: 16,
+      fontFamily: 'Baloo2-Bold',
+      color: C.text.primary,
+    },
+    removeCircle: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: '#FF6B6B',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: '#FFFFFF',
+    },
+    footer: {
+      paddingHorizontal: SPACING.xl,
+      paddingTop: SPACING.md,
+      backgroundColor: 'rgba(255,255,255,0.9)',
+    },
+    cta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 20,
+      borderRadius: 30,
+      gap: 10,
+      ...SHADOWS.md,
+    },
+    ctaText: {
+      fontSize: 20,
+      fontFamily: 'Baloo2-Bold',
+      color: '#FFFFFF',
+    },
+    skipButton: {
+      alignItems: 'center',
+      paddingVertical: 14,
+    },
+    skipText: {
+      fontSize: 15,
+      fontFamily: 'Baloo2-Medium',
+      color: C.text.light,
+    },
+  }), [C, insets]);
+};

@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -34,9 +35,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { FamilyMember, Friend } from '@/types/database';
+import { Audio } from 'expo-av';
 
-const { width: SW } = Dimensions.get('window');
-const CARD_SIZE = (SW - SPACING.xl * 2 - SPACING.sm * 3) / 4;
 
 const FUN_FACTS = [
   'Did you know? Dolphins sleep with one eye open!',
@@ -84,9 +84,12 @@ interface GenerationStep {
 
 type Phase = 'options' | 'generating';
 
-function ThemeCard({ theme, selected, onPress }: {
+function ThemeCard({ theme, selected, cardSize, styles, colors_C, onPress }: {
   theme: typeof THEMES[0];
   selected: boolean;
+  cardSize: number;
+  styles: any;
+  colors_C: any;
   onPress: () => void;
 }) {
   const scale = useSharedValue(1);
@@ -111,7 +114,7 @@ function ThemeCard({ theme, selected, onPress }: {
     <TouchableOpacity onPress={handlePress} activeOpacity={1}>
       <ReAnimated.View style={animStyle}>
         <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: BORDER_RADIUS.xl, backgroundColor: theme.gradient[0] }, glowStyle]} />
-        <View style={[styles.themeCard, selected && styles.themeCardSelected]}>
+        <View style={[styles.themeCard, selected && styles.themeCardSelected, { width: cardSize, height: cardSize }]}>
           {selected ? (
             <LinearGradient colors={theme.gradient} style={styles.themeCardGradient}>
               <Text style={styles.themeCardEmoji}>{theme.emoji}</Text>
@@ -119,8 +122,9 @@ function ThemeCard({ theme, selected, onPress }: {
             </LinearGradient>
           ) : (
             <View style={styles.themeCardInner}>
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: colors_C.cardBackground, opacity: 0.95 }]} />
               <Text style={styles.themeCardEmoji}>{theme.emoji}</Text>
-              <Text style={styles.themeCardLabel}>{theme.label}</Text>
+              <Text style={[styles.themeCardLabel, { color: colors_C.text.secondary }]}>{theme.label}</Text>
             </View>
           )}
         </View>
@@ -129,9 +133,11 @@ function ThemeCard({ theme, selected, onPress }: {
   );
 }
 
-function MoodCard({ mood, selected, onPress }: {
+function MoodCard({ mood, selected, styles, colors_C, onPress }: {
   mood: typeof MOODS[0];
   selected: boolean;
+  styles: any;
+  colors_C: any;
   onPress: () => void;
 }) {
   const scale = useSharedValue(1);
@@ -148,10 +154,13 @@ function MoodCard({ mood, selected, onPress }: {
       <ReAnimated.View style={[animStyle, { flex: 1 }]}>
         <View style={[
           styles.moodCard,
-          { borderColor: selected ? mood.color : 'transparent', backgroundColor: selected ? mood.bg : '#F8FAFC' },
+          {
+            borderColor: selected ? mood.color : 'transparent',
+            backgroundColor: selected ? mood.bg : colors_C.cardBackground,
+          },
         ]}>
           <Text style={styles.moodEmoji}>{mood.emoji}</Text>
-          <Text style={[styles.moodLabel, { color: selected ? mood.color : '#64748B' }]}>
+          <Text style={[styles.moodLabel, { color: selected ? mood.color : colors_C.text.secondary }]}>
             {mood.label}
           </Text>
           {selected && (
@@ -163,21 +172,20 @@ function MoodCard({ mood, selected, onPress }: {
   );
 }
 
-function LengthCard({ len, selected, isPro, onPress }: {
+function LengthCard({ len, selected, isPro, styles, colors_C, onPress }: {
   len: typeof LENGTHS[0];
   selected: boolean;
   isPro: boolean;
+  styles: any;
+  colors_C: any;
   onPress: () => void;
 }) {
-  const { currentTheme } = useTheme();
-  const COLORS = currentTheme.colors;
-
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{ flex: 1 }}>
       <View style={[
         styles.lengthCard,
-        selected && { borderColor: COLORS.primary, backgroundColor: COLORS.primary + '0F' },
-        !selected && { borderColor: '#E2E8F0', backgroundColor: '#F8FAFC' },
+        selected && { borderColor: colors_C.primary, backgroundColor: colors_C.primary + '0F' },
+        !selected && { borderColor: colors_C.text.light + '20', backgroundColor: colors_C.cardBackground },
       ]}>
         {len.pro && !isPro && (
           <View style={styles.proCrown}>
@@ -185,10 +193,10 @@ function LengthCard({ len, selected, isPro, onPress }: {
           </View>
         )}
         <Text style={styles.lengthEmoji}>{len.emoji}</Text>
-        <Text style={[styles.lengthTitle, { color: selected ? COLORS.primary : '#1E293B' }]}>
+        <Text style={[styles.lengthTitle, { color: selected ? colors_C.primary : colors_C.text.primary }]}>
           {len.label}
         </Text>
-        <Text style={[styles.lengthWords, { color: selected ? COLORS.primary + 'AA' : '#94A3B8' }]}>
+        <Text style={[styles.lengthWords, { color: selected ? colors_C.primary + 'AA' : colors_C.text.light }]}>
           {len.desc}
         </Text>
       </View>
@@ -196,7 +204,7 @@ function LengthCard({ len, selected, isPro, onPress }: {
   );
 }
 
-function CtaButton({ gradient, onPress }: { gradient: [string, string]; onPress: () => void }) {
+function CtaButton({ gradient, styles, onPress }: { gradient: [string, string]; styles: any; onPress: () => void }) {
   const shimmerX = useSharedValue(-1);
   const scale = useSharedValue(1);
 
@@ -238,12 +246,482 @@ function CtaButton({ gradient, onPress }: { gradient: [string, string]; onPress:
   );
 }
 
+
+const useStyles = (C: any, winWidth: number, insets: any) => {
+  return useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.background },
+    scrollContent: { paddingBottom: SPACING.xxxl },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: SPACING.xl,
+      marginBottom: SPACING.lg,
+    },
+    backBtn: {
+      width: 42, height: 42, borderRadius: 21,
+      alignItems: 'center', justifyContent: 'center',
+      backgroundColor: C.cardBackground, ...SHADOWS.sm,
+    },
+    locationPill: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      paddingHorizontal: 12, paddingVertical: 7, borderRadius: BORDER_RADIUS.pill,
+      borderWidth: 1, backgroundColor: C.info + '10', borderColor: C.info + '30',
+    },
+    locationPillText: {
+      fontSize: 12,
+      fontFamily: FONTS.semibold,
+    },
+    header: {
+      paddingHorizontal: SPACING.xl,
+      marginBottom: SPACING.xl,
+    },
+    headerAccent: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      marginBottom: 12,
+    },
+    pageTitle: {
+      fontSize: 34, fontFamily: FONTS.displayBold, lineHeight: 40,
+      letterSpacing: -1, marginBottom: 6, color: C.text.primary,
+    },
+    pageSubtitle: {
+      fontSize: 15, fontFamily: FONTS.medium,
+      opacity: 0.8, color: C.text.secondary,
+    },
+    section: {
+      marginBottom: SPACING.xl,
+    },
+    sectionHead: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: SPACING.xl,
+      marginBottom: SPACING.md,
+    },
+    sectionLabel: {
+      fontSize: 13, fontFamily: FONTS.bold, textTransform: 'uppercase',
+      letterSpacing: 1.2, color: C.text.secondary,
+    },
+    sectionBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: BORDER_RADIUS.pill,
+    },
+    sectionBadgeText: {
+      fontSize: 11,
+      fontFamily: FONTS.bold,
+    },
+    themeGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      paddingHorizontal: SPACING.xl,
+      gap: SPACING.sm,
+    },
+    themeCard: {
+      borderRadius: BORDER_RADIUS.xl,
+      overflow: 'hidden',
+      ...SHADOWS.sm,
+    },
+    themeCardSelected: {
+      ...SHADOWS.md,
+    },
+    themeCardGradient: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: SPACING.xs,
+    },
+    themeCardInner: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: SPACING.xs,
+      overflow: 'hidden',
+      borderRadius: BORDER_RADIUS.xl,
+    },
+    themeCardEmoji: { fontSize: 28, marginBottom: 4 },
+    themeCardLabel: { fontSize: 11, fontFamily: FONTS.bold },
+    themeCardLabelSelected: { fontSize: 11, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
+
+    moodRow: {
+      flexDirection: 'row',
+      paddingHorizontal: SPACING.xl,
+      gap: SPACING.sm,
+    },
+    moodCard: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: SPACING.lg,
+      paddingHorizontal: SPACING.xs,
+      borderRadius: BORDER_RADIUS.xl,
+      borderWidth: 2,
+      gap: 6,
+      ...SHADOWS.xs,
+      position: 'relative',
+    },
+    moodEmoji: { fontSize: 28 },
+    moodLabel: { fontSize: 13, fontFamily: FONTS.displayBold },
+    moodDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+
+    lengthRow: {
+      flexDirection: 'row',
+      gap: SPACING.sm,
+    },
+    lengthCard: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: SPACING.lg,
+      paddingHorizontal: SPACING.xs,
+      borderRadius: BORDER_RADIUS.xl,
+      borderWidth: 2,
+      gap: 4,
+      position: 'relative',
+      ...SHADOWS.xs,
+    },
+    lengthEmoji: { fontSize: 26 },
+    lengthTitle: {
+      fontSize: 14,
+      fontFamily: FONTS.displayBold,
+    },
+    lengthWords: {
+      fontSize: 11,
+      fontFamily: FONTS.displayMedium,
+    },
+    proCrown: {
+      position: 'absolute', top: -8, right: -4,
+      backgroundColor: C.accent.gold, paddingHorizontal: 6, paddingVertical: 2,
+      borderRadius: BORDER_RADIUS.pill,
+    },
+    proText: {
+      fontSize: 8,
+      fontFamily: FONTS.extrabold,
+      color: '#FFFFFF',
+      letterSpacing: 0.5,
+    },
+
+    ctaSection: {
+      paddingHorizontal: SPACING.xl,
+      gap: SPACING.md,
+      alignItems: 'center',
+    },
+    quotaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    quotaDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.text.light },
+    quotaText: { fontSize: 13, fontFamily: FONTS.medium, color: C.text.light },
+    ctaButton: {
+      borderRadius: BORDER_RADIUS.xxl,
+      ...SHADOWS.lg,
+      overflow: 'hidden',
+    },
+    ctaButtonInner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 20,
+      paddingHorizontal: 48,
+      gap: SPACING.sm,
+    },
+    ctaText: {
+      fontSize: 20,
+      fontFamily: FONTS.display,
+      color: '#FFFFFF',
+      letterSpacing: -0.2,
+    },
+    ctaArrow: {
+      marginLeft: 4,
+    },
+    ctaShimmer: {
+      position: 'absolute',
+      top: 0, bottom: 0,
+      width: 60,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      transform: [{ skewX: '-20deg' }],
+    },
+
+    quotaContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: SPACING.xxxl,
+      gap: SPACING.lg,
+    },
+    quotaIconWrap: { marginBottom: SPACING.sm },
+    quotaIconBg: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    quotaTitle: {
+      fontSize: 24, fontFamily: FONTS.extrabold, color: C.text.primary,
+      textAlign: 'center', letterSpacing: -0.5,
+    },
+    quotaSubtitle: {
+      fontSize: 15, fontFamily: FONTS.medium, color: C.text.secondary,
+      textAlign: 'center', lineHeight: 23,
+    },
+    fullWidth: { width: '100%' },
+    upgradeButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: SPACING.sm,
+      paddingVertical: 18,
+      borderRadius: BORDER_RADIUS.xxl,
+      ...SHADOWS.lg,
+    },
+    upgradeButtonText: {
+      fontSize: 16,
+      fontFamily: FONTS.extrabold,
+      color: '#FFFFFF',
+    },
+    backLink: { paddingVertical: SPACING.md },
+    backLinkText: { fontSize: 14, fontFamily: FONTS.medium, color: C.text.light },
+    
+    // Generating
+    generatingScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: C.background },
+    genAmbientOrb1: {
+      position: 'absolute',
+      width: 300,
+      height: 300,
+      borderRadius: 150,
+      top: -80,
+      right: -80,
+    },
+    genAmbientOrb2: {
+      position: 'absolute',
+      width: 240,
+      height: 240,
+      borderRadius: 120,
+      bottom: 60,
+      left: -80,
+    },
+    generatingContent: {
+      width: '100%',
+      maxWidth: 400,
+      paddingHorizontal: SPACING.xl,
+      alignItems: 'center',
+    },
+    orbContainer: {
+      width: 180,
+      height: 180,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: SPACING.xxl,
+    },
+    orbRingOuter: {
+      position: 'absolute',
+      width: 180,
+      height: 180,
+      borderRadius: 90,
+      borderWidth: 1,
+      borderColor: 'rgba(99,102,241,0.15)',
+      borderStyle: 'dashed',
+    },
+    orbRingMid: {
+      position: 'absolute',
+      width: 148,
+      height: 148,
+      borderRadius: 74,
+      borderWidth: 1.5,
+    },
+    pulseWrap: { ...SHADOWS.lg },
+    iconCircle: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    genTitleBlock: {
+      alignItems: 'center',
+      gap: SPACING.sm,
+      marginBottom: SPACING.md,
+    },
+    genTitle: {
+      fontSize: 26,
+      fontFamily: FONTS.extrabold,
+      textAlign: 'center',
+      letterSpacing: -0.5,
+      lineHeight: 32,
+    },
+    locationBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: BORDER_RADIUS.pill,
+      borderWidth: 1,
+    },
+    locationBadgeText: {
+      fontSize: 12,
+      fontFamily: FONTS.semibold,
+    },
+    activeStepChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      marginBottom: SPACING.xl,
+    },
+    activeStepDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+    },
+    activeStepText: {
+      fontSize: 12,
+      fontFamily: FONTS.medium,
+      lineHeight: 18,
+    },
+    progressWrap: {
+      width: '100%',
+      marginBottom: SPACING.xl,
+      gap: SPACING.sm,
+    },
+    progressTrack: {
+      height: 9,
+      borderRadius: 5,
+      overflow: 'hidden',
+      position: 'relative',
+    },
+    progressFill: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      borderRadius: 5,
+    },
+    progressShimmer: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      borderRadius: 5,
+      overflow: 'hidden',
+    },
+    progressPct: {
+      fontSize: 12,
+      fontFamily: FONTS.bold,
+      textAlign: 'center',
+    },
+    timelineCard: {
+      width: '100%',
+      paddingHorizontal: SPACING.lg,
+      paddingTop: SPACING.lg,
+      paddingBottom: SPACING.sm,
+      borderRadius: BORDER_RADIUS.xl,
+      marginBottom: SPACING.lg,
+      ...SHADOWS.sm,
+    },
+    timelineRow: {
+      flexDirection: 'row',
+    },
+    timelineLeft: {
+      alignItems: 'center',
+      width: 32,
+      marginRight: SPACING.md,
+    },
+    timelineDot: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    timelineConnector: {
+      width: 2,
+      flex: 1,
+      minHeight: SPACING.lg,
+      marginTop: 3,
+      marginBottom: 3,
+      borderRadius: 1,
+    },
+    timelineContent: {
+      flex: 1,
+      paddingTop: 5,
+      gap: 3,
+    },
+    timelineLabel: {
+      fontSize: 13,
+      fontFamily: FONTS.semibold,
+      lineHeight: 18,
+    },
+    activePulseRow: {
+      flexDirection: 'row',
+      gap: 3,
+      alignItems: 'center',
+      marginTop: 2,
+    },
+    activePulseDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+      opacity: 0.6,
+    },
+    stepDoneText: {
+      fontSize: 11,
+      fontFamily: FONTS.semibold,
+      marginTop: 1,
+    },
+    funFactCard: {
+      width: '100%',
+      flexDirection: 'column',
+      gap: SPACING.xs,
+      padding: SPACING.lg,
+      borderRadius: BORDER_RADIUS.xl,
+      borderWidth: 1,
+      marginBottom: SPACING.md,
+    },
+    funFactHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    funFact: {
+      flex: 1,
+      fontSize: 12,
+      fontFamily: FONTS.medium,
+      lineHeight: 18,
+    },
+    longWaitCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.md,
+      borderRadius: BORDER_RADIUS.xl,
+      ...SHADOWS.xs,
+    },
+    longWaitText: {
+      fontSize: 13,
+      fontFamily: FONTS.medium,
+    },
+  }), [C, winWidth, insets]);
+};
+
 export default function GenerateStory() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
-  const themeColors = currentTheme.colors;
+  const { width: winWidth, height: winHeight } = useWindowDimensions();
+  const C = currentTheme.colors;
   const { subscription, refreshSubscription, refreshStories } = useApp();
+  const styles = useStyles(C, winWidth, insets);
+
+  const CARD_SIZE = (winWidth - SPACING.xl * 2 - SPACING.sm * 3) / 4;
 
   const [phase, setPhase] = useState<Phase>('options');
   const [selectedTheme, setSelectedTheme] = useState('adventure');
@@ -265,10 +743,51 @@ export default function GenerateStory() {
   const longWaitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
 
+  // Audio State
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
   useEffect(() => {
     isMountedRef.current = true;
-    return () => { isMountedRef.current = false; };
-  }, []);
+    return () => { 
+      isMountedRef.current = false;
+      if (sound) {
+        sound.unloadAsync().catch(() => {});
+      }
+    };
+  }, [sound]);
+
+  const speak = async (text: string, id: string) => {
+    try {
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+        setSound(null);
+      }
+
+      setPlayingId(id);
+      const url = await generateAudio(text, params.languageCode as string || 'en');
+      if (!url) {
+        setPlayingId(null);
+        return;
+      }
+
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: url },
+        { shouldPlay: true }
+      );
+      
+      setSound(newSound);
+      newSound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setPlayingId(null);
+        }
+      });
+    } catch (err) {
+      console.error('TTS Error (Generate):', err);
+      setPlayingId(null);
+    }
+  };
 
   const [steps, setSteps] = useState<GenerationStep[]>([
     { id: 'profile', label: 'Loading profile', icon: Sparkles, completed: false },
@@ -279,6 +798,20 @@ export default function GenerateStory() {
 
   const pulseScale = useSharedValue(1);
   const orbRotate = useSharedValue(0);
+  const [lottieSpeed, setLottieSpeed] = useState(1);
+  const lottieRef = useRef<LottieView>(null);
+
+  const handleOrbTap = () => {
+    hapticFeedback.medium();
+    setLottieSpeed(3);
+    pulseScale.value = withSequence(
+      withSpring(1.3, { damping: 10 }),
+      withSpring(1, { damping: 12 })
+    );
+    setTimeout(() => {
+      if (isMountedRef.current) setLottieSpeed(1);
+    }, 1200);
+  };
 
   const isPro = subscription?.plan !== 'free';
 
@@ -322,10 +855,17 @@ export default function GenerateStory() {
     );
 
     timerRef.current = setInterval(() => {
-      setFunFactIndex(prev => (prev + 1) % FUN_FACTS.length);
-    }, 4000);
+      setFunFactIndex(prev => {
+        const next = (prev + 1) % FUN_FACTS.length;
+        speak(FUN_FACTS[next], `fact_${next}`);
+        return next;
+      });
+    }, 8000); // Slower interval for TTS completion
 
-    longWaitRef.current = setTimeout(() => setLongWait(true), 15000);
+    longWaitRef.current = setTimeout(() => {
+      setLongWait(true);
+      speak("Making it extra special — hang tight!", "long_wait");
+    }, 18000);
 
     runGeneration();
 
@@ -441,22 +981,16 @@ export default function GenerateStory() {
       if (!isMountedRef.current) return;
       completeStep('quiz');
 
-      setStatus('Generating audio narration...');
-      setProgress(85);
+      setStatus('Finalising your story...');
+      setProgress(90);
 
-      try {
-        const audioPath = await generateAudio(story.content, languageCode, storyRecord.id);
-        if (audioPath) {
-          await storyService.update(storyRecord.id, { audio_url: audioPath });
-          completeStep('audio');
-          setStatus('Story ready with audio narration!');
-        } else {
-          setStatus('Your story is ready!');
-        }
-      } catch {
-        setStatus('Your story is ready!');
-      }
+      // Trigger audio in the background — server writes audio_url directly to DB
+      // via its API key. No await needed; playback screen polls DB for audio_url.
+      generateAudio(story.content, languageCode, storyRecord.id).then(audioPath => {
+        if (audioPath) completeStep('audio');
+      }).catch(() => {});
 
+      setStatus('Story ready!');
       setProgress(100);
       hapticFeedback.success();
       await Promise.all([refreshSubscription(), refreshStories()]);
@@ -491,20 +1025,20 @@ export default function GenerateStory() {
 
   if (isQuotaError) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FAFBFF' }}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.quotaContainer}>
           <View style={styles.quotaIconWrap}>
-            <LinearGradient colors={['#FEF3C7', '#FDE68A']} style={styles.quotaIconBg}>
-              <Zap size={36} color="#F59E0B" strokeWidth={2} />
+            <LinearGradient colors={C.accent.goldGradient || ['#FEF3C7', '#FDE68A']} style={styles.quotaIconBg}>
+              <Zap size={36} color={C.accent.gold} strokeWidth={2} />
             </LinearGradient>
           </View>
           <Text style={styles.quotaTitle}>Monthly Limit Reached</Text>
           <Text style={styles.quotaSubtitle}>
             You've used all your free stories this month. Upgrade to Pro for unlimited adventures!
           </Text>
-          <TouchableOpacity onPress={() => router.push('/paywall')} activeOpacity={0.9} style={{ width: '100%' }}>
+          <TouchableOpacity onPress={() => router.push('/paywall')} activeOpacity={0.9} style={styles.fullWidth}>
             <LinearGradient
-              colors={[...themeColors.gradients.sunset]}
+              colors={[...C.gradients.sunset]}
               style={styles.upgradeButton}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -523,7 +1057,7 @@ export default function GenerateStory() {
 
   if (error) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FAFBFF' }}>
+      <SafeAreaView style={styles.container}>
         <ErrorState
           type="general"
           title="Generation Failed"
@@ -541,36 +1075,45 @@ export default function GenerateStory() {
     const activeStep = activeStepIndex >= 0 ? steps[activeStepIndex] : steps[steps.length - 1];
 
     return (
-      <SafeAreaView style={[styles.generatingScreen, { backgroundColor: themeColors.background }]}>
-        <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <SafeAreaView style={styles.generatingScreen}>
+        <LinearGradient colors={C.backgroundGradient} style={StyleSheet.absoluteFill} />
 
-        <View style={[styles.genAmbientOrb1, { backgroundColor: themeColors.primary + '0C' }]} />
-        <View style={[styles.genAmbientOrb2, { backgroundColor: themeColors.gradients.sunset[0] + '08' }]} />
+        <View style={[styles.genAmbientOrb1, { backgroundColor: C.primary + '0C' }]} />
+        <View style={[styles.genAmbientOrb2, { backgroundColor: C.gradients.sunset[0] + '08' }]} />
 
         <View style={styles.generatingContent}>
           <ReAnimated.View entering={ZoomIn.delay(0).springify()} style={styles.orbContainer}>
             <ReAnimated.View style={[styles.orbRingOuter, orbStyle]} />
-            <View style={[styles.orbRingMid, { borderColor: themeColors.primary + '18' }]} />
-            <ReAnimated.View style={[styles.pulseWrap, pulseAnimStyle]}>
-              <LinearGradient
-                colors={[...themeColors.gradients.sunset]}
-                style={styles.iconCircle}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Wand2 size={48} color="#FFFFFF" strokeWidth={1.5} />
-              </LinearGradient>
-            </ReAnimated.View>
+            <View style={[styles.orbRingMid, { borderColor: C.primary + '18' }]} />
+            <TouchableOpacity onPress={handleOrbTap} activeOpacity={1}>
+              <ReAnimated.View style={[styles.pulseWrap, pulseAnimStyle]}>
+                <LinearGradient
+                  colors={[...C.gradients.sunset]}
+                  style={styles.iconCircle}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <LottieView
+                    ref={lottieRef}
+                    source={{ uri: 'https://lottie.host/505437a6-0683-431c-99d8-9c5957096752/Q5W4n5W5nG.json' }}
+                    autoPlay
+                    loop
+                    speed={lottieSpeed}
+                    style={{ width: 80, height: 80 }}
+                  />
+                </LinearGradient>
+              </ReAnimated.View>
+            </TouchableOpacity>
           </ReAnimated.View>
 
           <ReAnimated.View entering={FadeInUp.delay(140).springify()} style={styles.genTitleBlock}>
-            <Text style={[styles.genTitle, { color: themeColors.text.primary }]}>
+            <Text style={[styles.genTitle, { color: C.text.primary }]}>
               Creating Your Story
             </Text>
             {locationCtx && (
-              <View style={[styles.locationBadge, { backgroundColor: themeColors.primary + '10', borderColor: themeColors.primary + '20' }]}>
-                <MapPin size={11} color={themeColors.primary} strokeWidth={2.5} />
-                <Text style={[styles.locationBadgeText, { color: themeColors.primary }]}>
+              <View style={[styles.locationBadge, { backgroundColor: C.primary + '10', borderColor: C.primary + '20' }]}>
+                <MapPin size={11} color={C.primary} strokeWidth={2.5} />
+                <Text style={[styles.locationBadgeText, { color: C.primary }]}>
                   Set in {formatLocationLabel(locationCtx)}
                 </Text>
               </View>
@@ -578,16 +1121,16 @@ export default function GenerateStory() {
           </ReAnimated.View>
 
           <ReAnimated.View entering={FadeInUp.delay(200).springify()} style={styles.activeStepChip}>
-            <View style={[styles.activeStepDot, { backgroundColor: themeColors.primary }]} />
-            <Text style={[styles.activeStepText, { color: themeColors.text.secondary }]}>
+            <View style={[styles.activeStepDot, { backgroundColor: C.primary }]} />
+            <Text style={[styles.activeStepText, { color: C.text.secondary }]}>
               {status}
             </Text>
           </ReAnimated.View>
 
           <ReAnimated.View entering={FadeInUp.delay(260).springify()} style={styles.progressWrap}>
-            <View style={[styles.progressTrack, { backgroundColor: themeColors.text.light + '18' }]}>
+            <View style={[styles.progressTrack, { backgroundColor: C.text.light + '18' }]}>
               <LinearGradient
-                colors={[...themeColors.gradients.sunset]}
+                colors={[...C.gradients.sunset]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[styles.progressFill, { width: `${progress}%` }]}
@@ -601,12 +1144,12 @@ export default function GenerateStory() {
                 />
               </View>
             </View>
-            <Text style={[styles.progressPct, { color: themeColors.primary }]}>{progress}%</Text>
+            <Text style={[styles.progressPct, { color: C.primary }]}>{progress}%</Text>
           </ReAnimated.View>
 
           <ReAnimated.View
             entering={FadeInUp.delay(320).springify()}
-            style={[styles.timelineCard, { backgroundColor: themeColors.cardBackground }]}
+            style={styles.timelineCard}
           >
             {steps.map((step, i) => {
               const Icon = step.icon;
@@ -619,19 +1162,19 @@ export default function GenerateStory() {
                   <View style={styles.timelineLeft}>
                     <View style={[
                       styles.timelineDot,
-                      isPast && { backgroundColor: themeColors.success },
-                      isActive && { backgroundColor: themeColors.primary },
-                      isFuture && { backgroundColor: themeColors.text.light + '20' },
+                      isPast && { backgroundColor: C.success },
+                      isActive && { backgroundColor: C.primary },
+                      isFuture && { backgroundColor: C.text.light + '20' },
                     ]}>
                       {isPast
                         ? <Check size={11} color="#FFFFFF" strokeWidth={3} />
-                        : <Icon size={11} color={isPast || isActive ? '#FFFFFF' : themeColors.text.light} strokeWidth={2} />
+                        : <Icon size={11} color={isPast || isActive ? '#FFFFFF' : C.text.light} strokeWidth={2} />
                       }
                     </View>
                     {i < steps.length - 1 && (
                       <View style={[
                         styles.timelineConnector,
-                        { backgroundColor: isPast ? themeColors.success + '40' : themeColors.text.light + '15' },
+                        { backgroundColor: isPast ? C.success + '40' : C.text.light + '15' },
                       ]} />
                     )}
                   </View>
@@ -639,21 +1182,21 @@ export default function GenerateStory() {
                   <View style={[styles.timelineContent, i < steps.length - 1 && { marginBottom: SPACING.md }]}>
                     <Text style={[
                       styles.timelineLabel,
-                      isPast && { color: themeColors.text.secondary },
-                      isActive && { color: themeColors.text.primary },
-                      isFuture && { color: themeColors.text.light },
+                      isPast && { color: C.text.secondary },
+                      isActive && { color: C.text.primary },
+                      isFuture && { color: C.text.light },
                     ]}>
                       {step.label}
                     </Text>
                     {isActive && (
                       <ReAnimated.View entering={FadeInLeft.springify()} style={styles.activePulseRow}>
                         {[0, 1, 2].map(j => (
-                          <View key={j} style={[styles.activePulseDot, { backgroundColor: themeColors.primary }]} />
+                          <View key={j} style={[styles.activePulseDot, { backgroundColor: C.primary }]} />
                         ))}
                       </ReAnimated.View>
                     )}
                     {isPast && (
-                      <ReAnimated.Text entering={FadeInLeft.springify()} style={[styles.stepDoneText, { color: themeColors.success }]}>
+                      <ReAnimated.Text entering={FadeInLeft.springify()} style={[styles.stepDoneText, { color: C.success }]}>
                         Done
                       </ReAnimated.Text>
                     )}
@@ -665,18 +1208,23 @@ export default function GenerateStory() {
 
           <ReAnimated.View
             entering={FadeInUp.delay(420).springify()}
-            style={[styles.funFactCard, { backgroundColor: themeColors.primary + '09', borderColor: themeColors.primary + '18' }]}
+            style={[styles.funFactCard, { backgroundColor: C.primary + '09', borderColor: C.primary + '18' }]}
           >
-            <Sparkles size={14} color={themeColors.primary} strokeWidth={2} />
-            <Text style={[styles.funFact, { color: themeColors.text.secondary }]}>
+            <View style={styles.funFactHeader}>
+              <Sparkles size={14} color={C.primary} strokeWidth={2} />
+              {playingId?.startsWith('fact_') && (
+                <Volume2 size={14} color={C.primary} strokeWidth={2} />
+              )}
+            </View>
+            <Text style={[styles.funFact, { color: C.text.secondary }]}>
               {FUN_FACTS[funFactIndex]}
             </Text>
           </ReAnimated.View>
 
           {longWait && (
-            <ReAnimated.View entering={SlideInDown.springify()} style={[styles.longWaitCard, { backgroundColor: themeColors.cardBackground }]}>
-              <Wand2 size={16} color={themeColors.primary} strokeWidth={2} />
-              <Text style={[styles.longWaitText, { color: themeColors.text.secondary }]}>
+            <ReAnimated.View entering={SlideInDown.springify()} style={styles.longWaitCard}>
+              <Wand2 size={16} color={C.primary} strokeWidth={2} />
+              <Text style={[styles.longWaitText, { color: C.text.secondary }]}>
                 Making it extra special — hang tight!
               </Text>
             </ReAnimated.View>
@@ -690,21 +1238,21 @@ export default function GenerateStory() {
   const locationLabel = formatLocationLabel(locationCtx);
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <ReAnimated.View entering={FadeInDown.delay(0).springify()} style={styles.topBar}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-            <ChevronLeft size={22} color="#1E293B" />
+            <ChevronLeft size={22} color={C.text.primary} />
           </TouchableOpacity>
 
           <View style={styles.locationPill}>
-            <MapPin size={12} color={locationLoading ? '#94A3B8' : locationLabel ? '#0EA5E9' : '#94A3B8'} strokeWidth={2.5} />
+            <MapPin size={12} color={locationLoading ? C.text.light : locationLabel ? C.info : C.text.light} strokeWidth={2.5} />
             <Text style={[
               styles.locationPillText,
-              { color: locationLoading ? '#94A3B8' : locationLabel ? '#0EA5E9' : '#94A3B8' },
+              { color: locationLoading ? C.text.light : locationLabel ? C.info : C.text.light },
             ]}>
               {locationLoading ? 'Locating...' : locationLabel || 'Location unavailable'}
             </Text>
@@ -737,7 +1285,10 @@ export default function GenerateStory() {
                 <ThemeCard
                   theme={theme}
                   selected={selectedTheme === theme.id}
+                  cardSize={CARD_SIZE}
+                  styles={styles}
                   onPress={() => setSelectedTheme(theme.id)}
+                  colors_C={C}
                 />
               </ReAnimated.View>
             ))}
@@ -752,6 +1303,8 @@ export default function GenerateStory() {
                 key={mood.id}
                 mood={mood}
                 selected={selectedMood === mood.id}
+                styles={styles}
+                colors_C={C}
                 onPress={() => setSelectedMood(mood.id)}
               />
             ))}
@@ -767,6 +1320,8 @@ export default function GenerateStory() {
                 len={len}
                 selected={selectedLength === len.id}
                 isPro={isPro}
+                styles={styles}
+                colors_C={C}
                 onPress={() => setSelectedLength(len.id as 'short' | 'medium' | 'long')}
               />
             ))}
@@ -795,525 +1350,12 @@ export default function GenerateStory() {
 
           <CtaButton
             gradient={selectedThemeObj.gradient}
+            styles={styles}
             onPress={handleStartGeneration}
           />
         </ReAnimated.View>
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FAFBFF' },
-  scrollContent: { paddingBottom: 48 },
-
-  topBar: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.sm,
-    paddingBottom: SPACING.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  locationPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: BORDER_RADIUS.pill,
-    backgroundColor: '#F0F9FF',
-    borderWidth: 1,
-    borderColor: '#BAE6FD',
-  },
-  locationPillText: {
-    fontSize: 12,
-    fontFamily: FONTS.semibold,
-  },
-
-  header: {
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.xxl,
-    gap: SPACING.sm,
-  },
-  headerAccent: {
-    height: 4,
-    width: 48,
-    borderRadius: 2,
-    marginBottom: SPACING.sm,
-  },
-  pageTitle: {
-    fontSize: 40,
-    fontFamily: FONTS.display,
-    color: '#0F172A',
-    letterSpacing: -0.5,
-    lineHeight: 46,
-  },
-  pageSubtitle: {
-    fontSize: 16,
-    fontFamily: FONTS.displayMedium,
-    color: '#64748B',
-    lineHeight: 24,
-  },
-
-  section: {
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xxl,
-  },
-  sectionHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
-  },
-  sectionLabel: {
-    fontSize: 15,
-    fontFamily: FONTS.displayBold,
-    color: '#334155',
-    letterSpacing: 0.3,
-  },
-  sectionBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  sectionBadgeText: {
-    fontSize: 12,
-    fontFamily: FONTS.displayBold,
-  },
-
-  themeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  themeCard: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
-    borderRadius: BORDER_RADIUS.xl,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'transparent',
-    ...SHADOWS.sm,
-  },
-  themeCardSelected: {
-    borderColor: 'transparent',
-    ...SHADOWS.md,
-  },
-  themeCardGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  themeCardInner: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: '#F1F5F9',
-  },
-  themeCardEmoji: { fontSize: 32 },
-  themeCardLabel: {
-    fontSize: 12,
-    fontFamily: FONTS.displayBold,
-    color: '#475569',
-  },
-  themeCardLabelSelected: {
-    fontSize: 12,
-    fontFamily: FONTS.display,
-    color: '#FFFFFF',
-  },
-
-  moodRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  moodCard: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xs,
-    borderRadius: BORDER_RADIUS.xl,
-    borderWidth: 2,
-    gap: 6,
-    ...SHADOWS.xs,
-    position: 'relative',
-  },
-  moodEmoji: { fontSize: 28 },
-  moodLabel: { fontSize: 13, fontFamily: FONTS.displayBold },
-  moodDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-
-  lengthRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  lengthCard: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xs,
-    borderRadius: BORDER_RADIUS.xl,
-    borderWidth: 2,
-    gap: 4,
-    position: 'relative',
-    ...SHADOWS.xs,
-  },
-  lengthEmoji: { fontSize: 26 },
-  lengthTitle: {
-    fontSize: 14,
-    fontFamily: FONTS.displayBold,
-  },
-  lengthWords: {
-    fontSize: 11,
-    fontFamily: FONTS.displayMedium,
-  },
-  proCrown: {
-    position: 'absolute',
-    top: -8,
-    right: -4,
-    backgroundColor: '#F59E0B',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  proText: {
-    fontSize: 8,
-    fontFamily: FONTS.extrabold,
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-  },
-
-  ctaSection: {
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.md,
-    alignItems: 'center',
-  },
-  quotaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  quotaDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#94A3B8',
-  },
-  quotaText: {
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-    color: '#94A3B8',
-  },
-  ctaButton: {
-    borderRadius: BORDER_RADIUS.xxl,
-    ...SHADOWS.lg,
-    overflow: 'hidden',
-  },
-  ctaButtonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 48,
-    gap: SPACING.sm,
-  },
-  ctaText: {
-    fontSize: 20,
-    fontFamily: FONTS.display,
-    color: '#FFFFFF',
-    letterSpacing: -0.2,
-  },
-  ctaArrow: {
-    marginLeft: 4,
-  },
-  ctaShimmer: {
-    position: 'absolute',
-    top: 0, bottom: 0,
-    width: 60,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    transform: [{ skewX: '-20deg' }],
-  },
-
-  quotaContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.xxxl,
-    gap: SPACING.lg,
-  },
-  quotaIconWrap: { marginBottom: SPACING.sm },
-  quotaIconBg: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quotaTitle: {
-    fontSize: 24,
-    fontFamily: FONTS.extrabold,
-    color: '#0F172A',
-    textAlign: 'center',
-    letterSpacing: -0.5,
-  },
-  quotaSubtitle: {
-    fontSize: 15,
-    fontFamily: FONTS.medium,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 23,
-  },
-  upgradeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: 18,
-    borderRadius: BORDER_RADIUS.xxl,
-    ...SHADOWS.lg,
-  },
-  upgradeButtonText: {
-    fontSize: 16,
-    fontFamily: FONTS.extrabold,
-    color: '#FFFFFF',
-  },
-  backLink: { paddingVertical: SPACING.md },
-  backLinkText: {
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-    color: '#94A3B8',
-  },
-
-  generatingScreen: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  genAmbientOrb1: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    top: -80,
-    right: -80,
-  },
-  genAmbientOrb2: {
-    position: 'absolute',
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    bottom: 60,
-    left: -80,
-  },
-  generatingContent: {
-    width: '100%',
-    maxWidth: 400,
-    paddingHorizontal: SPACING.xl,
-    alignItems: 'center',
-  },
-  orbContainer: {
-    width: 180,
-    height: 180,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xxl,
-  },
-  orbRingOuter: {
-    position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 1,
-    borderColor: 'rgba(99,102,241,0.15)',
-    borderStyle: 'dashed',
-  },
-  orbRingMid: {
-    position: 'absolute',
-    width: 148,
-    height: 148,
-    borderRadius: 74,
-    borderWidth: 1.5,
-  },
-  pulseWrap: { ...SHADOWS.lg },
-  iconCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  genTitleBlock: {
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  genTitle: {
-    fontSize: 26,
-    fontFamily: FONTS.extrabold,
-    textAlign: 'center',
-    letterSpacing: -0.5,
-    lineHeight: 32,
-  },
-  locationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: BORDER_RADIUS.pill,
-    borderWidth: 1,
-  },
-  locationBadgeText: {
-    fontSize: 12,
-    fontFamily: FONTS.semibold,
-  },
-  activeStepChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    marginBottom: SPACING.xl,
-  },
-  activeStepDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-  },
-  activeStepText: {
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-    lineHeight: 18,
-  },
-  progressWrap: {
-    width: '100%',
-    marginBottom: SPACING.xl,
-    gap: SPACING.sm,
-  },
-  progressTrack: {
-    height: 9,
-    borderRadius: 5,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  progressFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    borderRadius: 5,
-  },
-  progressShimmer: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  progressPct: {
-    fontSize: 12,
-    fontFamily: FONTS.bold,
-    textAlign: 'center',
-  },
-  timelineCard: {
-    width: '100%',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.sm,
-    borderRadius: BORDER_RADIUS.xl,
-    marginBottom: SPACING.lg,
-    ...SHADOWS.sm,
-  },
-  timelineRow: {
-    flexDirection: 'row',
-  },
-  timelineLeft: {
-    alignItems: 'center',
-    width: 32,
-    marginRight: SPACING.md,
-  },
-  timelineDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timelineConnector: {
-    width: 2,
-    flex: 1,
-    minHeight: SPACING.lg,
-    marginTop: 3,
-    marginBottom: 3,
-    borderRadius: 1,
-  },
-  timelineContent: {
-    flex: 1,
-    paddingTop: 5,
-    gap: 3,
-  },
-  timelineLabel: {
-    fontSize: 13,
-    fontFamily: FONTS.semibold,
-    lineHeight: 18,
-  },
-  activePulseRow: {
-    flexDirection: 'row',
-    gap: 3,
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  activePulseDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    opacity: 0.6,
-  },
-  stepDoneText: {
-    fontSize: 11,
-    fontFamily: FONTS.semibold,
-    marginTop: 1,
-  },
-  funFactCard: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING.sm,
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
-    borderWidth: 1,
-    marginBottom: SPACING.md,
-  },
-  funFact: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-    lineHeight: 18,
-  },
-  longWaitCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.xs,
-  },
-  longWaitText: {
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-  },
-});

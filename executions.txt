@@ -1,0 +1,349 @@
+total : 37
+
+executions
+$id                 69ce06e52a6c96f859df
+$createdAt          2026-04-02T06:04:25.393+00:00
+$updatedAt          2026-04-02T06:04:25.393+00:00
+functionId          generate-story
+deploymentId        69cde30fa35b8157b8c5
+trigger             http
+status              failed
+requestMethod       POST
+requestPath         /
+responseStatusCode  500
+duration            0.027069091796875
+────────────────────────────────────────────────────────────
+$id                 69ce073c93294a762170
+$createdAt          2026-04-02T06:05:48.628+00:00
+$updatedAt          2026-04-02T06:05:48.628+00:00
+functionId          generate-story
+deploymentId        69cde30fa35b8157b8c5
+trigger             http
+status              failed
+requestMethod       POST
+requestPath         /
+responseStatusCode  500
+duration            0.012992858886719
+────────────────────────────────────────────────────────────
+$id                 69ce086069927ed95a13
+$createdAt          2026-04-02T06:10:45.303+00:00
+$updatedAt          2026-04-02T06:10:45.303+00:00
+functionId          generate-story
+deploymentId        69ce0802b4727a850474
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  401
+duration            1.052276134491
+────────────────────────────────────────────────────────────
+$id                 69ce09007efaf74009ed
+$createdAt          2026-04-02T06:13:24.603+00:00
+$updatedAt          2026-04-02T06:13:24.603+00:00
+functionId          generate-story
+deploymentId        69ce08ca4092445701c2
+trigger             http
+status              failed
+requestMethod       POST
+requestPath         /
+responseStatusCode  500
+errors              generate-story error: Unexpected token < in JSON at position 0
+
+duration            0.36931395530701
+────────────────────────────────────────────────────────────
+$id                 69ce0ab9e72bd730678d
+$createdAt          2026-04-02T06:20:58.213+00:00
+$updatedAt          2026-04-02T06:20:58.213+00:00
+functionId          generate-story
+deploymentId        69ce0a5c8da85a661eba
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  200
+duration            12.646274089813
+────────────────────────────────────────────────────────────
+$id                 69ce0bfe0bf8d3746eb2
+$createdAt          2026-04-02T06:26:14.995+00:00
+$updatedAt          2026-04-02T06:26:14.995+00:00
+functionId          generate-story
+deploymentId        69ce0a5c8da85a661eba
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  200
+duration            8.9356429576874
+────────────────────────────────────────────────────────────
+$id                 69ce173b9b2dedefda46
+$createdAt          2026-04-02T07:14:21.171+00:00
+$updatedAt          2026-04-02T07:14:21.171+00:00
+functionId          generate-story
+deploymentId        69ce0a5c8da85a661eba
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  200
+duration            14.03524684906
+────────────────────────────────────────────────────────────
+$id                 69ce19e0c87154c8e7da
+$createdAt          2026-04-02T07:25:50.825+00:00
+$updatedAt          2026-04-02T07:25:50.825+00:00
+functionId          generate-story
+deploymentId        69ce18e5236c5d19b1e1
+trigger             http
+status              failed
+requestMethod       POST
+requestPath         /
+responseStatusCode  500
+errors              Synchronous function execution timed out. Use asynchronous execution instead, or ensure the execution duration doesn't exceed 30 seconds.\nError Code: 408
+duration            30.003448009491
+────────────────────────────────────────────────────────────
+$id                 69ce20a8090420821b34
+$createdAt          2026-04-02T07:54:31.366+00:00
+$updatedAt          2026-04-02T07:54:31.366+00:00
+functionId          generate-story
+deploymentId        69ce18e5236c5d19b1e1
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  200
+duration            11.722237110138
+────────────────────────────────────────────────────────────
+$id                 69ce25c04060d1c5dd06
+$createdAt          2026-04-02T08:16:21.221+00:00
+$updatedAt          2026-04-02T08:16:21.221+00:00
+functionId          generate-story
+deploymentId        69ce2543ab6d9253720f
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  200
+duration            17.24480009079
+────────────────────────────────────────────────────────────
+$id                 69ce280cd9100a038db7
+$createdAt          2026-04-02T08:26:05.155+00:00
+$updatedAt          2026-04-02T08:26:05.155+00:00
+functionId          generate-story
+deploymentId        69ce27a1a2fbf9a3eb53
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  200
+duration            11.862447023392
+────────────────────────────────────────────────────────────
+$id                 69ce2897381a34b81424
+$createdAt          2026-04-02T08:28:23.554+00:00
+$updatedAt          2026-04-02T08:28:23.554+00:00
+functionId          generate-story
+deploymentId        69ce27a1a2fbf9a3eb53
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  200
+duration            16.311640024185
+────────────────────────────────────────────────────────────
+$id                 69ce2d01bf1312322b94
+$createdAt          2026-04-02T08:47:02.518+00:00
+$updatedAt          2026-04-02T08:47:02.518+00:00
+functionId          generate-story
+deploymentId        69ce2bd5003d097f3049
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  401
+duration            0.71150088310242
+────────────────────────────────────────────────────────────
+$id                 69ce2fff0461376f5679
+$createdAt          2026-04-02T08:59:47.629+00:00
+$updatedAt          2026-04-02T08:59:47.629+00:00
+functionId          generate-story
+deploymentId        69ce2fe9209360e055f4
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  401
+errors              AI API error status: 401
+AI API response body: {"error":{"message":"unauthorized client detected, contact support for assistance at https://discord.com/invite/V6kaP6Rg44"},"message":"UNAUTHENTICATED","success":false,"type":"unauthorized_client_error"}
+
+duration            1.0992789268494
+────────────────────────────────────────────────────────────
+$id                 69ce30261d13b2517ce7
+$createdAt          2026-04-02T09:00:27.107+00:00
+$updatedAt          2026-04-02T09:00:27.107+00:00
+functionId          generate-story
+deploymentId        69ce3015e15597f2b649
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  401
+errors              AI API error status: 401
+AI API response body: {"error":{"message":"unauthorized client detected, contact support for assistance at https://discord.com/invite/V6kaP6Rg44"},"message":"UNAUTHENTICATED","success":false,"type":"unauthorized_client_error"}
+
+duration            1.1041741371155
+────────────────────────────────────────────────────────────
+$id                 69ce306c8ba8604cf804
+$createdAt          2026-04-02T09:01:36.880+00:00
+$updatedAt          2026-04-02T09:01:36.880+00:00
+functionId          generate-story
+deploymentId        69ce305910a045744855
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  401
+errors              AI API error status: 401
+AI API response body: {"error":{"message":"unauthorized client detected, contact support for assistance at https://discord.com/invite/V6kaP6Rg44"},"message":"UNAUTHENTICATED","success":false,"type":"unauthorized_client_error"}
+
+duration            0.7210259437561
+────────────────────────────────────────────────────────────
+$id                 69ce30a96daccc7e0b9e
+$createdAt          2026-04-02T09:02:34.067+00:00
+$updatedAt          2026-04-02T09:02:34.067+00:00
+functionId          generate-story
+deploymentId        69ce305910a045744855
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  401
+errors              AI API error status: 401
+AI API response body: {"error":{"message":"unauthorized client detected, contact support for assistance at https://discord.com/invite/V6kaP6Rg44"},"message":"UNAUTHENTICATED","success":false,"type":"unauthorized_client_error"}
+
+duration            0.60210800170898
+────────────────────────────────────────────────────────────
+$id                 69ce3191c5ee74c18cad
+$createdAt          2026-04-02T09:06:30.529+00:00
+$updatedAt          2026-04-02T09:06:30.529+00:00
+functionId          generate-story
+deploymentId        69ce317b7fe016cebe9d
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  401
+errors              AI API error status: 401
+AI API response body: {"error":{"message":"unauthorized client detected, contact support for assistance at https://discord.com/invite/V6kaP6Rg44"},"message":"UNAUTHENTICATED","success":false,"type":"unauthorized_client_error"}
+
+duration            1.233736038208
+────────────────────────────────────────────────────────────
+$id                 69ce339322dab18b6b71
+$createdAt          2026-04-02T09:15:00.181+00:00
+$updatedAt          2026-04-02T09:15:00.181+00:00
+functionId          generate-story
+deploymentId        69ce317b7fe016cebe9d
+trigger             http
+status              completed
+requestMethod       POST
+requestPath         /
+responseStatusCode  401
+errors              AI API error status: 401
+AI API response body: {"error":{"message":"unauthorized client detected, contact support for assistance at https://discord.com/invite/V6kaP6Rg44"},"message":"UNAUTHENTICATED","success":false,"type":"unauthorized_client_error"}
+
+duration            1.0255169868469
+────────────────────────────────────────────────────────────
+$id                 69ce363e484d51ff54b5
+$createdAt          2026-04-02T09:26:27.848+00:00
+$updatedAt          2026-04-02T09:26:27.848+00:00
+functionId          generate-story
+deploymentId        69ce36249718d9466328
+trigger             http
+status              failed
+requestMethod       POST
+requestPath         /
+responseStatusCode  500
+logs                Attempting story generation via agentrouter using model DeepSeek-V3.2...
+Attempting story generation via openrouter using model z-ai/glm-4.5-air:free...
+Attempting story generation via openrouter-fallback using model openai/gpt-4o-mini...
+
+errors              agentrouter error (Status 401): {"error":{"message":"unauthorized client detected, contact support for assistance at https://discord.com/invite/V6kaP6Rg44"},"message":"UNAUTHENTICATED","success":false,"type":"unauthorized_client_error"}
+openrouter error (Status 429): {"error":{"message":"Provider returned error","code":429,"metadata":{"raw":"z-ai/glm-4.5-air:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations","provider_name":"Z.AI","is_byok":false}},"user_id":"user_2uoACPchIWaoCureXhwLMQAdizu"}
+openrouter-fallback error (Status 401): {"error":{"message":"Missing Authentication header","code":401}}
+
+duration            1.8360731601715
+────────────────────────────────────────────────────────────
+$id                 69ce41fdb4c570c3120e
+$createdAt          2026-04-02T10:16:59.745+00:00
+$updatedAt          2026-04-02T10:16:59.745+00:00
+functionId          generate-story
+deploymentId        69ce36249718d9466328
+trigger             http
+status              failed
+requestMethod       POST
+requestPath         /
+responseStatusCode  500
+errors              Synchronous function execution timed out. Use asynchronous execution instead, or ensure the execution duration doesn't exceed 30 seconds.\nError Code: 408
+duration            30.003282785416
+────────────────────────────────────────────────────────────
+$id                 69ce425965681ec5660c
+$createdAt          2026-04-02T10:18:02.527+00:00
+$updatedAt          2026-04-02T10:18:02.527+00:00
+functionId          generate-story
+deploymentId        69ce36249718d9466328
+trigger             http
+status              failed
+requestMethod       POST
+requestPath         /
+responseStatusCode  500
+logs                Attempting story generation via agentrouter using model DeepSeek-V3.2...
+Attempting story generation via openrouter using model z-ai/glm-4.5-air:free...
+Attempting story generation via openrouter-fallback using model openai/gpt-4o-mini...
+
+errors              agentrouter error (Status 401): {"error":{"message":"unauthorized client detected, contact support for assistance at https://discord.com/invite/V6kaP6Rg44"},"message":"UNAUTHENTICATED","success":false,"type":"unauthorized_client_error"}
+openrouter error (Status 429): {"error":{"message":"Provider returned error","code":429,"metadata":{"raw":"z-ai/glm-4.5-air:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations","provider_name":"Z.AI","is_byok":false}},"user_id":"user_2uoACPchIWaoCureXhwLMQAdizu"}
+openrouter-fallback error (Status 401): {"error":{"message":"Missing Authentication header","code":401}}
+
+duration            1.1007471084595
+────────────────────────────────────────────────────────────
+$id                 69ce43137e269a89d318
+$createdAt          2026-04-02T10:21:37.520+00:00
+$updatedAt          2026-04-02T10:21:37.520+00:00
+functionId          generate-story
+deploymentId        69ce36249718d9466328
+trigger             http
+status              failed
+requestMethod       POST
+requestPath         /
+responseStatusCode  500
+errors              Synchronous function execution timed out. Use asynchronous execution instead, or ensure the execution duration doesn't exceed 30 seconds.\nError Code: 408
+duration            30.002400159836
+────────────────────────────────────────────────────────────
+$id                 69ce439595f148b385ad
+$createdAt          2026-04-02T10:23:17.614+00:00
+$updatedAt          2026-04-02T10:24:17.677+00:00
+functionId          generate-story
+deploymentId        69ce36249718d9466328
+trigger             http
+status              failed
+requestMethod       POST
+requestPath         /
+responseStatusCode  500
+logs                Attempting story generation via agentrouter using model DeepSeek-V3.2...
+Attempting story generation via openrouter using model z-ai/glm-4.5-air:free...
+
+errors              agentrouter error (Status 401): {"error":{"message":"unauthorized client detected, contact support for assistance at https://discord.com/invite/V6kaP6Rg44"},"message":"UNAUTHENTICATED","success":false,"type":"unauthorized_client_error"}
+Execution timed out.
+
+duration            60.02304983139
+────────────────────────────────────────────────────────────
+$id                 69ce4b34443e4be3e73c
+$createdAt          2026-04-02T10:56:18.284+00:00
+$updatedAt          2026-04-02T10:56:18.284+00:00
+functionId          generate-story
+deploymentId        69ce36249718d9466328
+trigger             http
+status              failed
+requestMethod       POST
+requestPath         /
+responseStatusCode  500
+errors              Synchronous function execution timed out. Use asynchronous execution instead, or ensure the execution duration doesn't exceed 30 seconds.\nError Code: 408
+duration            30.003008127213
+

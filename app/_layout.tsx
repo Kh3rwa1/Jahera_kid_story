@@ -76,13 +76,22 @@ export default function RootLayout() {
         <ReadingPreferencesProvider>
         <AuthProvider>
           <AppProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+            <Stack screenOptions={{
+              headerShown: false,
+              animation: 'slide_from_right',
+              animationDuration: 250,
+              gestureEnabled: true,
+              fullScreenGestureEnabled: true,
+            }}>
+            <Stack.Screen name="paywall" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: 300 }} />
             <Stack.Screen name="parent-dashboard" />
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="index" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 200 }} />
               <Stack.Screen name="auth/login" />
               <Stack.Screen name="auth/register" />
+              <Stack.Screen name="story/generate" options={{ animation: 'fade_from_bottom', animationDuration: 280 }} />
+              <Stack.Screen name="story/playback" options={{ animation: 'fade_from_bottom', animationDuration: 280 }} />
+              <Stack.Screen name="story/quiz" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
               <Stack.Screen name="+not-found" />
             </Stack>
             <StatusBar style="auto" />

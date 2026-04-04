@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,13 +34,17 @@ import { useApp } from '@/contexts/AppContext';
 import { profileService } from '@/services/database';
 import { SPACING, BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
 import { getLanguageFlag } from '@/utils/languageUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DEFAULT_PIN = '1234';
 
 export default function ParentDashboard() {
   const router = useRouter();
+  const { width: winWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
+  const styles = useStyles(COLORS, insets, winWidth);
   const { profile, stories, quizAttempts, subscription, streak } = useApp();
 
   const [unlocked, setUnlocked] = useState(false);
@@ -115,7 +120,7 @@ export default function ParentDashboard() {
         <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
 
         <TouchableOpacity
-          style={[styles.backBtn, { backgroundColor: COLORS.cardBackground }]}
+          style={[styles.backBtn, { backgroundColor: COLORS.cardBackground, top: insets.top + (SPACING.sm || 12) }]}
           onPress={() => router.back()}
         >
           <ArrowLeft size={20} color={COLORS.text.primary} />
@@ -165,7 +170,7 @@ export default function ParentDashboard() {
             <TouchableOpacity onPress={handleUnlock} activeOpacity={0.9}>
               <LinearGradient
                 colors={COLORS.gradients.primary}
-                style={styles.unlockButton}
+                style={[styles.unlockButton, { width: Math.min(winWidth * 0.8, 300) }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
@@ -186,9 +191,9 @@ export default function ParentDashboard() {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + (SPACING.sm || 12) }]}>
         <TouchableOpacity
-          style={[styles.backBtn, { backgroundColor: COLORS.cardBackground }]}
+          style={[styles.backBtnHeader, { backgroundColor: COLORS.cardBackground }]}
           onPress={() => router.back()}
         >
           <ArrowLeft size={20} color={COLORS.text.primary} />
@@ -241,8 +246,11 @@ export default function ParentDashboard() {
           </Animated.View>
         )}
 
-        <Animated.View entering={FadeInDown.delay(120).springify()} style={styles.statsGrid}>
-          <View style={[styles.statCard, { backgroundColor: COLORS.cardBackground }]}>
+          <Animated.View
+            entering={FadeInDown.delay(120).springify()}
+            style={[styles.statsGrid, { flexWrap: winWidth < 400 ? 'wrap' : 'nowrap' }]}
+          >
+            <View style={[styles.statCard, { backgroundColor: COLORS.cardBackground, minWidth: winWidth < 400 ? '46%' : 0 }]}>
             <View style={[styles.statIconWrap, { backgroundColor: COLORS.primary + '15' }]}>
               <BookOpen size={20} color={COLORS.primary} />
             </View>
@@ -440,109 +448,116 @@ export default function ParentDashboard() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: SPACING.xl, paddingTop: SPACING.lg, paddingBottom: SPACING.md, gap: SPACING.md,
-  },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center', ...SHADOWS.xs,
-  },
-  headerText: { flex: 1 },
-  headerTitle: { fontSize: 20, fontFamily: FONTS.bold },
-  headerSub: { fontSize: 13, fontFamily: FONTS.medium },
-  pinBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center', ...SHADOWS.xs,
-  },
-  scrollContent: { paddingHorizontal: SPACING.xl, paddingBottom: 40 },
-  subscriptionBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    padding: SPACING.lg, borderRadius: BORDER_RADIUS.xl, marginBottom: SPACING.xl, ...SHADOWS.md,
-  },
-  subscriptionBannerContent: { flex: 1 },
-  subscriptionBannerTitle: { fontSize: 15, fontFamily: FONTS.bold, color: '#FFFFFF' },
-  subscriptionBannerSub: { fontSize: 12, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.85)' },
-  upgradeBannerBtn: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  upgradeBannerBtnText: { fontSize: 12, fontFamily: FONTS.bold, color: '#FFFFFF' },
-  statsGrid: {
-    flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.xxl,
-  },
-  statCard: {
-    flex: 1, alignItems: 'center', paddingVertical: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg, gap: 4, ...SHADOWS.xs,
-  },
-  statIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  statValue: { fontSize: 18, fontFamily: FONTS.bold },
-  statLabel: { fontSize: 10, fontFamily: FONTS.medium, textAlign: 'center' },
-  section: { marginBottom: SPACING.xxl },
-  sectionTitle: { fontSize: 18, fontFamily: FONTS.bold, marginBottom: SPACING.md },
-  weekCard: { borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg, gap: SPACING.md, ...SHADOWS.sm },
-  weekRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
-  weekIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  weekInfo: { flex: 1, gap: 6 },
-  weekLabel: { fontSize: 13, fontFamily: FONTS.medium },
-  weekProgress: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  weekProgressFill: { height: '100%', borderRadius: 2 },
-  weekCount: { fontSize: 16, fontFamily: FONTS.bold, minWidth: 32, textAlign: 'right' },
-  languagesCard: { borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg, ...SHADOWS.sm },
-  langRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.sm },
-  langFlag: { fontSize: 20 },
-  langInfo: { flex: 1, gap: 6 },
-  langName: { fontSize: 14, fontFamily: FONTS.semibold },
-  langBar: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  langBarFill: { height: '100%', borderRadius: 2 },
-  langCount: { fontSize: 14, fontFamily: FONTS.semibold, minWidth: 24, textAlign: 'right' },
-  activityList: { gap: SPACING.sm },
-  activityRow: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    padding: SPACING.md, borderRadius: BORDER_RADIUS.lg, ...SHADOWS.xs,
-  },
-  activityEmoji: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  activityEmojiText: { fontSize: 22 },
-  activityInfo: { flex: 1, gap: 2 },
-  activityTitle: { fontSize: 14, fontFamily: FONTS.semibold },
-  activityMeta: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  activityFlag: { fontSize: 14 },
-  activityScore: { fontSize: 12, fontFamily: FONTS.bold },
-  pinSection: { marginTop: SPACING.md },
-  pinFormCard: { borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg, gap: SPACING.md, ...SHADOWS.sm },
-  pinFormInput: {
-    borderWidth: 1.5, borderRadius: BORDER_RADIUS.lg,
-    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
-    fontSize: 16, fontFamily: FONTS.medium,
-  },
-  savePinBtn: {
-    alignItems: 'center', paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-  },
-  savePinBtnText: { fontSize: 15, fontFamily: FONTS.bold, color: '#FFFFFF' },
-  lockScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl },
-  lockIconWrap: { marginBottom: SPACING.xxl },
-  lockIconCircle: {
-    width: 96, height: 96, borderRadius: 48,
-    alignItems: 'center', justifyContent: 'center', ...SHADOWS.lg,
-  },
-  lockContent: { width: '100%', maxWidth: 340, alignItems: 'center', gap: SPACING.lg },
-  lockTitle: { fontSize: 26, fontFamily: FONTS.bold, textAlign: 'center' },
-  lockSubtitle: { fontSize: 15, fontFamily: FONTS.medium, textAlign: 'center', lineHeight: 22 },
-  pinInputWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    width: '100%', borderWidth: 1.5, borderRadius: BORDER_RADIUS.xl,
-    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
-  },
-  pinInput: { flex: 1, fontSize: 18, fontFamily: FONTS.semibold, letterSpacing: 4 },
-  pinError: { fontSize: 13, fontFamily: FONTS.medium },
-  unlockButton: {
-    width: 260, alignItems: 'center', justifyContent: 'center',
-    paddingVertical: SPACING.xl, borderRadius: BORDER_RADIUS.pill, ...SHADOWS.md,
-  },
-  unlockButtonText: { fontSize: 16, fontFamily: FONTS.bold, color: '#FFFFFF' },
-  defaultPinHint: { fontSize: 12, fontFamily: FONTS.medium },
-});
+const useStyles = (C: any, insets: any, winWidth: number) => {
+  return useMemo(() => StyleSheet.create({
+    container: { flex: 1 },
+    header: {
+      flexDirection: 'row', alignItems: 'center',
+      paddingHorizontal: SPACING.xl, paddingTop: SPACING.lg, paddingBottom: SPACING.md, gap: SPACING.md,
+    },
+    backBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      alignItems: 'center', justifyContent: 'center', ...SHADOWS.xs,
+      position: 'absolute', left: SPACING.xl, zIndex: 10,
+    },
+    backBtnHeader: {
+      width: 40, height: 40, borderRadius: 20,
+      alignItems: 'center', justifyContent: 'center', ...SHADOWS.xs,
+    },
+    headerText: { flex: 1 },
+    headerTitle: { fontSize: 20, fontFamily: FONTS.bold },
+    headerSub: { fontSize: 13, fontFamily: FONTS.medium },
+    pinBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      alignItems: 'center', justifyContent: 'center', ...SHADOWS.xs,
+    },
+    scrollContent: { paddingHorizontal: SPACING.xl, paddingBottom: 40 },
+    subscriptionBanner: {
+      flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+      padding: SPACING.lg, borderRadius: BORDER_RADIUS.xl, marginBottom: SPACING.xl, ...SHADOWS.md,
+    },
+    subscriptionBannerContent: { flex: 1 },
+    subscriptionBannerTitle: { fontSize: 15, fontFamily: FONTS.bold, color: '#FFFFFF' },
+    subscriptionBannerSub: { fontSize: 12, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.85)' },
+    upgradeBannerBtn: {
+      backgroundColor: 'rgba(255,255,255,0.25)',
+      paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+      borderRadius: BORDER_RADIUS.pill,
+    },
+    upgradeBannerBtnText: { fontSize: 12, fontFamily: FONTS.bold, color: '#FFFFFF' },
+    statsGrid: {
+      flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.xxl,
+    },
+    statCard: {
+      flex: 1, alignItems: 'center', paddingVertical: SPACING.lg,
+      borderRadius: BORDER_RADIUS.lg, gap: 4, ...SHADOWS.xs,
+    },
+    statIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    statValue: { fontSize: 18, fontFamily: FONTS.bold },
+    statLabel: { fontSize: 10, fontFamily: FONTS.medium, textAlign: 'center' },
+    section: { marginBottom: SPACING.xxl },
+    sectionTitle: { fontSize: 18, fontFamily: FONTS.bold, marginBottom: SPACING.md },
+    weekCard: { borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg, gap: SPACING.md, ...SHADOWS.sm },
+    weekRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+    weekIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    weekInfo: { flex: 1, gap: 6 },
+    weekLabel: { fontSize: 13, fontFamily: FONTS.medium },
+    weekProgress: { height: 4, borderRadius: 2, overflow: 'hidden' },
+    weekProgressFill: { height: '100%', borderRadius: 2 },
+    weekCount: { fontSize: 16, fontFamily: FONTS.bold, minWidth: 32, textAlign: 'right' },
+    languagesCard: { borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg, ...SHADOWS.sm },
+    langRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.sm },
+    langFlag: { fontSize: 20 },
+    langInfo: { flex: 1, gap: 6 },
+    langName: { fontSize: 14, fontFamily: FONTS.semibold },
+    langBar: { height: 4, borderRadius: 2, overflow: 'hidden' },
+    langBarFill: { height: '100%', borderRadius: 2 },
+    langCount: { fontSize: 14, fontFamily: FONTS.semibold, minWidth: 24, textAlign: 'right' },
+    activityList: { gap: SPACING.sm },
+    activityRow: {
+      flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+      padding: SPACING.md, borderRadius: BORDER_RADIUS.lg, ...SHADOWS.xs,
+    },
+    activityEmoji: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    activityEmojiText: { fontSize: 22 },
+    activityInfo: { flex: 1, gap: 2 },
+    activityTitle: { fontSize: 14, fontFamily: FONTS.semibold },
+    activityMeta: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+    activityFlag: { fontSize: 14 },
+    activityScore: { fontSize: 12, fontFamily: FONTS.bold },
+    pinSection: { marginTop: SPACING.md },
+    pinFormCard: { borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg, gap: SPACING.md, ...SHADOWS.sm },
+    pinFormInput: {
+      borderWidth: 1.5, borderRadius: BORDER_RADIUS.lg,
+      paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
+      fontSize: 16, fontFamily: FONTS.medium,
+    },
+    savePinBtn: {
+      alignItems: 'center', paddingVertical: SPACING.md,
+      borderRadius: BORDER_RADIUS.lg,
+    },
+    savePinBtnText: { fontSize: 15, fontFamily: FONTS.bold, color: '#FFFFFF' },
+    lockScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl },
+    lockIconWrap: { marginBottom: SPACING.xxl },
+    lockIconCircle: {
+      width: 96, height: 96, borderRadius: 48,
+      alignItems: 'center', justifyContent: 'center', ...SHADOWS.lg,
+    },
+    lockContent: { width: '100%', maxWidth: 340, alignItems: 'center', gap: SPACING.lg },
+    lockTitle: { fontSize: 26, fontFamily: FONTS.bold, textAlign: 'center' },
+    lockSubtitle: { fontSize: 15, fontFamily: FONTS.medium, textAlign: 'center', lineHeight: 22 },
+    pinInputWrap: {
+      flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+      width: '100%', borderWidth: 1.5, borderRadius: BORDER_RADIUS.xl,
+      paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
+    },
+    pinInput: { flex: 1, fontSize: 18, fontFamily: FONTS.semibold, letterSpacing: 4 },
+    pinError: { fontSize: 13, fontFamily: FONTS.medium },
+    unlockButton: {
+      alignItems: 'center', justifyContent: 'center',
+      paddingVertical: SPACING.xl, borderRadius: BORDER_RADIUS.pill, ...SHADOWS.md,
+    },
+    unlockButtonText: { fontSize: 16, fontFamily: FONTS.bold, color: '#FFFFFF' },
+    defaultPinHint: { fontSize: 12, fontFamily: FONTS.medium },
+  }), [C, insets, winWidth]);
+};

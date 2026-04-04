@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { databases, COLLECTIONS, DATABASE_ID, ID, Query } from '@/lib/appwrite';
 import { SubscriptionStatus, Streak } from '@/types/database';
 import { revenueCatService, PlanType } from '@/services/revenueCatService';
 
@@ -9,15 +9,17 @@ const PLAN_LIMITS: Record<string, number> = {
 };
 
 function rowToStreak(row: any): Streak {
+  if (!row) return null as any;
+  const { $id, $createdAt, $updatedAt, current_streak, longest_streak, last_activity_date, total_days_active, profile_id } = row;
   return {
-    id: row.id,
-    profile_id: row.profile_id,
-    current_streak: row.current_streak || 0,
-    longest_streak: row.longest_streak || 0,
-    last_activity_date: row.last_activity_date ?? null,
-    total_days_active: row.total_days_active || 0,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
+    id: $id,
+    profile_id: profile_id,
+    current_streak: current_streak || 0,
+    longest_streak: longest_streak || 0,
+    last_activity_date: last_activity_date ?? null,
+    total_days_active: total_days_active || 0,
+    created_at: $createdAt,
+    updated_at: $updatedAt,
   };
 }
 
@@ -28,6 +30,11 @@ async function upsertSubscription(
   trialEndsAt?: string
 ): Promise<boolean> {
   try {
+    const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [
+      Query.equal('profile_id', profileId),
+      Query.limit(1)
+    ]);
+
     const payload: any = {
       profile_id: profileId,
       plan,
@@ -36,13 +43,10 @@ async function upsertSubscription(
     };
     if (trialEndsAt) payload.trial_ends_at = trialEndsAt;
 
-    const { error } = await supabase
-      .from('subscriptions')
-      .upsert(payload, { onConflict: 'profile_id' });
-
-    if (error) {
-      console.error('Error upserting subscription:', error);
-      return false;
+    if (response.documents.length > 0) {
+      await databases.updateDocument(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, response.documents[0].$id, payload);
+    } else {
+      await databases.createDocument(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, ID.unique(), payload);
     }
     return true;
   } catch (error) {
@@ -61,12 +65,11 @@ export const subscriptionService = {
         plan = rcInfo.plan;
         await upsertSubscription(profileId, plan, PLAN_LIMITS[plan] ?? 9999, rcInfo.expiresAt ?? undefined);
       } else {
-        const { data: subRow } = await supabase
-          .from('subscriptions')
-          .select('plan')
-          .eq('profile_id', profileId)
-          .maybeSingle();
-        plan = ((subRow?.plan) || 'free') as PlanType;
+        const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [
+          Query.equal('profile_id', profileId),
+          Query.limit(1)
+        ]);
+        plan = ((response.documents[0]?.plan) || 'free') as PlanType;
       }
 
       const storiesLimit = PLAN_LIMITS[plan] ?? 3;
@@ -75,13 +78,12 @@ export const subscriptionService = {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      const { count: storiesUsed } = await supabase
-        .from('stories')
-        .select('id', { count: 'exact', head: true })
-        .eq('profile_id', profileId)
-        .gte('generated_at', startOfMonth.toISOString());
+      const storiesResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORIES, [
+        Query.equal('profile_id', profileId),
+        Query.greaterThanEqual('generated_at', startOfMonth.toISOString()),
+      ]);
 
-      const used = storiesUsed ?? 0;
+      const used = storiesResponse.total ?? 0;
       const storiesRemaining = Math.max(0, storiesLimit - used);
 
       return {
@@ -129,13 +131,12 @@ export const subscriptionService = {
 export const streakService = {
   async getStreak(profileId: string): Promise<Streak | null> {
     try {
-      const { data, error } = await supabase
-        .from('streaks')
-        .select('*')
-        .eq('profile_id', profileId)
-        .maybeSingle();
-      if (error || !data) return null;
-      return rowToStreak(data);
+      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STREAKS, [
+        Query.equal('profile_id', profileId),
+        Query.limit(1)
+      ]);
+      if (response.documents.length === 0) return null;
+      return rowToStreak(response.documents[0]);
     } catch {
       return null;
     }
@@ -145,25 +146,26 @@ export const streakService = {
     try {
       const today = new Date().toISOString().split('T')[0];
 
-      const { data: existing } = await supabase
-        .from('streaks')
-        .select('*')
-        .eq('profile_id', profileId)
-        .maybeSingle();
+      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STREAKS, [
+        Query.equal('profile_id', profileId),
+        Query.limit(1)
+      ]);
+
+      const existing = response.documents[0];
 
       if (!existing) {
-        const { data: created, error } = await supabase
-          .from('streaks')
-          .insert({
-            profile_id: profileId,
-            current_streak: 1,
-            longest_streak: 1,
-            last_activity_date: today,
-            total_days_active: 1,
-          })
-          .select()
-          .single();
-        if (error || !created) return null;
+        const created = await databases.createDocument(
+            DATABASE_ID,
+            COLLECTIONS.STREAKS,
+            ID.unique(),
+            {
+              profile_id: profileId,
+              current_streak: 1,
+              longest_streak: 1,
+              last_activity_date: today,
+              total_days_active: 1,
+            }
+        );
         return rowToStreak(created);
       }
 
@@ -184,19 +186,18 @@ export const streakService = {
         ? (existing.total_days_active || 0) + 1
         : existing.total_days_active;
 
-      const { data: updated, error } = await supabase
-        .from('streaks')
-        .update({
+      const updated = await databases.updateDocument(
+        DATABASE_ID,
+        COLLECTIONS.STREAKS,
+        existing.$id,
+        {
           current_streak: newStreak,
           longest_streak: longestStreak,
           last_activity_date: today,
           total_days_active: totalDaysActive,
-        })
-        .eq('id', existing.id)
-        .select()
-        .single();
+        }
+      );
 
-      if (error || !updated) return null;
       return rowToStreak(updated);
     } catch {
       return null;
@@ -207,12 +208,10 @@ export const streakService = {
 export const interestService = {
   async getInterests(profileId: string): Promise<string[]> {
     try {
-      const { data, error } = await supabase
-        .from('profile_interests')
-        .select('interest')
-        .eq('profile_id', profileId);
-      if (error || !data) return [];
-      return data.map((row: any) => row.interest);
+      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILE_INTERESTS, [
+        Query.equal('profile_id', profileId)
+      ]);
+      return response.documents.map((row: any) => row.interest);
     } catch {
       return [];
     }
@@ -220,25 +219,21 @@ export const interestService = {
 
   async setInterests(profileId: string, interests: string[]): Promise<boolean> {
     try {
-      const { error: deleteError } = await supabase
-        .from('profile_interests')
-        .delete()
-        .eq('profile_id', profileId);
+      const existing = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILE_INTERESTS, [
+        Query.equal('profile_id', profileId)
+      ]);
 
-      if (deleteError) {
-        console.error('Error deleting interests:', deleteError);
-        return false;
+      for (const doc of existing.documents) {
+        await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROFILE_INTERESTS, doc.$id);
       }
 
-      if (interests.length > 0) {
-        const rows = interests.map(interest => ({ profile_id: profileId, interest }));
-        const { error: insertError } = await supabase
-          .from('profile_interests')
-          .insert(rows);
-        if (insertError) {
-          console.error('Error inserting interests:', insertError);
-          return false;
-        }
+      for (const interest of interests) {
+        await databases.createDocument(
+            DATABASE_ID,
+            COLLECTIONS.PROFILE_INTERESTS,
+            ID.unique(),
+            { profile_id: profileId, interest }
+        );
       }
       return true;
     } catch {

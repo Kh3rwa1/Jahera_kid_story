@@ -1,22 +1,15 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { View, StyleSheet, PanResponder, Dimensions, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, PanResponder, useWindowDimensions, Text, TouchableOpacity } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-  interpolateColor,
   FadeIn,
   FadeInDown,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check, RotateCcw } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
-
-const WHEEL_SIZE = Math.min(Dimensions.get('window').width - 80, 280);
-const WHEEL_RADIUS = WHEEL_SIZE / 2;
-const HANDLE_SIZE = 32;
-const RING_WIDTH = 36;
 
 function hslToHex(h: number, s: number, l: number): string {
   const sn = s / 100;
@@ -85,6 +78,12 @@ export function ColorWheelPicker({
   textSecondary,
   cardBg,
 }: ColorWheelPickerProps) {
+  const { width: winWidth } = useWindowDimensions();
+  const WHEEL_SIZE = Math.min(winWidth - 80, 280);
+  const WHEEL_RADIUS = WHEEL_SIZE / 2;
+  const HANDLE_SIZE = 32;
+  const RING_WIDTH = 36;
+
   const [selectedColor, setSelectedColor] = useState(initialColor);
   const [hue, setHue] = useState(() => hexToHsl(initialColor)[0]);
   const [saturation] = useState(() => Math.max(hexToHsl(initialColor)[1], 60));
@@ -110,7 +109,7 @@ export function ColorWheelPicker({
       setSelectedColor(hex);
       onColorSelect(hex);
     },
-    [saturation, lightness, onColorSelect]
+    [WHEEL_RADIUS, saturation, lightness, onColorSelect]
   );
 
   const panResponder = useRef(
@@ -156,7 +155,7 @@ export function ColorWheelPicker({
       <View style={styles.wheelSection}>
         <View
           ref={wheelRef}
-          style={[styles.wheelContainer, { width: WHEEL_SIZE, height: WHEEL_SIZE }]}
+          style={[styles.wheelContainer, { width: WHEEL_SIZE, height: WHEEL_SIZE, borderRadius: WHEEL_SIZE / 2 }]}
           {...panResponder.panHandlers}
         >
           {Array.from({ length: 360 }, (_, i) => i).map((deg) => (
@@ -283,11 +282,10 @@ const styles = StyleSheet.create({
   wheelContainer: {
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: WHEEL_SIZE / 2,
   },
   wheelSlice: {
     position: 'absolute',
-    transformOrigin: `${RING_WIDTH / 2}px 2px`,
+    transformOrigin: '18px 2px',
   },
   centerPreview: {
     position: 'absolute',
@@ -310,9 +308,9 @@ const styles = StyleSheet.create({
   },
   handle: {
     position: 'absolute',
-    width: HANDLE_SIZE,
-    height: HANDLE_SIZE,
-    borderRadius: HANDLE_SIZE / 2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 3,
     borderColor: '#FFFFFF',
     alignItems: 'center',

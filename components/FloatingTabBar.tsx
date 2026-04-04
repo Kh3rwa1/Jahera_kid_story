@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import {
   StyleSheet,
   Platform,
   View,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
   Text,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
@@ -13,18 +13,13 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
   interpolate,
-  interpolateColor,
-  runOnJS,
-  Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { House, Library, Award, Settings } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { FONTS } from '@/constants/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { hapticFeedback } from '@/utils/haptics';
 
 const TABS = [
   { name: 'index',    icon: House,   label: 'Home',     route: '/(tabs)/' },
@@ -33,14 +28,8 @@ const TABS = [
   { name: 'settings', icon: Settings, label: 'Settings', route: '/(tabs)/settings' },
 ];
 
-const BAR_WIDTH = Math.min(SCREEN_WIDTH - 28, 440);
-const TAB_WIDTH = BAR_WIDTH / TABS.length;
-const PILL_WIDTH = TAB_WIDTH - 10;
-const PILL_HEIGHT = 50;
-
 function TabItem({
   tab,
-  index,
   focused,
   onPress,
   activeColor,
@@ -58,9 +47,9 @@ function TabItem({
 
   useEffect(() => {
     progress.value = withSpring(focused ? 1 : 0, {
-      damping: 18,
-      stiffness: 300,
-      mass: 0.8,
+      damping: 16,
+      stiffness: 380,
+      mass: 0.7,
     });
   }, [focused]);
 
@@ -114,10 +103,22 @@ export function FloatingTabBar({
   activeTab: string;
   onTabPress: (route: string) => void;
 }) {
+  const { width: winWidth } = useWindowDimensions();
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
   const isDark = COLORS.background < '#888888';
   const insets = useSafeAreaInsets();
+
+  const BAR_WIDTH = Math.min(winWidth - 28, 440);
+  const TAB_WIDTH = BAR_WIDTH / TABS.length;
+  const PILL_WIDTH = TAB_WIDTH - 10;
+  const PILL_HEIGHT = 50;
+  const HALO_SIZE = BAR_WIDTH + 40;
+
+  const handleTabPress = (route: string) => {
+    hapticFeedback.selection();
+    onTabPress(route);
+  };
 
   const activeIndex = TABS.findIndex(t => t.name === activeTab);
   const safeActiveIndex = activeIndex === -1 ? 0 : activeIndex;
@@ -126,14 +127,15 @@ export function FloatingTabBar({
 
   useEffect(() => {
     pillX.value = withSpring(safeActiveIndex * TAB_WIDTH + 6, {
-      damping: 20,
-      stiffness: 320,
-      mass: 0.9,
+      damping: 18,
+      stiffness: 400,
+      mass: 0.7,
     });
-  }, [safeActiveIndex]);
+  }, [safeActiveIndex, TAB_WIDTH]);
 
   const pillStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: pillX.value }],
+    width: PILL_WIDTH,
   }));
 
   const bottomOffset = insets.bottom > 0 ? insets.bottom + 10 : 18;
@@ -148,11 +150,11 @@ export function FloatingTabBar({
       pointerEvents="box-none"
     >
       {/* Outer glow halo */}
-      <View style={[styles.glowHalo, { backgroundColor: glowColor }]} />
+      <View style={[styles.glowHalo, { backgroundColor: glowColor, width: HALO_SIZE }]} />
 
       {/* Shadow layers (stacked for depth) */}
-      <View style={styles.shadow1} />
-      <View style={styles.shadow2} />
+      <View style={[styles.shadow1, { width: BAR_WIDTH - 16 }]} />
+      <View style={[styles.shadow2, { width: BAR_WIDTH }]} />
 
       {/* Main pill container */}
       <View
@@ -192,7 +194,6 @@ export function FloatingTabBar({
           style={[
             styles.activePill,
             {
-              width: PILL_WIDTH,
               height: PILL_HEIGHT,
             },
             pillStyle,
@@ -219,7 +220,7 @@ export function FloatingTabBar({
               tab={tab}
               index={index}
               focused={activeTab === tab.name}
-              onPress={() => onTabPress(tab.route)}
+              onPress={() => handleTabPress(tab.route)}
               activeColor={COLORS.primary}
               inactiveColor={
                 isDark ? 'rgba(255,255,255,0.35)' : 'rgba(30,30,40,0.32)'
@@ -231,8 +232,6 @@ export function FloatingTabBar({
     </View>
   );
 }
-
-const HALO_SIZE = BAR_WIDTH + 40;
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -246,17 +245,14 @@ const styles = StyleSheet.create({
   /* Layered depth shadows */
   glowHalo: {
     position: 'absolute',
-    width: HALO_SIZE,
     height: 72,
     borderRadius: 44,
     bottom: -10,
     alignSelf: 'center',
     opacity: 0.5,
-    filter: Platform.OS === 'web' ? 'blur(22px)' : undefined,
-  } as any,
+  },
   shadow1: {
     position: 'absolute',
-    width: BAR_WIDTH - 16,
     height: 60,
     borderRadius: 36,
     bottom: 2,
@@ -270,7 +266,6 @@ const styles = StyleSheet.create({
   },
   shadow2: {
     position: 'absolute',
-    width: BAR_WIDTH,
     height: 60,
     borderRadius: 36,
     bottom: 0,
@@ -301,7 +296,7 @@ const styles = StyleSheet.create({
 
   activePill: {
     position: 'absolute',
-    top: 68 / 2 - PILL_HEIGHT / 2,
+    top: 9, // Manual centering for 68 height - 50 pill height
     borderRadius: 25,
     overflow: 'hidden',
   },
@@ -316,7 +311,7 @@ const styles = StyleSheet.create({
 
   tabItem: {
     flex: 1,
-    height: PILL_HEIGHT,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 3,
