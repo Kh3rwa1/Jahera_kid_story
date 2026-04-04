@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo, ReactNode } from 'react';
 import { ProfileWithRelations, Story, QuizAttempt, SubscriptionStatus, Streak } from '@/types/database';
 import { profileService, storyService, quizService } from '@/services/database';
 import { subscriptionService, streakService } from '@/services/subscriptionService';
@@ -53,9 +53,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       setError(null);
 
-      await revenueCatService.configure(user.id);
+      await revenueCatService.configure(user.$id);
 
-      const data = await profileService.getWithRelationsByUserId(user.id);
+      const data = await profileService.getWithRelationsByUserId(user.$id);
       if (!data) {
         setProfile(null);
         setStories([]);
@@ -179,7 +179,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [authLoading, isAuthenticated, loadProfile]);
 
-  const value: AppContextType = {
+  const value: AppContextType = useMemo(() => ({
     profile,
     stories,
     quizAttempts,
@@ -195,7 +195,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     refreshStories,
     refreshQuizAttempts,
     setStories,
-  };
+  }), [profile, stories, quizAttempts, subscription, streak, isLoading, error, loadProfile, updateProfile, refreshSubscription, clearProfile, refreshAll, refreshStories, refreshQuizAttempts, setStories]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -25,7 +25,8 @@ export default function Register() {
   const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
   const { signUp } = useAuth();
-  const themeColors = currentTheme.colors;
+  const COLORS = currentTheme.colors;
+  const styles = useStyles(COLORS, insets);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -71,43 +72,43 @@ export default function Register() {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={themeColors.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
         <ScrollView
-          contentContainerStyle={[styles.scroll, { paddingTop: insets.top + SPACING.xl, paddingBottom: insets.bottom + SPACING.xl }]}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <Animated.View entering={FadeInDown.delay(50).springify()}>
             <TouchableOpacity
               onPress={() => router.back()}
-              style={[styles.backBtn, { backgroundColor: themeColors.cardBackground }]}
+              style={[styles.backBtn, { backgroundColor: COLORS.cardBackground }]}
               activeOpacity={0.7}
             >
-              <ArrowLeft size={20} color={themeColors.text.primary} strokeWidth={2.5} />
+              <ArrowLeft size={20} color={COLORS.text.primary} strokeWidth={2.5} />
             </TouchableOpacity>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.hero}>
-            <View style={[styles.iconCircle, { shadowColor: themeColors.primary }]}>
-              <LinearGradient colors={[themeColors.primary, themeColors.primaryDark]} style={styles.iconGradient}>
+            <View style={[styles.iconCircle, { shadowColor: COLORS.primary }]}>
+              <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} style={styles.iconGradient}>
                 <Sparkles size={36} color="#FFFFFF" strokeWidth={1.8} />
               </LinearGradient>
             </View>
-            <Text style={[styles.title, { color: themeColors.text.primary }]}>Create account</Text>
-            <Text style={[styles.subtitle, { color: themeColors.text.secondary }]}>
+            <Text style={[styles.title, { color: COLORS.text.primary }]}>Create account</Text>
+            <Text style={[styles.subtitle, { color: COLORS.text.secondary }]}>
               Start your child's adventure today
             </Text>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.form}>
-            <View style={[styles.inputGroup, { backgroundColor: themeColors.cardBackground }]}>
-              <User size={20} color={themeColors.text.light} strokeWidth={2} />
+            <View style={[styles.inputGroup, { backgroundColor: COLORS.cardBackground }]}>
+              <User size={20} color={COLORS.text.light} strokeWidth={2} />
               <TextInput
-                style={[styles.input, { color: themeColors.text.primary }]}
+                style={[styles.input, { color: COLORS.text.primary }]}
                 placeholder="Your name (optional)"
-                placeholderTextColor={themeColors.text.light}
+                placeholderTextColor={COLORS.text.light}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
@@ -115,12 +116,12 @@ export default function Register() {
               />
             </View>
 
-            <View style={[styles.inputGroup, { backgroundColor: themeColors.cardBackground }]}>
-              <Mail size={20} color={themeColors.text.light} strokeWidth={2} />
+            <View style={[styles.inputGroup, { backgroundColor: COLORS.cardBackground }]}>
+              <Mail size={20} color={COLORS.text.light} strokeWidth={2} />
               <TextInput
-                style={[styles.input, { color: themeColors.text.primary }]}
+                style={[styles.input, { color: COLORS.text.primary }]}
                 placeholder="Email address"
-                placeholderTextColor={themeColors.text.light}
+                placeholderTextColor={COLORS.text.light}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -130,12 +131,12 @@ export default function Register() {
               />
             </View>
 
-            <View style={[styles.inputGroup, { backgroundColor: themeColors.cardBackground }]}>
-              <Lock size={20} color={themeColors.text.light} strokeWidth={2} />
+            <View style={[styles.inputGroup, { backgroundColor: COLORS.cardBackground }]}>
+              <Lock size={20} color={COLORS.text.light} strokeWidth={2} />
               <TextInput
-                style={[styles.input, { color: themeColors.text.primary }]}
+                style={[styles.input, { color: COLORS.text.primary }]}
                 placeholder="Password (6+ characters)"
-                placeholderTextColor={themeColors.text.light}
+                placeholderTextColor={COLORS.text.light}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -145,21 +146,21 @@ export default function Register() {
               />
               <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 {showPassword
-                  ? <EyeOff size={20} color={themeColors.text.light} strokeWidth={2} />
-                  : <Eye size={20} color={themeColors.text.light} strokeWidth={2} />
+                  ? <EyeOff size={20} color={COLORS.text.light} strokeWidth={2} />
+                  : <Eye size={20} color={COLORS.text.light} strokeWidth={2} />
                 }
               </TouchableOpacity>
             </View>
 
             {error && (
-              <Animated.Text entering={FadeInDown.springify()} style={[styles.errorText, { color: themeColors.error }]}>
+              <Animated.Text entering={FadeInDown.springify()} style={[styles.errorText, { color: COLORS.error }]}>
                 {error}
               </Animated.Text>
             )}
 
             <TouchableOpacity onPress={handleRegister} activeOpacity={0.88} disabled={isLoading}>
               <LinearGradient
-                colors={isLoading ? [themeColors.text.light, themeColors.text.light] : [themeColors.primary, themeColors.primaryDark]}
+                colors={isLoading ? [COLORS.text.light, COLORS.text.light] : [COLORS.primary, COLORS.primaryDark]}
                 style={styles.ctaButton}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -176,17 +177,17 @@ export default function Register() {
               </LinearGradient>
             </TouchableOpacity>
 
-            <Text style={[styles.termsText, { color: themeColors.text.light }]}>
+            <Text style={[styles.termsText, { color: COLORS.text.light }]}>
               By creating an account you agree to our Terms of Service and Privacy Policy.
             </Text>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.footer}>
-            <Text style={[styles.footerText, { color: themeColors.text.secondary }]}>
+            <Text style={[styles.footerText, { color: COLORS.text.secondary }]}>
               Already have an account?{' '}
             </Text>
             <TouchableOpacity onPress={() => router.push('/auth/login')}>
-              <Text style={[styles.linkText, { color: themeColors.primary }]}>Sign in</Text>
+              <Text style={[styles.linkText, { color: COLORS.primary }]}>Sign in</Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
@@ -195,115 +196,119 @@ export default function Register() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  kav: { flex: 1 },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: SPACING.xl,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xl,
-    ...SHADOWS.sm,
-  },
-  hero: {
-    alignItems: 'center',
-    marginBottom: SPACING.xxxl,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    overflow: 'hidden',
-    marginBottom: SPACING.xl,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  iconGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontFamily: FONTS.extrabold,
-    letterSpacing: -0.5,
-    marginBottom: SPACING.sm,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.medium,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  form: {
-    gap: SPACING.md,
-    marginBottom: SPACING.xl,
-  },
-  inputGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: BORDER_RADIUS.xl,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    gap: SPACING.md,
-    ...SHADOWS.sm,
-  },
-  input: {
-    flex: 1,
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.medium,
-    paddingVertical: SPACING.sm,
-  },
-  errorText: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.semibold,
-    textAlign: 'center',
-    marginTop: SPACING.xs,
-  },
-  ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.xl,
-    borderRadius: BORDER_RADIUS.pill,
-    marginTop: SPACING.sm,
-    ...SHADOWS.xl,
-    minHeight: 58,
-  },
-  ctaText: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.bold,
-    letterSpacing: 0.3,
-  },
-  termsText: {
-    fontSize: FONT_SIZES.xs,
-    fontFamily: FONTS.medium,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: SPACING.sm,
-  },
-  footerText: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.medium,
-  },
-  linkText: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
-  },
-});
+const useStyles = (COLORS: any, insets: any) => {
+  return useMemo(() => StyleSheet.create({
+    root: { flex: 1 },
+    kav: { flex: 1 },
+    scroll: {
+      flexGrow: 1,
+      paddingHorizontal: SPACING.xl,
+      paddingTop: insets.top + SPACING.xl,
+      paddingBottom: insets.bottom + SPACING.xl,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: BORDER_RADIUS.lg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: SPACING.xl,
+      ...SHADOWS.sm,
+    },
+    hero: {
+      alignItems: 'center',
+      marginBottom: SPACING.xxxl,
+    },
+    iconCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: 24,
+      overflow: 'hidden',
+      marginBottom: SPACING.xl,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.3,
+      shadowRadius: 16,
+      elevation: 10,
+    },
+    iconGradient: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: 32,
+      fontFamily: FONTS.extrabold,
+      letterSpacing: -0.5,
+      marginBottom: SPACING.sm,
+      textAlign: 'center',
+    },
+    subtitle: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: FONTS.medium,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    form: {
+      gap: SPACING.md,
+      marginBottom: SPACING.xl,
+    },
+    inputGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: BORDER_RADIUS.xl,
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.md,
+      gap: SPACING.md,
+      ...SHADOWS.sm,
+    },
+    input: {
+      flex: 1,
+      fontSize: FONT_SIZES.md,
+      fontFamily: FONTS.medium,
+      paddingVertical: SPACING.sm,
+    },
+    errorText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: FONTS.semibold,
+      textAlign: 'center',
+      marginTop: SPACING.xs,
+    },
+    ctaButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: SPACING.sm,
+      paddingVertical: SPACING.xl,
+      borderRadius: BORDER_RADIUS.pill,
+      marginTop: SPACING.sm,
+      ...SHADOWS.xl,
+      minHeight: 58,
+    },
+    ctaText: {
+      color: '#FFFFFF',
+      fontSize: FONT_SIZES.lg,
+      fontFamily: FONTS.bold,
+      letterSpacing: 0.3,
+    },
+    termsText: {
+      fontSize: FONT_SIZES.xs,
+      fontFamily: FONTS.medium,
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+    footer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: SPACING.sm,
+    },
+    footerText: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: FONTS.medium,
+    },
+    linkText: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: FONTS.bold,
+    },
+  }), [COLORS, insets]);
+};

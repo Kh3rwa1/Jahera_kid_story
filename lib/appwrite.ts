@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, ID, Query } from 'react-native-appwrite';
+import { Client, Account, Databases, Storage, Functions, ID, Query } from 'react-native-appwrite';
 import { Platform } from 'react-native';
 
 const ENDPOINT = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || 'https://sfo.cloud.appwrite.io/v1';
@@ -17,6 +17,7 @@ export const client = clientBuilder;
 export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
+export const functions = new Functions(client);
 
 export const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID || 'jahera_db';
 export const APPWRITE_ENDPOINT = ENDPOINT;

@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   StatusBar,
   Pressable,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BookOpen, Mic as Mic2, Zap } from 'lucide-react-native';
@@ -30,32 +31,23 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
-
-const { width, height } = Dimensions.get('window');
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const TEAL = '#00C4B4';
-const TEAL_DARK = '#009E92';
-const TEAL_DEEP = '#007A70';
-const BG_BASE = '#D6F5F2';
-const BG_MID = '#E8FAF8';
-const BG_LIGHT = '#F0FFFE';
-const DARK_TEXT = '#0D2926';
-const BODY_TEXT = '#2A5550';
-
 export default function Welcome() {
+  const { width } = useWindowDimensions();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { currentTheme, isLoading: themeLoading } = useTheme();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading } = useApp();
 
+  const COLORS = currentTheme.colors;
+  const styles = useStyles(COLORS, insets, width);
+
   const glowPulse = useSharedValue(0.3);
   const orbFloat = useSharedValue(0);
   const blob1Float = useSharedValue(0);
-  const blob2Float = useSharedValue(0);
   const logoScale = useSharedValue(0.8);
   const logoOpacity = useSharedValue(0);
   const tapScale = useSharedValue(1);
@@ -82,11 +74,7 @@ export default function Welcome() {
       -1, true
     );
     blob1Float.value = withRepeat(
-      withSequence(withTiming(-22, { duration: 5000, easing: Easing.inOut(Easing.ease) }), withTiming(0, { duration: 5000, easing: Easing.inOut(Easing.ease) })),
-      -1, true
-    );
-    blob2Float.value = withRepeat(
-      withSequence(withTiming(-16, { duration: 4200, easing: Easing.inOut(Easing.ease) }), withTiming(0, { duration: 4200, easing: Easing.inOut(Easing.ease) })),
+      withSequence(withTiming(-18, { duration: 4600, easing: Easing.inOut(Easing.ease) }), withTiming(0, { duration: 4600, easing: Easing.inOut(Easing.ease) })),
       -1, true
     );
     badge1Float.value = withDelay(200, withRepeat(
@@ -135,13 +123,12 @@ export default function Welcome() {
       withSpring(0.975, { damping: 15 }),
       withSpring(1, { damping: 12 })
     );
-    setTimeout(() => router.push('/auth/register'), 80);
+    setTimeout(() => router.push('/auth/register'), 40);
   };
 
   const glowStyle = useAnimatedStyle(() => ({ opacity: glowPulse.value }));
   const orbStyle = useAnimatedStyle(() => ({ transform: [{ translateY: orbFloat.value }] }));
   const blob1Style = useAnimatedStyle(() => ({ transform: [{ translateY: blob1Float.value }] }));
-  const blob2Style = useAnimatedStyle(() => ({ transform: [{ translateY: blob2Float.value }] }));
   const logoStyle = useAnimatedStyle(() => ({ opacity: logoOpacity.value, transform: [{ scale: logoScale.value }] }));
   const tapScaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: tapScale.value }] }));
   const ctaGlowStyle = useAnimatedStyle(() => ({ opacity: ctaGlow.value }));
@@ -149,16 +136,17 @@ export default function Welcome() {
   const badge2Style = useAnimatedStyle(() => ({ transform: [{ translateY: badge2Float.value }] }));
   const badge3Style = useAnimatedStyle(() => ({ transform: [{ translateY: badge3Float.value }] }));
   const shimmerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(shimmer.value, [0, 1], [-width * 0.6, width * 1.2]) }],
+    opacity: interpolate(shimmer.value, [0, 0.5, 1], [0, 1, 0]),
+    transform: [{ translateX: interpolate(shimmer.value, [0, 1], [-200, 200]) }],
   }));
 
   if (authLoading || profileLoading || themeLoading) {
     return (
       <View style={styles.loadingScreen}>
-        <LinearGradient colors={[BG_BASE, BG_MID, BG_LIGHT]} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
         <Animated.View entering={FadeIn.duration(600)}>
           <LinearGradient
-            colors={[TEAL, TEAL_DARK]}
+            colors={[COLORS.primary, COLORS.primaryDark]}
             style={styles.loadingOrb}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -175,23 +163,23 @@ export default function Welcome() {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <LinearGradient
-        colors={[BG_MID, BG_BASE, '#C8EFEC', BG_MID]}
+        colors={[COLORS.backgroundGradient[1], COLORS.backgroundGradient[0], COLORS.primary + '15', COLORS.backgroundGradient[1]]}
         locations={[0, 0.3, 0.7, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Teal glow — top right */}
+      {/* Primary glow — top right */}
       <Animated.View style={[styles.ambientBlob, styles.ambientTopRight, blob1Style]}>
         <LinearGradient
-          colors={[TEAL + '30', TEAL + '00']}
+          colors={[COLORS.primary + '30', COLORS.primary + '00']}
           style={{ flex: 1 }}
         />
       </Animated.View>
 
-      {/* Soft teal wash — bottom left */}
-      <Animated.View style={[styles.ambientBlob, styles.ambientBottomLeft, blob2Style]}>
+      {/* Secondary wash — bottom left */}
+      <Animated.View style={[styles.ambientBlob, styles.ambientBottomLeft, blob1Style]}>
         <LinearGradient
-          colors={[TEAL_DARK + '20', TEAL + '00']}
+          colors={[COLORS.primaryDark + '20', COLORS.primary + '00']}
           style={{ flex: 1 }}
         />
       </Animated.View>
@@ -199,7 +187,7 @@ export default function Welcome() {
       {/* Accent glow — mid right */}
       <Animated.View style={[styles.ambientBlob, styles.ambientMidRight]}>
         <LinearGradient
-          colors={[TEAL + '18', TEAL + '00']}
+          colors={[COLORS.primary + '18', COLORS.primary + '00']}
           style={{ flex: 1 }}
         />
       </Animated.View>
@@ -207,21 +195,21 @@ export default function Welcome() {
       {/* Floating feature badges */}
       <Animated.View style={[styles.floatingBadge, styles.badge1, badge1Style]}>
         <Animated.View entering={FadeInDown.delay(1100).springify()} style={styles.badgeInner}>
-          <BookOpen size={13} color={TEAL_DARK} strokeWidth={2} />
+          <BookOpen size={13} color={COLORS.primaryDark} strokeWidth={2} />
           <Text style={styles.badgeText}>100+ Languages</Text>
         </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.floatingBadge, styles.badge2, badge2Style]}>
         <Animated.View entering={FadeInDown.delay(1350).springify()} style={styles.badgeInner}>
-          <Mic2 size={13} color={TEAL_DARK} strokeWidth={2} />
+          <Mic2 size={13} color={COLORS.primaryDark} strokeWidth={2} />
           <Text style={styles.badgeText}>AI Narration</Text>
         </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.floatingBadge, styles.badge3, badge3Style]}>
         <Animated.View entering={FadeIn.delay(1600)} style={styles.badgeInner}>
-          <Zap size={13} color={TEAL_DARK} strokeWidth={2} />
+          <Zap size={13} color={COLORS.primaryDark} strokeWidth={2} />
           <Text style={styles.badgeText}>Daily Quizzes</Text>
         </Animated.View>
       </Animated.View>
@@ -233,7 +221,7 @@ export default function Welcome() {
           {/* Outer glow halo */}
           <Animated.View style={[styles.halo, glowStyle]}>
             <LinearGradient
-              colors={[TEAL + '40', TEAL + '00']}
+              colors={[COLORS.primary + '40', COLORS.primary + '00']}
               style={{ flex: 1, borderRadius: 160 }}
             />
           </Animated.View>
@@ -243,13 +231,13 @@ export default function Welcome() {
 
           {/* Main orb */}
           <LinearGradient
-            colors={['#FFFFFF', '#E8FDFB']}
+            colors={[COLORS.cardBackground, COLORS.background]}
             style={styles.orbContainer}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <LinearGradient
-              colors={[TEAL, TEAL_DARK, TEAL_DEEP]}
+              colors={[COLORS.primary, COLORS.primaryDark]}
               style={styles.orbGold}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -262,7 +250,7 @@ export default function Welcome() {
         {/* App name */}
         <Animated.View entering={FadeInUp.delay(350).springify()} style={styles.nameContainer}>
           <View style={styles.nameOverflow}>
-            <Text style={styles.appName}>Jahera</Text>
+            <Text style={[styles.appName, { fontSize: Math.min(width * 0.18, 72) }]}>Jahera</Text>
             {/* Shimmer overlay */}
             <Animated.View style={[styles.shimmerStripe, shimmerStyle]}>
               <LinearGradient
@@ -281,7 +269,7 @@ export default function Welcome() {
         <Animated.View entering={FadeIn.delay(700)} style={styles.dividerRow}>
           <View style={styles.dividerLine} />
           <LinearGradient
-            colors={[TEAL + '00', TEAL + '90', TEAL + '00']}
+            colors={[COLORS.primary + '00', COLORS.primary + '90', COLORS.primary + '00']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.dividerGold}
@@ -307,18 +295,18 @@ export default function Welcome() {
       {/* Bottom CTA */}
       <Animated.View
         entering={FadeInUp.delay(950).springify()}
-        style={[styles.bottom, { paddingBottom: insets.bottom + 44 }]}
+        style={[styles.bottom, { paddingBottom: Math.max(insets.bottom + 44, 60) }]}
       >
         {/* CTA button */}
         <View style={styles.ctaWrapper}>
           <Animated.View style={[styles.ctaGlowHalo, ctaGlowStyle]}>
             <LinearGradient
-              colors={[TEAL + '30', TEAL + '00']}
+              colors={[COLORS.primary + '30', COLORS.primary + '00']}
               style={{ flex: 1, borderRadius: 48 }}
             />
           </Animated.View>
           <LinearGradient
-            colors={[TEAL, TEAL_DARK, TEAL_DEEP]}
+            colors={[COLORS.primary, COLORS.primaryDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.ctaButton}
@@ -333,7 +321,7 @@ export default function Welcome() {
             onPress={(e) => { e.stopPropagation?.(); router.push('/auth/login'); }}
             hitSlop={8}
           >
-            <Text style={styles.signInLink}>Sign in</Text>
+            <Text style={[styles.signInLink, { color: COLORS.primaryDark }]}>Sign in</Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -341,283 +329,284 @@ export default function Welcome() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: BG_BASE,
-  },
-  loadingScreen: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingOrb: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingOrbText: {
-    fontSize: 36,
-    fontFamily: FONTS.extrabold,
-    color: '#FFFFFF',
-    letterSpacing: -1,
-  },
-
-  // Ambient background blobs
-  ambientBlob: {
-    position: 'absolute',
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  ambientTopRight: {
-    width: 380,
-    height: 380,
-    top: -120,
-    right: -140,
-  },
-  ambientBottomLeft: {
-    width: 300,
-    height: 300,
-    bottom: height * 0.1,
-    left: -130,
-  },
-  ambientMidRight: {
-    width: 220,
-    height: 220,
-    top: height * 0.42,
-    right: -80,
-  },
-
-  // Floating badges
-  floatingBadge: {
-    position: 'absolute',
-    zIndex: 10,
-  },
-  badge1: {
-    top: height * 0.13,
-    left: 20,
-  },
-  badge2: {
-    top: height * 0.21,
-    right: 18,
-  },
-  badge3: {
-    top: height * 0.56,
-    left: 16,
-  },
-  badgeInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: BORDER_RADIUS.pill,
-    backgroundColor: 'rgba(255,255,255,0.75)',
-    borderWidth: 1,
-    borderColor: TEAL + '40',
-  },
-  badgeText: {
-    fontSize: 11,
-    fontFamily: FONTS.semibold,
-    color: BODY_TEXT,
-    letterSpacing: 0.4,
-  },
-
-  // Center layout
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.xl,
-  },
-
-  // Logo orb
-  logoArea: {
-    width: 148,
-    height: 148,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xxl + 4,
-  },
-  halo: {
-    position: 'absolute',
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-  },
-  glowRing: {
-    position: 'absolute',
-    width: 158,
-    height: 158,
-    borderRadius: 79,
-    borderWidth: 1,
-    borderColor: TEAL + '30',
-  },
-  orbContainer: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: TEAL + '35',
-    shadowColor: TEAL,
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.4,
-    shadowRadius: 36,
-    elevation: 28,
-  },
-  orbGold: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  orbLetter: {
-    fontSize: 56,
-    fontFamily: FONTS.extrabold,
-    color: '#FFFFFF',
-    letterSpacing: -2,
-    lineHeight: 62,
-  },
-
-  // App name
-  nameContainer: {
-    alignItems: 'center',
-    gap: SPACING.md,
-    marginBottom: SPACING.xl,
-  },
-  nameOverflow: {
-    overflow: 'hidden',
-    borderRadius: 6,
-  },
-  appName: {
-    fontSize: 72,
-    fontFamily: FONTS.extrabold,
-    color: DARK_TEXT,
-    letterSpacing: -3,
-    textAlign: 'center',
-    lineHeight: 78,
-    textShadowColor: TEAL + '30',
-    textShadowOffset: { width: 0, height: 3 },
-    textShadowRadius: 16,
-  },
-  shimmerStripe: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: width * 0.45,
-  },
-  tagline: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.medium,
-    color: BODY_TEXT,
-    textAlign: 'center',
-    lineHeight: 27,
-    letterSpacing: 0.1,
-    opacity: 0.65,
-  },
-
-  // Divider
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '80%',
-    marginBottom: SPACING.xl,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(0, 100, 90, 0.08)',
-  },
-  dividerGold: {
-    width: 60,
-    height: 1,
-  },
-
-  // Feature pills
-  pillRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderWidth: 1,
-    borderColor: TEAL + '25',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  pillEmoji: {
-    fontSize: 13,
-  },
-  pillText: {
-    fontSize: 12,
-    fontFamily: FONTS.semibold,
-    color: BODY_TEXT,
-    letterSpacing: 0.3,
-    opacity: 0.8,
-  },
-
-  // Bottom section
-  bottom: {
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.lg,
-  },
-  ctaWrapper: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  ctaGlowHalo: {
-    position: 'absolute',
-    top: -18,
-    left: -18,
-    right: -18,
-    bottom: -18,
-    borderRadius: 56,
-  },
-  ctaButton: {
-    width: '100%',
-    paddingVertical: 18,
-    borderRadius: 48,
-    alignItems: 'center',
-    shadowColor: TEAL_DARK,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    elevation: 20,
-  },
-  ctaText: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
-    letterSpacing: 0.4,
-  },
-  signInRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  signInLabel: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.regular,
-    color: BODY_TEXT,
-    letterSpacing: 0.2,
-    opacity: 0.6,
-  },
-  signInLink: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.semibold,
-    color: TEAL_DARK,
-    letterSpacing: 0.2,
-  },
-});
+const useStyles = (C: any, insets: any, width: number) => {
+  return useMemo(() => StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: C.background,
+    },
+    loadingScreen: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadingOrb: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadingOrbText: {
+      fontSize: 36,
+      fontFamily: FONTS.extrabold,
+      color: '#FFFFFF',
+      letterSpacing: -1,
+    },
+  
+    // Ambient background blobs
+    ambientBlob: {
+      position: 'absolute',
+      borderRadius: 999,
+      overflow: 'hidden',
+    },
+    ambientTopRight: {
+      width: 380,
+      height: 380,
+      top: -120,
+      right: -140,
+    },
+    ambientBottomLeft: {
+      width: 300,
+      height: 300,
+      bottom: '10%',
+      left: -130,
+    },
+    ambientMidRight: {
+      width: 220,
+      height: 220,
+      top: '42%',
+      right: -80,
+    },
+  
+    // Floating badges
+    floatingBadge: {
+      position: 'absolute',
+      zIndex: 10,
+    },
+    badge1: {
+      top: '13%',
+      left: 20,
+    },
+    badge2: {
+      top: '21%',
+      right: 18,
+    },
+    badge3: {
+      top: '56%',
+      left: 16,
+    },
+    badgeInner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      borderRadius: BORDER_RADIUS.pill,
+      backgroundColor: C.cardBackground + 'BF',
+      borderWidth: 1,
+      borderColor: C.primary + '40',
+    },
+    badgeText: {
+      fontSize: 11,
+      fontFamily: FONTS.semibold,
+      color: C.text.secondary,
+      letterSpacing: 0.4,
+    },
+  
+    // Center layout
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: SPACING.xl,
+    },
+  
+    // Logo orb
+    logoArea: {
+      width: 148,
+      height: 148,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: SPACING.xxl + 4,
+    },
+    halo: {
+      position: 'absolute',
+      width: 260,
+      height: 260,
+      borderRadius: 130,
+    },
+    glowRing: {
+      position: 'absolute',
+      width: 158,
+      height: 158,
+      borderRadius: 79,
+      borderWidth: 1,
+      borderColor: C.primary + '30',
+    },
+    orbContainer: {
+      width: 130,
+      height: 130,
+      borderRadius: 65,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: C.primary + '35',
+      shadowColor: C.primary,
+      shadowOffset: { width: 0, height: 16 },
+      shadowOpacity: 0.4,
+      shadowRadius: 36,
+      elevation: 28,
+    },
+    orbGold: {
+      width: 110,
+      height: 110,
+      borderRadius: 55,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    orbLetter: {
+      fontSize: 56,
+      fontFamily: FONTS.extrabold,
+      color: '#FFFFFF',
+      letterSpacing: -2,
+      lineHeight: 62,
+    },
+  
+    // App name
+    nameContainer: {
+      alignItems: 'center',
+      gap: SPACING.md,
+      marginBottom: SPACING.xl,
+    },
+    nameOverflow: {
+      overflow: 'hidden',
+      borderRadius: 6,
+    },
+    appName: {
+      fontSize: 72,
+      fontFamily: FONTS.extrabold,
+      color: C.text.primary,
+      letterSpacing: -3,
+      textAlign: 'center',
+      lineHeight: 78,
+      textShadowColor: C.primary + '30',
+      textShadowOffset: { width: 0, height: 3 },
+      textShadowRadius: 16,
+    },
+    shimmerStripe: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      width: 200,
+    },
+    tagline: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: FONTS.medium,
+      color: C.text.secondary,
+      textAlign: 'center',
+      lineHeight: 27,
+      letterSpacing: 0.1,
+      opacity: 0.65,
+    },
+  
+    // Divider
+    dividerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '80%',
+      marginBottom: SPACING.xl,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: C.text.light + '20',
+    },
+    dividerGold: {
+      width: 60,
+      height: 1,
+    },
+  
+    // Feature pills
+    pillRow: {
+      flexDirection: 'row',
+      gap: SPACING.sm,
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+    },
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: C.cardBackground + '99',
+      borderWidth: 1,
+      borderColor: C.primary + '25',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: BORDER_RADIUS.pill,
+    },
+    pillEmoji: {
+      fontSize: 13,
+    },
+    pillText: {
+      fontSize: 12,
+      fontFamily: FONTS.semibold,
+      color: C.text.secondary,
+      letterSpacing: 0.3,
+      opacity: 0.8,
+    },
+  
+    // Bottom section
+    bottom: {
+      alignItems: 'center',
+      paddingHorizontal: SPACING.xl,
+      gap: SPACING.lg,
+    },
+    ctaWrapper: {
+      width: '100%',
+      alignItems: 'center',
+    },
+    ctaGlowHalo: {
+      position: 'absolute',
+      top: -18,
+      left: -18,
+      right: -18,
+      bottom: -18,
+      borderRadius: 56,
+    },
+    ctaButton: {
+      width: '100%',
+      paddingVertical: 18,
+      borderRadius: 48,
+      alignItems: 'center',
+      shadowColor: C.primaryDark,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.4,
+      shadowRadius: 24,
+      elevation: 20,
+    },
+    ctaText: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: FONTS.bold,
+      color: '#FFFFFF',
+      letterSpacing: 0.4,
+    },
+    signInRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    signInLabel: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: FONTS.regular,
+      color: C.text.secondary,
+      letterSpacing: 0.2,
+      opacity: 0.6,
+    },
+    signInLink: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: FONTS.semibold,
+      letterSpacing: 0.2,
+    },
+  }), [C, insets, width]);
+};

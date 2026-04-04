@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
-import { supabase } from '@/lib/supabase';
+import { storage, STORAGE_BUCKETS } from '@/lib/appwrite';
 
 export type ImageSource = 'camera' | 'library';
 
@@ -46,20 +46,23 @@ export async function uploadAvatar(
     const uriParts = imageUri.split('.');
     const ext = uriParts[uriParts.length - 1]?.split('?')[0] || 'jpg';
     const mimeType = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
-    const filePath = `${profileId}/avatar.${ext}`;
+    
+    // Create a safe 36 char custom ID
+    const fileId = profileId.replace(/[^a-zA-Z0-9.\-_]/g, '_').substring(0, 36);
+
+    // Delete existing avatar if it exists
+    try {
+      await storage.deleteFile(STORAGE_BUCKETS.AVATARS, fileId);
+    } catch {
+      // Ignored if file doesn't exist
+    }
 
     if (Platform.OS === 'web') {
       const response = await fetch(imageUri);
-      const blob = await response.blob();
+      const blob = await response.blob() as any;
+      const file = new File([blob], `avatar.${ext}`, { type: mimeType });
 
-      const { error } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, blob, { upsert: true, contentType: mimeType });
-
-      if (error) {
-        console.error('Error uploading avatar:', error);
-        return null;
-      }
+      await storage.createFile(STORAGE_BUCKETS.AVATARS, fileId, file as any);
     } else {
       const fileInfo = await FileSystem.getInfoAsync(imageUri);
       const size = fileInfo.exists ? (fileInfo as FileSystem.FileInfo & { size?: number }).size ?? 0 : 0;
@@ -71,21 +74,11 @@ export async function uploadAvatar(
         size,
       };
 
-      const { error } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file as any, { upsert: true, contentType: mimeType });
-
-      if (error) {
-        console.error('Error uploading avatar:', error);
-        return null;
-      }
+      await storage.createFile(STORAGE_BUCKETS.AVATARS, fileId, file as any);
     }
 
-    const { data } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl ?? null;
+    const fileViewUrl = storage.getFileView(STORAGE_BUCKETS.AVATARS, fileId).toString();
+    return fileViewUrl;
   } catch (error) {
     console.error('Error uploading avatar:', error);
     return null;
@@ -94,14 +87,8 @@ export async function uploadAvatar(
 
 export async function deleteAvatar(profileId: string): Promise<boolean> {
   try {
-    const { data: files } = await supabase.storage
-      .from('avatars')
-      .list(profileId);
-
-    if (files && files.length > 0) {
-      const paths = files.map(f => `${profileId}/${f.name}`);
-      await supabase.storage.from('avatars').remove(paths);
-    }
+    const fileId = profileId.replace(/[^a-zA-Z0-9.\-_]/g, '_').substring(0, 36);
+    await storage.deleteFile(STORAGE_BUCKETS.AVATARS, fileId);
     return true;
   } catch {
     return false;

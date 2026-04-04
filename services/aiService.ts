@@ -1,9 +1,7 @@
 import { ProfileWithRelations } from '@/types/database';
 import { StoryContext } from '@/utils/contextUtils';
 import { LocationContext } from '@/services/locationService';
-
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+import { functions } from '@/lib/appwrite';
 
 export class QuotaExceededError extends Error {
   constructor(message: string) {
@@ -43,25 +41,21 @@ export async function generateAdventureStory(
   options?: StoryOptions
 ): Promise<GeneratedStory | null> {
   try {
-    const functionUrl = `${SUPABASE_URL}/functions/v1/generate-story`;
-
-    const response = await fetch(functionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Apikey': SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({ profile, languageCode, context, options }),
+    const payload = JSON.stringify({ profile, languageCode, context, options });
+    const response = await functions.createExecution({
+      functionId: 'generate-story',
+      body: payload,
+      async: false // Switch to synchronous for 100% reliable body delivery
     });
 
-    if (!response.ok) {
-      throw new Error(`Story generation service error: ${response.status}`);
+    if (response.status === 'failed' || (response.errors && response.errors.length > 0)) {
+      throw new Error(`Story generation service execution error: ${response.errors || 'Execution failed'}`);
     }
 
     let data: any = {};
     try {
-      data = await response.json();
+      // Direct access to the response body in synchronous mode
+      data = JSON.parse(response.responseBody);
     } catch {
       throw new Error('Invalid response from story generation service');
     }

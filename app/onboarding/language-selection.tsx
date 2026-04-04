@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   StatusBar,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import { SUPPORTED_LANGUAGES, MAX_LANGUAGES, Language } from '@/constants/languages';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Animated, {
   FadeInDown,
@@ -26,39 +28,59 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Globe as Globe2, ChevronRight, Check } from 'lucide-react-native';
+import { ChevronRight, Check, Sparkles } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Audio } from 'expo-av';
+import { generateAudio } from '@/services/audioService';
 
 export default function LanguageSelection() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: winWidth } = useWindowDimensions();
   const { currentTheme } = useTheme();
-  const themeColors = currentTheme.colors;
+  const C = currentTheme.colors;
+  const styles = useStyles(C, insets, winWidth);
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
 
-  const ring1 = useSharedValue(1);
-  const ring2 = useSharedValue(1);
   const btnScale = useSharedValue(1);
 
   useEffect(() => {
-    ring1.value = withRepeat(
-      withSequence(withTiming(1.5, { duration: 2200 }), withTiming(1, { duration: 2200 })),
-      -1, true
-    );
-    ring2.value = withRepeat(
-      withSequence(withTiming(1, { duration: 600 }), withTiming(1.3, { duration: 2600 }), withTiming(1, { duration: 1400 })),
-      -1, true
-    );
+    // Welcome narration
+    const timer = setTimeout(() => {
+      speak("Hi there! Which languages should we use for your stories?", 'en');
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+      if (sound) {
+        sound.unloadAsync().catch(() => {});
+      }
+    };
   }, []);
 
-  const ring1Style = useAnimatedStyle(() => ({
-    transform: [{ scale: ring1.value }],
-    opacity: interpolate(ring1.value, [1, 1.5], [0.22, 0]),
-  }));
-  const ring2Style = useAnimatedStyle(() => ({
-    transform: [{ scale: ring2.value }],
-    opacity: interpolate(ring2.value, [1, 1.3], [0.3, 0]),
-  }));
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  const speak = async (text: string, lang: string) => {
+    try {
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+        setSound(null);
+      }
+
+      const url = await generateAudio(text, lang);
+      if (!url) return;
+
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: url },
+        { shouldPlay: true }
+      );
+      setSound(newSound);
+    } catch (err) {
+      console.error('TTS Error (Language Selection):', err);
+    }
+  };
+
   const btnAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
 
   const toggleLanguage = async (language: Language) => {
@@ -72,6 +94,8 @@ export default function LanguageSelection() {
         return;
       }
       setSelectedLanguages([...selectedLanguages, language]);
+      // Narrate language name playfully
+      speak(language.name, language.code);
     }
   };
 
@@ -81,13 +105,13 @@ export default function LanguageSelection() {
       return;
     }
     if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    btnScale.value = withSequence(withSpring(0.95, { damping: 12 }), withSpring(1, { damping: 12 }));
+    btnScale.value = withSequence(withSpring(0.92, { damping: 10 }), withSpring(1, { damping: 12 }));
     setTimeout(() => {
       router.push({
         pathname: '/onboarding/kid-name',
         params: { languages: JSON.stringify(selectedLanguages.map(l => ({ code: l.code, name: l.name }))) },
       });
-    }, 80);
+    }, 150);
   };
 
   const canContinue = selectedLanguages.length > 0;
@@ -98,112 +122,97 @@ export default function LanguageSelection() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 120 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         <LinearGradient
-          colors={['#0F0F1A', '#1A0826', '#0A1628']}
-          style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}
+          colors={[C.primary, C.primaryDark]}
+          style={[styles.header, { paddingTop: insets.top + SPACING.md }]}
         >
-          <View style={styles.progressWrap}>
-            <View style={styles.progressTrack}>
-              <Animated.View
-                entering={FadeInDown.delay(100)}
-                style={[styles.progressFill, { width: '25%', backgroundColor: themeColors.primary }]}
-              />
+          <View style={styles.topRow}>
+            <View style={styles.progressContainer}>
+              <View style={[styles.progressLine, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                <Animated.View 
+                  entering={FadeInDown.delay(200)}
+                  style={[styles.progressFill, { width: '25%', backgroundColor: '#FFFFFF' }]} 
+                />
+              </View>
+              <Text style={styles.progressText}>Step 1 of 4</Text>
             </View>
-            <Text style={styles.stepBadge}>1 / 4</Text>
           </View>
 
-          <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.iconZone}>
-            <Animated.View style={[styles.ring, ring1Style, { borderColor: themeColors.primary + '60' }]} />
-            <Animated.View style={[styles.ring, styles.ringInner, ring2Style, { borderColor: themeColors.primary + '80' }]} />
-            <LinearGradient
-              colors={[themeColors.primary, themeColors.primaryDark]}
-              style={styles.iconCircle}
-            >
-              <Globe2 size={32} color="#FFFFFF" strokeWidth={1.8} />
-            </LinearGradient>
-          </Animated.View>
+          <View style={styles.heroSection}>
+            <LottieView
+              source={{ uri: 'https://lottie.host/76cc96a6-f13e-436d-963d-4c3822295cf7/l9GzB6p7Qk.json' }}
+              autoPlay
+              loop
+              style={styles.lottieGlobe}
+            />
+            <Animated.View entering={ZoomIn.delay(400).springify()} style={styles.sparkleIcon}>
+              <Sparkles size={24} color="#FFD700" fill="#FFD700" />
+            </Animated.View>
+          </View>
 
-          <Animated.Text entering={FadeInDown.delay(260).springify()} style={styles.headerTitle}>
-            Choose Your Languages
+          <Animated.Text entering={FadeInUp.delay(300).springify()} style={styles.title}>
+            Languages!
           </Animated.Text>
-          <Animated.Text entering={FadeInDown.delay(310).springify()} style={styles.headerSubtitle}>
-            Stories will be crafted in the languages{'\n'}your child loves most
+          <Animated.Text entering={FadeInUp.delay(400).springify()} style={styles.subtitle}>
+            Which languages should we use{'\n'}to tell your stories?
           </Animated.Text>
 
-          <Animated.View entering={FadeInDown.delay(360).springify()} style={styles.selectionRow}>
-            {Array.from({ length: MAX_LANGUAGES }).map((_, i) => {
-              const filled = i < selectedLanguages.length;
-              return (
-                <View
-                  key={i}
-                  style={[
-                    styles.selDot,
-                    filled
-                      ? { backgroundColor: themeColors.primary }
-                      : { backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-                  ]}
-                >
-                  {filled && <Check size={10} color="#FFFFFF" strokeWidth={3.5} />}
-                </View>
-              );
-            })}
-            <Text style={styles.selText}>
-              {selectedLanguages.length === 0
-                ? 'Select up to 3'
-                : selectedLanguages.length === 1
-                  ? '1 selected'
-                  : `${selectedLanguages.length} selected`}
+          <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.selectionPill}>
+            <Text style={styles.selectionLabel}>
+              {selectedLanguages.length === 0 
+                ? 'Pick up to 3' 
+                : `Awesome! ${selectedLanguages.length} chosen`}
             </Text>
+            <View style={styles.dotRow}>
+              {[0, 1, 2].map(i => (
+                <View 
+                  key={i} 
+                  style={[
+                    styles.dot, 
+                    i < selectedLanguages.length ? { backgroundColor: '#FFFFFF' } : { backgroundColor: 'rgba(255,255,255,0.3)' }
+                  ]} 
+                />
+              ))}
+            </View>
           </Animated.View>
         </LinearGradient>
 
-        <View style={styles.listContent}>
-          {SUPPORTED_LANGUAGES.map((language, index) => {
-            const isSelected = selectedLanguages.some(l => l.code === language.code);
+        <View style={styles.listSection}>
+          {SUPPORTED_LANGUAGES.map((lang, idx) => {
+            const isSelected = selectedLanguages.some(l => l.code === lang.code);
             return (
-              <Animated.View
-                key={language.code}
-                entering={FadeInDown.delay(60 + index * 35).springify()}
+              <Animated.View 
+                key={lang.code}
+                entering={FadeInDown.delay(600 + idx * 50).springify()}
               >
                 <TouchableOpacity
-                  onPress={() => toggleLanguage(language)}
-                  activeOpacity={0.75}
+                  onPress={() => toggleLanguage(lang)}
+                  activeOpacity={0.9}
+                  style={[
+                    styles.card,
+                    isSelected && { borderColor: C.primary, backgroundColor: C.primary + '10', borderWidth: 2.5 },
+                  ]}
                 >
-                  <View style={[
-                    styles.langCard,
-                    isSelected
-                      ? { backgroundColor: themeColors.primary + '10', borderColor: themeColors.primary, borderWidth: 1.5 }
-                      : { backgroundColor: '#FFFFFF', borderColor: '#F0F0F5', borderWidth: 1 },
-                  ]}>
-                    {isSelected && (
-                      <View style={[styles.cardBar, { backgroundColor: themeColors.primary }]} />
-                    )}
-                    <View style={[
-                      styles.flagWrap,
-                      { backgroundColor: isSelected ? themeColors.primary + '15' : '#F7F8FA' },
-                    ]}>
-                      <Text style={styles.flagEmoji}>{language.flag}</Text>
-                    </View>
-                    <View style={styles.langDetails}>
-                      <Text style={[styles.langName, { color: isSelected ? themeColors.primary : '#1A1A2E' }]}>
-                        {language.name}
-                      </Text>
-                      <Text style={[styles.langNative, { color: isSelected ? themeColors.primary + 'AA' : '#9CA3AF' }]}>
-                        {language.nativeName}
-                      </Text>
-                    </View>
-                    {isSelected ? (
-                      <Animated.View entering={ZoomIn.springify()} style={[styles.checkBubble, { backgroundColor: themeColors.primary }]}>
-                        <Check size={13} color="#FFFFFF" strokeWidth={3} />
-                      </Animated.View>
-                    ) : (
-                      <View style={[styles.emptyCheck, { borderColor: '#E5E7EB' }]} />
-                    )}
+                  <View style={[styles.flagCircle, { backgroundColor: isSelected ? '#FFFFFF' : '#F5F6F9' }]}>
+                    <Text style={styles.flagEmoji}>{lang.flag}</Text>
                   </View>
+                  <View style={styles.cardInfo}>
+                    <Text style={[styles.langName, { color: isSelected ? C.primary : C.text.primary }]}>
+                      {lang.name}
+                    </Text>
+                    <Text style={styles.langNative}>{lang.nativeName}</Text>
+                  </View>
+                  {isSelected ? (
+                    <Animated.View entering={ZoomIn} style={[styles.checkCircle, { backgroundColor: C.primary }]}>
+                      <Check size={16} color="#FFFFFF" strokeWidth={3} />
+                    </Animated.View>
+                  ) : (
+                    <View style={styles.emptyCheck} />
+                  )}
                 </TouchableOpacity>
               </Animated.View>
             );
@@ -211,24 +220,26 @@ export default function LanguageSelection() {
         </View>
       </ScrollView>
 
-      <Animated.View
-        entering={FadeInUp.delay(300).springify()}
+      <Animated.View 
+        entering={FadeInUp.delay(200).springify()}
         style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
       >
         <Animated.View style={btnAnimStyle}>
-          <TouchableOpacity onPress={handleContinue} disabled={!canContinue} activeOpacity={0.88}>
+          <TouchableOpacity 
+            onPress={handleContinue} 
+            disabled={!canContinue} 
+            activeOpacity={0.8}
+          >
             <LinearGradient
-              colors={canContinue ? [themeColors.primary, themeColors.primaryDark] : ['#E5E7EB', '#E5E7EB']}
-              style={styles.ctaBtn}
+              colors={canContinue ? [C.primary, C.primaryDark] : ['#E2E8F0', '#CBD5E1']}
+              style={styles.cta}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Text style={[styles.ctaBtnText, !canContinue && { color: '#9CA3AF' }]}>
-                {canContinue
-                  ? `Continue with ${selectedLanguages.length} language${selectedLanguages.length > 1 ? 's' : ''}`
-                  : 'Select at least one language'}
+              <Text style={[styles.ctaText, !canContinue && { color: '#94A3B8' }]}>
+                {canContinue ? 'Lets Go!' : 'Pick your language'}
               </Text>
-              {canContinue && <ChevronRight size={20} color="#FFFFFF" strokeWidth={2.5} />}
+              {canContinue && <ChevronRight size={22} color="#FFFFFF" strokeWidth={3} />}
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -237,202 +248,169 @@ export default function LanguageSelection() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F7F8FA' },
-  scroll: { flex: 1 },
-  scrollContent: { flexGrow: 1 },
-  header: {
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.xxl,
-    alignItems: 'center',
-  },
-  progressWrap: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    marginBottom: SPACING.xxl,
-  },
-  progressTrack: {
-    flex: 1,
-    height: 3,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  stepBadge: {
-    fontSize: FONT_SIZES.xs,
-    fontFamily: FONTS.bold,
-    color: 'rgba(255,255,255,0.5)',
-    letterSpacing: 0.5,
-  },
-  iconZone: {
-    width: 88,
-    height: 88,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xl,
-  },
-  ring: {
-    position: 'absolute',
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    borderWidth: 1.5,
-  },
-  ringInner: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
-  iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontFamily: FONTS.extrabold,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    letterSpacing: -0.5,
-    marginBottom: SPACING.sm,
-  },
-  headerSubtitle: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.55)',
-    textAlign: 'center',
-    lineHeight: 21,
-    marginBottom: SPACING.xl,
-  },
-  selectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 10,
-    borderRadius: BORDER_RADIUS.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  selDot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selText: {
-    fontSize: FONT_SIZES.xs,
-    fontFamily: FONTS.semibold,
-    color: 'rgba(255,255,255,0.65)',
-    marginLeft: 2,
-    letterSpacing: 0.3,
-  },
-  listContent: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.lg,
-    gap: SPACING.sm,
-  },
-  langCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.md,
-    gap: SPACING.md,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 3,
-    borderTopLeftRadius: BORDER_RADIUS.xl,
-    borderBottomLeftRadius: BORDER_RADIUS.xl,
-  },
-  flagWrap: {
-    width: 50,
-    height: 50,
-    borderRadius: BORDER_RADIUS.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  flagEmoji: { fontSize: 28 },
-  langDetails: { flex: 1 },
-  langName: {
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
-    marginBottom: 2,
-  },
-  langNative: {
-    fontSize: FONT_SIZES.xs,
-    fontFamily: FONTS.medium,
-  },
-  checkBubble: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  emptyCheck: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.lg,
-    backgroundColor: '#F7F8FA',
-    borderTopWidth: 1,
-    borderTopColor: '#EEEEF2',
-  },
-  ctaBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: 18,
-    borderRadius: BORDER_RADIUS.pill,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  ctaBtnText: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.md,
-    fontFamily: FONTS.bold,
-    letterSpacing: 0.2,
-  },
-});
+const useStyles = (C: any, insets: any, winWidth: number) => {
+  return useMemo(() => StyleSheet.create({
+    root: { flex: 1, backgroundColor: C.background },
+    scroll: { flex: 1 },
+    scrollContent: { flexGrow: 1 },
+    header: {
+      paddingHorizontal: SPACING.xl,
+      paddingBottom: SPACING.xxl,
+      borderBottomLeftRadius: 40,
+      borderBottomRightRadius: 40,
+      alignItems: 'center',
+      ...SHADOWS.md,
+    },
+    topRow: {
+      width: '100%',
+      marginBottom: SPACING.lg,
+    },
+    progressContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    progressLine: {
+      flex: 1,
+      height: 6,
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 3,
+    },
+    progressText: {
+      fontSize: 12,
+      fontFamily: FONTS.bold,
+      color: 'rgba(255,255,255,0.7)',
+    },
+    heroSection: {
+      position: 'relative',
+      width: 180,
+      height: 180,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: SPACING.md,
+    },
+    lottieGlobe: {
+      width: 220,
+      height: 220,
+    },
+    sparkleIcon: {
+      position: 'absolute',
+      top: 10,
+      right: 10,
+    },
+    title: {
+      fontSize: 36,
+      fontFamily: 'Baloo2-Bold',
+      color: '#FFFFFF',
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+    subtitle: {
+      fontSize: 17,
+      fontFamily: 'Baloo2-Medium',
+      color: 'rgba(255,255,255,0.85)',
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: SPACING.xl,
+    },
+    selectionPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 30,
+      gap: 12,
+    },
+    selectionLabel: {
+      fontSize: 14,
+      fontFamily: FONTS.bold,
+      color: '#FFFFFF',
+    },
+    dotRow: {
+      flexDirection: 'row',
+      gap: 4,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    listSection: {
+      paddingHorizontal: SPACING.xl,
+      paddingTop: SPACING.xl,
+      gap: 12,
+    },
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FFFFFF',
+      borderRadius: 24,
+      padding: 16,
+      borderWidth: 1.5,
+      borderColor: '#F1F5F9',
+      ...SHADOWS.sm,
+    },
+    flagCircle: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 16,
+    },
+    flagEmoji: { fontSize: 32 },
+    cardInfo: { flex: 1 },
+    langName: {
+      fontSize: 18,
+      fontFamily: 'Baloo2-Bold',
+      marginBottom: 0,
+    },
+    langNative: {
+      fontSize: 13,
+      fontFamily: FONTS.medium,
+      color: C.text.light,
+    },
+    checkCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyCheck: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 2,
+      borderColor: '#E2E8F0',
+    },
+    footer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: SPACING.xl,
+      paddingTop: SPACING.md,
+      backgroundColor: 'rgba(255,255,255,0.9)',
+    },
+    cta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 20,
+      borderRadius: 30,
+      gap: 10,
+      ...SHADOWS.md,
+    },
+    ctaText: {
+      fontSize: 20,
+      fontFamily: 'Baloo2-Bold',
+      color: '#FFFFFF',
+    },
+  }), [C, insets]);
+};

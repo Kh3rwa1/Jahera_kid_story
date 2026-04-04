@@ -1,13 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 import { Achievement } from '@/services/achievementService';
 import { PremiumButton } from './PremiumButton';
 import { CelebrationOverlay } from './CelebrationOverlay';
-
-const { width } = Dimensions.get('window');
 
 interface AchievementModalProps {
   visible: boolean;
@@ -20,6 +18,8 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({
   achievement,
   onClose,
 }) => {
+  const { width } = useWindowDimensions();
+  
   if (!achievement) return null;
 
   return (
@@ -34,7 +34,7 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({
 
         <Pressable style={styles.backdrop} onPress={onClose} />
 
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { width: width - SPACING.xxxl * 2 }]}>
           <LinearGradient
             colors={COLORS.gradients.magic}
             start={{ x: 0, y: 0 }}
@@ -76,7 +76,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContainer: {
-    width: width - SPACING.xxxl * 2,
     maxWidth: 400,
   },
   card: {

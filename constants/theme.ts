@@ -191,7 +191,7 @@ export const LAYOUT = {
   screenPadding: SPACING.xl,
   cardPadding: SPACING.lg,
   sectionSpacing: SPACING.xxxl,
-  maxWidth: 1200, // Max width for large screens
+  maxWidth: 1000, // Max width for large screens
 };
 
 // Responsive breakpoints

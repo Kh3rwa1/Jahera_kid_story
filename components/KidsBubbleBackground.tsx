@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,8 +10,6 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const BUBBLE_COLORS: ReadonlyArray<readonly [string, string]> = [
   ['rgba(255, 182, 193, 0.45)', 'rgba(255, 182, 193, 0)'],
@@ -52,25 +50,20 @@ interface Cloud {
   colors: readonly [string, string, string];
 }
 
-const FloatingBubble: React.FC<{ bubble: Bubble }> = ({ bubble }) => {
+const FloatingBubble: React.FC<{ bubble: Bubble; winHeight: number }> = React.memo(({ bubble, winHeight }) => {
   const translateY = useSharedValue(bubble.startY);
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.3);
 
   useEffect(() => {
     opacity.value = withDelay(
       bubble.delay,
-      withTiming(1, { duration: 1200, easing: Easing.out(Easing.quad) })
-    );
-    scale.value = withDelay(
-      bubble.delay,
-      withTiming(1, { duration: 1000, easing: Easing.out(Easing.quad) })
+      withTiming(0.8, { duration: 1200, easing: Easing.out(Easing.quad) })
     );
     translateY.value = withDelay(
       bubble.delay,
       withRepeat(
-        withTiming(-SCREEN_HEIGHT - 150, {
+        withTiming(-winHeight - 150, {
           duration: bubble.duration,
           easing: Easing.linear,
         }),
@@ -90,13 +83,12 @@ const FloatingBubble: React.FC<{ bubble: Bubble }> = ({ bubble }) => {
         false
       )
     );
-  }, []);
+  }, [winHeight, bubble.delay, bubble.duration, bubble.swayAmount]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
-      { scale: scale.value },
     ],
     opacity: opacity.value,
   }));
@@ -117,9 +109,9 @@ const FloatingBubble: React.FC<{ bubble: Bubble }> = ({ bubble }) => {
       />
     </Animated.View>
   );
-};
+});
 
-const DriftingCloud: React.FC<{ cloud: Cloud }> = ({ cloud }) => {
+const DriftingCloud: React.FC<{ cloud: Cloud; winWidth: number }> = React.memo(({ cloud, winWidth }) => {
   const translateX = useSharedValue(cloud.startX);
   const opacity = useSharedValue(0);
 
@@ -141,7 +133,7 @@ const DriftingCloud: React.FC<{ cloud: Cloud }> = ({ cloud }) => {
     translateX.value = withDelay(
       cloud.delay,
       withRepeat(
-        withTiming(SCREEN_WIDTH + cloud.width + 50, {
+        withTiming(winWidth + cloud.width + 50, {
           duration: cloud.duration,
           easing: Easing.linear,
         }),
@@ -149,7 +141,7 @@ const DriftingCloud: React.FC<{ cloud: Cloud }> = ({ cloud }) => {
         false
       )
     );
-  }, []);
+  }, [winWidth, cloud.delay, cloud.duration, cloud.width]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -172,30 +164,32 @@ const DriftingCloud: React.FC<{ cloud: Cloud }> = ({ cloud }) => {
       />
     </Animated.View>
   );
-};
+});
 
 interface KidsBubbleBackgroundProps {
   bubbleCount?: number;
   cloudCount?: number;
 }
 
-export const KidsBubbleBackground: React.FC<KidsBubbleBackgroundProps> = ({
-  bubbleCount = 12,
-  cloudCount = 4,
+export const KidsBubbleBackground: React.FC<KidsBubbleBackgroundProps> = React.memo(({
+  bubbleCount = 6,
+  cloudCount = 2,
 }) => {
+  const { width: winWidth, height: winHeight } = useWindowDimensions();
+
   const bubbles = useMemo<Bubble[]>(
     () =>
       Array.from({ length: bubbleCount }, (_, i) => ({
         id: i,
         size: Math.random() * 50 + 15,
-        startX: Math.random() * SCREEN_WIDTH,
-        startY: SCREEN_HEIGHT + Math.random() * 300,
+        startX: Math.random() * winWidth,
+        startY: winHeight + Math.random() * 300,
         delay: Math.random() * 4000,
         duration: Math.random() * 10000 + 14000,
         colors: BUBBLE_COLORS[i % BUBBLE_COLORS.length],
         swayAmount: Math.random() * 30 + 10,
       })),
-    []
+    [bubbleCount, winWidth, winHeight]
   );
 
   const clouds = useMemo<Cloud[]>(
@@ -205,25 +199,25 @@ export const KidsBubbleBackground: React.FC<KidsBubbleBackgroundProps> = ({
         width: Math.random() * 120 + 80,
         height: Math.random() * 50 + 35,
         startX: -150 - Math.random() * 200,
-        startY: Math.random() * (SCREEN_HEIGHT * 0.6),
+        startY: Math.random() * (winHeight * 0.6),
         delay: Math.random() * 8000,
         duration: Math.random() * 20000 + 30000,
         colors: CLOUD_COLORS[i % CLOUD_COLORS.length],
       })),
-    []
+    [cloudCount, winHeight]
   );
 
   return (
     <View style={styles.container} pointerEvents="none">
       {clouds.map(cloud => (
-        <DriftingCloud key={`cloud-${cloud.id}`} cloud={cloud} />
+        <DriftingCloud key={`cloud-${cloud.id}`} cloud={cloud} winWidth={winWidth} />
       ))}
       {bubbles.map(bubble => (
-        <FloatingBubble key={`bubble-${bubble.id}`} bubble={bubble} />
+        <FloatingBubble key={`bubble-${bubble.id}`} bubble={bubble} winHeight={winHeight} />
       ))}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

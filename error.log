@@ -1,0 +1,14 @@
+? Which functions would you like to push? (Press <space> to select, <a> to 
+toggle all, <i> to invert selection, and <enter> to proceed)
+❯◯ generate-story (generate-story)
+ ◯ generate-audio (generate-audio)[34D[34C[2K[1A[2K[1A[2K[1A[2K[G? Which functions would you like to push? (Press <space> to select, <a> to 
+toggle all, <i> to invert selection, and <enter> to proceed)
+❯◉ generate-story (generate-story)
+ ◉ generate-audio (generate-audio)[34D[34C[2K[1A[2K[1A[2K[1A[2K[G? Which functions would you like to push? generate-story (generate-story), 
+generate-audio (generate-audio)[1A[31D[106C
+[1Bℹ Info: Validating functions ...
+ℹ Info: Checking for changes ...
+ℹ Info: Pushing functions ...
+✗ Error        • generate-story (generate-story)          • Runtime "node-21.0" is not supported
+✗ Error        • generate-audio (generate-audio)          • Runtime "node-21.0" is not supported
+✗ Error: No functions were pushed.

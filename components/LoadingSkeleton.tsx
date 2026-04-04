@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,8 +11,6 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, BORDER_RADIUS } from '@/constants/theme';
 
-const { width: screenWidth } = Dimensions.get('window');
-
 interface SkeletonProps {
   width?: number | string;
   height?: number;
@@ -21,6 +19,7 @@ interface SkeletonProps {
 }
 
 export const Skeleton = ({ width = '100%', height = 20, borderRadius = 8, style }: SkeletonProps) => {
+  const { width: winWidth } = useWindowDimensions();
   const shimmerProgress = useSharedValue(-1);
 
   useEffect(() => {
@@ -35,7 +34,7 @@ export const Skeleton = ({ width = '100%', height = 20, borderRadius = 8, style 
     'worklet';
     return {
       transform: [
-        { translateX: interpolate(shimmerProgress.value, [-1, 1], [-screenWidth, screenWidth]) },
+        { translateX: interpolate(shimmerProgress.value, [-1, 1], [-winWidth, winWidth]) },
       ],
     };
   });
