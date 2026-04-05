@@ -16,7 +16,8 @@ import Animated, {
   FadeInDown, FadeInUp, ZoomIn, FadeIn,
   useSharedValue, useAnimatedStyle, withSpring, interpolate,
 } from 'react-native-reanimated';
-import { useEntranceSequence, useSpringPress } from '@/utils/animations';
+import { useEntranceSequence, useSpringPress, usePulse, useFloat } from '@/utils/animations';
+import { FloatingParticles } from '@/components/FloatingParticles';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag, getLanguageNativeName } from '@/utils/languageUtils';
@@ -31,7 +32,7 @@ import {
   Grid2x2,
   List,
 } from 'lucide-react-native';
-import { SPACING, SHADOWS, FONTS, LAYOUT } from '@/constants/theme';
+import { SPACING, SHADOWS, FONTS, LAYOUT, BORDER_RADIUS } from '@/constants/theme';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { MeshBackground } from '@/components/MeshBackground';
@@ -161,6 +162,9 @@ export default function HistoryScreen() {
 
   const styles = useStyles(COLORS, insets, isTablet, isDesktop, winWidth);
 
+  const featuredPulseStyle = usePulse(0.98, 1.02);
+  const emptyFloatStyle = useFloat(6, 1500);
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await refreshStories();
@@ -223,19 +227,12 @@ export default function HistoryScreen() {
       }}
     >
       <MeshBackground primaryColor={COLORS.primary} />
-        {/* ── Page header ── */}
-        <Animated.View entering={FadeInDown.delay(40).springify()} style={styles.header}>
-          <View>
-            <View style={styles.titleRow}>
-              <View style={[styles.titleIcon, { backgroundColor: COLORS.primary + '15' }]}>
-                <BookOpen size={20} color={COLORS.primary} strokeWidth={2.5} />
-              </View>
-              <Text style={[styles.pageTitle, { color: COLORS.text.primary }]}>Your Library</Text>
-            </View>
-            <Text style={[styles.pageSubtitle, { color: COLORS.text.secondary }]}>
-              {stories.length} {stories.length === 1 ? 'Magical Story' : 'Magical Stories'}
-            </Text>
-          </View>
+      <FloatingParticles count={15} />
+        {/* ── View Toggle / Meta (No redundant title) ── */}
+        <Animated.View entering={FadeInDown.delay(40).springify()} style={[styles.header, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }]}>
+          <Text style={[styles.pageSubtitle, { color: COLORS.text.secondary, marginTop: 0 }]}>
+            {stories.length} {stories.length === 1 ? 'Magical Story' : 'Magical Stories'}
+          </Text>
           <TouchableOpacity
             style={[styles.viewToggle, { backgroundColor: COLORS.cardBackground + '66', borderColor: COLORS.text.light + '20', borderWidth: 1 }]}
             onPress={() => {
@@ -254,11 +251,12 @@ export default function HistoryScreen() {
         {/* ── Featured / latest story ── */}
         {featuredStory && (
           <Animated.View entering={FadeInDown.delay(100).springify()}>
-            <AnimatedPressable
-              onPress={() => handlePlayStory(featuredStory.title, featuredStory.id, featuredStory.language_code)}
-              scaleDown={0.96}
-              style={styles.featuredWrap}
-            >
+            <Animated.View style={featuredPulseStyle}>
+              <AnimatedPressable
+                onPress={() => handlePlayStory(featuredStory.title, featuredStory.id, featuredStory.language_code)}
+                scaleDown={0.96}
+                style={styles.featuredWrap}
+              >
               <LinearGradient
                 colors={getSeasonPalette(featuredStory.season, COLORS.primary, featuredStory.theme).colors}
                 start={{ x: 0, y: 0 }}
@@ -309,6 +307,7 @@ export default function HistoryScreen() {
                 </View>
               </LinearGradient>
             </AnimatedPressable>
+            </Animated.View>
           </Animated.View>
         )}
 
@@ -400,9 +399,9 @@ export default function HistoryScreen() {
         {/* ── Stories ── */}
         {filteredStories.length === 0 ? (
           <Animated.View entering={ZoomIn.delay(100).springify()} style={styles.emptyWrap}>
-            <View style={[styles.emptyIconCircle, { backgroundColor: COLORS.primary + '10' }]}>
+            <Animated.View style={[styles.emptyIconCircle, { backgroundColor: COLORS.primary + '10' }, emptyFloatStyle]}>
               <Text style={styles.emptyEmoji}>{searchQuery ? '🔍' : '✨'}</Text>
-            </View>
+            </Animated.View>
             <Text style={[styles.emptyTitle, { color: COLORS.text.primary }]}>
               {searchQuery ? 'No matches found' : 'Ready for adventure?'}
             </Text>
@@ -572,7 +571,6 @@ const useStyles = (C: any, insets: any, isTablet: boolean, isDesktop: boolean, w
         borderRadius: isTablet ? 40 : 32, 
         overflow: 'hidden', 
         ...SHADOWS.md,
-        elevation: 8,
       },
       featuredCard: {
         minHeight: isTablet ? 260 : 180,
@@ -594,17 +592,17 @@ const useStyles = (C: any, insets: any, isTablet: boolean, isDesktop: boolean, w
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        paddingHorizontal: 12,
+        paddingHorizontal: 14,
         paddingVertical: 6,
-        borderRadius: 10,
+        borderRadius: BORDER_RADIUS.pill,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.3)',
       },
       featuredBadgeText: {
-        fontSize: 10,
+        fontSize: 13,
         fontFamily: FONTS.displayBold,
         color: '#FFF',
-        letterSpacing: 1,
+        letterSpacing: 0.8,
       },
       audioPill: {
         width: 32, height: 32, 
@@ -656,9 +654,9 @@ const useStyles = (C: any, insets: any, isTablet: boolean, isDesktop: boolean, w
         fontFamily: FONTS.displayBold,
       },
       wordCountText: {
-        fontSize: 13,
+        fontSize: 14,
         fontFamily: FONTS.displayMedium,
-        color: 'rgba(255,255,255,0.8)',
+        color: 'rgba(255,255,255,0.9)',
       },
 
       controlsStickyWrapper: {
@@ -678,9 +676,11 @@ const useStyles = (C: any, insets: any, isTablet: boolean, isDesktop: boolean, w
         flexDirection: 'row',
         alignItems: 'center',
         height: 56,
-        paddingHorizontal: 16,
+        paddingHorizontal: 18,
         borderRadius: 18,
         gap: 12,
+        borderWidth: 2,
+        borderColor: C.primary + '30',
       },
       searchInput: { flex: 1, fontSize: 16, fontFamily: FONTS.displayMedium },
       sortBtn: {
@@ -749,7 +749,7 @@ const useStyles = (C: any, insets: any, isTablet: boolean, isDesktop: boolean, w
         position: 'relative',
       },
       gridSeasonEmoji: {
-        fontSize: isTablet ? 64 : 52,
+        fontSize: isTablet ? 76 : 64,
         marginBottom: 4,
       },
       gridPlayCircle: {
@@ -797,7 +797,7 @@ const useStyles = (C: any, insets: any, isTablet: boolean, isDesktop: boolean, w
         minHeight: isTablet ? 40 : 36,
       },
       gridMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-      gridMetaText: { fontSize: 12, fontFamily: FONTS.displayMedium, opacity: 0.6 },
+      gridMetaText: { fontSize: 14, fontFamily: FONTS.displayMedium, opacity: 0.7 },
 
       list: {
         borderRadius: 32,

@@ -8,6 +8,7 @@
     "scheme": "jahera",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "jsEngine": "hermes",
     "description": "Jahera - AI-powered personalized story adventures for kids. Create magical, educational stories tailored to your child's interests, family, and friends with multilingual narration.",
     "primaryColor": "#4ECDC4",
     "backgroundColor": "#FFF8E7",
@@ -28,7 +29,6 @@
       },
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Jahera needs microphone access for voice input features.",
-        "NSCameraUsageDescription": "Jahera needs camera access to create personalized story experiences.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -43,7 +43,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "playStoreUrl": "https://play.google.com/store/apps/details?id=com.hindi.harp"
     },
@@ -78,8 +79,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": "jahera-kids-stories"
-      }
-    }
+        "projectId": "f64a4e9f-d17e-41be-8480-65f1565162e8"
+      },
+      "router": {}
+    },
+    "owner": "dulork"
   }
 }

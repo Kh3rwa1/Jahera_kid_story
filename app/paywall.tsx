@@ -397,7 +397,10 @@ export default function PaywallScreen() {
             result.restored
               ? 'Your subscription has been restored.'
               : 'Your subscription is now active. Enjoy unlimited stories!',
-            [{ text: "Let's Go!", onPress: () => router.back() }]
+            [{ text: "Let's Go!", onPress: () => {
+              if (router.canGoBack()) router.back();
+              else router.replace('/(tabs)');
+            }}]
           );
         }
         return;
@@ -413,7 +416,10 @@ export default function PaywallScreen() {
           Alert.alert(
             'Welcome to Pro!',
             'Your subscription is now active. Enjoy unlimited stories!',
-            [{ text: "Let's Go!", onPress: () => router.back() }]
+            [{ text: "Let's Go!", onPress: () => {
+              if (router.canGoBack()) router.back();
+              else router.replace('/(tabs)');
+            }}]
           );
         } else {
           Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
@@ -429,7 +435,10 @@ export default function PaywallScreen() {
         Alert.alert(
           'Welcome to Pro!',
           'Your subscription is now active. Enjoy unlimited stories!',
-          [{ text: "Let's Go!", onPress: () => router.back() }]
+          [{ text: "Let's Go!", onPress: () => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(tabs)');
+          }}]
         );
       }
     } catch (err: any) {
@@ -455,7 +464,10 @@ export default function PaywallScreen() {
           Alert.alert(
             'Welcome to Pro!',
             'Your subscription is now active. Enjoy unlimited stories!',
-            [{ text: 'Start Exploring', onPress: () => router.back() }]
+            [{ text: 'Start Exploring', onPress: () => {
+              if (router.canGoBack()) router.back();
+              else router.replace('/(tabs)');
+            }}]
           );
         } else {
           Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
@@ -471,7 +483,10 @@ export default function PaywallScreen() {
         Alert.alert(
           'Welcome to Pro!',
           'Your subscription is now active. Enjoy unlimited stories!',
-          [{ text: 'Start Exploring', onPress: () => router.back() }]
+          [{ text: 'Start Exploring', onPress: () => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(tabs)');
+          }}]
         );
       }
     } catch (err: any) {
@@ -495,7 +510,10 @@ export default function PaywallScreen() {
           hapticFeedback.success();
           if (result.restored) {
             Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.', [
-              { text: 'Great!', onPress: () => router.back() },
+              { text: 'Great!', onPress: () => {
+                if (router.canGoBack()) router.back();
+                else router.replace('/(tabs)');
+              }},
             ]);
           }
         }
@@ -520,7 +538,10 @@ export default function PaywallScreen() {
         await refreshSubscription();
         hapticFeedback.success();
         Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.', [
-          { text: 'Great!', onPress: () => router.back() },
+          { text: 'Great!', onPress: () => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(tabs)');
+          }},
         ]);
       } else {
         Alert.alert('No Purchases Found', 'We could not find any active subscriptions linked to your account.');
@@ -541,7 +562,13 @@ export default function PaywallScreen() {
 
       <TouchableOpacity
         style={[styles.closeButton, { backgroundColor: COLORS.cardBackground, ...SHADOWS.sm }]}
-        onPress={() => router.back()}
+        onPress={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)');
+          }
+        }}
         activeOpacity={0.7}
       >
         <X size={17} color={COLORS.text.secondary} />

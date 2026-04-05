@@ -9,8 +9,10 @@ import {
   useWindowDimensions,
   Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
 import { generateAudio } from '@/services/audioService';
@@ -29,7 +31,8 @@ import Animated, {
   cancelAnimation,
   interpolate,
 } from 'react-native-reanimated';
-import { useFloat, useEntranceSequence, useSpringPress } from '@/utils/animations';
+import { useFloat, useEntranceSequence, useSpringPress, usePulse, useRotate } from '@/utils/animations';
+import { FloatingParticles } from '@/components/FloatingParticles';
 import { Sparkles, BookOpen, ChevronRight, Globe, Users, Volume2, Clock, Play, Shuffle, Settings, Crown, ArrowRight, Wand as Wand2, TrendingUp, Award } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -96,6 +99,8 @@ function HeroShimmer({ styles }: { styles: any }) {
 function AnimatedStreakChip({ count, styles }: { count: number; styles: any }) {
   const scale = useSharedValue(0.7);
   const opacity = useSharedValue(0);
+  const pulseStyle = usePulse(0.95, 1.05);
+
   useEffect(() => {
     scale.value = withSpring(1, { damping: 10, stiffness: 120 });
     opacity.value = withTiming(1, { duration: 300 });
@@ -105,7 +110,7 @@ function AnimatedStreakChip({ count, styles }: { count: number; styles: any }) {
     opacity: opacity.value,
   }));
   return (
-    <Animated.View style={[styles.streakChip, { backgroundColor: '#FFF3E0' }, style]}>
+    <Animated.View style={[styles.streakChip, { backgroundColor: '#FFF3E0' }, style, pulseStyle]}>
       <Animated.Text style={styles.streakChipText}>🔥 {count}</Animated.Text>
     </Animated.View>
   );
@@ -206,23 +211,41 @@ const QuickActionItem = React.memo(function QuickActionItem({ item, index, style
   );
 });
 
-const QuickActions = React.memo(function QuickActions({ handleLastStory, handleRandomStory, storiesCount, textPrimary, textSecondary, onLibrary, styles }: {
+const QuickActions = React.memo(function QuickActions({ 
+  handleLastStory, 
+  handleGenerateStory, 
+  storiesCount, 
+  textPrimary, 
+  textSecondary, 
+  onLibrary, 
+  continueStory,
+  styles 
+}: {
   handleLastStory: () => void;
-  handleRandomStory: () => void;
+  handleGenerateStory: () => void;
   storiesCount: number;
   textPrimary: string;
   textSecondary: string;
   onLibrary: () => void;
+  continueStory?: { id: string; title: string; progress: number } | null;
   styles: any;
 }) {
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
 
   const actions = useMemo(() => [
-    { icon: <Play size={20} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />, label: 'Continue', sublabel: 'Last story', grad: ['#6366F1', '#4F46E5'] as [string, string], onPress: handleLastStory, textPrimary, textSecondary },
-    { icon: <Shuffle size={20} color="#FFFFFF" strokeWidth={2.5} />, label: 'Surprise', sublabel: 'Random pick', grad: ['#F59E0B', '#D97706'] as [string, string], onPress: handleRandomStory, textPrimary, textSecondary },
-    { icon: <TrendingUp size={20} color="#FFFFFF" strokeWidth={2.5} />, label: 'Library', sublabel: `${storiesCount} stories`, grad: ['#10B981', '#059669'] as [string, string], onPress: onLibrary, textPrimary, textSecondary },
-  ], [handleLastStory, handleRandomStory, storiesCount, textPrimary, textSecondary, onLibrary]);
+    { 
+      icon: <Play size={26} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />, 
+      label: continueStory ? 'Continue' : 'Play', 
+      sublabel: continueStory ? (continueStory.title.length > 12 ? continueStory.title.substring(0, 10) + '...' : continueStory.title) : 'Last story', 
+      grad: ['#6366F1', '#4F46E5'] as [string, string], 
+      onPress: handleLastStory, 
+      textPrimary, 
+      textSecondary 
+    },
+    { icon: <Sparkles size={26} color="#FFFFFF" strokeWidth={2.5} />, label: 'Create', sublabel: 'New story', grad: ['#F59E0B', '#D97706'] as [string, string], onPress: handleGenerateStory, textPrimary, textSecondary },
+    { icon: <TrendingUp size={26} color="#FFFFFF" strokeWidth={2.5} />, label: 'Library', sublabel: `${storiesCount} stories`, grad: ['#10B981', '#059669'] as [string, string], onPress: onLibrary, textPrimary, textSecondary },
+  ], [handleLastStory, handleGenerateStory, storiesCount, textPrimary, textSecondary, onLibrary, continueStory]);
 
   return (
     <View style={styles.quickWrapper}>
@@ -241,6 +264,10 @@ export default function HomeScreen() {
   const isTablet = winWidth >= BREAKPOINTS.tablet;
   const isDesktop = winWidth >= BREAKPOINTS.desktop;
   
+  const heroActionPulse = usePulse(0.97, 1.05);
+  const wizardFloat = useFloat(6, 2000);
+  const sparkleRotate = useRotate(8000);
+  
   // Dynamic card width for the carousel
   const CARD_W = useMemo(() => {
     if (winWidth >= 1280) return 340;
@@ -256,7 +283,40 @@ export default function HomeScreen() {
 
   const styles = useStyles(C, isTablet, isDesktop);
 
+  const isFocused = useIsFocused();
+  const [continueStory, setContinueStory] = React.useState<{ id: string; title: string; progress: number } | null>(null);
   const [sound, setSound] = React.useState<Audio.Sound | null>(null);
+
+  // Fetch continue story metadata
+  useEffect(() => {
+    if (!isFocused || !stories || stories.length === 0) {
+      setContinueStory(null);
+      return;
+    }
+
+    const checkProgress = async () => {
+      try {
+        const lastId = await AsyncStorage.getItem('last_active_story_id');
+        if (lastId) {
+          const progressData = await AsyncStorage.getItem(`story_progress_${lastId}`);
+          if (progressData) {
+            const { position, duration, title } = JSON.parse(progressData);
+            // If it's between 1% and 98% complete, it's a good candidate for "Continue"
+            const pct = duration > 0 ? (position / duration) * 100 : 0;
+            if (pct > 1 && pct < 98) {
+              setContinueStory({ id: lastId, title, progress: pct });
+            } else {
+              setContinueStory(null);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[home] Error checking story progress:', e);
+      }
+    };
+
+    checkProgress();
+  }, [isFocused, stories]);
 
   useEffect(() => {
     return () => {
@@ -287,12 +347,28 @@ export default function HomeScreen() {
   }, [router]);
 
   const handleLastStory = useCallback(() => {
-    if (stories?.length > 0) handleStoryPress(stories[0].id);
-  }, [stories, handleStoryPress]);
+    if (continueStory) {
+      handleStoryPress(continueStory.id);
+    } else if (stories && stories.length > 0) {
+      handleStoryPress(stories[0].id);
+    }
+  }, [continueStory, stories, handleStoryPress]);
 
   const handleRandomStory = useCallback(() => {
-    if (stories?.length > 0) handleStoryPress(stories[Math.floor(Math.random() * stories.length)].id);
-  }, [stories, handleStoryPress]);
+    if (stories && stories.length > 0) {
+      handleStoryPress(stories[Math.floor(Math.random() * stories.length)].id);
+    } else {
+      // For new users, "Surprise Me" means "Make a random story"
+      router.push({ 
+        pathname: '/story/generate', 
+        params: { 
+          profileId: profile?.id, 
+          languageCode: profile?.primary_language,
+          surprise: 'true' 
+        } 
+      });
+    }
+  }, [stories, handleStoryPress, profile, router]);
 
   const recentStories = useMemo(() => (stories || []).slice(0, 10), [stories]);
 
@@ -306,6 +382,10 @@ export default function HomeScreen() {
   }
 
   if (error || !profile) {
+    if (!profile && !error) {
+      return <Redirect href="/" />;
+    }
+    
     return (
       <SafeAreaView style={[styles.root, { backgroundColor: C.background }]} edges={['top']}>
         <LinearGradient colors={C.backgroundGradient} style={StyleSheet.absoluteFill} />
@@ -331,28 +411,21 @@ export default function HomeScreen() {
       }}
     >
       <MeshBackground primaryColor={C.primary} />
+      <FloatingParticles count={15} />
 
       {/* ─── TOP BAR ─── */}
-      <Animated.View entering={FadeIn.delay(40)} style={[styles.topBar, { backgroundColor: C.cardBackground + '90', borderBottomColor: C.text.light + '10' }]}>
+      <Animated.View entering={FadeIn.delay(40)} style={[styles.topBar, { backgroundColor: C.cardBackground + '90' }]}>
         <TouchableOpacity style={styles.avatarRow} onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.85}>
-          <View style={styles.avatarContainer}>
-            <ProfileAvatar avatarUrl={profile.avatar_url} name={profile.kid_name} size="medium" />
-            <View style={[styles.avatarStatus, { backgroundColor: '#10B981' }]} />
-          </View>
           <View style={styles.greetBlock}>
-            <Text style={[styles.greetLine1, { color: C.text.secondary }]}>{line1}</Text>
-            <Text style={[styles.greetLine2, { color: C.text.primary }]}>{line2}</Text>
+            <Text style={[styles.greetLine2, { color: C.text.primary, fontSize: isTablet ? 28 : 24 }]} numberOfLines={1}>
+              <Text style={{ fontFamily: FONTS.displayMedium, color: C.text.secondary }}>{line1} </Text>
+              {line2}
+            </Text>
           </View>
         </TouchableOpacity>
 
         <View style={styles.topBarRight}>
           {streak && streak.current_streak > 0 && <AnimatedStreakChip count={streak.current_streak} styles={styles} />}
-          <TouchableOpacity 
-            style={[styles.iconBtn, { backgroundColor: C.cardBackground, borderColor: C.text.light + '15' }]} 
-            onPress={() => router.push('/(tabs)/settings')}
-          >
-            <Settings size={isTablet ? 24 : 20} color={C.text.primary} strokeWidth={2.2} />
-          </TouchableOpacity>
         </View>
       </Animated.View>
 
@@ -373,17 +446,17 @@ export default function HomeScreen() {
                 <Text style={styles.heroH1}>Magic Story Maker</Text>
                 <Text style={styles.heroSub}>Let's weave a wonderful tale together!</Text>
                 
-                <View style={styles.heroActionBtn}>
+                <Animated.View style={[styles.heroActionBtn, heroActionPulse]}>
                   <Wand2 size={isTablet ? 18 : 16} color="#0F172A" />
                   <Text style={styles.heroActionBtnText}>Surprise Me</Text>
-                </View>
+                </Animated.View>
               </View>
 
               <View style={styles.heroVisual}>
-                <Text style={styles.heroLargeEmoji}>🧙‍♂️</Text>
-                <View style={styles.heroSparkleTrack}>
+                <Animated.Text style={[styles.heroLargeEmoji, wizardFloat]}>🧙‍♂️</Animated.Text>
+                <Animated.View style={[styles.heroSparkleTrack, sparkleRotate]}>
                   <Text style={styles.heroSpk}>✨</Text>
-                </View>
+                </Animated.View>
               </View>
             </View>
 
@@ -405,11 +478,12 @@ export default function HomeScreen() {
       {/* ─── QUICK ACTIONS ─── */}
       <QuickActions 
         handleLastStory={handleLastStory} 
-        handleRandomStory={handleRandomStory}
+        handleGenerateStory={handleGenerateStory}
         storiesCount={stories?.length || 0}
         textPrimary={C.text.primary}
         textSecondary={C.text.secondary}
         onLibrary={() => router.push('/(tabs)/history')}
+        continueStory={continueStory}
         styles={styles}
       />
 
@@ -485,7 +559,7 @@ export default function HomeScreen() {
             decelerationRate="fast"
           >
             {recentStories?.map((story, i) => {
-              const palette = getSeasonPalette(story.season?.toLowerCase());
+              const palette = getSeasonPalette(story.season, C.primary, story.theme);
               return (
                 <Animated.View key={story.id} entering={FadeInRight.delay(400 + i * 100).springify()}>
                   <AnimatedPressable onPress={() => handleStoryPress(story.id)} style={{ width: CARD_W }}>
@@ -571,8 +645,6 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderBottomWidth: 1.5,
-      ...SHADOWS.sm,
     },
     avatarRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
     avatarContainer: { position: 'relative' },
@@ -613,7 +685,7 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
       minHeight: isTablet ? 300 : 220,
       overflow: 'hidden',
       position: 'relative',
-      ...SHADOWS.xl,
+      ...SHADOWS.lg,
     },
     orb: { position: 'absolute', borderRadius: 999 },
     orbTL: { width: 160, height: 160, top: -40, left: -40 },
@@ -642,13 +714,13 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
     heroActionBtn: {
       flexDirection: 'row', alignItems: 'center', gap: 7,
       backgroundColor: '#FFFFFF',
-      paddingHorizontal: isTablet ? 20 : 14, paddingVertical: isTablet ? 14 : 10,
+      paddingHorizontal: isTablet ? 24 : 18, paddingVertical: isTablet ? 16 : 13,
       borderRadius: BORDER_RADIUS.pill,
       marginTop: 12,
       alignSelf: 'flex-start',
-      ...SHADOWS.sm,
+      ...SHADOWS.md,
     },
-    heroActionBtnText: { fontSize: isTablet ? 16 : 14, fontFamily: FONTS.displayBold, color: '#0F172A' },
+    heroActionBtnText: { fontSize: isTablet ? 18 : 16, fontFamily: FONTS.displayBold, color: '#0F172A' },
     heroVisual: { alignItems: 'center', justifyContent: 'center', paddingRight: isTablet ? 20 : 0 },
     heroLargeEmoji: { fontSize: isTablet ? 100 : 72 },
     heroSparkleTrack: { position: 'absolute', width: '100%', height: '100%', alignItems: 'center' },
@@ -660,7 +732,7 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
       zIndex: 1,
     },
     heroStripItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    heroStripText: { fontSize: isTablet ? 13 : 11, fontFamily: FONTS.displayMedium, color: 'rgba(255,255,255,0.85)' },
+    heroStripText: { fontSize: isTablet ? 14 : 13, fontFamily: FONTS.displayMedium, color: 'rgba(255,255,255,0.85)' },
     heroStripDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.4)' },
 
     /* Quick actions */
@@ -685,22 +757,22 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
     quickItem: { flex: 1 },
     quickCard: {
       alignItems: 'center',
-      gap: isTablet ? 10 : 6,
-      paddingVertical: SPACING.xs,
+      gap: isTablet ? 12 : 8,
+      paddingVertical: SPACING.md,
     },
     quickIconCircle: {
-      width: isTablet ? 64 : 52, height: isTablet ? 64 : 52, borderRadius: isTablet ? 32 : 26,
+      width: isTablet ? 72 : 60, height: isTablet ? 72 : 60, borderRadius: isTablet ? 36 : 30,
       alignItems: 'center', justifyContent: 'center',
-      ...SHADOWS.sm,
+      ...SHADOWS.md,
     },
-    quickLabel: { fontSize: isTablet ? 16 : 14, fontFamily: FONTS.displayBold, textAlign: 'center' },
-    quickSublabel: { fontSize: isTablet ? 12 : 10, fontFamily: FONTS.displayMedium, textAlign: 'center', opacity: 0.6 },
+    quickLabel: { fontSize: isTablet ? 17 : 16, fontFamily: FONTS.displayBold, textAlign: 'center' },
+    quickSublabel: { fontSize: isTablet ? 13 : 12, fontFamily: FONTS.displayMedium, textAlign: 'center', opacity: 0.7 },
 
     /* Stats Ticker */
     statsTickerWrapper: {
       overflow: 'hidden',
       marginBottom: isTablet ? SPACING.xxxl : SPACING.xxl,
-      height: isTablet ? 80 : 60,
+      height: isTablet ? 90 : 70,
       justifyContent: 'center',
     },
     statsTickerTrack: {
@@ -712,39 +784,39 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
     statsTickerPill: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: isTablet ? 24 : 16,
-      paddingVertical: isTablet ? 16 : 12,
+      paddingHorizontal: isTablet ? 28 : 20,
+      paddingVertical: isTablet ? 18 : 14,
       borderRadius: BORDER_RADIUS.pill,
-      gap: 10,
-      ...SHADOWS.xs,
+      gap: 12,
+      ...SHADOWS.sm,
     },
     statsTickerIcon: {
-      width: isTablet ? 40 : 30, height: isTablet ? 40 : 30, borderRadius: isTablet ? 20 : 15,
+      width: isTablet ? 44 : 34, height: isTablet ? 44 : 34, borderRadius: isTablet ? 22 : 17,
       alignItems: 'center', justifyContent: 'center',
     },
-    statsTickerVal: { fontSize: isTablet ? 22 : 18, fontFamily: FONTS.display, letterSpacing: -0.3 },
-    statsTickerLbl: { fontSize: isTablet ? 15 : 13, fontFamily: FONTS.displayMedium },
+    statsTickerVal: { fontSize: isTablet ? 24 : 20, fontFamily: FONTS.display, letterSpacing: -0.3 },
+    statsTickerLbl: { fontSize: isTablet ? 16 : 14, fontFamily: FONTS.displayMedium },
 
     /* Discovery Section */
     discoverySection: { marginBottom: isTablet ? SPACING.xxl : SPACING.xl + 4 },
     discoveryTitle: { 
-      fontSize: isTablet ? 13 : 11, 
+      fontSize: isTablet ? 15 : 14, 
       fontFamily: FONTS.displayBold, 
       paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl, 
       marginBottom: SPACING.md, 
       letterSpacing: 1.2, 
-      opacity: 0.7 
+      opacity: 0.8 
     },
     discoveryScroll: { paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl, gap: SPACING.md },
     discoveryChip: {
       flexDirection: 'row', alignItems: 'center', gap: 10,
-      paddingHorizontal: isTablet ? 20 : 16, paddingVertical: isTablet ? 15 : 12,
+      paddingHorizontal: isTablet ? 22 : 18, paddingVertical: isTablet ? 18 : 16,
       borderRadius: BORDER_RADIUS.pill,
-      borderWidth: 1.2,
-      ...SHADOWS.xs,
+      borderWidth: 1.5,
+      ...SHADOWS.sm,
     },
-    discoveryEmoji: { fontSize: isTablet ? 20 : 16 },
-    discoveryLabel: { fontSize: isTablet ? 16 : 14, fontFamily: FONTS.displayBold },
+    discoveryEmoji: { fontSize: isTablet ? 24 : 22 },
+    discoveryLabel: { fontSize: isTablet ? 18 : 16, fontFamily: FONTS.displayBold },
 
     /* Sections */
     section: { marginBottom: isTablet ? SPACING.xxxl : SPACING.xxl },
@@ -752,12 +824,12 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
       paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl, marginBottom: SPACING.lg,
     },
-    secTitle: { fontSize: isTablet ? 30 : 24, fontFamily: FONTS.display, letterSpacing: -0.6 },
+    secTitle: { fontSize: isTablet ? 32 : 28, fontFamily: FONTS.display, letterSpacing: -0.6 },
     seeAllBtn: {
       flexDirection: 'row', alignItems: 'center', gap: 8,
-      paddingHorizontal: 14, paddingVertical: 8, borderRadius: BORDER_RADIUS.pill,
+      paddingHorizontal: 16, paddingVertical: 9, borderRadius: BORDER_RADIUS.pill,
     },
-    seeAllText: { fontSize: 14, fontFamily: FONTS.displayBold },
+    seeAllText: { fontSize: 15, fontFamily: FONTS.displayBold },
 
     /* Carousel */
     carousel: { paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl, gap: SPACING.md },
@@ -765,22 +837,22 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
       borderRadius: 28, overflow: 'hidden', ...SHADOWS.md,
       borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)',
     },
-    storyArt: { width: '100%', height: isTablet ? 160 : 140, alignItems: 'center', justifyContent: 'center' },
-    storyArtEmoji: { fontSize: isTablet ? 72 : 56 },
+    storyArt: { width: '100%', height: isTablet ? 170 : 155, alignItems: 'center', justifyContent: 'center' },
+    storyArtEmoji: { fontSize: isTablet ? 80 : 68 },
     storyBadgesTop: { position: 'absolute', top: 12, left: 12 },
-    storyFlagBadge: { width: isTablet ? 40 : 32, height: isTablet ? 40 : 32, borderRadius: isTablet ? 20 : 16, backgroundColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center', ...SHADOWS.xs },
-    storyFlag: { fontSize: isTablet ? 20 : 16 },
+    storyFlagBadge: { width: isTablet ? 44 : 36, height: isTablet ? 44 : 36, borderRadius: isTablet ? 22 : 18, backgroundColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center', ...SHADOWS.xs },
+    storyFlag: { fontSize: isTablet ? 22 : 18 },
     storyPlayBtn: {
       position: 'absolute', bottom: 12, right: 12,
-      width: isTablet ? 40 : 32, height: isTablet ? 40 : 32, borderRadius: isTablet ? 20 : 16,
-      alignItems: 'center', justifyContent: 'center', ...SHADOWS.xs,
+      width: isTablet ? 44 : 36, height: isTablet ? 44 : 36, borderRadius: isTablet ? 22 : 18,
+      alignItems: 'center', justifyContent: 'center', ...SHADOWS.sm,
     },
-    storyContent: { padding: SPACING.lg, gap: 6 },
-    storyTitle: { fontSize: isTablet ? 18 : 16, fontFamily: FONTS.displayBold, lineHeight: isTablet ? 24 : 22 },
+    storyContent: { padding: SPACING.lg, gap: 8 },
+    storyTitle: { fontSize: isTablet ? 20 : 18, fontFamily: FONTS.displayBold, lineHeight: isTablet ? 26 : 24 },
     storyMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    seasonTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: BORDER_RADIUS.pill },
-    seasonTagText: { fontSize: 12, fontFamily: FONTS.displayBold },
-    storyMetaText: { fontSize: 12, fontFamily: FONTS.displayMedium },
+    seasonTag: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: BORDER_RADIUS.pill },
+    seasonTagText: { fontSize: 13, fontFamily: FONTS.displayBold },
+    storyMetaText: { fontSize: 13, fontFamily: FONTS.displayMedium },
 
     /* Empty state */
     emptyWrap: { paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl },

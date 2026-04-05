@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { ArrowLeft, Plus, X, Save, Globe, Users, UserPlus, Camera, Image as ImageIcon, Trash2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
@@ -28,6 +28,7 @@ export default function EditProfileScreen() {
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
   const { profile, updateProfile, refreshAll } = useApp();
+  const insets = useSafeAreaInsets();
   const styles = useStyles(C, insets);
 
   const [kidName, setKidName] = useState(profile?.kid_name || '');

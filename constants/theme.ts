@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { DEFAULT_THEME } from './themeSchemes';
 
 /**
@@ -65,11 +66,14 @@ export const FONT_WEIGHTS = {
 };
 
 export const FONTS = {
+  // Body text — Nunito for comfortable long-form reading (story content)
   regular: 'Nunito-Regular',
-  medium: 'Nunito-Medium',
-  semibold: 'Nunito-SemiBold',
-  bold: 'Nunito-Bold',
-  extrabold: 'Nunito-ExtraBold',
+  // All UI chrome now uses Baloo2 for a consistent kid-friendly feel
+  medium: 'Baloo2-Medium',
+  semibold: 'Baloo2-SemiBold',
+  bold: 'Baloo2-Bold',
+  extrabold: 'Baloo2-ExtraBold',
+  // Explicit Baloo2 aliases (unchanged semantics)
   display: 'Baloo2-ExtraBold',
   displayBold: 'Baloo2-Bold',
   displayMedium: 'Baloo2-Medium',
@@ -88,45 +92,53 @@ export function createShadows(primaryColor: string) {
     },
     xs: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.07,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 3,
+      elevation: Platform.OS === 'android' ? 0 : 2,
     },
     sm: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+      elevation: Platform.OS === 'android' ? 0 : 3,
+    },
+    // Use this for top-most cards to prevent shadow bleed on Android
+    topCard: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: Platform.OS === 'android' ? 0 : 4,
     },
     md: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.13,
-      shadowRadius: 14,
-      elevation: 6,
+      shadowOffset: { width: 0, height: 5 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: Platform.OS === 'android' ? 0 : 5,
     },
     lg: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.16,
       shadowRadius: 24,
-      elevation: 10,
+      elevation: Platform.OS === 'android' ? 0 : 10,
     },
     xl: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 16 },
       shadowOpacity: 0.12,
       shadowRadius: 32,
-      elevation: 12,
+      elevation: Platform.OS === 'android' ? 0 : 12,
     },
     xxl: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 24 },
       shadowOpacity: 0.15,
       shadowRadius: 48,
-      elevation: 16,
+      elevation: Platform.OS === 'android' ? 0 : 16,
     },
     // Colored shadows for premium effect
     colored: {
