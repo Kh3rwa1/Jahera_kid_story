@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   SlideInDown,
@@ -170,6 +171,41 @@ export default function StoryPlayback() {
   const [showSettings, setShowSettings] = useState(false);
   const [isPlayingRequested, setIsPlayingRequested] = useState(true); // Auto-play by default
   const audioPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const progressSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const PROGRESS_KEY_PREFIX = 'story_progress_';
+
+  const saveProgress = useCallback(async (pos: number, dur: number) => {
+    if (!story?.id || dur <= 0) return;
+    try {
+      const progress = {
+        position: pos,
+        duration: dur,
+        updatedAt: Date.now(),
+        title: story.title,
+        theme: story.theme
+      };
+      await AsyncStorage.setItem(`${PROGRESS_KEY_PREFIX}${story.id}`, JSON.stringify(progress));
+      // Also track this as the 'latest' active story globally for the home screen
+      await AsyncStorage.setItem('last_active_story_id', story.id);
+    } catch (err) {
+      console.warn('[playback] Failed to save progress:', err);
+    }
+  }, [story]);
+
+  // Periodic autosave
+  useEffect(() => {
+    if (isPlaying && duration > 0) {
+      progressSaveTimerRef.current = setInterval(() => {
+        saveProgress(lastPositionRef.current, duration);
+      }, 5000);
+    } else {
+      if (progressSaveTimerRef.current) clearInterval(progressSaveTimerRef.current);
+    }
+    return () => {
+      if (progressSaveTimerRef.current) clearInterval(progressSaveTimerRef.current);
+    };
+  }, [isPlaying, duration, saveProgress]);
 
   const playScale = useSharedValue(1);
   const vinylRotation = useSharedValue(0);
@@ -369,9 +405,30 @@ export default function StoryPlayback() {
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false
       });
+
+      // Check for saved progress
+      let startPosition = 0;
+      try {
+        const saved = await AsyncStorage.getItem(`${PROGRESS_KEY_PREFIX}${params.storyId}`);
+        if (saved) {
+          const { position: savedPos, duration: savedDur } = JSON.parse(saved);
+          // Only resume if not at the very end (98%)
+          if (savedPos > 5000 && savedPos < (savedDur * 0.98)) {
+            startPosition = savedPos;
+            console.log('[playback] Resuming from saved position:', startPosition);
+          }
+        }
+      } catch (e) {
+        console.warn('[playback] Failed to load saved progress:', e);
+      }
+
       const { sound: audioSound } = await Audio.Sound.createAsync(
         { uri: audioPath },
-        { shouldPlay: true, progressUpdateIntervalMillis: 50 }, // Force shouldPlay to true for audio-first
+        { 
+          shouldPlay: true, 
+          positionMillis: startPosition,
+          progressUpdateIntervalMillis: 50 
+        },
         onPlaybackStatusUpdate
       );
       setSound(audioSound);
@@ -433,9 +490,12 @@ export default function StoryPlayback() {
 
   const handleBack = useCallback(() => {
     hapticFeedback.light();
-    if (sound) sound.stopAsync().catch(() => {});
+    if (sound) {
+      sound.stopAsync().catch(() => {});
+      saveProgress(lastPositionRef.current, duration);
+    }
     router.back();
-  }, [sound, router]);
+  }, [sound, router, saveProgress, duration]);
 
   const handleShare = useCallback(async () => {
     if (!story) return;
@@ -951,7 +1011,7 @@ export default function StoryPlayback() {
             <Animated.View
               key={`r${i}`}
               style={[styles.waveBar, ws, {
-                backgroundColor: isPlaying ? (accentColor + 'E5') : '#1E293B20',
+                backgroundColor: isPlaying ? (accentColor + 'E5') : (C.text.primary + '15'),
                 height: 32 + ((5 - i) % 3) * 6,
                 marginHorizontal: 2,
               }]}
@@ -990,8 +1050,8 @@ export default function StoryPlayback() {
                           style={[
                             styles.lyricsWord,
                             { fontFamily: FONTS.medium },
-                            isCurrentSentence && { color: '#333' },
-                            isPastWord && { color: '#111', fontFamily: FONTS.bold },
+                            isCurrentSentence && { color: C.text.primary },
+                            isPastWord && { color: C.text.primary, opacity: 0.8, fontFamily: FONTS.bold },
                             isActive && {
                               color: accentColor,
                               fontFamily: FONTS.extrabold,
@@ -1010,13 +1070,13 @@ export default function StoryPlayback() {
         </View>
 
         <Pressable onPress={handleProgressPress} style={styles.progressArea} hitSlop={12}>
-          <View style={[styles.progressTrack, { backgroundColor: '#33333318' }]}>
+          <View style={[styles.progressTrack, { backgroundColor: C.text.primary + '12' }]}>
             <View style={[styles.progressFilled, { width: `${progressPercentage}%`, backgroundColor: accentColor }]} />
             <Animated.View style={[styles.progressThumb, thumbStyle, { left: `${progressPercentage}%`, backgroundColor: accentColor }]} />
           </View>
           <View style={styles.timeLabels}>
-            <Text style={[styles.timeLabel, { color: '#888', fontFamily: FONTS.medium }]}>{formatTime(position)}</Text>
-            <Text style={[styles.timeLabel, { color: '#888', fontFamily: FONTS.medium }]}>-{formatTime(Math.max(0, duration - position))}</Text>
+            <Text style={[styles.timeLabel, { color: C.text.light, fontFamily: FONTS.medium }]}>{formatTime(position)}</Text>
+            <Text style={[styles.timeLabel, { color: C.text.light, fontFamily: FONTS.medium }]}>-{formatTime(Math.max(0, duration - position))}</Text>
           </View>
         </Pressable>
 
@@ -1207,8 +1267,8 @@ const useStyles = (C: any, insets: any, winWidth: number, winHeight: number) => 
       paddingHorizontal: 10, paddingVertical: 4,
       borderRadius: BORDER_RADIUS.pill, borderWidth: 1,
     },
-    readMetaBadgeText: { fontSize: 11, textTransform: 'capitalize' },
-    readMetaWords: { fontSize: 11 },
+    readMetaBadgeText: { fontSize: 13, textTransform: 'capitalize' },
+    readMetaWords: { fontSize: 13 },
     paragraph: { flexDirection: 'row', flexWrap: 'wrap' },
     readEndDivider: { height: 1, marginVertical: SPACING.xxl },
     readEndActions: { gap: SPACING.md, paddingBottom: SPACING.xl },
@@ -1217,7 +1277,7 @@ const useStyles = (C: any, insets: any, winWidth: number, winHeight: number) => 
       gap: SPACING.sm, paddingVertical: 13,
       borderRadius: BORDER_RADIUS.xl, borderWidth: 1.5,
     },
-    readEndBtnText: { fontSize: FONT_SIZES.sm },
+    readEndBtnText: { fontSize: 16 },
   
     errorBanner: {
       paddingVertical: 10, paddingHorizontal: SPACING.xl,
@@ -1236,9 +1296,9 @@ const useStyles = (C: any, insets: any, winWidth: number, winHeight: number) => 
     },
     audioTopBtn: {
       width: 40, height: 40, borderRadius: 20,
-      backgroundColor: 'rgba(0,0,0,0.28)',
+      backgroundColor: 'rgba(0,0,0,0.25)',
       alignItems: 'center', justifyContent: 'center',
-      borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
     },
     audioTabPill: {
       flexDirection: 'row',
@@ -1251,7 +1311,7 @@ const useStyles = (C: any, insets: any, winWidth: number, winHeight: number) => 
       paddingHorizontal: SPACING.md, paddingVertical: 7,
       borderRadius: BORDER_RADIUS.pill,
     },
-    audioTabText: { fontSize: 12 },
+    audioTabText: { fontSize: 14 },
   
     heroSection: {
       flex: 1, alignItems: 'center', justifyContent: 'center',
@@ -1280,17 +1340,17 @@ const useStyles = (C: any, insets: any, winWidth: number, winHeight: number) => 
     },
     heroMeta: { alignItems: 'center', gap: SPACING.md },
     heroTitle: {
-      fontSize: 22, color: '#FFF', textAlign: 'center',
-      lineHeight: 28, letterSpacing: -0.4,
+      fontSize: 30, color: '#FFF', textAlign: 'center',
+      lineHeight: 38, letterSpacing: -0.5,
       textShadowColor: 'rgba(0,0,0,0.35)',
       textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6,
     },
     heroBadges: { flexDirection: 'row', gap: SPACING.sm, flexWrap: 'wrap', justifyContent: 'center' },
     heroBadge: {
       flexDirection: 'row', alignItems: 'center', gap: 4,
-      borderRadius: BORDER_RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1,
+      borderRadius: BORDER_RADIUS.pill, paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1,
     },
-    heroBadgeText: { fontSize: 11, textTransform: 'capitalize' },
+    heroBadgeText: { fontSize: 14, textTransform: 'capitalize' },
   
     playerSheet: {
       position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -1329,8 +1389,8 @@ const useStyles = (C: any, insets: any, winWidth: number, winHeight: number) => 
       gap: SPACING.xl, marginBottom: SPACING.lg, paddingVertical: SPACING.xs,
     },
     statItem: { alignItems: 'center', gap: 1 },
-    statValue: { fontSize: 16 },
-    statLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+    statValue: { fontSize: 20 },
+    statLabel: { fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
     statDot: { width: 4, height: 4, borderRadius: 2 },
   
     controlsRow: {
@@ -1338,12 +1398,12 @@ const useStyles = (C: any, insets: any, winWidth: number, winHeight: number) => 
       gap: SPACING.xxxl + 8, marginBottom: SPACING.lg,
     },
     skipBtn: { alignItems: 'center', gap: 2, minWidth: 44 },
-    skipSec: { fontSize: 9, letterSpacing: 0.5 },
+    skipSec: { fontSize: 11, letterSpacing: 0.5 },
     playBtnWrap: {
       shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.38, shadowRadius: 20, elevation: 12,
     },
     playBtn: {
-      width: 72, height: 72, borderRadius: 36,
+      width: 80, height: 80, borderRadius: 40,
       alignItems: 'center', justifyContent: 'center',
     },
     bufferRow: { flexDirection: 'row', gap: 4, alignItems: 'center' },
@@ -1356,13 +1416,13 @@ const useStyles = (C: any, insets: any, winWidth: number, winHeight: number) => 
       shadowColor: '#F59E0B', shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.28, shadowRadius: 10, elevation: 6,
     },
-    quizBtnText: { color: '#FFF', fontSize: FONT_SIZES.md },
+    quizBtnText: { color: '#FFF', fontSize: 20 },
     outlineBtn: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-      gap: SPACING.sm, paddingVertical: 12,
+      gap: SPACING.sm, paddingVertical: 13,
       borderRadius: BORDER_RADIUS.xl, borderWidth: 1.5,
     },
-    outlineBtnText: { fontSize: FONT_SIZES.sm },
+    outlineBtnText: { fontSize: 16 },
   
     lyricsStrip: {
       height: 72, borderRadius: BORDER_RADIUS.lg,

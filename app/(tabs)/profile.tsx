@@ -6,6 +6,7 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,7 +23,8 @@ import Animated, {
   withSpring,
   Easing,
 } from 'react-native-reanimated';
-import { useEntranceSequence, useProgressBar, useGlowPulse } from '@/utils/animations';
+import { useEntranceSequence, useProgressBar, useGlowPulse, usePulse } from '@/utils/animations';
+import { FloatingParticles } from '@/components/FloatingParticles';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag } from '@/utils/languageUtils';
@@ -33,7 +35,7 @@ import {
   Zap,
   ChevronRight,
 } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
+import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES, COLORS as THEME_COLORS } from '@/constants/theme';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
@@ -74,6 +76,9 @@ export default function ProfileScreen() {
   const { profile, stories, quizAttempts, isLoading, error, refreshAll } = useApp();
   const insets = useSafeAreaInsets();
   const styles = useStyles(COLORS, insets);
+
+  const avatarPulseStyle = usePulse(0.97, 1.03);
+  const streakPinPulseStyle = usePulse(0.92, 1.1);
 
   const stats = useMemo(() => {
     const totalQuizzes = quizAttempts?.length || 0;
@@ -151,6 +156,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
       <MeshBackground primaryColor={COLORS.primary} />
+      <FloatingParticles count={15} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -159,13 +165,6 @@ export default function ProfileScreen() {
           <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={COLORS.primary} />
         }
       >
-        {/* ── Page title ── */}
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.pageHeader}>
-          <View style={styles.pageTitleRow}>
-            <Text style={styles.pageTitleEmoji}>🏆</Text>
-            <Text style={[styles.pageTitle, { color: COLORS.text.primary }]}>My Progress</Text>
-          </View>
-        </Animated.View>
 
         {/* ── Hero Glasmorphic Banner ── */}
         <Animated.View entering={FadeInDown.delay(200).springify()}>
@@ -178,7 +177,7 @@ export default function ProfileScreen() {
             />
             
             <View style={styles.heroTop}>
-              <View style={styles.heroAvatarWrap}>
+              <Animated.View style={[styles.heroAvatarWrap, avatarPulseStyle]}>
                 <ProfileAvatar
                   avatarUrl={profile.avatar_url}
                   name={profile.kid_name}
@@ -187,12 +186,12 @@ export default function ProfileScreen() {
                   onPress={() => router.push('/settings/edit-profile')}
                 />
                 {streak > 0 && (
-                  <Animated.View entering={ZoomIn.delay(600)} style={styles.streakPin}>
+                  <Animated.View entering={ZoomIn.delay(600)} style={[styles.streakPin, streakPinPulseStyle]}>
                     <Flame size={10} color="#FFFFFF" fill="#FFFFFF" />
                     <Text style={styles.streakPinText}>{streak}</Text>
                   </Animated.View>
                 )}
-              </View>
+              </Animated.View>
 
               <View style={styles.heroMeta}>
                 <Text style={[styles.heroName, { color: COLORS.text.primary }]}>{profile.kid_name}</Text>
@@ -389,7 +388,7 @@ const useStyles = (C: any, insets: any) => {
 
     pageHeader: { paddingTop: SPACING.xs },
     pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    pageTitleEmoji: { fontSize: 24 },
+    pageTitleEmoji: { fontSize: 32 },
     pageTitle: {
       fontSize: 34,
       fontFamily: FONTS.display,
@@ -400,7 +399,7 @@ const useStyles = (C: any, insets: any) => {
       borderRadius: BORDER_RADIUS.xxl + 8,
       overflow: 'hidden',
       borderWidth: 1,
-      ...SHADOWS.md,
+      ...(Platform.OS === 'ios' ? SHADOWS.md : {}),
     },
     heroTop: {
       flexDirection: 'row',
@@ -428,10 +427,10 @@ const useStyles = (C: any, insets: any) => {
     streakPinText: { fontSize: 10, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
     heroMeta: { flex: 1, gap: SPACING.xs },
     heroName: {
-      fontSize: 36,
+      fontSize: 42,
       fontFamily: FONTS.display,
       letterSpacing: -0.8,
-      lineHeight: 40,
+      lineHeight: 48,
     },
     langPill: {
       flexDirection: 'row',
@@ -469,7 +468,7 @@ const useStyles = (C: any, insets: any) => {
       justifyContent: 'center',
       marginBottom: 2,
     },
-    heroStatVal: { fontSize: 22, fontFamily: FONTS.display, letterSpacing: -0.4 },
+    heroStatVal: { fontSize: 28, fontFamily: FONTS.display, letterSpacing: -0.4 },
     heroStatLbl: {
       fontSize: 10,
       fontFamily: FONTS.extrabold,
@@ -483,17 +482,18 @@ const useStyles = (C: any, insets: any) => {
       alignItems: 'center',
       gap: 8,
       marginBottom: SPACING.md,
+      paddingHorizontal: 2,
     },
-    sectionEmoji: { fontSize: 22 },
+    sectionEmoji: { fontSize: 28 },
     sectionTitle: {
-      fontSize: 22,
+      fontSize: 24,
       fontFamily: FONTS.display,
-      letterSpacing: -0.4,
+      letterSpacing: -0.3,
       flex: 1,
     },
     sectionBadge: {
       paddingHorizontal: 12,
-      paddingVertical: 4,
+      paddingVertical: 5,
       borderRadius: BORDER_RADIUS.pill,
     },
     sectionBadgeText: { fontSize: 11, fontFamily: FONTS.extrabold },
@@ -504,29 +504,32 @@ const useStyles = (C: any, insets: any) => {
       borderRadius: BORDER_RADIUS.xxl,
       overflow: 'hidden',
       ...SHADOWS.md,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.2)',
     },
     achieveCardInner: {
       alignItems: 'center',
       padding: SPACING.md,
-      paddingVertical: SPACING.xl,
-      gap: 2,
+      paddingVertical: SPACING.xl + 2,
+      gap: 4,
     },
-    achieveEmoji: { fontSize: 32, marginBottom: 4 },
+    achieveEmoji: { fontSize: 44, marginBottom: 8 },
     achieveValue: {
-      fontSize: 24,
+      fontSize: 32,
       fontFamily: FONTS.display,
       color: '#FFFFFF',
       letterSpacing: -0.6,
     },
-    achieveLabel: { fontSize: 12, fontFamily: FONTS.extrabold, color: 'rgba(255,255,255,0.92)' },
+    achieveLabel: { fontSize: 13, fontFamily: FONTS.extrabold, color: 'rgba(255,255,255,0.92)' },
     achieveSub: { fontSize: 10, fontFamily: FONTS.bold, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' },
 
     section: { gap: SPACING.sm },
 
     listCard: {
-      borderRadius: BORDER_RADIUS.xxl + 4,
+      borderRadius: BORDER_RADIUS.xxl,
       overflow: 'hidden',
       ...SHADOWS.sm,
+      borderWidth: 1,
     },
     quizRow: {
       flexDirection: 'row',
@@ -545,9 +548,9 @@ const useStyles = (C: any, insets: any) => {
     },
     scorePillText: { fontSize: 14, fontFamily: FONTS.extrabold },
     quizInfo: { flex: 1, gap: 2 },
-    quizTitle: { fontSize: 15, fontFamily: FONTS.bold, letterSpacing: -0.1 },
-    quizSub: { fontSize: 13, fontFamily: FONTS.medium },
-    quizPerfectEmoji: { fontSize: 20 },
+    quizTitle: { fontSize: 17, fontFamily: FONTS.bold, letterSpacing: -0.1 },
+    quizSub: { fontSize: 14, fontFamily: FONTS.medium },
+    quizPerfectEmoji: { fontSize: 24 },
 
     langScroll: { gap: SPACING.md, paddingRight: SPACING.xs },
     langCard: {
@@ -558,9 +561,9 @@ const useStyles = (C: any, insets: any) => {
       alignItems: 'flex-start',
       ...SHADOWS.sm,
     },
-    langFlag: { fontSize: 32, marginBottom: 4 },
-    langName: { fontSize: 14, fontFamily: FONTS.extrabold, letterSpacing: -0.2 },
-    langCount: { fontSize: 11, fontFamily: FONTS.medium },
+    langFlag: { fontSize: 44, marginBottom: 6 },
+    langName: { fontSize: 16, fontFamily: FONTS.extrabold, letterSpacing: -0.2 },
+    langCount: { fontSize: 13, fontFamily: FONTS.medium },
     langBar: {
       width: '100%',
       height: 5,
@@ -593,7 +596,7 @@ const useStyles = (C: any, insets: any) => {
       ...SHADOWS.lg,
     },
     xpEmojiRow: { alignItems: 'center' },
-    xpEmoji: { fontSize: 52 },
+    xpEmoji: { fontSize: 64 },
     xpBadge: { 
       backgroundColor: 'rgba(255,255,255,0.2)', 
       paddingHorizontal: 8, 

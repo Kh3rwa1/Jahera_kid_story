@@ -39,8 +39,9 @@ const ConfettiPiece = ({ x, color, size, delay, winHeight }: { x: number; color:
     'worklet';
     return {
       transform: [
-        { translateY: interpolate(progress.value, [0, 1], [-50, winHeight + 50]) },
-        { rotate: `${interpolate(progress.value, [0, 1], [0, 720])}deg` },
+        { translateY: interpolate(progress.value, [0, 1], [-50, winHeight + 100]) },
+        { translateX: interpolate(progress.value, [0, 1], [0, (Math.random() - 0.5) * 150]) },
+        { rotate: `${interpolate(progress.value, [0, 1], [0, 1080])}deg` },
       ],
       opacity: interpolate(progress.value, [0, 0.1, 0.9, 1], [0, 1, 1, 0]),
     };
@@ -55,6 +56,7 @@ const ConfettiPiece = ({ x, color, size, delay, winHeight }: { x: number; color:
           width: size,
           height: size,
           backgroundColor: color,
+          borderRadius: Math.random() > 0.5 ? size / 2 : 4,
         },
         animatedStyle,
       ]}
@@ -69,19 +71,19 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
   const { width, height } = useWindowDimensions();
 
   const pieces = useMemo(() =>
-    Array.from({ length: 40 }, (_, i) => ({
+    Array.from({ length: 90 }, (_, i) => ({
       id: i,
       x: Math.random() * width,
       color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-      size: Math.random() * 10 + 5,
-      delay: Math.random() * 300,
+      size: Math.random() * 16 + 12, // 12-28px size for chunky kid feel
+      delay: Math.random() * 400,
     })),
     [width]
   );
 
   useEffect(() => {
     if (visible) {
-      const timer = setTimeout(() => onComplete?.(), 2200);
+      const timer = setTimeout(() => onComplete?.(), 2500);
       return () => clearTimeout(timer);
     }
   }, [visible, onComplete]);
@@ -104,6 +106,5 @@ const styles = StyleSheet.create({
   },
   confetti: {
     position: 'absolute',
-    borderRadius: 2,
   },
 });

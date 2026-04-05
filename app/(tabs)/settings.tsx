@@ -24,7 +24,8 @@ import Animated, {
   interpolate,
   cancelAnimation,
 } from 'react-native-reanimated';
-import { useEntranceSequence } from '@/utils/animations';
+import { useEntranceSequence, usePulse } from '@/utils/animations';
+import { FloatingParticles } from '@/components/FloatingParticles';
 import {
   Key,
   Palette,
@@ -137,6 +138,8 @@ export default function SettingsTab() {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const { user, signOut } = useAuth();
+  
+  const crownPulseStyle = usePulse(0.9, 1.1);
   const { clearProfile, profile, stories } = useApp();
   const COLORS = currentTheme.colors;
   const [signingOut, setSigningOut] = useState(false);
@@ -176,7 +179,7 @@ export default function SettingsTab() {
           id: 'edit-profile',
           label: 'Edit Profile',
           sublabel: profile?.kid_name ? `${profile.kid_name}'s profile` : 'Update name & avatar',
-          icon: <UserCog size={17} color="#FFFFFF" strokeWidth={2.5} />,
+          icon: <UserCog size={24} color="#FFFFFF" strokeWidth={2} />,
           iconGradient: ['#3B82F6', '#2563EB'],
           route: '/settings/edit-profile',
         },
@@ -186,7 +189,7 @@ export default function SettingsTab() {
           sublabel: profile?.languages?.length
             ? `${profile.languages.length} active`
             : 'Add learning languages',
-          icon: <Globe size={17} color="#FFFFFF" strokeWidth={2.5} />,
+          icon: <Globe size={24} color="#FFFFFF" strokeWidth={2} />,
           iconGradient: ['#10B981', '#059669'],
           route: '/settings/edit-profile',
         },
@@ -200,7 +203,7 @@ export default function SettingsTab() {
           id: 'customization',
           label: 'Themes & Colors',
           sublabel: 'Personalize your world',
-          icon: <Palette size={17} color="#FFFFFF" strokeWidth={2.5} />,
+          icon: <Palette size={24} color="#FFFFFF" strokeWidth={2} />,
           iconGradient: ['#F59E0B', '#D97706'],
           route: '/settings/customization',
         },
@@ -213,7 +216,7 @@ export default function SettingsTab() {
         {
           id: 'signout',
           label: signingOut ? 'Signing out…' : 'Sign Out',
-          icon: <LogOut size={17} color={COLORS.error} strokeWidth={2.5} />,
+          icon: <LogOut size={24} color={COLORS.error} strokeWidth={2} />,
           iconGradient: [COLORS.error + '30', COLORS.error + '15'],
           destructive: true,
           onPress: handleSignOut,
@@ -226,16 +229,10 @@ export default function SettingsTab() {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
       <MeshBackground primaryColor={COLORS.primary} />
+      <FloatingParticles count={15} />
       
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        {/* Page header */}
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.pageHeader}>
-          <View style={styles.pageTitleRow}>
-            <Text style={styles.pageTitleEmoji}>⚙️</Text>
-            <Text style={[styles.pageTitle, { color: COLORS.text.primary }]}>Settings</Text>
-          </View>
-        </Animated.View>
 
         {/* ── Hero Glasmorphic Card ── */}
         <Animated.View entering={FadeInDown.delay(200).springify()}>
@@ -255,9 +252,9 @@ export default function SettingsTab() {
                   size="medium"
                   editable={false}
                 />
-                <View style={[styles.crownBadge, { backgroundColor: COLORS.primary }]}>
+                <Animated.View style={[styles.crownBadge, { backgroundColor: COLORS.primary }, crownPulseStyle]}>
                    <Crown size={10} color="#FFFFFF" fill="#FFFFFF" />
-                </View>
+                </Animated.View>
               </View>
 
               <View style={styles.heroInfo}>
@@ -459,7 +456,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.xxl + 4,
     overflow: 'hidden',
     borderWidth: 1,
-    ...SHADOWS.md,
+    ...(Platform.OS === 'ios' ? SHADOWS.md : {}),
   },
   heroTop: {
     flexDirection: 'row',
@@ -558,7 +555,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: SPACING.lg,
-    ...SHADOWS.lg,
+    ...SHADOWS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   premiumIconBox: {
     width: 48, height: 48, borderRadius: 16,
@@ -567,25 +566,25 @@ const styles = StyleSheet.create({
   },
   premiumBody: { flex: 1, gap: 2 },
   premiumTitle: {
-    fontSize: 17, fontFamily: FONTS.display,
+    fontSize: 20, fontFamily: FONTS.display,
     color: '#FFFFFF', letterSpacing: -0.3,
   },
-  premiumDesc: { fontSize: 13, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.9)' },
+  premiumDesc: { fontSize: 14, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.9)' },
   premiumAction: {
-    paddingHorizontal: 12, paddingVertical: 8,
+    paddingHorizontal: 16, paddingVertical: 10,
     backgroundColor: '#FFF', borderRadius: BORDER_RADIUS.pill,
     ...SHADOWS.sm,
   },
-  premiumActionText: { fontSize: 10, fontFamily: FONTS.extrabold, color: '#F59E0B' },
+  premiumActionText: { fontSize: 13, fontFamily: FONTS.extrabold, color: '#F59E0B' },
 
   referralCard: { width: '100%' },
   referralInner: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.lg,
     padding: SPACING.xl, borderRadius: 28,
-    overflow: 'hidden', borderWidth: 1, ...SHADOWS.md,
+    overflow: 'hidden', borderWidth: 1, ...SHADOWS.sm,
   },
   referralIcon: {
-    width: 48, height: 48, borderRadius: 24,
+    width: 58, height: 58, borderRadius: 29,
     alignItems: 'center', justifyContent: 'center',
   },
   referralContent: { flex: 1, gap: 2 },
@@ -612,13 +611,13 @@ const styles = StyleSheet.create({
   wisdomAuthor: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   wisdomAuthorText: { fontSize: 10, fontFamily: FONTS.extrabold, color: '#94A3B8', letterSpacing: 1.2 },
 
-  group: { gap: 8 },
-  groupLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: SPACING.md },
-  groupEmoji: { fontSize: 16 },
+  group: { gap: 10 },
+  groupLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: SPACING.md },
+  groupEmoji: { fontSize: 22 },
   groupLabel: {
-    fontSize: 11,
+    fontSize: 15,
     fontFamily: FONTS.extrabold,
-    letterSpacing: 1.2,
+    letterSpacing: 0.8,
   },
   groupCard: {
     borderRadius: 28,
@@ -630,27 +629,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.xl,
-    paddingVertical: 18,
+    paddingVertical: 20,
     gap: SPACING.lg,
-    minHeight: 70,
+    minHeight: 82,
   },
   rowIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 54,
+    height: 54,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowBody: { flex: 1, gap: 1 },
+  rowBody: { flex: 1, gap: 2 },
   rowLabel: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: FONTS.bold,
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   rowSub: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: FONTS.medium,
-    opacity: 0.7,
+    opacity: 0.75,
   },
   rowTrailing: {
     flexDirection: 'row',
@@ -662,15 +661,15 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.xl,
   },
   badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: BORDER_RADIUS.pill,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 13,
     fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
 
   footer: { alignItems: 'center', paddingVertical: SPACING.xl },

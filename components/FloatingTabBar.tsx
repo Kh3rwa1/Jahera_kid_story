@@ -77,10 +77,11 @@ function TabItem({
     >
       <Animated.View style={[styles.tabContent, iconStyle]}>
         <Icon
-          size={21}
+          size={26}
           color={focused ? activeColor : inactiveColor}
           strokeWidth={focused ? 2.5 : 1.8}
         />
+        {focused && <Animated.View style={[styles.activeDot, { backgroundColor: activeColor }]} />}
       </Animated.View>
       <Animated.Text
         style={[
@@ -112,7 +113,7 @@ export function FloatingTabBar({
   const BAR_WIDTH = Math.min(winWidth - 28, 440);
   const TAB_WIDTH = BAR_WIDTH / TABS.length;
   const PILL_WIDTH = TAB_WIDTH - 10;
-  const PILL_HEIGHT = 50;
+  const PILL_HEIGHT = 62;
   const HALO_SIZE = BAR_WIDTH + 40;
 
   const handleTabPress = (route: string) => {
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.22,
     shadowRadius: 40,
-    elevation: 24,
+    elevation: Platform.OS === 'android' ? 0 : 24,
   },
   shadow2: {
     position: 'absolute',
@@ -275,7 +276,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
-    elevation: 12,
+    elevation: Platform.OS === 'android' ? 0 : 12,
   },
 
   barContainer: {
@@ -305,13 +306,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 8,
     paddingHorizontal: 4,
-    height: 68,
+    height: 80,
     alignItems: 'center',
   },
 
   tabItem: {
     flex: 1,
-    height: 50,
+    height: 62,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 3,
@@ -320,11 +321,18 @@ const styles = StyleSheet.create({
   tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
+  },
+
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
 
   tabLabel: {
-    fontSize: 11.5,
+    fontSize: 13,
     letterSpacing: 0.1,
-    lineHeight: 14,
+    lineHeight: 16,
   },
 });

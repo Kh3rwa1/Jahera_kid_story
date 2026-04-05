@@ -27,7 +27,8 @@ import { generateAdventureStory, QuotaExceededError, StoryOptions } from '@/serv
 import { generateAudio } from '@/services/audioService';
 import { getCurrentContext } from '@/utils/contextUtils';
 import { getLocationContext, formatLocationLabel, LocationContext } from '@/services/locationService';
-import { Sparkles, BookOpen, Volume2, Circle as HelpCircle, Check, Zap, ChevronLeft, Wand as Wand2, MapPin } from 'lucide-react-native';
+import { Sparkles, BookOpen, Volume2, Circle as HelpCircle, Check, Zap, ChevronLeft, Wand as Wand2, MapPin, Globe } from 'lucide-react-native';
+import { SUPPORTED_LANGUAGES, Language } from '@/constants/languages';
 import { ErrorState } from '@/components/ErrorState';
 import { CharacterManager } from '@/components/CharacterManager';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
@@ -74,6 +75,41 @@ const LENGTHS = [
   { id: 'medium', label: 'Medium', desc: '~120 words', emoji: '📖' },
   { id: 'long', label: 'Long', desc: '~250 words', emoji: '📜', pro: true },
 ];
+
+// A compact pill for the language picker
+function LanguagePill({ lang, selected, styles, colors_C, onPress }: {
+  lang: Language;
+  selected: boolean;
+  styles: any;
+  colors_C: any;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const handlePress = () => {
+    scale.value = withSequence(withSpring(0.88, { damping: 10 }), withSpring(1, { damping: 12 }));
+    onPress();
+    hapticFeedback.light();
+  };
+  return (
+    <TouchableOpacity onPress={handlePress} activeOpacity={1}>
+      <ReAnimated.View style={animStyle}>
+        <View style={[
+          styles.langPill,
+          selected
+            ? { backgroundColor: colors_C.primary, borderColor: colors_C.primary }
+            : { backgroundColor: colors_C.cardBackground, borderColor: colors_C.text.light + '25' },
+        ]}>
+          <Text style={styles.langFlag}>{lang.flag}</Text>
+          <Text style={[styles.langName, { color: selected ? '#fff' : colors_C.text.secondary }]}>
+            {lang.nativeName}
+          </Text>
+          {selected && <Check size={13} color="#fff" strokeWidth={3} />}
+        </View>
+      </ReAnimated.View>
+    </TouchableOpacity>
+  );
+}
 
 interface GenerationStep {
   id: string;
@@ -283,11 +319,11 @@ const useStyles = (C: any, winWidth: number, insets: any) => {
       marginBottom: 12,
     },
     pageTitle: {
-      fontSize: 34, fontFamily: FONTS.displayBold, lineHeight: 40,
-      letterSpacing: -1, marginBottom: 6, color: C.text.primary,
+      fontSize: 42, fontFamily: FONTS.display, lineHeight: 50,
+      letterSpacing: -1.2, marginBottom: 6, color: C.text.primary,
     },
     pageSubtitle: {
-      fontSize: 15, fontFamily: FONTS.medium,
+      fontSize: 16, fontFamily: FONTS.medium,
       opacity: 0.8, color: C.text.secondary,
     },
     section: {
@@ -301,17 +337,17 @@ const useStyles = (C: any, winWidth: number, insets: any) => {
       marginBottom: SPACING.md,
     },
     sectionLabel: {
-      fontSize: 13, fontFamily: FONTS.bold, textTransform: 'uppercase',
-      letterSpacing: 1.2, color: C.text.secondary,
+      fontSize: 15, fontFamily: FONTS.displayBold, textTransform: 'uppercase',
+      letterSpacing: 1.5, color: C.text.secondary,
     },
     sectionBadge: {
-      paddingHorizontal: 10,
-      paddingVertical: 5,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
       borderRadius: BORDER_RADIUS.pill,
     },
     sectionBadgeText: {
-      fontSize: 11,
-      fontFamily: FONTS.bold,
+      fontSize: 13,
+      fontFamily: FONTS.displayBold,
     },
     themeGrid: {
       flexDirection: 'row',
@@ -341,9 +377,9 @@ const useStyles = (C: any, winWidth: number, insets: any) => {
       overflow: 'hidden',
       borderRadius: BORDER_RADIUS.xl,
     },
-    themeCardEmoji: { fontSize: 28, marginBottom: 4 },
-    themeCardLabel: { fontSize: 11, fontFamily: FONTS.bold },
-    themeCardLabelSelected: { fontSize: 11, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
+    themeCardEmoji: { fontSize: 34, marginBottom: 4 },
+    themeCardLabel: { fontSize: 12, fontFamily: FONTS.displayBold },
+    themeCardLabelSelected: { fontSize: 12, fontFamily: FONTS.display, color: '#FFFFFF' },
 
     moodRow: {
       flexDirection: 'row',
@@ -361,8 +397,8 @@ const useStyles = (C: any, winWidth: number, insets: any) => {
       ...SHADOWS.xs,
       position: 'relative',
     },
-    moodEmoji: { fontSize: 28 },
-    moodLabel: { fontSize: 13, fontFamily: FONTS.displayBold },
+    moodEmoji: { fontSize: 34 },
+    moodLabel: { fontSize: 16, fontFamily: FONTS.displayBold },
     moodDot: {
       width: 6,
       height: 6,
@@ -384,13 +420,13 @@ const useStyles = (C: any, winWidth: number, insets: any) => {
       position: 'relative',
       ...SHADOWS.xs,
     },
-    lengthEmoji: { fontSize: 26 },
+    lengthEmoji: { fontSize: 30 },
     lengthTitle: {
-      fontSize: 14,
+      fontSize: 17,
       fontFamily: FONTS.displayBold,
     },
     lengthWords: {
-      fontSize: 11,
+      fontSize: 13,
       fontFamily: FONTS.displayMedium,
     },
     proCrown: {
@@ -622,6 +658,9 @@ const useStyles = (C: any, winWidth: number, insets: any) => {
       paddingBottom: SPACING.sm,
       borderRadius: BORDER_RADIUS.xl,
       marginBottom: SPACING.lg,
+      backgroundColor: C.cardBackground + '90',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.3)',
       ...SHADOWS.sm,
     },
     timelineRow: {
@@ -708,6 +747,24 @@ const useStyles = (C: any, winWidth: number, insets: any) => {
       fontSize: 13,
       fontFamily: FONTS.medium,
     },
+    // ── Language picker ───────────────────────────────────────────────
+    langRow: {
+      paddingHorizontal: SPACING.xl,
+      gap: SPACING.sm,
+      paddingVertical: 4,
+    },
+    langPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: BORDER_RADIUS.pill,
+      borderWidth: 1.5,
+      ...SHADOWS.xs,
+    },
+    langFlag: { fontSize: 18 },
+    langName: { fontSize: 14, fontFamily: FONTS.displayBold },
   }), [C, winWidth, insets]);
 };
 
@@ -727,6 +784,9 @@ export default function GenerateStory() {
   const [selectedTheme, setSelectedTheme] = useState('adventure');
   const [selectedMood, setSelectedMood] = useState('exciting');
   const [selectedLength, setSelectedLength] = useState<'short' | 'medium' | 'long'>('short');
+  const [selectedLanguage, setSelectedLanguage] = useState(
+    (params.languageCode as string) || 'en'
+  );
 
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -737,6 +797,27 @@ export default function GenerateStory() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isQuotaError, setIsQuotaError] = useState(false);
+
+  // Handle "Surprise Me" randomization
+  useEffect(() => {
+    if (params.surprise === 'true') {
+      const randomTheme = THEMES[Math.floor(Math.random() * THEMES.length)].id;
+      const randomMood = MOODS[Math.floor(Math.random() * MOODS.length)].id;
+      
+      // Don't surprise with 'long' if they aren't pro to avoid immediate paywall
+      const availableLengths = subscription?.plan !== 'free' 
+        ? LENGTHS 
+        : LENGTHS.filter(l => !l.pro);
+      const randomLength = availableLengths[Math.floor(Math.random() * availableLengths.length)].id;
+
+      setSelectedTheme(randomTheme);
+      setSelectedMood(randomMood);
+      setSelectedLength(randomLength as any);
+      
+      hapticFeedback.success();
+    }
+  }, [params.surprise, subscription?.plan]);
+
   const [funFactIndex, setFunFactIndex] = useState(0);
   const [longWait, setLongWait] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -899,7 +980,7 @@ export default function GenerateStory() {
   const runGeneration = async () => {
     try {
       const profileId = params.profileId as string;
-      const languageCode = params.languageCode as string;
+      const languageCode = selectedLanguage;
 
       if (!isMountedRef.current) return;
       setStatus('Loading your profile...');
@@ -1267,7 +1348,7 @@ export default function GenerateStory() {
             end={{ x: 1, y: 0 }}
           />
           <Text style={styles.pageTitle}>Craft Your{'\n'}Story</Text>
-          <Text style={styles.pageSubtitle}>Choose your theme, mood, and length</Text>
+          <Text style={styles.pageSubtitle}>Choose theme, language, mood & length</Text>
         </ReAnimated.View>
 
         <ReAnimated.View entering={FadeInUp.delay(80).springify()} style={styles.section}>
@@ -1328,7 +1409,41 @@ export default function GenerateStory() {
           </View>
         </ReAnimated.View>
 
-        <ReAnimated.View entering={FadeInUp.delay(340).springify()} style={styles.section}>
+        {/* ── Language ── */}
+        <ReAnimated.View entering={FadeInUp.delay(240).springify()} style={styles.section}>
+          <View style={styles.sectionHead}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+              <Globe size={14} color={C.text.secondary} strokeWidth={2.5} />
+              <Text style={styles.sectionLabel}>Story Language</Text>
+            </View>
+            <View style={[styles.sectionBadge, { backgroundColor: C.primary + '15' }]}>
+              <Text style={[styles.sectionBadgeText, { color: C.primary }]}>
+                {SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.flag}{' '}
+                {SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name}
+              </Text>
+            </View>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.langRow}
+          >
+            {SUPPORTED_LANGUAGES.map(lang => (
+              <LanguagePill
+                key={lang.code}
+                lang={lang}
+                selected={selectedLanguage === lang.code}
+                styles={styles}
+                colors_C={C}
+                onPress={() => setSelectedLanguage(lang.code)}
+              />
+            ))}
+          </ScrollView>
+        </ReAnimated.View>
+
+
+        {/* ── Characters ── */}
+        <ReAnimated.View entering={FadeInUp.delay(380).springify()} style={styles.section}>
           <CharacterManager
             profileId={params.profileId as string}
             familyMembers={familyMembers}
@@ -1338,7 +1453,7 @@ export default function GenerateStory() {
           />
         </ReAnimated.View>
 
-        <ReAnimated.View entering={FadeInUp.delay(400).springify()} style={styles.ctaSection}>
+        <ReAnimated.View entering={FadeInUp.delay(440).springify()} style={styles.ctaSection}>
           {subscription && subscription.plan === 'free' && (
             <View style={styles.quotaRow}>
               <View style={styles.quotaDot} />
