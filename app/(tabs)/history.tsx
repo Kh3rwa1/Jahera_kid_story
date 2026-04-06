@@ -149,7 +149,7 @@ export default function HistoryScreen() {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
-  const { stories, refreshStories, setStories } = useApp();
+  const { profile, stories, refreshStories, setStories } = useApp();
   const { wakeUI } = useUI();
   const insets = useSafeAreaInsets();
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
@@ -475,7 +475,7 @@ export default function HistoryScreen() {
             {!searchQuery && (
               <TouchableOpacity
                 style={[styles.emptyAction, { backgroundColor: COLORS.primary }]}
-                onPress={() => router.push('/story/generate')}
+                onPress={() => router.push({ pathname: '/story/generate', params: { profileId: profile?.id, languageCode: profile?.primary_language } })}
               >
                 <Sparkles size={16} color="#FFF" strokeWidth={2.5} />
                 <Text style={styles.emptyActionText}>Create Story</Text>
