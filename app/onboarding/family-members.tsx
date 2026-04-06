@@ -29,8 +29,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Audio } from 'expo-av';
-import { generateAudio } from '@/services/audioService';
+import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 
 const MEMBER_EMOJIS = ['👨', '👩', '👧', '👦', '👴', '👵', '🐶', '🐱'];
@@ -43,10 +42,10 @@ export default function FamilyMembers() {
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
   const styles = useStyles(C, insets, winWidth);
+  const { speak } = useNarrationAudio('family-members');
   const [familyMembers, setFamilyMembers] = useState<string[]>([]);
   const [currentName, setCurrentName] = useState('');
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-
+  
   const addBtnScale = useSharedValue(1);
 
   useEffect(() => {
@@ -62,32 +61,8 @@ export default function FamilyMembers() {
 
     return () => {
       clearTimeout(timer);
-      if (sound) {
-        sound.unloadAsync().catch(() => {});
-      }
     };
-  }, []);
-
-  const speak = async (text: string, lang: string) => {
-    try {
-      if (sound) {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-        setSound(null);
-      }
-
-      const url = await generateAudio(text, lang);
-      if (!url) return;
-
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: url },
-        { shouldPlay: true }
-      );
-      setSound(newSound);
-    } catch (err) {
-      console.error('TTS Error (Family Members):', err);
-    }
-  };
+  }, [params.kidName, params.languages, speak]);
 
   const addFamilyMember = async () => {
     const trimmed = currentName.trim();
