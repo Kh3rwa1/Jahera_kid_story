@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 
 export default function Register() {
   const router = useRouter();
@@ -72,8 +73,8 @@ export default function Register() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <BrandVideoBackground videoId="onboarding_video" fallbackSource={require('@/assets/jahera.mp4')} overlayOpacity={0.25} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
         <ScrollView
@@ -84,10 +85,10 @@ export default function Register() {
           <Animated.View entering={FadeInDown.delay(50).springify()}>
             <TouchableOpacity
               onPress={() => router.back()}
-              style={[styles.backBtn, { backgroundColor: COLORS.cardBackground }]}
+              style={styles.backBtn}
               activeOpacity={0.7}
             >
-              <ArrowLeft size={20} color={COLORS.text.primary} strokeWidth={2.5} />
+              <ArrowLeft size={20} color={COLORS.primaryDark} strokeWidth={2.5} />
             </TouchableOpacity>
           </Animated.View>
 
@@ -101,14 +102,14 @@ export default function Register() {
                 />
               </LinearGradient>
             </View>
-            <Text style={[styles.title, { color: COLORS.text.primary }]}>Create account</Text>
-            <Text style={[styles.subtitle, { color: COLORS.text.secondary }]}>
+            <Text style={[styles.title, { color: '#FFFFFF' }]}>Create account</Text>
+            <Text style={[styles.subtitle, { color: '#E2E8F0' }]}>
               Start your child's adventure today
             </Text>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.form}>
-            <View style={[styles.inputGroup, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={styles.inputGroup}>
               <User size={20} color={COLORS.text.light} strokeWidth={2} />
               <TextInput
                 style={[styles.input, { color: COLORS.text.primary }]}
@@ -121,7 +122,7 @@ export default function Register() {
               />
             </View>
 
-            <View style={[styles.inputGroup, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={styles.inputGroup}>
               <Mail size={20} color={COLORS.text.light} strokeWidth={2} />
               <TextInput
                 style={[styles.input, { color: COLORS.text.primary }]}
@@ -136,7 +137,7 @@ export default function Register() {
               />
             </View>
 
-            <View style={[styles.inputGroup, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={styles.inputGroup}>
               <Lock size={20} color={COLORS.text.light} strokeWidth={2} />
               <TextInput
                 style={[styles.input, { color: COLORS.text.primary }]}
@@ -165,30 +166,30 @@ export default function Register() {
 
             <TouchableOpacity onPress={handleRegister} activeOpacity={0.88} disabled={isLoading}>
               <LinearGradient
-                colors={isLoading ? [COLORS.text.light, COLORS.text.light] : [COLORS.primary, COLORS.primaryDark]}
+                colors={isLoading ? ['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.4)'] : ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.95)']}
                 style={styles.ctaButton}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
                 {isLoading
-                  ? <ActivityIndicator color="#FFFFFF" size="small" />
+                  ? <ActivityIndicator color={COLORS.primaryDark} size="small" />
                   : (
                     <>
-                      <Text style={styles.ctaText}>Create Account</Text>
-                      <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} />
+                      <Text style={[styles.ctaText, { color: COLORS.primaryDark }]}>Create Account</Text>
+                      <ArrowRight size={20} color={COLORS.primaryDark} strokeWidth={2.5} />
                     </>
                   )
                 }
               </LinearGradient>
             </TouchableOpacity>
 
-            <Text style={[styles.termsText, { color: COLORS.text.light }]}>
+            <Text style={[styles.termsText, { color: '#CBD5E1' }]}>
               By creating an account you agree to our Terms of Service and Privacy Policy.
             </Text>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.footer}>
-            <Text style={[styles.footerText, { color: COLORS.text.secondary }]}>
+            <Text style={[styles.footerText, { color: '#F1F5F9' }]}>
               Already have an account?{' '}
             </Text>
             <TouchableOpacity onPress={() => router.push('/auth/login')}>
@@ -203,7 +204,7 @@ export default function Register() {
 
 const useStyles = (COLORS: any, insets: any) => {
   return useMemo(() => StyleSheet.create({
-    root: { flex: 1 },
+    root: { flex: 1, backgroundColor: '#000' },
     kav: { flex: 1 },
     scroll: {
       flexGrow: 1,
@@ -218,7 +219,13 @@ const useStyles = (COLORS: any, insets: any) => {
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: SPACING.xl,
-      ...SHADOWS.sm,
+      backgroundColor: 'rgba(255, 255, 255, 0.85)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.5)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
     },
     hero: {
       alignItems: 'center',
@@ -246,12 +253,18 @@ const useStyles = (COLORS: any, insets: any) => {
       letterSpacing: -0.5,
       marginBottom: SPACING.sm,
       textAlign: 'center',
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 4 },
+      textShadowRadius: 10,
     },
     subtitle: {
       fontSize: FONT_SIZES.md,
       fontFamily: FONTS.medium,
       textAlign: 'center',
       lineHeight: 22,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 6,
     },
     form: {
       gap: SPACING.md,
@@ -264,7 +277,13 @@ const useStyles = (COLORS: any, insets: any) => {
       paddingHorizontal: SPACING.lg,
       paddingVertical: SPACING.md,
       gap: SPACING.md,
-      ...SHADOWS.sm,
+      backgroundColor: 'rgba(255, 255, 255, 0.85)',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.5)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
     },
     input: {
       flex: 1,
@@ -286,7 +305,12 @@ const useStyles = (COLORS: any, insets: any) => {
       paddingVertical: SPACING.xl,
       borderRadius: BORDER_RADIUS.pill,
       marginTop: SPACING.sm,
-      ...SHADOWS.xl,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.7)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.2,
+      shadowRadius: 20,
       minHeight: 58,
     },
     ctaText: {
@@ -300,6 +324,9 @@ const useStyles = (COLORS: any, insets: any) => {
       fontFamily: FONTS.medium,
       textAlign: 'center',
       lineHeight: 18,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 6,
     },
     footer: {
       flexDirection: 'row',
@@ -310,10 +337,16 @@ const useStyles = (COLORS: any, insets: any) => {
     footerText: {
       fontSize: FONT_SIZES.md,
       fontFamily: FONTS.medium,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 6,
     },
     linkText: {
       fontSize: FONT_SIZES.md,
       fontFamily: FONTS.bold,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 6,
     },
   }), [COLORS, insets]);
 };
