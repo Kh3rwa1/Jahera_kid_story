@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Dimensions, ViewStyle } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, STORAGE_BUCKETS, storage } from '@/lib/appwrite';
+import { STORAGE_BUCKETS, storage } from '@/lib/appwrite';
 
 interface BrandVideoBackgroundProps {
   /** The ID of the file in the app_assets bucket (e.g., 'onboarding_video') */
@@ -20,17 +20,34 @@ export function BrandVideoBackground({ videoId, fallbackSource, style, overlayOp
   const { width, height } = Dimensions.get('screen');
 
   useEffect(() => {
-    try {
-      const url = `${APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKETS.APP_ASSETS}/files/${videoId}/view?project=${APPWRITE_PROJECT_ID}`;
-      setAssetUrl(url);
-    } catch (e) {
-      console.log(`Fallback for video ${videoId}: Appwrite asset not found.`);
-      setHasError(true);
-    }
+    let isMounted = true;
+
+    const resolveVideo = async () => {
+      try {
+        await storage.getFile(STORAGE_BUCKETS.APP_ASSETS, videoId);
+        const url = storage.getFileView(STORAGE_BUCKETS.APP_ASSETS, videoId).toString();
+        if (isMounted) {
+          setAssetUrl(url);
+          setHasError(false);
+        }
+      } catch (e) {
+        console.log(`Fallback for video ${videoId}: Appwrite asset not found or inaccessible.`, e);
+        if (isMounted) {
+          setHasError(true);
+          setAssetUrl(null);
+        }
+      }
+    };
+
+    resolveVideo();
+
+    return () => {
+      isMounted = false;
+    };
   }, [videoId]);
 
-  const source = (!hasError && assetUrl) 
-    ? assetUrl 
+  const source = (!hasError && assetUrl)
+    ? { uri: assetUrl }
     : fallbackSource;
 
   const player = useVideoPlayer(source, player => {
