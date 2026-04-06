@@ -959,13 +959,15 @@ export default function GenerateStory() {
 
   const isPro = subscription?.plan !== 'free';
 
+  // Resolve profileId: prefer URL param, fallback to AppContext profile
+  const resolvedProfileId = (params.profileId as string) || profile?.id;
+
   useEffect(() => {
-    const profileId = params.profileId as string;
-    if (!profileId) return;
+    if (!resolvedProfileId) return;
 
     Promise.all([
-      familyMemberService.getByProfileId(profileId),
-      friendService.getByProfileId(profileId),
+      familyMemberService.getByProfileId(resolvedProfileId),
+      friendService.getByProfileId(resolvedProfileId),
     ]).then(([fm, fr]) => {
       if (fm) setFamilyMembers(fm);
       if (fr) setFriends(fr);
@@ -978,7 +980,7 @@ export default function GenerateStory() {
         setLocationLoading(false);
       }
     });
-  }, [params.profileId]);
+  }, [resolvedProfileId]);
 
   useEffect(() => {
     if (phase !== 'generating') return;
@@ -1042,8 +1044,13 @@ export default function GenerateStory() {
 
   const runGeneration = async () => {
     try {
-      const profileId = params.profileId as string;
+      const profileId = resolvedProfileId;
       const languageCode = selectedLanguage;
+
+      if (!profileId) {
+        setError('Profile not found. Please make sure you have created a profile first.');
+        return;
+      }
 
       if (!isMountedRef.current) return;
       setStatus('Loading your profile...');
