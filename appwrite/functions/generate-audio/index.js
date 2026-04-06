@@ -1,17 +1,11 @@
 const sdk = require('node-appwrite');
 const fetch = require('node-fetch');
 const { EdgeTTS } = require('@andresaya/edge-tts');
+const nodeCrypto = require('crypto');
 
 const DATABASE_ID = 'jahera_db';
 const STORIES_COLLECTION = 'stories';
-
-// Polyfill crypto for Node.js runtimes that don't have it globally
-if (typeof crypto === 'undefined') {
-  const nodeCrypto = require('crypto');
-  if (nodeCrypto.webcrypto) {
-    global.crypto = nodeCrypto.webcrypto;
-  }
-}
+const CACHE_VERSION = 'v1_final'; // Tracking for story-audio cache hits
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ElevenLabs Configuration
