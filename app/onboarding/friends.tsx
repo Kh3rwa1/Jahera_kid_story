@@ -33,8 +33,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Audio } from 'expo-av';
-import { generateAudio } from '@/services/audioService';
+import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 
 const FRIEND_EMOJIS = ['🧒', '👦', '👧', '🧑', '👶', '🧓', '🌟', '🌈'];
@@ -49,12 +48,12 @@ export default function Friends() {
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
   const styles = useStyles(C, insets, winWidth);
+  const { speak } = useNarrationAudio('friends');
   const [friends, setFriends] = useState<string[]>([]);
   const [currentName, setCurrentName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-
+  
   const addBtnScale = useSharedValue(1);
 
   useEffect(() => {
@@ -74,32 +73,8 @@ export default function Friends() {
 
     return () => {
       clearTimeout(timer);
-      if (sound) {
-        sound.unloadAsync().catch(() => {});
-      }
     };
-  }, [params.languages]);
-
-  const speak = async (text: string, lang: string) => {
-    try {
-      if (sound) {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-        setSound(null);
-      }
-
-      const url = await generateAudio(text, lang);
-      if (!url) return;
-
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: url },
-        { shouldPlay: true }
-      );
-      setSound(newSound);
-    } catch (err) {
-      console.error('TTS Error (Friends):', err);
-    }
-  };
+  }, [params.languages, speak]);
 
   const addFriend = async () => {
     const trimmed = currentName.trim();
