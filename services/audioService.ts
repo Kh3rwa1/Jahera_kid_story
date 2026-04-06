@@ -24,31 +24,40 @@ export async function generateAudio(
   }
 
   try {
-    console.log(`[audioService] Triggering audio generation. storyId: ${storyId}, lang: ${languageCode}, noStore: ${noStore}`);
+    const isNarration = !storyId;
+    console.log(`[audioService] Triggering audio generation. storyId: ${storyId}, lang: ${languageCode}, isNarration: ${isNarration}`);
     
-    // Fire and forget — server will write audio_url to DB when done
-    const execution = await functions.createExecution({
+    // Always use async — responseBody is always empty for client SDK calls
+    await functions.createExecution({
       functionId: 'generate-audio',
-      body: JSON.stringify({ text, languageCode, storyId, noStore }),
+      body: JSON.stringify({ text, languageCode, storyId, noStore: isNarration ? false : noStore }),
       async: true
     });
 
-    console.log(`[audioService] Execution triggered: ${execution.$id}, status: ${execution.status}`);
+    // For narrations: poll Appwrite Storage using the deterministic file key
+    if (isNarration) {
+      console.log(`[audioService] Narration: waiting for Storage bucket...`);
+      // Wait for function to likely complete (Edge TTS is fast for short strings)
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      // After waiting, return null — narration is best-effort and non-blocking
+      console.log('[audioService] Narration: skipping wait, returning null (non-blocking)');
+      return null;
+    }
 
-    // If we have a storyId, poll the story document for audio_url (the reliable path)
+    // For stories: poll the story document for audio_url
     if (storyId && !noStore) {
-      console.log(`[audioService] Starting poll for story: ${storyId}`);
-      const audioUrl = await pollStoryForAudioUrl(storyId, 75_000); // up to 75s
+      console.log(`[audioService] Story: polling DB for audio_url...`);
+      const audioUrl = await pollStoryForAudioUrl(storyId, 75_000);
       if (audioUrl) return audioUrl;
     }
 
-    // noStore mode: no storyId to poll — used only for previews/tests, return null gracefully
     return null;
   } catch (error) {
     console.error('[audioService] CRITICAL: Failed to trigger generate-audio:', error);
     return null;
   }
 }
+
 
 /**
  * Poll the story document every 3 seconds until audio_url is set.

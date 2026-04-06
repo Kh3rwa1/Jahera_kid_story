@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo, memo } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,10 @@ import {
   Pressable,
   StatusBar,
   useWindowDimensions,
+  Dimensions,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Audio } from 'expo-av';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { Audio, Video, ResizeMode } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -32,6 +33,7 @@ import Animated, {
 import { storyService, quizService } from '@/services/database';
 import { generateAudio } from '@/services/audioService';
 import { Story } from '@/types/database';
+import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Play, Pause, Award, RefreshCw, VolumeX, ArrowLeft, BookOpen, Share2, Minus, Plus, Headphones, SkipBack, SkipForward, BookMarked, Sparkles, Type, ChevronLeft as AlignLeft, TextAlignJustify as AlignJustify } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, FONTS, FONT_SIZES } from '@/constants/theme';
@@ -140,6 +142,47 @@ type TabMode = 'audio' | 'text';
 const FONT_FAMILIES: FontFamily[] = ['nunito', 'merriweather', 'comic-neue', 'atkinson'];
 const LINE_SPACINGS: LineSpacing[] = ['compact', 'normal', 'relaxed'];
 
+const PlaybackProgress = memo(({ accentColor, winWidth, C, styles }: { accentColor: string, winWidth: number, C: any, styles: any }) => {
+    const { position, duration } = useAudioProgress();
+    const { seek } = useAudio();
+    const progress = useSharedValue(0);
+
+    useEffect(() => {
+      const pct = duration > 0 ? (position / duration) : 0;
+      progress.value = withTiming(pct, { duration: 250 });
+    }, [position, duration]);
+
+    const barStyle = useAnimatedStyle(() => ({
+      width: `${progress.value * 100}%`,
+    }));
+
+    const thumbStyle = useAnimatedStyle(() => ({
+      left: `${progress.value * 100}%`,
+    }));
+
+    const handlePress = (event: any) => {
+      if (!duration) return;
+      const { locationX } = event.nativeEvent;
+      const barWidth = winWidth - SPACING.xxl * 2;
+      const pct = Math.max(0, Math.min(1, locationX / barWidth));
+      hapticFeedback.light();
+      seek(duration * pct);
+    };
+
+    return (
+      <Pressable onPress={handlePress} style={styles.progressArea} hitSlop={12}>
+        <View style={[styles.progressTrack, { backgroundColor: C.text.primary + '12' }]}>
+          <Animated.View style={[styles.progressFilled, { backgroundColor: accentColor }, barStyle]} />
+          <Animated.View style={[styles.progressThumb, { backgroundColor: accentColor }, thumbStyle]} />
+        </View>
+        <View style={styles.timeLabels}>
+          <Text style={[styles.timeLabel, { color: C.text.light, fontFamily: FONTS.medium }]}>{formatTime(position)}</Text>
+          <Text style={[styles.timeLabel, { color: C.text.light, fontFamily: FONTS.medium }]}>-{formatTime(Math.max(0, duration - position))}</Text>
+        </View>
+      </Pressable>
+    );
+});
+
 export default function StoryPlayback() {
   const { width: winWidth, height: winHeight } = useWindowDimensions();
   const router = useRouter();
@@ -149,63 +192,28 @@ export default function StoryPlayback() {
   const { prefs, setFontSize, setFontFamily, setLineSpacing, setTextAlign } = useReadingPreferences();
   const scrollRef = useRef<ScrollView>(null);
   const lyricsScrollRef = useRef<ScrollView>(null);
-  const lastPositionRef = useRef<number>(0);
-  const lastSentenceRef = useRef<number>(-1);
   const lastActiveParaRef = useRef<number>(-1);
   const paraOffsets = useRef<number[]>([]);
   const insets = useSafeAreaInsets();
 
   const styles = useStyles(C, insets, winWidth, winHeight);
 
+  // Global Audio Context
+  const { 
+    activeStory, sound, isPlaying, isBuffering, 
+    audioError, audioPolling, loadAndPlayAudio, playPause, seek, stopAudio, retryAudio 
+  } = useAudio();
+
+  const { position, duration } = useAudioProgress();
+
   const [story, setStory] = useState<Story | null>(null);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [audioError, setAudioError] = useState(false);
-  const [audioPolling, setAudioPolling] = useState(false);
   const [hasQuiz, setHasQuiz] = useState(false);
   const [tab, setTab] = useState<TabMode>('audio');
-  const [isBuffering, setIsBuffering] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isPlayingRequested, setIsPlayingRequested] = useState(true); // Auto-play by default
-  const audioPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const progressSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const PROGRESS_KEY_PREFIX = 'story_progress_';
-
-  const saveProgress = useCallback(async (pos: number, dur: number) => {
-    if (!story?.id || dur <= 0) return;
-    try {
-      const progress = {
-        position: pos,
-        duration: dur,
-        updatedAt: Date.now(),
-        title: story.title,
-        theme: story.theme
-      };
-      await AsyncStorage.setItem(`${PROGRESS_KEY_PREFIX}${story.id}`, JSON.stringify(progress));
-      // Also track this as the 'latest' active story globally for the home screen
-      await AsyncStorage.setItem('last_active_story_id', story.id);
-    } catch (err) {
-      console.warn('[playback] Failed to save progress:', err);
-    }
-  }, [story]);
-
-  // Periodic autosave
-  useEffect(() => {
-    if (isPlaying && duration > 0) {
-      progressSaveTimerRef.current = setInterval(() => {
-        saveProgress(lastPositionRef.current, duration);
-      }, 5000);
-    } else {
-      if (progressSaveTimerRef.current) clearInterval(progressSaveTimerRef.current);
-    }
-    return () => {
-      if (progressSaveTimerRef.current) clearInterval(progressSaveTimerRef.current);
-    };
-  }, [isPlaying, duration, saveProgress]);
+  const lastSentenceRef = useRef<number>(-1);
 
   const playScale = useSharedValue(1);
   const vinylRotation = useSharedValue(0);
@@ -272,7 +280,6 @@ export default function StoryPlayback() {
   const skipFwdStyle = useAnimatedStyle(() => ({ transform: [{ scale: skipFwdPulse.value }] }));
   const thumbStyle = useAnimatedStyle(() => ({ transform: [{ scale: progressThumbScale.value }] }));
 
-  const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
   const paragraphs = useMemo(() => (story ? splitIntoParagraphs(story.content) : []), [story]);
   const allWords = useMemo(() => buildWordIndex(paragraphs), [paragraphs]);
   const totalChars = useMemo(() => countTotalChars(allWords), [allWords]);
@@ -339,10 +346,6 @@ export default function StoryPlayback() {
   }, [activeParaIndex, tab]);
 
   useEffect(() => { loadStory(); }, []);
-  useEffect(() => () => {
-    if (sound) sound.unloadAsync().catch(() => {});
-    if (audioPollingRef.current) clearInterval(audioPollingRef.current);
-  }, [sound]);
 
   const loadStory = async () => {
     try {
@@ -351,151 +354,45 @@ export default function StoryPlayback() {
       const storyData = await storyService.getById(storyId);
       if (!storyData) { setIsLoading(false); return; }
       setStory(storyData);
+      
       const quizData = await quizService.getQuestionsByStoryId(storyId);
       setHasQuiz(!!quizData && quizData.length > 0);
 
-      if (storyData.audio_url) {
-        await loadAudio(storyData.audio_url);
-      } else {
-        // Audio is missing. Trigger generation immediately and poll.
-        setAudioPolling(true);
-        setTab('audio'); // Audio-first: Stay on audio tab even while generating
-        
-        // Trigger generation — server writes audio_url directly to DB
-        generateAudio(storyData.content, storyData.language_code || 'en', storyData.id).catch(err => {
-          console.error('[playback] Failed to trigger audio generation:', err);
-        });
-
-        let polls = 0;
-        const MAX_POLLS = 25; // 25 × 3s = 75s
-        audioPollingRef.current = setInterval(async () => {
-          polls++;
-          try {
-            const fresh = await storyService.getById(storyId);
-            if (fresh?.audio_url) {
-              if (audioPollingRef.current) clearInterval(audioPollingRef.current);
-              setAudioPolling(false);
-              await loadAudio(fresh.audio_url);
-              setTab('audio');
-            } else if (polls >= MAX_POLLS) {
-              if (audioPollingRef.current) clearInterval(audioPollingRef.current);
-              setAudioPolling(false);
-              setAudioError(true);
-            }
-          } catch {
-            if (polls >= MAX_POLLS) {
-              if (audioPollingRef.current) clearInterval(audioPollingRef.current);
-              setAudioPolling(false);
-              setAudioError(true);
-            }
-          }
-        }, 3000);
+      if (!storyData.audio_url) {
+        setTab('audio'); // Audio-first
       }
-      setIsLoading(false);
-    } catch {
-      setIsLoading(false);
-    }
-  };
-
-  const loadAudio = async (audioPath: string) => {
-    try {
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false
-      });
-
-      // Check for saved progress
-      let startPosition = 0;
-      try {
-        const saved = await AsyncStorage.getItem(`${PROGRESS_KEY_PREFIX}${params.storyId}`);
-        if (saved) {
-          const { position: savedPos, duration: savedDur } = JSON.parse(saved);
-          // Only resume if not at the very end (98%)
-          if (savedPos > 5000 && savedPos < (savedDur * 0.98)) {
-            startPosition = savedPos;
-            console.log('[playback] Resuming from saved position:', startPosition);
-          }
-        }
-      } catch (e) {
-        console.warn('[playback] Failed to load saved progress:', e);
-      }
-
-      const { sound: audioSound } = await Audio.Sound.createAsync(
-        { uri: audioPath },
-        { 
-          shouldPlay: true, 
-          positionMillis: startPosition,
-          progressUpdateIntervalMillis: 50 
-        },
-        onPlaybackStatusUpdate
-      );
-      setSound(audioSound);
-      setAudioError(false);
       
-      // Explicitly trigger play to ensure autoplay in all environments
-      try {
-        await audioSound.playAsync();
-        setIsPlaying(true);
-        hapticFeedback.light();
-      } catch (err) {
-        console.warn('[playback] Autoplay blocked or failed:', err);
-      }
+      // Tell global context to load (and optionally generate/poll)
+      loadAndPlayAudio(storyData);
+      
+      setIsLoading(false);
     } catch (err) {
-      console.error('Failed to load audio:', err);
-      setAudioError(true);
-      setTab('text');
-    }
-  };
-
-  const onPlaybackStatusUpdate = (status: any) => {
-    if (status.isLoaded) {
-      const newPos: number = status.positionMillis ?? 0;
-      if (Math.abs(newPos - lastPositionRef.current) >= 80 || status.didJustFinish) {
-        lastPositionRef.current = newPos;
-        setPosition(newPos);
-      }
-      setDuration(status.durationMillis || 0);
-      setIsPlaying(status.isPlaying);
-      setIsBuffering(status.isBuffering || false);
-      if (status.didJustFinish) { setIsPlaying(false); setPosition(0); lastPositionRef.current = 0; }
-    } else if (status.error) {
-      setAudioError(true); setIsPlaying(false);
+      setIsLoading(false);
     }
   };
 
   const handlePlayPause = useCallback(async () => {
-    if (!sound) return;
-    try {
-      hapticFeedback.medium();
-      playScale.value = withSequence(withSpring(0.88, { damping: 8 }), withSpring(1, { damping: 10 }));
-      isPlaying ? await sound.pauseAsync() : await sound.playAsync();
-    } catch { setAudioError(true); }
-  }, [sound, isPlaying]);
+    playScale.value = withSequence(withSpring(0.88, { damping: 8 }), withSpring(1, { damping: 10 }));
+    playPause();
+  }, [playPause]);
 
   const handleSkipBack = useCallback(async () => {
-    if (!sound) return;
     hapticFeedback.light();
     skipBackPulse.value = withSequence(withSpring(0.82), withSpring(1, { damping: 8 }));
-    try { await sound.setPositionAsync(Math.max(0, position - 10000)); } catch {}
-  }, [sound, position]);
+    seek(Math.max(0, position - 10000));
+  }, [seek, position]);
 
   const handleSkipForward = useCallback(async () => {
-    if (!sound || !duration) return;
+    if (!duration) return;
     hapticFeedback.light();
     skipFwdPulse.value = withSequence(withSpring(0.82), withSpring(1, { damping: 8 }));
-    try { await sound.setPositionAsync(Math.min(duration, position + 15000)); } catch {}
-  }, [sound, position, duration]);
+    seek(Math.min(duration, position + 15000));
+  }, [seek, position, duration]);
 
   const handleBack = useCallback(() => {
     hapticFeedback.light();
-    if (sound) {
-      sound.stopAsync().catch(() => {});
-      saveProgress(lastPositionRef.current, duration);
-    }
     router.back();
-  }, [sound, router, saveProgress, duration]);
+  }, [router]);
 
   const handleShare = useCallback(async () => {
     if (!story) return;
@@ -504,58 +401,31 @@ export default function StoryPlayback() {
   }, [story]);
 
   const handleProgressPress = useCallback(async (event: any) => {
-    if (!sound || !duration) return;
+    if (!duration) return;
     const { locationX } = event.nativeEvent;
     const barWidth = winWidth - SPACING.xxl * 2;
     const pct = Math.max(0, Math.min(1, locationX / barWidth));
     progressThumbScale.value = withSequence(withSpring(1.4, { damping: 6 }), withSpring(1, { damping: 10 }));
-    try { hapticFeedback.light(); await sound.setPositionAsync(duration * pct); } catch {}
-  }, [sound, duration]);
+    hapticFeedback.light();
+    seek(duration * pct);
+  }, [seek, duration, winWidth]);
 
   const handleGoToQuiz = useCallback(() => {
     hapticFeedback.medium();
-    if (sound) sound.stopAsync().catch(() => {});
+    stopAudio();
     router.push({ pathname: '/story/quiz', params: { storyId: story!.id } });
-  }, [sound, story, router]);
+  }, [stopAudio, story, router]);
 
   const handleNewStory = useCallback(() => {
     hapticFeedback.light();
-    if (sound) sound.stopAsync().catch(() => {});
+    stopAudio();
     router.push({ pathname: '/story/generate', params: { profileId: story!.profile_id, languageCode: story!.language_code } });
-  }, [sound, story, router]);
+  }, [stopAudio, story, router]);
 
-  const handleRetryAudio = useCallback(async () => {
-    if (!story) return;
+  const handleRetryAudioCall = useCallback(async () => {
     hapticFeedback.medium();
-    setAudioError(false);
-    setAudioPolling(true);
-    
-    try {
-      await generateAudio(story.content, story.language_code || 'en', story.id);
-      // After triggering, loadStory logic for polling will be handled by re-mounting or manual call
-      // But here we can just wait for a moment and then the polling in loadStory (if active) would pick it up
-      // Or we can manually start a new poll here for better UX
-      let polls = 0;
-      const MAX_POLLS = 20;
-      const interval = setInterval(async () => {
-        polls++;
-        const fresh = await storyService.getById(story.id);
-        if (fresh?.audio_url) {
-          clearInterval(interval);
-          setAudioPolling(false);
-          await loadAudio(fresh.audio_url);
-          setTab('audio');
-        } else if (polls >= MAX_POLLS) {
-          clearInterval(interval);
-          setAudioPolling(false);
-          setAudioError(true);
-        }
-      }, 3000);
-    } catch (err) {
-      setAudioError(true);
-      setAudioPolling(false);
-    }
-  }, [story, loadAudio]);
+    retryAudio();
+  }, [retryAudio]);
 
   const lineHeight = prefs.fontSize * LINE_SPACING_VALUES[prefs.lineSpacing];
   const activeFontDef = FONT_FAMILY_VALUES[prefs.fontFamily ?? 'nunito'];
@@ -579,26 +449,25 @@ export default function StoryPlayback() {
   }), [prefs.fontSize, lineHeight, activeFontDef.regular, C.text.secondary]);
 
   if (isLoading) {
+    const screen = Dimensions.get('screen');
     return (
-      <View style={{ flex: 1 }}>
-        <StatusBar barStyle="light-content" />
-        <LinearGradient 
-          colors={[
-            C.primaryDark,
-            C.primaryDark + 'E6', // slightly transparent mid
-            '#000000' + 'CC'      // Fade to near-black
-          ]} 
-          style={StyleSheet.absoluteFill} 
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        <StatusBar barStyle="light-content" hidden />
+        <Video
+          source={require('@/assets/jahera.mp4')}
+          style={{
+            width: screen.width,
+            height: screen.height,
+          }}
+          videoStyle={{
+            width: screen.width,
+            height: screen.height,
+          }}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay
+          isLooping
+          isMuted
         />
-        <SafeAreaView style={[styles.fill, styles.center]}>
-          <Animated.View entering={FadeIn.duration(600)} style={styles.loadingBox}>
-            <View style={styles.loadingRing}>
-              <BookOpen size={32} color="rgba(255,255,255,0.9)" strokeWidth={1.5} />
-            </View>
-            <Text style={[styles.loadingTitle, { fontFamily: FONTS.bold }]}>Opening Story</Text>
-            <Text style={[styles.loadingSubtitle, { fontFamily: FONTS.regular }]}>Preparing your adventure...</Text>
-          </Animated.View>
-        </SafeAreaView>
       </View>
     );
   }
@@ -890,7 +759,7 @@ export default function StoryPlayback() {
               </View>
               {audioError && (
                 <TouchableOpacity 
-                  onPress={handleRetryAudio} 
+                  onPress={handleRetryAudioCall} 
                   style={[styles.retryBtn, { backgroundColor: '#FFEDD5' }]}
                   activeOpacity={0.7}
                 >
@@ -1069,16 +938,12 @@ export default function StoryPlayback() {
           </ScrollView>
         </View>
 
-        <Pressable onPress={handleProgressPress} style={styles.progressArea} hitSlop={12}>
-          <View style={[styles.progressTrack, { backgroundColor: C.text.primary + '12' }]}>
-            <View style={[styles.progressFilled, { width: `${progressPercentage}%`, backgroundColor: accentColor }]} />
-            <Animated.View style={[styles.progressThumb, thumbStyle, { left: `${progressPercentage}%`, backgroundColor: accentColor }]} />
-          </View>
-          <View style={styles.timeLabels}>
-            <Text style={[styles.timeLabel, { color: C.text.light, fontFamily: FONTS.medium }]}>{formatTime(position)}</Text>
-            <Text style={[styles.timeLabel, { color: C.text.light, fontFamily: FONTS.medium }]}>-{formatTime(Math.max(0, duration - position))}</Text>
-          </View>
-        </Pressable>
+        <PlaybackProgress 
+          accentColor={accentColor}
+          winWidth={winWidth}
+          C={C}
+          styles={styles}
+        />
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { storage } from '@/utils/storage';
 
 const STORAGE_KEY = 'reading_preferences';
@@ -117,10 +117,17 @@ export function ReadingPreferencesProvider({ children }: { children: ReactNode }
     save(DEFAULTS);
   }, [save]);
 
+  const value = useMemo(() => ({
+    prefs,
+    setFontSize,
+    setLineSpacing,
+    setTextAlign,
+    setFontFamily,
+    resetToDefaults,
+  }), [prefs, setFontSize, setLineSpacing, setTextAlign, setFontFamily, resetToDefaults]);
+
   return (
-    <ReadingPreferencesContext.Provider
-      value={{ prefs, setFontSize, setLineSpacing, setTextAlign, setFontFamily, resetToDefaults }}
-    >
+    <ReadingPreferencesContext.Provider value={value}>
       {children}
     </ReadingPreferencesContext.Provider>
   );

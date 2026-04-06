@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { ColorScheme, COLOR_SCHEMES, DEFAULT_THEME, getThemeById } from '@/constants/themeSchemes';
 import { storage } from '@/utils/storage';
 import { handleError } from '@/utils/errorHandler';
@@ -92,7 +92,14 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
 
       const savedThemeId = await storage.getItem<string>(THEME_STORAGE_KEY);
-      if (savedThemeId) {
+      const isFirstNewVersionLaunch = await storage.getItem<string>('branding_migrated_v1');
+
+      if (!isFirstNewVersionLaunch) {
+        // One-time migration to the new Red branding for everyone
+        setBaseTheme(DEFAULT_THEME);
+        await storage.setItem(THEME_STORAGE_KEY, DEFAULT_THEME.id);
+        await storage.setItem('branding_migrated_v1', 'true');
+      } else if (savedThemeId) {
         const theme = getThemeById(savedThemeId);
         setBaseTheme(theme);
       }
@@ -158,7 +165,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const value: ThemeContextType = {
+  const value: ThemeContextType = useMemo(() => ({
     currentTheme,
     currentIcon,
     customColor,
@@ -167,7 +174,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setCustomColor,
     clearCustomColor,
     isLoading,
-  };
+  }), [currentTheme, currentIcon, customColor, isLoading]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };

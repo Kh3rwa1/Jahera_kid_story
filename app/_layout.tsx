@@ -35,6 +35,7 @@ import { AppProvider } from '@/contexts/AppContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ReadingPreferencesProvider } from '@/contexts/ReadingPreferencesContext';
+import { AudioProvider } from '@/contexts/AudioContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -76,6 +77,7 @@ export default function RootLayout() {
         <ReadingPreferencesProvider>
         <AuthProvider>
           <AppProvider>
+            <AudioProvider>
             <Stack screenOptions={{
               headerShown: false,
               animation: 'slide_from_right',
@@ -83,10 +85,10 @@ export default function RootLayout() {
               gestureEnabled: true,
               fullScreenGestureEnabled: true,
             }}>
-            <Stack.Screen name="paywall" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: 300 }} />
-            <Stack.Screen name="parent-dashboard" />
               <Stack.Screen name="index" options={{ animation: 'fade' }} />
               <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 200 }} />
+            <Stack.Screen name="paywall" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: 300 }} />
+            <Stack.Screen name="parent-dashboard" />
               <Stack.Screen name="auth/login" />
               <Stack.Screen name="auth/register" />
               <Stack.Screen name="story/generate" options={{ animation: 'fade_from_bottom', animationDuration: 280 }} />
@@ -95,6 +97,7 @@ export default function RootLayout() {
               <Stack.Screen name="+not-found" />
             </Stack>
             <StatusBar style="auto" />
+            </AudioProvider>
           </AppProvider>
         </AuthProvider>
         </ReadingPreferencesProvider>

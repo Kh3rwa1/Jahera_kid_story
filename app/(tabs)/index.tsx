@@ -35,9 +35,11 @@ import { useFloat, useEntranceSequence, useSpringPress, usePulse, useRotate } fr
 import { FloatingParticles } from '@/components/FloatingParticles';
 import { Sparkles, BookOpen, ChevronRight, Globe, Users, Volume2, Clock, Play, Shuffle, Settings, Crown, ArrowRight, Wand as Wand2, TrendingUp, Award } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { useUI } from '@/contexts/UIContext';
+import { useAudio } from '@/contexts/AudioContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { BREAKPOINTS, LAYOUT, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
-import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { LoadingSkeleton, Skeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import { getTimeOfDay } from '@/utils/contextUtils';
@@ -219,6 +221,9 @@ const QuickActions = React.memo(function QuickActions({
   textSecondary, 
   onLibrary, 
   continueStory,
+  activeStoryId,
+  isPlaying,
+  playPause,
   styles 
 }: {
   handleLastStory: () => void;
@@ -228,24 +233,34 @@ const QuickActions = React.memo(function QuickActions({
   textSecondary: string;
   onLibrary: () => void;
   continueStory?: { id: string; title: string; progress: number } | null;
+  activeStoryId?: string | null;
+  isPlaying: boolean;
+  playPause: () => Promise<void>;
   styles: any;
 }) {
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
 
+  const isCurrentActive = activeStoryId === continueStory?.id;
+
   const actions = useMemo(() => [
     { 
-      icon: <Play size={26} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />, 
-      label: continueStory ? 'Continue' : 'Play', 
+      icon: (isCurrentActive && isPlaying) 
+        ? <View style={{ width: 26, height: 26, flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
+            <View style={{ width: 8, height: 26, backgroundColor: '#FFF', borderRadius: 2 }} />
+            <View style={{ width: 8, height: 26, backgroundColor: '#FFF', borderRadius: 2 }} />
+          </View>
+        : <Play size={26} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />, 
+      label: isCurrentActive ? (isPlaying ? 'Pause' : 'Resume') : (continueStory ? 'Continue' : 'Play'), 
       sublabel: continueStory ? (continueStory.title.length > 12 ? continueStory.title.substring(0, 10) + '...' : continueStory.title) : 'Last story', 
-      grad: ['#6366F1', '#4F46E5'] as [string, string], 
-      onPress: handleLastStory, 
+      grad: (isCurrentActive && isPlaying) ? (['#EC4899', '#8B5CF6'] as [string, string]) : (['#6366F1', '#4F46E5'] as [string, string]), 
+      onPress: isCurrentActive ? playPause : handleLastStory, 
       textPrimary, 
       textSecondary 
     },
     { icon: <Sparkles size={26} color="#FFFFFF" strokeWidth={2.5} />, label: 'Create', sublabel: 'New story', grad: ['#F59E0B', '#D97706'] as [string, string], onPress: handleGenerateStory, textPrimary, textSecondary },
     { icon: <TrendingUp size={26} color="#FFFFFF" strokeWidth={2.5} />, label: 'Library', sublabel: `${storiesCount} stories`, grad: ['#10B981', '#059669'] as [string, string], onPress: onLibrary, textPrimary, textSecondary },
-  ], [handleLastStory, handleGenerateStory, storiesCount, textPrimary, textSecondary, onLibrary, continueStory]);
+  ], [handleLastStory, handleGenerateStory, storiesCount, textPrimary, textSecondary, onLibrary, continueStory, isCurrentActive, isPlaying, playPause]);
 
   return (
     <View style={styles.quickWrapper}>
@@ -280,6 +295,8 @@ export default function HomeScreen() {
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
   const { profile, stories, isLoading, error, refreshAll, subscription, streak } = useApp();
+  const { wakeUI } = useUI();
+  const { activeStory, isPlaying, playPause, loadAndPlayAudio } = useAudio();
 
   const styles = useStyles(C, isTablet, isDesktop);
 
@@ -304,9 +321,12 @@ export default function HomeScreen() {
             // If it's between 1% and 98% complete, it's a good candidate for "Continue"
             const pct = duration > 0 ? (position / duration) * 100 : 0;
             if (pct > 1 && pct < 98) {
-              setContinueStory({ id: lastId, title, progress: pct });
+              setContinueStory((prev) => {
+                if (prev?.id === lastId && Math.abs(prev.progress - pct) < 0.1) return prev;
+                return { id: lastId, title, progress: pct };
+              });
             } else {
-              setContinueStory(null);
+              setContinueStory((prev) => prev === null ? prev : null);
             }
           }
         }
@@ -347,12 +367,24 @@ export default function HomeScreen() {
   }, [router]);
 
   const handleLastStory = useCallback(() => {
-    if (continueStory) {
-      handleStoryPress(continueStory.id);
-    } else if (stories && stories.length > 0) {
-      handleStoryPress(stories[0].id);
+    // If it's already active, just play it
+    if (activeStory && continueStory && activeStory.id === continueStory.id) {
+      playPause();
+      return;
     }
-  }, [continueStory, stories, handleStoryPress]);
+
+    if (continueStory) {
+      // Find the full story object
+      const fullStory = stories.find(s => s.id === continueStory.id);
+      if (fullStory) {
+        loadAndPlayAudio(fullStory);
+      } else {
+        handleStoryPress(continueStory.id);
+      }
+    } else if (stories && stories.length > 0) {
+      loadAndPlayAudio(stories[0]);
+    }
+  }, [continueStory, stories, handleStoryPress, activeStory, playPause, loadAndPlayAudio]);
 
   const handleRandomStory = useCallback(() => {
     if (stories && stories.length > 0) {
@@ -374,16 +406,66 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.root, { backgroundColor: C.background }]} edges={['top']}>
-        <LinearGradient colors={C.backgroundGradient} style={StyleSheet.absoluteFill} />
-        <View style={styles.loadingWrap}><LoadingSkeleton type="card" count={3} /></View>
-      </SafeAreaView>
+      <Container 
+        maxWidth 
+        gradient 
+        gradientColors={C.backgroundGradient}
+        safeAreaEdges={['top']}
+        scroll
+        scrollProps={{
+          contentContainerStyle: styles.scrollContent
+        }}
+      >
+        <MeshBackground primaryColor={C.primary} />
+        <FloatingParticles count={15} />
+
+        {/* Header Skeleton */}
+        <View style={styles.topBar}>
+          <Skeleton width={180} height={32} borderRadius={8} color="rgba(0,0,0,0.08)" />
+          <View style={styles.topBarRight}>
+            <Skeleton width={60} height={32} borderRadius={16} color="rgba(0,0,0,0.05)" />
+          </View>
+        </View>
+
+        {/* Hero Skeleton */}
+        <View style={styles.heroWrap}>
+          <Skeleton width="100%" height={240} borderRadius={32} color="rgba(0,0,0,0.08)" />
+        </View>
+
+        {/* Quick Actions Skeleton */}
+        <View style={styles.section}>
+          <LoadingSkeleton type="quick-actions" count={1} />
+        </View>
+
+        {/* Stats Skeleton */}
+        <View style={styles.section}>
+          <Skeleton width="100%" height={50} borderRadius={25} color="rgba(0,0,0,0.04)" />
+        </View>
+
+        {/* Discovery Skeleton */}
+        <View style={styles.section}>
+           <Skeleton width={150} height={20} borderRadius={4} style={{ marginBottom: 12 }} color="rgba(0,0,0,0.08)" />
+           <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Skeleton width={120} height={40} borderRadius={20} color="rgba(0,0,0,0.05)" />
+              <Skeleton width={120} height={40} borderRadius={20} color="rgba(0,0,0,0.05)" />
+              <Skeleton width={120} height={40} borderRadius={20} color="rgba(0,0,0,0.05)" />
+           </View>
+        </View>
+
+        {/* Stories Skeleton */}
+        <View style={styles.section}>
+           <Skeleton width={120} height={24} borderRadius={4} style={{ marginBottom: 16 }} color="rgba(0,0,0,0.1)" />
+           <View style={{ flexDirection: 'row', gap: 16 }}>
+              <LoadingSkeleton type="card" count={3} />
+           </View>
+        </View>
+      </Container>
     );
   }
 
   if (error || !profile) {
     if (!profile && !error) {
-      return <Redirect href="/" />;
+      return <Redirect href="/onboarding/language-selection" />;
     }
     
     return (
@@ -406,6 +488,8 @@ export default function HomeScreen() {
       safeAreaEdges={['top']}
       scroll
       scrollProps={{
+        onScroll: wakeUI,
+        scrollEventThrottle: 16,
         refreshControl: <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={C.primary} />,
         contentContainerStyle: styles.scrollContent
       }}
@@ -484,6 +568,9 @@ export default function HomeScreen() {
         textSecondary={C.text.secondary}
         onLibrary={() => router.push('/(tabs)/history')}
         continueStory={continueStory}
+        activeStoryId={activeStory?.id}
+        isPlaying={isPlaying}
+        playPause={playPause}
         styles={styles}
       />
 

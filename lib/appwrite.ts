@@ -36,6 +36,7 @@ export const COLLECTIONS = {
   SUBSCRIPTIONS: 'subscriptions',
   STREAKS: 'streaks',
   PROFILE_INTERESTS: 'profile_interests',
+  CONFIG: 'config',
 } as const;
 
 export const STORAGE_BUCKETS = {

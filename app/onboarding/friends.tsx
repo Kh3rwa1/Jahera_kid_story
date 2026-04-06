@@ -61,9 +61,13 @@ export default function Friends() {
     const timer = setTimeout(() => {
       let lang = 'en';
       try {
-        const langs = JSON.parse(params.languages as string);
-        if (langs && langs.length > 0) lang = langs[0].code;
-      } catch {}
+        if (params.languages) {
+          const langs = JSON.parse(params.languages as string);
+          if (langs && langs.length > 0) lang = langs[0].code;
+        }
+      } catch (err) {
+        console.warn('[Friends] Failed to parse languages for narration:', err);
+      }
       speak("Almost there! Finally, who are your best friends? We can invite them into the stories too!", lang);
     }, 800);
 
@@ -73,7 +77,7 @@ export default function Friends() {
         sound.unloadAsync().catch(() => {});
       }
     };
-  }, []);
+  }, [params.languages]);
 
   const speak = async (text: string, lang: string) => {
     try {
@@ -122,10 +126,19 @@ export default function Friends() {
     setErrorMsg(null);
     try {
       if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      
+      // Safety checks for params (handles web reloads where params might be lost)
+      if (!params.languages || !params.kidName) {
+        setErrorMsg('Session expired. Please restart the onboarding process.');
+        setIsLoading(false);
+        return;
+      }
+
       const languages = JSON.parse(params.languages as string);
       const kidName = params.kidName as string;
       const familyMembers = JSON.parse((params.familyMembers as string) || '[]');
       const primaryLanguage = languages[0]?.code || 'en';
+      
       const profile = await profileService.create(user.$id, kidName, primaryLanguage);
       if (!profile) {
         setErrorMsg('Failed to create profile. Please try again.');
@@ -171,42 +184,49 @@ export default function Friends() {
           colors={[C.primary, C.primaryDark]}
           style={[styles.header, { paddingTop: insets.top + SPACING.md }]}
         >
+          {/* Mesh Gradient Accents */}
+          <View style={styles.headerMesh1} />
+          <View style={styles.headerMesh2} />
+
           <View style={styles.topRow}>
             <TouchableOpacity onPress={handleBack} style={styles.backButton} disabled={isLoading}>
               <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
-            <View style={styles.progressLine}>
+            <View style={styles.progressLineOuter}>
               <View style={[styles.progressFill, { width: '100%', backgroundColor: '#FFFFFF' }]} />
             </View>
-            <Text style={styles.stepLabel}>4 of 4</Text>
+            <Text style={styles.stepLabel}>Final Step!</Text>
           </View>
 
           <View style={styles.heroSection}>
             <LottieView
-              source={{ uri: 'https://lottie.host/9e4d6d63-7d84-484d-adb4-8d9e6ee0895c/H6uMNoOfZp.json' }}
+              source={require('@/assets/lottie/success.json')}
               autoPlay
               loop
               style={styles.lottieFriends}
             />
-            <Animated.View entering={ZoomIn.delay(400)} style={styles.starOverlay}>
-              <Star size={28} color="#FFD700" fill="#FFD700" />
+            <Animated.View entering={ZoomIn.delay(400).springify()} style={styles.starOverlay}>
+              <Star size={32} color="#FFD700" fill="#FFD700" />
             </Animated.View>
           </View>
 
-          <Animated.Text entering={FadeInDown.delay(200)} style={styles.title}>
+          <Animated.Text entering={FadeInDown.delay(200).springify()} style={styles.title}>
             Best Friends!
           </Animated.Text>
-          <Animated.Text entering={FadeInDown.delay(300)} style={styles.subtitle}>
+          <Animated.Text entering={FadeInDown.delay(300).springify()} style={styles.subtitle}>
             Who are the partners in crime{'\n'}for your adventures?
           </Animated.Text>
         </LinearGradient>
 
         <View style={styles.body}>
-          <Animated.View entering={FadeInUp.delay(500)} style={styles.inputContainer}>
+          <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.inputContainer}>
             <View style={styles.inputCard}>
+               <View style={styles.inputIcon}>
+                  <UserPlus size={20} color={C.primary} />
+               </View>
               <TextInput
                 style={styles.input}
-                placeholder="Friend's Name"
+                placeholder="Buddy's Name"
                 placeholderTextColor="#CBD5E1"
                 value={currentName}
                 onChangeText={setCurrentName}
@@ -215,42 +235,46 @@ export default function Friends() {
                 onSubmitEditing={addFriend}
                 editable={!isLoading}
               />
-              <TouchableOpacity onPress={addFriend} activeOpacity={0.8} disabled={isLoading}>
+              <TouchableOpacity onPress={addFriend} activeOpacity={0.85} disabled={isLoading}>
                 <Animated.View style={[styles.addButton, addBtnStyle, { backgroundColor: C.primary }]}>
                   <Plus size={24} color="#FFFFFF" strokeWidth={3} />
                 </Animated.View>
               </TouchableOpacity>
             </View>
-            {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
+            {errorMsg && (
+              <Animated.Text entering={FadeInDown} style={styles.errorText}>
+                {errorMsg}
+              </Animated.Text>
+            )}
           </Animated.View>
 
           <View style={styles.listSection}>
             {friends.length === 0 ? (
-              <Animated.View entering={FadeInDown.delay(600)} style={styles.emptyState}>
+              <Animated.View entering={FadeInDown.delay(600).springify()} style={styles.emptyState}>
                 <View style={styles.emojiRow}>
                   {['🧒', '👧', '🧑'].map((e, i) => (
                     <Animated.Text 
                       key={i} 
-                      entering={ZoomIn.delay(700 + i * 100)} 
+                      entering={ZoomIn.delay(700 + i * 100).springify()} 
                       style={styles.emptyEmoji}
                     >
                       {e}
                     </Animated.Text>
                   ))}
                 </View>
-                <Text style={styles.emptyTitle}>Add your buddies!</Text>
-                <Text style={styles.emptySub}>Friends make stories better</Text>
+                <Text style={styles.emptyTitle}>Better with Friends</Text>
+                <Text style={styles.emptySub}>Add buddies to join the journey!</Text>
               </Animated.View>
             ) : (
               <View style={styles.grid}>
                 {friends.map((friend, idx) => (
                   <Animated.View 
                     key={`${friend}-${idx}`} 
-                    entering={ZoomIn.springify()} 
+                    entering={ZoomIn.delay(idx * 50).springify()} 
                     exiting={FadeOutUp}
                     style={styles.stickerWrapper}
                   >
-                    <View style={[styles.sticker, { borderColor: C.primary + '30' }]}>
+                    <View style={styles.sticker}>
                       <View style={[styles.avatarCircle, { backgroundColor: C.primary + '10' }]}>
                         <Text style={styles.avatarEmoji}>{FRIEND_EMOJIS[idx % FRIEND_EMOJIS.length]}</Text>
                       </View>
@@ -259,9 +283,11 @@ export default function Friends() {
                         onPress={() => removeFriend(idx)} 
                         style={styles.removeCircle}
                         disabled={isLoading}
+                        activeOpacity={0.7}
                       >
                         <X size={12} color="#FFFFFF" strokeWidth={3} />
                       </TouchableOpacity>
+                      <View style={[styles.stickerGlow, { backgroundColor: C.primary + '05' }]} />
                     </View>
                   </Animated.View>
                 ))}
@@ -272,10 +298,14 @@ export default function Friends() {
         </ScrollView>
 
         <Animated.View
-          entering={FadeInUp.delay(300)}
+          entering={FadeInUp.delay(300).springify()}
           style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
         >
-          <TouchableOpacity onPress={handleComplete} activeOpacity={0.8} disabled={isLoading}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
+            style={styles.footerGradient}
+          />
+          <TouchableOpacity onPress={handleComplete} activeOpacity={0.9} disabled={isLoading}>
             <LinearGradient
               colors={[C.primary, C.primaryDark]}
               style={styles.cta}
@@ -286,13 +316,15 @@ export default function Friends() {
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Text style={styles.ctaText}>Start Adventures!</Text>
-                  <Sparkles size={22} color="#FFFFFF" strokeWidth={3} />
+                  <Text style={styles.ctaText}>Create Magic!</Text>
+                  <View style={styles.ctaArrow}>
+                    <Sparkles size={22} color="#FFFFFF" strokeWidth={3} />
+                  </View>
                 </>
               )}
             </LinearGradient>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleComplete} style={styles.skipButton} disabled={isLoading}>
+          <TouchableOpacity onPress={handleComplete} style={styles.skipButton} disabled={isLoading} activeOpacity={0.7}>
             <Text style={styles.skipText}>I'll add them later</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -310,17 +342,26 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
     header: {
       paddingHorizontal: SPACING.xl,
       paddingBottom: SPACING.xxxl,
-      borderBottomLeftRadius: 40,
-      borderBottomRightRadius: 40,
+      borderBottomLeftRadius: 48,
+      borderBottomRightRadius: 48,
       alignItems: 'center',
-      ...SHADOWS.md,
+      ...SHADOWS.lg,
+      overflow: 'hidden',
+    },
+    headerMesh1: {
+      position: 'absolute', top: -50, right: -50, width: 200, height: 200,
+      borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.1)',
+    },
+    headerMesh2: {
+      position: 'absolute', bottom: -30, left: -40, width: 150, height: 150,
+      borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.05)',
     },
     topRow: {
       width: '100%',
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
-      marginBottom: SPACING.lg,
+      gap: 16,
+      marginBottom: SPACING.xl,
     },
     backButton: {
       width: 44,
@@ -330,21 +371,23 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    progressLine: {
+    progressLineOuter: {
       flex: 1,
-      height: 6,
+      height: 8,
       backgroundColor: 'rgba(255,255,255,0.2)',
-      borderRadius: 3,
+      borderRadius: 4,
       overflow: 'hidden',
     },
     progressFill: {
       height: '100%',
-      borderRadius: 3,
+      borderRadius: 4,
     },
     stepLabel: {
-      fontSize: 13,
-      fontFamily: FONTS.bold,
-      color: 'rgba(255,255,255,0.7)',
+      fontSize: 10,
+      fontFamily: FONTS.extrabold,
+      color: '#FFFFFF',
+      letterSpacing: 1.2,
+      opacity: 0.85,
     },
     heroSection: {
       width: 160,
@@ -352,6 +395,7 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
+      marginBottom: 8,
     },
     lottieFriends: {
       width: 180,
@@ -360,60 +404,72 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
     starOverlay: {
       position: 'absolute',
       top: 10,
-      right: 10,
+      right: -10,
     },
     title: {
-      fontSize: 32,
-      fontFamily: 'Baloo2-Bold',
+      fontSize: 34,
+      fontFamily: FONTS.extrabold,
       color: '#FFFFFF',
       textAlign: 'center',
       marginBottom: 6,
+      letterSpacing: -0.5,
     },
     subtitle: {
-      fontSize: 17,
-      fontFamily: 'Baloo2-Medium',
-      color: 'rgba(255,255,255,0.85)',
+      fontSize: 16,
+      fontFamily: FONTS.medium,
+      color: 'rgba(255,255,255,0.9)',
       textAlign: 'center',
       lineHeight: 22,
     },
     body: {
       flex: 1,
       paddingHorizontal: SPACING.xl,
-      paddingTop: SPACING.xl,
+      paddingTop: SPACING.xxxl,
     },
     inputContainer: {
-      marginBottom: 24,
+      marginBottom: 32,
     },
     inputCard: {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: '#FFFFFF',
-      borderRadius: 30,
-      paddingLeft: 24,
-      paddingRight: 8,
-      paddingVertical: 8,
-      borderWidth: 3,
+      borderRadius: 32,
+      paddingLeft: 20,
+      paddingRight: 10,
+      paddingVertical: 10,
+      borderWidth: 2,
       borderColor: '#F1F5F9',
       ...SHADOWS.md,
+    },
+    inputIcon: {
+       width: 40,
+       height: 40,
+       borderRadius: 20,
+       backgroundColor: C.primary + '10',
+       alignItems: 'center',
+       justifyContent: 'center',
+       marginRight: 12,
     },
     input: {
       flex: 1,
       fontSize: 18,
-      fontFamily: 'Baloo2-Bold',
+      fontFamily: FONTS.extrabold,
       color: C.text.primary,
+      letterSpacing: -0.3,
     },
     addButton: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
+      ...SHADOWS.sm,
     },
     errorText: {
       color: '#FF6B6B',
       fontSize: 14,
-      fontFamily: 'Baloo2-Medium',
-      marginTop: 8,
+      fontFamily: FONTS.bold,
+      marginTop: 12,
       textAlign: 'center',
     },
     listSection: {
@@ -421,25 +477,27 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
     },
     emptyState: {
       alignItems: 'center',
-      marginTop: 40,
+      marginTop: 20,
     },
     emojiRow: {
       flexDirection: 'row',
-      gap: 12,
-      marginBottom: 16,
+      gap: 16,
+      marginBottom: 20,
     },
     emptyEmoji: {
-      fontSize: 32,
+      fontSize: 36,
     },
     emptyTitle: {
-      fontSize: 20,
-      fontFamily: 'Baloo2-Bold',
+      fontSize: 22,
+      fontFamily: FONTS.extrabold,
       color: C.text.primary,
+      marginBottom: 4,
     },
     emptySub: {
       fontSize: 15,
-      fontFamily: 'Baloo2-Medium',
+      fontFamily: FONTS.medium,
       color: C.text.light,
+      opacity: 0.7,
     },
     grid: {
       flexDirection: 'row',
@@ -451,68 +509,94 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
     },
     sticker: {
       backgroundColor: '#FFFFFF',
-      borderRadius: 24,
-      padding: 12,
+      borderRadius: 28,
+      padding: 16,
       alignItems: 'center',
       borderWidth: 2,
       borderColor: '#F1F5F9',
       ...SHADOWS.sm,
       position: 'relative',
+      overflow: 'hidden',
+    },
+    stickerGlow: {
+       position: 'absolute',
+       bottom: -20, left: -20, right: -20, height: 60,
+       borderRadius: 40,
     },
     avatarCircle: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
+      width: 64,
+      height: 64,
+      borderRadius: 32,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 8,
+      marginBottom: 10,
+      ...SHADOWS.xs,
     },
-    avatarEmoji: { fontSize: 32 },
+    avatarEmoji: { fontSize: 36 },
     stickerName: {
-      fontSize: 16,
-      fontFamily: 'Baloo2-Bold',
+      fontSize: 17,
+      fontFamily: FONTS.extrabold,
       color: C.text.primary,
+      letterSpacing: -0.2,
     },
     removeCircle: {
       position: 'absolute',
-      top: -6,
-      right: -6,
-      width: 24,
-      height: 24,
-      borderRadius: 12,
+      top: 10,
+      right: 10,
+      width: 26,
+      height: 26,
+      borderRadius: 13,
       backgroundColor: '#FF6B6B',
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 2,
       borderColor: '#FFFFFF',
+      ...SHADOWS.xs,
+      zIndex: 10,
+    },
+    footerGradient: {
+      position: 'absolute',
+      top: -80, left: 0, right: 0, height: 160,
     },
     footer: {
       paddingHorizontal: SPACING.xl,
       paddingTop: SPACING.md,
-      backgroundColor: 'rgba(255,255,255,0.9)',
+      backgroundColor: 'transparent',
     },
     cta: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       paddingVertical: 20,
-      borderRadius: 30,
-      gap: 10,
+      borderRadius: 32,
+      gap: 12,
       ...SHADOWS.md,
     },
     ctaText: {
       fontSize: 20,
-      fontFamily: 'Baloo2-Bold',
+      fontFamily: FONTS.extrabold,
       color: '#FFFFFF',
+      letterSpacing: -0.2,
+    },
+    ctaArrow: {
+       width: 44,
+       height: 44,
+       borderRadius: 22,
+       backgroundColor: 'rgba(255,255,255,0.2)',
+       alignItems: 'center',
+       justifyContent: 'center',
+       marginLeft: 4,
     },
     skipButton: {
       alignItems: 'center',
-      paddingVertical: 14,
+      paddingVertical: 18,
     },
     skipText: {
       fontSize: 15,
-      fontFamily: 'Baloo2-Medium',
+      fontFamily: FONTS.extrabold,
       color: C.text.light,
+      opacity: 0.6,
+      letterSpacing: 0.5,
     },
-  }), [C, insets]);
+  }), [C, insets, winWidth]);
 };

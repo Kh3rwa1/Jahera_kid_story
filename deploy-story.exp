@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+
+set timeout 300
+spawn appwrite push function --function-id generate-story
+
+expect "Are you sure you want to apply these changes?"
+send "YES\r"
+
+expect "Do you want to create a deployment for your functions?"
+send "y\r"
+
+expect eof

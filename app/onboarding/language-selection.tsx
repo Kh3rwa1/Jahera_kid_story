@@ -116,13 +116,18 @@ export default function LanguageSelection() {
 
   const canContinue = selectedLanguages.length > 0;
 
+  const dotStyle = (i: number) => useAnimatedStyle(() => ({
+    backgroundColor: i < selectedLanguages.length ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
+    transform: [{ scale: withSpring(i < selectedLanguages.length ? 1.2 : 1) }]
+  }));
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 120 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 140 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -130,15 +135,19 @@ export default function LanguageSelection() {
           colors={[C.primary, C.primaryDark]}
           style={[styles.header, { paddingTop: insets.top + SPACING.md }]}
         >
+          {/* Mesh Gradient Accents */}
+          <View style={styles.headerMesh1} />
+          <View style={styles.headerMesh2} />
+
           <View style={styles.topRow}>
             <View style={styles.progressContainer}>
-              <View style={[styles.progressLine, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+              <View style={styles.progressLineOuter}>
                 <Animated.View 
                   entering={FadeInDown.delay(200)}
                   style={[styles.progressFill, { width: '25%', backgroundColor: '#FFFFFF' }]} 
                 />
               </View>
-              <Text style={styles.progressText}>Step 1 of 4</Text>
+              <Text style={styles.progressText}>JOURNEY START</Text>
             </View>
           </View>
 
@@ -150,31 +159,29 @@ export default function LanguageSelection() {
               style={styles.lottieGlobe}
             />
             <Animated.View entering={ZoomIn.delay(400).springify()} style={styles.sparkleIcon}>
-              <Sparkles size={24} color="#FFD700" fill="#FFD700" />
+              <Sparkles size={28} color="#FFD700" fill="#FFD700" />
             </Animated.View>
           </View>
 
           <Animated.Text entering={FadeInUp.delay(300).springify()} style={styles.title}>
-            Languages!
+            Choose Your Tongue
           </Animated.Text>
           <Animated.Text entering={FadeInUp.delay(400).springify()} style={styles.subtitle}>
-            Which languages should we use{'\n'}to tell your stories?
+            Select the languages for your magical{'\n'}adventure to begin.
           </Animated.Text>
 
           <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.selectionPill}>
+             <View style={styles.pillGlow} />
             <Text style={styles.selectionLabel}>
               {selectedLanguages.length === 0 
                 ? 'Pick up to 3' 
-                : `Awesome! ${selectedLanguages.length} chosen`}
+                : `${selectedLanguages.length} Languages Selected`}
             </Text>
             <View style={styles.dotRow}>
               {[0, 1, 2].map(i => (
-                <View 
+                <Animated.View 
                   key={i} 
-                  style={[
-                    styles.dot, 
-                    i < selectedLanguages.length ? { backgroundColor: '#FFFFFF' } : { backgroundColor: 'rgba(255,255,255,0.3)' }
-                  ]} 
+                  style={[styles.dot, dotStyle(i)]} 
                 />
               ))}
             </View>
@@ -187,17 +194,17 @@ export default function LanguageSelection() {
             return (
               <Animated.View 
                 key={lang.code}
-                entering={FadeInDown.delay(600 + idx * 50).springify()}
+                entering={FadeInDown.delay(600 + idx * 60).springify().damping(12)}
               >
                 <TouchableOpacity
                   onPress={() => toggleLanguage(lang)}
-                  activeOpacity={0.9}
+                  activeOpacity={0.85}
                   style={[
                     styles.card,
-                    isSelected && { borderColor: C.primary, backgroundColor: C.primary + '10', borderWidth: 2.5 },
+                    isSelected && styles.cardSelected,
                   ]}
                 >
-                  <View style={[styles.flagCircle, { backgroundColor: isSelected ? '#FFFFFF' : '#F5F6F9' }]}>
+                  <View style={[styles.flagCircle, { backgroundColor: isSelected ? C.primary + '15' : '#F8FAFC' }]}>
                     <Text style={styles.flagEmoji}>{lang.flag}</Text>
                   </View>
                   <View style={styles.cardInfo}>
@@ -207,8 +214,8 @@ export default function LanguageSelection() {
                     <Text style={styles.langNative}>{lang.nativeName}</Text>
                   </View>
                   {isSelected ? (
-                    <Animated.View entering={ZoomIn} style={[styles.checkCircle, { backgroundColor: C.primary }]}>
-                      <Check size={16} color="#FFFFFF" strokeWidth={3} />
+                    <Animated.View entering={ZoomIn.springify()} style={[styles.checkCircle, { backgroundColor: C.primary }]}>
+                      <Check size={18} color="#FFFFFF" strokeWidth={3} />
                     </Animated.View>
                   ) : (
                     <View style={styles.emptyCheck} />
@@ -221,14 +228,19 @@ export default function LanguageSelection() {
       </ScrollView>
 
       <Animated.View 
-        entering={FadeInUp.delay(200).springify()}
+        entering={FadeInUp.delay(300).springify()}
         style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
       >
+        <LinearGradient
+           colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.95)', 'rgba(255,255,255,1)']}
+           style={styles.footerGradient}
+        />
         <Animated.View style={btnAnimStyle}>
           <TouchableOpacity 
             onPress={handleContinue} 
             disabled={!canContinue} 
-            activeOpacity={0.8}
+            activeOpacity={0.9}
+            style={styles.ctaWrapper}
           >
             <LinearGradient
               colors={canContinue ? [C.primary, C.primaryDark] : ['#E2E8F0', '#CBD5E1']}
@@ -237,9 +249,13 @@ export default function LanguageSelection() {
               end={{ x: 1, y: 0 }}
             >
               <Text style={[styles.ctaText, !canContinue && { color: '#94A3B8' }]}>
-                {canContinue ? 'Lets Go!' : 'Pick your language'}
+                {canContinue ? 'Continue Journey' : 'Choose a Language'}
               </Text>
-              {canContinue && <ChevronRight size={22} color="#FFFFFF" strokeWidth={3} />}
+              {canContinue && (
+                <View style={styles.ctaArrow}>
+                   <ChevronRight size={22} color="#FFFFFF" strokeWidth={3} />
+                </View>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -255,64 +271,77 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
     scrollContent: { flexGrow: 1 },
     header: {
       paddingHorizontal: SPACING.xl,
-      paddingBottom: SPACING.xxl,
-      borderBottomLeftRadius: 40,
-      borderBottomRightRadius: 40,
+      paddingBottom: SPACING.xxxl,
+      borderBottomLeftRadius: 48,
+      borderBottomRightRadius: 48,
       alignItems: 'center',
-      ...SHADOWS.md,
+      ...SHADOWS.lg,
+      overflow: 'hidden',
+    },
+    headerMesh1: {
+      position: 'absolute', top: -50, right: -50, width: 200, height: 200,
+      borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.1)',
+    },
+    headerMesh2: {
+      position: 'absolute', bottom: -30, left: -40, width: 150, height: 150,
+      borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.05)',
     },
     topRow: {
       width: '100%',
-      marginBottom: SPACING.lg,
+      marginBottom: SPACING.xl,
     },
     progressContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 16,
     },
-    progressLine: {
+    progressLineOuter: {
       flex: 1,
-      height: 6,
-      borderRadius: 3,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: 'rgba(255,255,255,0.2)',
       overflow: 'hidden',
     },
     progressFill: {
       height: '100%',
-      borderRadius: 3,
+      borderRadius: 4,
     },
     progressText: {
-      fontSize: 12,
-      fontFamily: FONTS.bold,
-      color: 'rgba(255,255,255,0.7)',
+      fontSize: 10,
+      fontFamily: FONTS.extrabold,
+      color: '#FFFFFF',
+      letterSpacing: 1.5,
+      opacity: 0.8,
     },
     heroSection: {
       position: 'relative',
-      width: 180,
-      height: 180,
+      width: 160,
+      height: 160,
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: SPACING.md,
     },
     lottieGlobe: {
-      width: 220,
-      height: 220,
+      width: 200,
+      height: 200,
     },
     sparkleIcon: {
       position: 'absolute',
-      top: 10,
-      right: 10,
+      top: 0,
+      right: 0,
     },
     title: {
-      fontSize: 36,
-      fontFamily: 'Baloo2-Bold',
+      fontSize: 34,
+      fontFamily: FONTS.extrabold,
       color: '#FFFFFF',
       textAlign: 'center',
-      marginBottom: 4,
+      marginBottom: 6,
+      letterSpacing: -0.5,
     },
     subtitle: {
-      fontSize: 17,
-      fontFamily: 'Baloo2-Medium',
-      color: 'rgba(255,255,255,0.85)',
+      fontSize: 16,
+      fontFamily: FONTS.medium,
+      color: 'rgba(255,255,255,0.9)',
       textAlign: 'center',
       lineHeight: 22,
       marginBottom: SPACING.xl,
@@ -321,19 +350,28 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: 'rgba(255,255,255,0.15)',
-      paddingHorizontal: 20,
-      paddingVertical: 10,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
       borderRadius: 30,
-      gap: 12,
+      gap: 14,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.25)',
+    },
+    pillGlow: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: '#FFFFFF',
+      opacity: 0.05,
+      borderRadius: 30,
     },
     selectionLabel: {
       fontSize: 14,
-      fontFamily: FONTS.bold,
+      fontFamily: FONTS.extrabold,
       color: '#FFFFFF',
+      letterSpacing: 0.5,
     },
     dotRow: {
       flexDirection: 'row',
-      gap: 4,
+      gap: 6,
     },
     dot: {
       width: 8,
@@ -342,45 +380,53 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
     },
     listSection: {
       paddingHorizontal: SPACING.xl,
-      paddingTop: SPACING.xl,
-      gap: 12,
+      paddingTop: SPACING.xxl,
+      gap: 16,
     },
     card: {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: '#FFFFFF',
-      borderRadius: 24,
-      padding: 16,
-      borderWidth: 1.5,
+      borderRadius: 28,
+      padding: 18,
+      borderWidth: 2,
       borderColor: '#F1F5F9',
       ...SHADOWS.sm,
     },
+    cardSelected: {
+      borderColor: C.primary,
+      backgroundColor: C.primary + '08',
+      ...SHADOWS.md,
+    },
     flagCircle: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
+      width: 60,
+      height: 60,
+      borderRadius: 30,
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 16,
+      marginRight: 18,
+      ...SHADOWS.xs,
     },
-    flagEmoji: { fontSize: 32 },
-    cardInfo: { flex: 1 },
+    flagEmoji: { fontSize: 34 },
+    cardInfo: { flex: 1, gap: 2 },
     langName: {
-      fontSize: 18,
-      fontFamily: 'Baloo2-Bold',
-      marginBottom: 0,
+      fontSize: 20,
+      fontFamily: FONTS.extrabold,
+      letterSpacing: -0.3,
     },
     langNative: {
       fontSize: 13,
-      fontFamily: FONTS.medium,
+      fontFamily: FONTS.semibold,
       color: C.text.light,
+      opacity: 0.7,
     },
     checkCircle: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
+      ...SHADOWS.sm,
     },
     emptyCheck: {
       width: 32,
@@ -395,22 +441,38 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       left: 0,
       right: 0,
       paddingHorizontal: SPACING.xl,
-      paddingTop: SPACING.md,
-      backgroundColor: 'rgba(255,255,255,0.9)',
+      paddingTop: SPACING.xl,
+    },
+    footerGradient: {
+       position: 'absolute',
+       top: -40, left: 0, right: 0, height: 160,
+    },
+    ctaWrapper: {
+       width: '100%',
     },
     cta: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       paddingVertical: 20,
-      borderRadius: 30,
-      gap: 10,
+      borderRadius: 32,
+      gap: 12,
       ...SHADOWS.md,
     },
     ctaText: {
       fontSize: 20,
-      fontFamily: 'Baloo2-Bold',
+      fontFamily: FONTS.extrabold,
       color: '#FFFFFF',
+      letterSpacing: -0.2,
+    },
+    ctaArrow: {
+       width: 40,
+       height: 40,
+       borderRadius: 20,
+       backgroundColor: 'rgba(255,255,255,0.2)',
+       alignItems: 'center',
+       justifyContent: 'center',
+       marginLeft: 4,
     },
   }), [C, insets]);
 };

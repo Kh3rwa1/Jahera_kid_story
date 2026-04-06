@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   StatusBar,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Sparkles, Mail, Lock, User, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react-native';
@@ -93,7 +94,11 @@ export default function Register() {
           <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.hero}>
             <View style={[styles.iconCircle, { shadowColor: COLORS.primary }]}>
               <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} style={styles.iconGradient}>
-                <Sparkles size={36} color="#FFFFFF" strokeWidth={1.8} />
+                <Image 
+                  source={require('@/assets/images/icon.png')}
+                  style={{ width: '100%', height: '100%', borderRadius: 60, borderWidth: 3, borderColor: '#FFFFFF' }}
+                  resizeMode="cover"
+                />
               </LinearGradient>
             </View>
             <Text style={[styles.title, { color: COLORS.text.primary }]}>Create account</Text>
@@ -220,15 +225,15 @@ const useStyles = (COLORS: any, insets: any) => {
       marginBottom: SPACING.xxxl,
     },
     iconCircle: {
-      width: 80,
-      height: 80,
-      borderRadius: 24,
+      width: 120,
+      height: 120,
+      borderRadius: 60,
       overflow: 'hidden',
       marginBottom: SPACING.xl,
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 10,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.35,
+      shadowRadius: 20,
+      elevation: 14,
     },
     iconGradient: {
       flex: 1,

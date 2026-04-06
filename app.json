@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "jsEngine": "hermes",
     "description": "Jahera - AI-powered personalized story adventures for kids. Create magical, educational stories tailored to your child's interests, family, and friends with multilingual narration.",
-    "primaryColor": "#4ECDC4",
+    "primaryColor": "#FF4B4B",
     "backgroundColor": "#FFF8E7",
     "splash": {
       "image": "./assets/images/icon.png",
