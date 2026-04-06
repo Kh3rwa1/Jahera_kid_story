@@ -416,7 +416,6 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
     },
     langNative: {
       fontSize: 13,
-      fontFamily: FONTS.semibold,
       color: C.text.light,
       opacity: 0.7,
     },

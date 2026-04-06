@@ -9,6 +9,7 @@ import {
   StatusBar,
   useWindowDimensions,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Audio, Video, ResizeMode } from 'expo-av';
@@ -81,6 +82,19 @@ const THEME_ACCENT: Record<string, string> = {
   science:     '#38BDF8',
   default:     '#2DD4BF',
 };
+
+const FALLBACK_SCRIPT_LANG_CODES = new Set(['bn', 'sat']);
+
+function getScriptFontOverride(languageCode?: string) {
+  if (!languageCode || !FALLBACK_SCRIPT_LANG_CODES.has(languageCode.toLowerCase())) {
+    return null;
+  }
+  return Platform.select({
+    ios: 'System',
+    android: 'sans-serif',
+    default: undefined,
+  });
+}
 
 function splitIntoParagraphs(content: string): string[] {
   return content.split(/\n+/).map(p => p.trim()).filter(p => p.length > 0);
@@ -445,6 +459,7 @@ export default function StoryPlayback() {
 
   const lineHeight = prefs.fontSize * LINE_SPACING_VALUES[prefs.lineSpacing];
   const activeFontDef = FONT_FAMILY_VALUES[prefs.fontFamily ?? 'nunito'];
+  const scriptFontOverride = getScriptFontOverride(story?.language_code);
 
   // Pre-compute styles for active/past words to avoid inline object creation
   // These useMemo hooks MUST be before any early returns to satisfy React's Rules of Hooks
@@ -452,17 +467,17 @@ export default function StoryPlayback() {
     color: accentColor,
     backgroundColor: accentColor + '20',
     borderRadius: 3,
-    fontFamily: activeFontDef.bold,
+    fontFamily: scriptFontOverride ?? activeFontDef.bold,
     overflow: 'hidden' as const,
-  }), [accentColor, activeFontDef.bold]);
+  }), [accentColor, activeFontDef.bold, scriptFontOverride]);
 
   const pastWordColor = useMemo(() => ({ color: C.text.primary }), [C.text.primary]);
   const baseWordStyle = useMemo(() => ({
     fontSize: prefs.fontSize,
     lineHeight,
-    fontFamily: activeFontDef.regular,
+    fontFamily: scriptFontOverride ?? activeFontDef.regular,
     color: C.text.secondary,
-  }), [prefs.fontSize, lineHeight, activeFontDef.regular, C.text.secondary]);
+  }), [prefs.fontSize, lineHeight, activeFontDef.regular, C.text.secondary, scriptFontOverride]);
 
   if (isLoading) {
     const screen = Dimensions.get('screen');
@@ -922,7 +937,7 @@ export default function StoryPlayback() {
                 <View key={si} style={[styles.lyricsSentenceRow, { height: 72, justifyContent: 'center' }]}>
                   <Text style={[
                     styles.lyricsSentenceText,
-                    { fontFamily: FONTS.medium },
+                    { fontFamily: scriptFontOverride ?? FONTS.medium },
                     isPastSentence && { opacity: 0.3 },
                     !isCurrentSentence && !isPastSentence && { opacity: 0.25 },
                   ]} numberOfLines={2}>
@@ -935,12 +950,12 @@ export default function StoryPlayback() {
                           key={wi}
                           style={[
                             styles.lyricsWord,
-                            { fontFamily: FONTS.medium },
+                            { fontFamily: scriptFontOverride ?? FONTS.medium },
                             isCurrentSentence && { color: C.text.primary },
-                            isPastWord && { color: C.text.primary, opacity: 0.8, fontFamily: FONTS.bold },
+                            isPastWord && { color: C.text.primary, opacity: 0.8, fontFamily: scriptFontOverride ?? FONTS.bold },
                             isActive && {
                               color: accentColor,
-                              fontFamily: FONTS.extrabold,
+                              fontFamily: scriptFontOverride ?? FONTS.extrabold,
                             },
                           ]}
                         >
