@@ -56,6 +56,15 @@ export function BrandVideoBackground({ videoId, fallbackSource, style, overlayOp
     player.play();
   });
 
+  // Explicitly ensure playback starts when player is ready or source changes
+  useEffect(() => {
+    if (player) {
+      player.muted = true;
+      player.loop = true;
+      player.play();
+    }
+  }, [player, source]);
+
   if (!source) return <View style={[styles.container, style, { backgroundColor: '#0F172A' }]} />;
 
   return (

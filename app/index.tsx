@@ -174,7 +174,7 @@ export default function Welcome() {
   return (
     <AnimatedPressable style={[styles.root, tapScaleStyle]} onPress={handleTap}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <BrandVideoBackground videoId="onboarding_video" fallbackSource={require('@/assets/jahera.mp4')} overlayOpacity={0.25} />
+      <BrandVideoBackground videoId="onboarding_video" fallbackSource={require('@/assets/jahera.mp4')} overlayOpacity={0} />
 
 
 
@@ -299,7 +299,7 @@ export default function Welcome() {
           </Animated.View>
           
           <LinearGradient
-            colors={[COLORS.primary, COLORS.primaryDark]}
+            colors={['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.9)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.ctaButton}
@@ -320,7 +320,7 @@ export default function Welcome() {
             hitSlop={12}
             style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
           >
-            <Text style={[styles.signInLink, { color: COLORS.primaryDark }]}>Log In</Text>
+            <Text style={[styles.signInLink, { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 10 }]}>Log In</Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -449,17 +449,17 @@ const useStyles = (C: any, insets: any, width: number) => {
   
     // Logo orb
     logoArea: {
-      width: 220,
-      height: 220,
+      width: Math.min(width * 0.6, 280),
+      height: Math.min(width * 0.6, 280),
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: SPACING.xxl + 8,
     },
     halo: {
       position: 'absolute',
-      width: 340,
-      height: 340,
-      borderRadius: 170,
+      width: Math.min(width * 0.9, 420),
+      height: Math.min(width * 0.9, 420),
+      borderRadius: 210,
     },
     glowRing: {
       position: 'absolute',
@@ -470,31 +470,31 @@ const useStyles = (C: any, insets: any, width: number) => {
       borderColor: C.primary + '25',
     },
     orbContainer: {
-      width: 200,
-      height: 200,
-      borderRadius: 100,
+      width: Math.min(width * 0.5, 240),
+      height: Math.min(width * 0.5, 240),
+      borderRadius: 120,
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 2,
-      borderColor: C.primary + '30',
-      shadowColor: C.primary,
+      borderColor: '#FFFFFF60',
+      shadowColor: '#000',
       shadowOffset: { width: 0, height: 20 },
-      shadowOpacity: 0.45,
+      shadowOpacity: 0.5,
       shadowRadius: 40,
       elevation: 32,
     },
     orbGold: {
-      width: 170,
-      height: 170,
-      borderRadius: 85,
+      width: '85%',
+      height: '85%',
+      borderRadius: 999,
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',
     },
     logoImage: {
-      width: 140,
-      height: 140,
-      borderRadius: 70,
+      width: '100%',
+      height: '100%',
+      borderRadius: 999,
       borderWidth: 3,
       borderColor: '#FFFFFF',
     },
@@ -537,9 +537,10 @@ const useStyles = (C: any, insets: any, width: number) => {
       letterSpacing: -4,
       textAlign: 'center',
       lineHeight: 88,
-      textShadowColor: 'rgba(0,0,0,0.5)',
-      textShadowOffset: { width: 0, height: 4 },
-      textShadowRadius: 15,
+      textShadowColor: 'rgba(0,0,0,0.8)',
+      textShadowOffset: { width: 0, height: 6 },
+      textShadowRadius: 20,
+      elevation: 10,
     },
     shimmerStripe: {
       position: 'absolute',

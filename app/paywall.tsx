@@ -45,6 +45,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
 import { revenueCatService, RCOffering } from '@/services/revenueCatService';
 import { subscriptionService } from '@/services/subscriptionService';
+import { Image } from 'react-native';
 
 const ENTITLEMENT_PRO = 'pro';
 import { SPACING, BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
@@ -68,10 +69,10 @@ const PRO_FEATURES = [
 ];
 
 const AVATARS = [
-  { initials: 'SA', color: '#FF6B6B' },
-  { initials: 'MK', color: '#4ECDC4' },
-  { initials: 'JL', color: '#45B7D1' },
-  { initials: 'RT', color: '#F59E0B' },
+  { color: '#FF6B6B' },
+  { color: '#4ECDC4' },
+  { color: '#45B7D1' },
+  { color: '#F59E0B' },
 ];
 
 type PlanId = 'weekly' | 'monthly' | 'yearly' | 'family';
@@ -193,7 +194,10 @@ function ShimmerCta({ onPress, isLoading, label, gradient, styles }: {
           {isLoading ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Sparkles size={19} color="#FFFFFF" strokeWidth={2} />
+            <Image 
+              source={require('@/assets/images/icon.png')} 
+              style={{ width: 22, height: 22, tintColor: '#FFFFFF' }} 
+            />
           )}
           <Text style={styles.ctaButtonText}>{isLoading ? 'Processing...' : label}</Text>
         </LinearGradient>
@@ -581,14 +585,13 @@ export default function PaywallScreen() {
         <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.heroSection}>
           <View style={[styles.iconGlowOuter, { backgroundColor: COLORS.primary + '0A' }]}>
             <View style={[styles.iconGlowMid, { backgroundColor: COLORS.primary + '16' }]}>
-              <LinearGradient
-                colors={COLORS.gradients.sunset}
-                style={styles.iconCircle}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Sparkles size={40} color="#FFFFFF" strokeWidth={1.5} />
-              </LinearGradient>
+              <View style={[styles.iconCircle, { overflow: 'hidden' }]}>
+                <Image 
+                  source={require('@/assets/images/icon.png')} 
+                  style={{ width: 80, height: 80 }} 
+                  resizeMode="cover"
+                />
+              </View>
             </View>
           </View>
 
@@ -726,7 +729,7 @@ export default function PaywallScreen() {
             <View style={styles.avatarStack}>
               {AVATARS.map((a, i) => (
                 <View key={i} style={[styles.avatarBubble, { backgroundColor: a.color, marginLeft: i > 0 ? -9 : 0, borderColor: COLORS.background }]}>
-                  <Text style={styles.avatarInitials}>{a.initials}</Text>
+                  <Image source={require('@/assets/images/icon.png')} style={{ width: 14, height: 14, opacity: 0.9 }} />
                 </View>
               ))}
             </View>

@@ -1,4 +1,5 @@
 const sdk = require('node-appwrite');
+const fetch = require('node-fetch');
 const { EdgeTTS } = require('@andresaya/edge-tts');
 
 const DATABASE_ID = 'jahera_db';
@@ -12,9 +13,29 @@ if (typeof crypto === 'undefined') {
   }
 }
 
-// High-quality Microsoft Edge neural voices per language
-const LANGUAGE_VOICE_MAP = {
-  en: 'en-US-AnaNeural',         // Child-friendly female voice
+// ─────────────────────────────────────────────────────────────────────────────
+// ElevenLabs Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1';
+
+// Warm, expressive storytelling voices (multilingual v2 model handles ALL languages)
+const ELEVENLABS_VOICES = {
+  default: 'EXAVITQu4vr4xnSDxMaL',  // Sarah — warm, calm, storytelling
+  storytelling: 'EXAVITQu4vr4xnSDxMaL',
+  childFriendly: 'FGY2WhTYpPnrIDTdsKH5', // Laura — gentle, soothing
+  energetic: 'TX3LPaxmHKxFdv7VOQHJ',     // Liam — upbeat, fun
+};
+
+// ElevenLabs model: multilingual v2 handles 29+ languages with ONE voice
+const ELEVENLABS_MODEL = 'eleven_multilingual_v2';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Edge TTS Fallback — High-quality Microsoft Edge neural voices per language
+// ─────────────────────────────────────────────────────────────────────────────
+
+const EDGE_VOICE_MAP = {
+  en: 'en-US-AnaNeural',
   es: 'es-ES-ElviraNeural',
   fr: 'fr-FR-DeniseNeural',
   de: 'de-DE-KatjaNeural',
@@ -84,12 +105,14 @@ const LANGUAGE_VOICE_MAP = {
   su: 'su-ID-TutiNeural',
 };
 
-const DEFAULT_VOICE = 'en-US-AnaNeural';
+const DEFAULT_EDGE_VOICE = 'en-US-AnaNeural';
 
-// Truncate text to avoid TTS timeouts (Edge TTS handles up to ~5000 chars well)
+// ─────────────────────────────────────────────────────────────────────────────
+// Text preparation
+// ─────────────────────────────────────────────────────────────────────────────
+
 function prepareText(text, maxChars = 4500) {
   if (text.length <= maxChars) return text;
-  // Truncate at last sentence boundary
   const truncated = text.slice(0, maxChars);
   const lastPeriod = truncated.lastIndexOf('.');
   const lastExclaim = truncated.lastIndexOf('!');
@@ -100,8 +123,86 @@ function prepareText(text, maxChars = 4500) {
     : truncated;
 }
 
+// Strip markdown formatting for cleaner speech
+function cleanTextForSpeech(text) {
+  return text.replace(/[*_#`~\[\]]/g, '').replace(/\n{2,}/g, '. ').trim();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ElevenLabs TTS — Primary (human-quality)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function generateWithElevenLabs(text, lang, apiKey, options, log) {
+  const { voiceId, modelId, stability, similarity, style, speakerBoost } = options;
+  const voice = voiceId || ELEVENLABS_VOICES.default;
+  const model = modelId || ELEVENLABS_MODEL;
+
+  log(`[ElevenLabs] Generating with voice ${voice}, model ${model}, lang ${lang}`);
+
+  const response = await fetch(`${ELEVENLABS_API_URL}/text-to-speech/${voice}`, {
+    method: 'POST',
+    headers: {
+      'xi-api-key': apiKey,
+      'Content-Type': 'application/json',
+      'Accept': 'audio/mpeg',
+    },
+    body: JSON.stringify({
+      text: text,
+      model_id: model,
+      voice_settings: {
+        stability: stability ?? 0.65,
+        similarity_boost: similarity ?? 0.80,
+        style: style ?? 0.35,
+        use_speaker_boost: speakerBoost ?? true,
+      },
+      // Language hint for multilingual model
+      language_code: lang,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'unknown');
+    throw new Error(`ElevenLabs API error ${response.status}: ${errorText}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  if (buffer.length < 500) {
+    throw new Error('ElevenLabs returned suspiciously small audio buffer');
+  }
+
+  log(`[ElevenLabs] Success: ${buffer.length} bytes generated`);
+  return buffer;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Edge TTS — Fallback (free, decent quality)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function generateWithEdgeTTS(text, lang, log) {
+  const voice = EDGE_VOICE_MAP[lang] || DEFAULT_EDGE_VOICE;
+  log(`[EdgeTTS] Fallback: generating with voice ${voice}, lang ${lang}`);
+
+  const tts = new EdgeTTS();
+  await tts.synthesize(text, voice);
+  const buffer = tts.toBuffer();
+
+  if (!buffer || buffer.length < 500) {
+    throw new Error('Edge TTS returned empty or suspiciously small buffer');
+  }
+
+  log(`[EdgeTTS] Success: ${buffer.length} bytes generated`);
+  return buffer;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Function Handler
+// ─────────────────────────────────────────────────────────────────────────────
+
 module.exports = async ({ req, res, log, error }) => {
   try {
+    // ── Parse request ──
     let body;
     try {
       if (req.body) {
@@ -116,7 +217,7 @@ module.exports = async ({ req, res, log, error }) => {
       return res.json({ success: false, error: 'Invalid JSON' }, 400);
     }
 
-    const { text, languageCode, storyId, noStore } = body;
+    const { text, languageCode, storyId, noStore, voiceId, modelId, stability, similarity, style, speakerBoost } = body;
     const lang = languageCode || 'en';
 
     if (!text) {
@@ -124,7 +225,7 @@ module.exports = async ({ req, res, log, error }) => {
       return res.json({ success: false, error: 'Missing text' }, 400);
     }
 
-    // Appwrite configuration from Environment Variables
+    // ── Appwrite setup ──
     const endpoint = process.env.APPWRITE_FUNCTION_API_ENDPOINT;
     const projectId = process.env.APPWRITE_FUNCTION_PROJECT_ID;
     const apiKey = process.env.APPWRITE_API_KEY;
@@ -135,7 +236,6 @@ module.exports = async ({ req, res, log, error }) => {
       return res.json({ success: false, error: 'Server authentication missing' }, 500);
     }
 
-    // Initialize Appwrite SDK
     const client = new sdk.Client()
       .setEndpoint(endpoint)
       .setProject(projectId)
@@ -144,14 +244,16 @@ module.exports = async ({ req, res, log, error }) => {
     const storage = new sdk.Storage(client);
     const databases = new sdk.Databases(client);
 
-    // Hash text and lang for a deterministic file ID (caching)
-    const nodeCrypto = require('crypto');
-    const fileId = nodeCrypto.createHash('md5').update(`${text}_${lang}`).digest('hex');
+    // ── Compute deterministic file ID for caching ──
+    // Add a cache version to force regeneration for stories created before ElevenLabs
+    // Add all audio parameters to hash to ensure settings changes trigger regeneration
+    const settingsHash = `${voiceId || ''}-${modelId || ''}-${stability || ''}-${similarity || ''}-${style || ''}-${speakerBoost || ''}`;
+    const fileId = nodeCrypto.createHash('md5').update(`${text}_${lang}_${CACHE_VERSION}_${settingsHash}`).digest('hex');
     const fileName = `${fileId}.mp3`;
 
     log(`Processing audio request. ID: ${storyId || 'preview'}, hash: ${fileId}, lang: ${lang}`);
 
-    // Check if the audio already exists (Smart Cache)
+    // ── Check cache ──
     if (!noStore) {
       try {
         log('Checking for existing file in bucket...');
@@ -159,7 +261,6 @@ module.exports = async ({ req, res, log, error }) => {
         const audioUrl = `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
         log(`Cache HIT! Returning existing audio: ${audioUrl}`);
 
-        // Ensure DB is updated on cache hit too
         if (storyId) {
           try {
             await databases.updateDocument(DATABASE_ID, STORIES_COLLECTION, storyId, { audio_url: audioUrl });
@@ -177,41 +278,65 @@ module.exports = async ({ req, res, log, error }) => {
       log('noStore mode: skipping cache check.');
     }
 
-    // Pick the best voice for the language
-    const voice = LANGUAGE_VOICE_MAP[lang] || DEFAULT_VOICE;
-    log(`Using voice: ${voice} for ${lang}`);
+    // ── Prepare text for speech ──
+    const preparedText = cleanTextForSpeech(prepareText(text));
 
-    // Generate audio using Microsoft Edge TTS
-    const tts = new EdgeTTS();
-    const preparedTextContent = prepareText(text);
-    
-    log('Synthesizing speech via Edge TTS...');
-    await tts.synthesize(preparedTextContent.replace(/[*_#]/g, ''), voice);
-    const audioBuffer = tts.toBuffer();
+    // ── Generate audio: ElevenLabs (primary) → Edge TTS (fallback) ──
+    let audioBuffer;
+    let engine = 'unknown';
 
-    if (!audioBuffer || audioBuffer.length < 500) {
-      error('Edge TTS returned suspicious or empty buffer.');
-      return res.json({ success: false, error: 'TTS generation failed' }, 500);
+    const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
+    const elevenLabsVoice = process.env.ELEVENLABS_VOICE_ID;
+
+    if (elevenLabsKey) {
+      try {
+        audioBuffer = await generateWithElevenLabs(preparedText, lang, elevenLabsKey, {
+          voiceId: voiceId || elevenLabsVoice,
+          modelId,
+          stability,
+          similarity,
+          style,
+          speakerBoost
+        }, log);
+        engine = 'elevenlabs';
+      } catch (elevenErr) {
+        error(`[ElevenLabs] Failed: ${elevenErr.message}. Falling back to Edge TTS...`);
+        // Fall through to Edge TTS
+      }
+    } else {
+      log('[ElevenLabs] No API key configured. Using Edge TTS directly.');
     }
 
-    log(`Audio generated: ${audioBuffer.length} bytes.`);
+    // Fallback: Edge TTS
+    if (!audioBuffer) {
+      try {
+        audioBuffer = await generateWithEdgeTTS(preparedText, lang, log);
+        engine = 'edge-tts';
+      } catch (edgeErr) {
+        error(`[EdgeTTS] Also failed: ${edgeErr.message}`);
+        return res.json({ success: false, error: 'All TTS engines failed' }, 500);
+      }
+    }
 
+    log(`Audio generated via ${engine}: ${audioBuffer.length} bytes.`);
+
+    // ── Ephemeral mode (no storage) ──
     if (noStore) {
       const base64 = audioBuffer.toString('base64');
-      log('Ephemeral mode: returning base64 source.');
-      return res.json({ success: true, base64, format: 'mp3' });
+      log(`Ephemeral mode (${engine}): returning base64 source.`);
+      return res.json({ success: true, base64, format: 'mp3', engine });
     }
 
-    // Upload to Appwrite Storage
+    // ── Upload to Appwrite Storage ──
     log('Uploading file to bucket...');
     const { InputFile } = require('node-appwrite/file');
     const inputFile = InputFile.fromBuffer(audioBuffer, fileName);
 
     await storage.createFile(bucketId, fileId, inputFile);
     const audioUrl = `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
-    log(`Upload successful: ${audioUrl}`);
+    log(`Upload successful (${engine}): ${audioUrl}`);
 
-    // Write to Database
+    // ── Write audio_url to Database ──
     if (storyId) {
       try {
         log(`Updating story ${storyId} in database...`);
@@ -219,11 +344,10 @@ module.exports = async ({ req, res, log, error }) => {
         log('Document updated successfully.');
       } catch (dbErr) {
         error(`DB update failed: ${dbErr.message}`);
-        // We still return the audioUrl because the file was uploaded
       }
     }
 
-    return res.json({ success: true, audio_url: audioUrl, cached: false });
+    return res.json({ success: true, audio_url: audioUrl, cached: false, engine });
 
   } catch (err) {
     error('CRITICAL: Audio generation failure: ' + err.message);

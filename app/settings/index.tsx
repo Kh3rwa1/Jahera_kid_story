@@ -21,6 +21,7 @@ import {
   BookOpen,
   RotateCcw,
   CreditCard,
+  Volume2,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
@@ -133,6 +134,14 @@ export default function SettingsScreen() {
       icon: <BookOpen size={24} color="#FFFFFF" />,
       route: '/settings/reading',
       gradient: C.gradients.forest || ['#2E7D32', '#66BB6A'],
+    },
+    {
+      id: 'audio',
+      title: 'Audio Narration',
+      description: 'Voices, AI models, and fine-tuning',
+      icon: <Volume2 size={24} color="#FFFFFF" />,
+      route: '/settings/audio',
+      gradient: C.gradients.sunset || ['#F43F5E', '#FB923C'],
     },
     {
       id: 'parent-dashboard',
