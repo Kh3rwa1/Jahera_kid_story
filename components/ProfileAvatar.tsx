@@ -1,4 +1,4 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { Camera } from 'lucide-react-native';
@@ -69,10 +69,18 @@ export function ProfileAvatar({
                 width: dims.container,
                 height: dims.container,
                 borderRadius: radius,
+                overflow: 'hidden',
               },
             ]}
           >
-            <Text style={[styles.initial, { fontSize: dims.font }]}>{initial}</Text>
+            <Image 
+              source={require('@/assets/images/icon.png')} 
+              style={{ 
+                width: dims.container, 
+                height: dims.container,
+              }} 
+              resizeMode="cover"
+            />
           </LinearGradient>
         )}
 

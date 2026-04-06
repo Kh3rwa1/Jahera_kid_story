@@ -830,7 +830,7 @@ export default function GenerateStory() {
   const { currentTheme } = useTheme();
   const { width: winWidth, height: winHeight } = useWindowDimensions();
   const C = currentTheme.colors;
-  const { subscription, refreshSubscription, refreshStories } = useApp();
+  const { profile, subscription, refreshSubscription, refreshStories } = useApp();
   const styles = useStyles(C, winWidth, insets);
 
   const CARD_SIZE = (winWidth - SPACING.xl * 2 - SPACING.sm * 3) / 4;
@@ -902,7 +902,15 @@ export default function GenerateStory() {
       }
 
       setPlayingId(id);
-      const url = await generateAudio(text, params.languageCode as string || 'en');
+      const audioSettings = profile ? {
+        voiceId: profile.elevenlabs_voice_id,
+        modelId: profile.elevenlabs_model_id,
+        stability: profile.elevenlabs_stability,
+        similarity: profile.elevenlabs_similarity,
+        style: profile.elevenlabs_style,
+        speakerBoost: profile.elevenlabs_speaker_boost,
+      } : undefined;
+      const url = await generateAudio(text, params.languageCode as string || 'en', undefined, true, audioSettings);
       if (!url) {
         setPlayingId(null);
         return;
@@ -1122,7 +1130,16 @@ export default function GenerateStory() {
 
       // Trigger audio in the background — server writes audio_url directly to DB
       // via its API key. No await needed; playback screen polls DB for audio_url.
-      generateAudio(story.content, languageCode, storyRecord.id).then(audioPath => {
+      const audioSettings = profile ? {
+        voiceId: profile.elevenlabs_voice_id,
+        modelId: profile.elevenlabs_model_id,
+        stability: profile.elevenlabs_stability,
+        similarity: profile.elevenlabs_similarity,
+        style: profile.elevenlabs_style,
+        speakerBoost: profile.elevenlabs_speaker_boost,
+      } : undefined;
+
+      generateAudio(story.content, languageCode, storyRecord.id, false, audioSettings).then(audioPath => {
         if (audioPath) completeStep('audio');
       }).catch(() => {});
 

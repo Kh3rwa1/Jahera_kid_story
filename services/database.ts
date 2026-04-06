@@ -87,7 +87,7 @@ export const profileService = {
     return this.getWithRelations(profile.id);
   },
 
-  async update(id: string, updates: Partial<Pick<Profile, 'kid_name' | 'primary_language' | 'avatar_url' | 'parent_pin' | 'age'>>): Promise<Profile | null> {
+  async update(id: string, updates: Partial<Pick<Profile, 'kid_name' | 'primary_language' | 'avatar_url' | 'parent_pin' | 'age' | 'elevenlabs_voice_id' | 'elevenlabs_model_id' | 'elevenlabs_stability' | 'elevenlabs_similarity' | 'elevenlabs_style' | 'elevenlabs_speaker_boost'>>): Promise<Profile | null> {
     try {
       const data = await databases.updateDocument(
         DATABASE_ID,

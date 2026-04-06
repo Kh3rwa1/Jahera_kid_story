@@ -1,4 +1,14 @@
 import { functions, databases, COLLECTIONS, DATABASE_ID } from '@/lib/appwrite';
+import { Profile } from '@/types/database';
+
+export interface AudioSettings {
+  voiceId?: string | null;
+  modelId?: string | null;
+  stability?: number | null;
+  similarity?: number | null;
+  style?: number | null;
+  speakerBoost?: boolean | null;
+}
 
 /**
  * Generate audio for a story.
@@ -16,7 +26,8 @@ export async function generateAudio(
   text: string,
   languageCode: string,
   storyId?: string,
-  noStore: boolean = false
+  noStore: boolean = false,
+  settings?: AudioSettings
 ): Promise<string | null> {
   if (!text || text.trim().length < 5) {
     console.warn('[audioService] Skipping generation: Text too short or empty');
@@ -30,7 +41,13 @@ export async function generateAudio(
     // Always use async — responseBody is always empty for client SDK calls
     await functions.createExecution({
       functionId: 'generate-audio',
-      body: JSON.stringify({ text, languageCode, storyId, noStore: isNarration ? false : noStore }),
+      body: JSON.stringify({ 
+        text, 
+        languageCode, 
+        storyId, 
+        noStore: isNarration ? false : noStore,
+        ...settings 
+      }),
       async: true
     });
 

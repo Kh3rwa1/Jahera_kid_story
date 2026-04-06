@@ -7,6 +7,12 @@ export interface Profile {
   parent_pin: string | null;
   share_token: string | null;
   avatar_url: string | null;
+  elevenlabs_voice_id?: string | null;
+  elevenlabs_model_id?: string | null;
+  elevenlabs_stability?: number | null;
+  elevenlabs_similarity?: number | null;
+  elevenlabs_style?: number | null;
+  elevenlabs_speaker_boost?: boolean | null;
   created_at: string;
   updated_at: string;
 }
