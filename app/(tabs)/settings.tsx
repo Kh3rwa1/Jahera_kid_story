@@ -42,6 +42,7 @@ import {
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
+import { useUI } from '@/contexts/UIContext';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { MeshBackground } from '@/components/MeshBackground';
@@ -141,6 +142,7 @@ export default function SettingsTab() {
   
   const crownPulseStyle = usePulse(0.9, 1.1);
   const { clearProfile, profile, stories } = useApp();
+  const { wakeUI } = useUI();
   const COLORS = currentTheme.colors;
   const [signingOut, setSigningOut] = useState(false);
 
@@ -231,7 +233,7 @@ export default function SettingsTab() {
       <MeshBackground primaryColor={COLORS.primary} />
       <FloatingParticles count={15} />
       
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} onScroll={wakeUI} scrollEventThrottle={16}>
 
 
         {/* ── Hero Glasmorphic Card ── */}
@@ -269,17 +271,6 @@ export default function SettingsTab() {
                   <Text style={[styles.heroPlanText, { color: COLORS.primary }]}>Explorer Plan</Text>
                 </View>
               </View>
-
-              <TouchableOpacity
-                style={[styles.heroEditBtn, { backgroundColor: COLORS.primary }]}
-                onPress={() => {
-                  hapticFeedback.light();
-                  router.push('/settings/edit-profile');
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.heroEditText}>Edit</Text>
-              </TouchableOpacity>
             </View>
 
             <View style={[styles.heroStats, { borderTopColor: 'rgba(0,0,0,0.06)' }]}>

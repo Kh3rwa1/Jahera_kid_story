@@ -85,27 +85,36 @@ function LanguagePill({ lang, selected, styles, colors_C, onPress }: {
   onPress: () => void;
 }) {
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const glow = useSharedValue(selected ? 1 : 0);
+  
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    backgroundColor: interpolate(glow.value, [0, 1], [0, 1]) > 0.5 ? colors_C.primary : colors_C.cardBackground,
+    borderColor: interpolate(glow.value, [0, 1], [0, 1]) > 0.5 ? colors_C.primary : colors_C.text.light + '25',
+  }));
+
+  useEffectGen(() => {
+    glow.value = withSpring(selected ? 1 : 0);
+  }, [selected]);
+
   const handlePress = () => {
-    scale.value = withSequence(withSpring(0.88, { damping: 10 }), withSpring(1, { damping: 12 }));
+    scale.value = withSequence(withSpring(0.9, { damping: 10 }), withSpring(1, { damping: 12 }));
     onPress();
     hapticFeedback.light();
   };
+
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={1}>
-      <ReAnimated.View style={animStyle}>
-        <View style={[
-          styles.langPill,
-          selected
-            ? { backgroundColor: colors_C.primary, borderColor: colors_C.primary }
-            : { backgroundColor: colors_C.cardBackground, borderColor: colors_C.text.light + '25' },
-        ]}>
-          <Text style={styles.langFlag}>{lang.flag}</Text>
-          <Text style={[styles.langName, { color: selected ? '#fff' : colors_C.text.secondary }]}>
-            {lang.nativeName}
-          </Text>
-          {selected && <Check size={13} color="#fff" strokeWidth={3} />}
-        </View>
+      <ReAnimated.View style={[styles.langPill, animStyle]}>
+        <Text style={styles.langFlag}>{lang.flag}</Text>
+        <Text style={[styles.langName, { color: selected ? '#fff' : colors_C.text.secondary }]}>
+          {lang.nativeName}
+        </Text>
+        {selected && (
+          <ReAnimated.View entering={ZoomIn.duration(200)}>
+            <Check size={13} color="#fff" strokeWidth={3} />
+          </ReAnimated.View>
+        )}
       </ReAnimated.View>
     </TouchableOpacity>
   );
@@ -130,10 +139,16 @@ function ThemeCard({ theme, selected, cardSize, styles, colors_C, onPress }: {
 }) {
   const scale = useSharedValue(1);
   const glow = useSharedValue(selected ? 1 : 0);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    borderColor: selected ? theme.gradient[0] : 'transparent',
+    borderWidth: selected ? 2 : 0,
+  }));
+
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(glow.value, [0, 1], [0, 0.5]),
-    transform: [{ scale: interpolate(glow.value, [0, 1], [0.8, 1.15]) }],
+    opacity: interpolate(glow.value, [0, 1], [0, 0.6]),
+    transform: [{ scale: interpolate(glow.value, [0, 1], [0.8, 1.1]) }],
   }));
 
   useEffectGen(() => {
@@ -141,27 +156,40 @@ function ThemeCard({ theme, selected, cardSize, styles, colors_C, onPress }: {
   }, [selected]);
 
   const handlePress = () => {
-    scale.value = withSequence(withSpring(0.88, { damping: 10 }), withSpring(1, { damping: 12 }));
+    scale.value = withSequence(withSpring(0.9, { damping: 10 }), withSpring(1, { damping: 12 }));
     onPress();
     hapticFeedback.light();
   };
 
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={1}>
-      <ReAnimated.View style={animStyle}>
-        <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: BORDER_RADIUS.xl, backgroundColor: theme.gradient[0] }, glowStyle]} />
-        <View style={[styles.themeCard, selected && styles.themeCardSelected, { width: cardSize, height: cardSize }]}>
-          {selected ? (
-            <LinearGradient colors={theme.gradient} style={styles.themeCardGradient}>
-              <Text style={styles.themeCardEmoji}>{theme.emoji}</Text>
-              <Text style={styles.themeCardLabelSelected}>{theme.label}</Text>
-            </LinearGradient>
-          ) : (
-            <View style={styles.themeCardInner}>
-              <View style={[StyleSheet.absoluteFill, { backgroundColor: colors_C.cardBackground, opacity: 0.95 }]} />
-              <Text style={styles.themeCardEmoji}>{theme.emoji}</Text>
-              <Text style={[styles.themeCardLabel, { color: colors_C.text.secondary }]}>{theme.label}</Text>
+      <ReAnimated.View style={[animStyle, { position: 'relative' }]}>
+        <ReAnimated.View 
+          style={[
+            StyleSheet.absoluteFill, 
+            { borderRadius: BORDER_RADIUS.xl, backgroundColor: theme.gradient[0], shadowColor: theme.gradient[0], shadowOpacity: 0.5, shadowRadius: 15 }, 
+            glowStyle
+          ]} 
+        />
+        <View style={[styles.themeCard, { width: cardSize, height: cardSize, backgroundColor: colors_C.cardBackground }]}>
+          <LinearGradient
+            colors={selected ? theme.gradient : ['transparent', 'transparent']}
+            style={styles.themeCardGradient}
+          >
+            <View style={[styles.themeCardInner, !selected && { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
+              <Text style={[styles.themeCardEmoji, { opacity: selected ? 1 : 0.7 }]}>{theme.emoji}</Text>
+              <Text style={[
+                selected ? styles.themeCardLabelSelected : styles.themeCardLabel,
+                { color: selected ? '#fff' : colors_C.text.secondary }
+              ]}>
+                {theme.label}
+              </Text>
             </View>
+          </LinearGradient>
+          {selected && (
+             <ReAnimated.View entering={ZoomIn.springify()} style={styles.themeCheckBadge}>
+                <Check size={10} color="#fff" strokeWidth={4} />
+             </ReAnimated.View>
           )}
         </View>
       </ReAnimated.View>
@@ -177,32 +205,35 @@ function MoodCard({ mood, selected, styles, colors_C, onPress }: {
   onPress: () => void;
 }) {
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const active = useSharedValue(selected ? 1 : 0);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    borderColor: interpolate(active.value, [0, 1], [0, 1]) > 0.5 ? mood.color : 'transparent',
+    backgroundColor: interpolate(active.value, [0, 1], [0, 1]) > 0.5 ? mood.bg : colors_C.cardBackground,
+    shadowOpacity: withTiming(selected ? 0.2 : 0, { duration: 200 }),
+  }));
+
+  useEffectGen(() => {
+    active.value = withSpring(selected ? 1 : 0);
+  }, [selected]);
 
   const handlePress = () => {
-    scale.value = withSequence(withSpring(0.88, { damping: 10 }), withSpring(1, { damping: 12 }));
+    scale.value = withSequence(withSpring(0.92, { damping: 10 }), withSpring(1, { damping: 12 }));
     onPress();
     hapticFeedback.light();
   };
 
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={1} style={{ flex: 1 }}>
-      <ReAnimated.View style={[animStyle, { flex: 1 }]}>
-        <View style={[
-          styles.moodCard,
-          {
-            borderColor: selected ? mood.color : 'transparent',
-            backgroundColor: selected ? mood.bg : colors_C.cardBackground,
-          },
-        ]}>
-          <Text style={styles.moodEmoji}>{mood.emoji}</Text>
-          <Text style={[styles.moodLabel, { color: selected ? mood.color : colors_C.text.secondary }]}>
-            {mood.label}
-          </Text>
-          {selected && (
-            <View style={[styles.moodDot, { backgroundColor: mood.color }]} />
-          )}
-        </View>
+      <ReAnimated.View style={[styles.moodCard, animStyle]}>
+        <Text style={styles.moodEmoji}>{mood.emoji}</Text>
+        <Text style={[styles.moodLabel, { color: selected ? mood.color : colors_C.text.secondary }]}>
+          {mood.label}
+        </Text>
+        {selected && (
+          <ReAnimated.View entering={ZoomIn.delay(100)} style={[styles.moodDot, { backgroundColor: mood.color }]} />
+        )}
       </ReAnimated.View>
     </TouchableOpacity>
   );
@@ -216,13 +247,23 @@ function LengthCard({ len, selected, isPro, styles, colors_C, onPress }: {
   colors_C: any;
   onPress: () => void;
 }) {
+  const scale = useSharedValue(1);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    borderColor: selected ? colors_C.primary : colors_C.text.light + '20',
+    backgroundColor: selected ? colors_C.primary + '0F' : colors_C.cardBackground,
+  }));
+
+  const handlePress = () => {
+    scale.value = withSequence(withSpring(0.92, { damping: 10 }), withSpring(1, { damping: 12 }));
+    onPress();
+    hapticFeedback.light();
+  };
+
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{ flex: 1 }}>
-      <View style={[
-        styles.lengthCard,
-        selected && { borderColor: colors_C.primary, backgroundColor: colors_C.primary + '0F' },
-        !selected && { borderColor: colors_C.text.light + '20', backgroundColor: colors_C.cardBackground },
-      ]}>
+    <TouchableOpacity onPress={handlePress} activeOpacity={1} style={{ flex: 1 }}>
+      <ReAnimated.View style={[styles.lengthCard, animStyle]}>
         {len.pro && !isPro && (
           <View style={styles.proCrown}>
             <Text style={styles.proText}>PRO</Text>
@@ -235,7 +276,7 @@ function LengthCard({ len, selected, isPro, styles, colors_C, onPress }: {
         <Text style={[styles.lengthWords, { color: selected ? colors_C.primary + 'AA' : colors_C.text.light }]}>
           {len.desc}
         </Text>
-      </View>
+      </ReAnimated.View>
     </TouchableOpacity>
   );
 }
@@ -313,10 +354,10 @@ const useStyles = (C: any, winWidth: number, insets: any) => {
       marginBottom: SPACING.xl,
     },
     headerAccent: {
-      width: 40,
-      height: 4,
-      borderRadius: 2,
-      marginBottom: 12,
+      width: 48,
+      height: 6,
+      borderRadius: 3,
+      marginBottom: 16,
     },
     pageTitle: {
       fontSize: 42, fontFamily: FONTS.display, lineHeight: 50,
@@ -359,15 +400,16 @@ const useStyles = (C: any, winWidth: number, insets: any) => {
       borderRadius: BORDER_RADIUS.xl,
       overflow: 'hidden',
       ...SHADOWS.sm,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
     },
     themeCardSelected: {
       ...SHADOWS.md,
+      borderColor: 'transparent',
     },
     themeCardGradient: {
       flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: SPACING.xs,
+      padding: 2,
     },
     themeCardInner: {
       flex: 1,
@@ -375,9 +417,22 @@ const useStyles = (C: any, winWidth: number, insets: any) => {
       justifyContent: 'center',
       padding: SPACING.xs,
       overflow: 'hidden',
-      borderRadius: BORDER_RADIUS.xl,
+      borderRadius: BORDER_RADIUS.xl - 2,
     },
-    themeCardEmoji: { fontSize: 34, marginBottom: 4 },
+    themeCheckBadge: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      backgroundColor: 'rgba(255,255,255,0.3)',
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: '#fff',
+    },
+    themeCardEmoji: { fontSize: 32, marginBottom: 2 },
     themeCardLabel: { fontSize: 12, fontFamily: FONTS.displayBold },
     themeCardLabelSelected: { fontSize: 12, fontFamily: FONTS.display, color: '#FFFFFF' },
 
@@ -1159,8 +1214,8 @@ export default function GenerateStory() {
       <SafeAreaView style={styles.generatingScreen}>
         <LinearGradient colors={C.backgroundGradient} style={StyleSheet.absoluteFill} />
 
-        <View style={[styles.genAmbientOrb1, { backgroundColor: C.primary + '0C' }]} />
-        <View style={[styles.genAmbientOrb2, { backgroundColor: C.gradients.sunset[0] + '08' }]} />
+        <View style={[styles.genAmbientOrb1, { backgroundColor: C.primary + '1A', width: 300, height: 300, borderRadius: 150, top: -100, left: -100, opacity: 0.4 }]} />
+        <View style={[styles.genAmbientOrb2, { backgroundColor: C.gradients.sunset[0] + '15', width: 400, height: 400, borderRadius: 200, bottom: -150, right: -150, opacity: 0.3 }]} />
 
         <View style={styles.generatingContent}>
           <ReAnimated.View entering={ZoomIn.delay(0).springify()} style={styles.orbContainer}>
@@ -1214,9 +1269,9 @@ export default function GenerateStory() {
                 colors={[...C.gradients.sunset]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={[styles.progressFill, { width: `${progress}%` }]}
+                style={StyleSheet.flatten([styles.progressFill, { width: `${progress}%` }])}
               />
-              <View style={[styles.progressShimmer, { width: `${progress}%` }]}>
+              <View style={StyleSheet.flatten([styles.progressShimmer, { width: `${progress}%` }])}>
                 <LinearGradient
                   colors={['transparent', 'rgba(255,255,255,0.25)', 'transparent']}
                   style={StyleSheet.absoluteFill}
@@ -1340,16 +1395,16 @@ export default function GenerateStory() {
           </View>
         </ReAnimated.View>
 
-        <ReAnimated.View entering={FadeInDown.delay(60).springify()} style={styles.header}>
-          <LinearGradient
-            colors={selectedThemeObj.gradient}
-            style={styles.headerAccent}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          />
-          <Text style={styles.pageTitle}>Craft Your{'\n'}Story</Text>
-          <Text style={styles.pageSubtitle}>Choose theme, language, mood & length</Text>
-        </ReAnimated.View>
+      <ReAnimated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
+        <LinearGradient
+          colors={selectedThemeObj.gradient}
+          style={styles.headerAccent}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        />
+        <Text style={styles.pageTitle}>Craft Your{'\n'}Story</Text>
+        <Text style={styles.pageSubtitle}>Choose theme, language, mood & length</Text>
+      </ReAnimated.View>
 
         <ReAnimated.View entering={FadeInUp.delay(80).springify()} style={styles.section}>
           <View style={styles.sectionHead}>

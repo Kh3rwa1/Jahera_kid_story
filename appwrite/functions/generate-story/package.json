@@ -1,7 +1,9 @@
 {
   "name": "generate-story",
   "version": "1.0.0",
-  "description": "Appwrite function to generate story via AgentRouter",
+  "description": "Appwrite function to generate story via OpenRouter",
   "main": "index.js",
-  "dependencies": {}
+  "dependencies": {
+    "node-appwrite": "^14.1.0"
+  }
 }

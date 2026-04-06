@@ -108,7 +108,14 @@ export default function KidName() {
   const charsNeeded = Math.max(0, 2 - name.trim().length);
 
   const cardAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: cardScale.value }]
+    transform: [{ scale: cardScale.value }],
+    borderColor: withSpring(name.trim().length >= 2 ? C.primary : '#F1F5F9', { damping: 12 }),
+    backgroundColor: withSpring(name.trim().length >= 2 ? C.primary + '08' : '#FFFFFF', { damping: 12 }),
+  }));
+
+  const inputGlowStyle = useAnimatedStyle(() => ({
+    opacity: withSpring(name.trim().length >= 2 ? 1 : 0),
+    transform: [{ scale: withSpring(name.trim().length >= 2 ? 1 : 0.8) }],
   }));
 
   return (
@@ -117,7 +124,7 @@ export default function KidName() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 }]}
           keyboardShouldPersistTaps="handled"
           scrollEnabled={false}
         >
@@ -125,14 +132,18 @@ export default function KidName() {
           colors={[C.primary, C.primaryDark]}
           style={[styles.header, { paddingTop: insets.top + SPACING.md }]}
         >
+           {/* Mesh Gradient Accents */}
+          <View style={styles.headerMesh1} />
+          <View style={styles.headerMesh2} />
+
           <View style={styles.topRow}>
             <TouchableOpacity onPress={handleBack} style={styles.backButton}>
               <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
-            <View style={styles.progressLine}>
+            <View style={styles.progressLineOuter}>
               <View style={[styles.progressFill, { width: '50%', backgroundColor: '#FFFFFF' }]} />
             </View>
-            <Text style={styles.stepLabel}>2 of 4</Text>
+            <Text style={styles.stepLabel}>Step 2 of 4</Text>
           </View>
 
           <View style={styles.characterContainer}>
@@ -143,24 +154,24 @@ export default function KidName() {
               style={styles.lottieRobot}
             />
             <Animated.View entering={ZoomIn.delay(300)} style={styles.nameSparkle}>
-              <Sparkles size={24} color="#FFD700" fill="#FFD700" />
+              <Sparkles size={32} color="#FFD700" fill="#FFD700" />
             </Animated.View>
           </View>
 
-          <Animated.Text entering={FadeInDown.delay(200)} style={styles.title}>
-            What's your name?
+          <Animated.Text entering={FadeInDown.delay(200).springify()} style={styles.title}>
+            Who's the Hero?
           </Animated.Text>
-          <Animated.Text entering={FadeInDown.delay(300)} style={styles.subtitle}>
-            Enter your name so I can{'\n'}make you the star of the story!
+          <Animated.Text entering={FadeInDown.delay(300).springify()} style={styles.subtitle}>
+            Enter your name so I can make you{'\n'}the star of every adventure!
           </Animated.Text>
         </LinearGradient>
 
         <View style={styles.body}>
-          <Animated.View entering={FadeInUp.delay(500)} style={[styles.inputWrapper, cardAnimStyle]}>
+          <Animated.View entering={FadeInUp.delay(500).springify()} style={[styles.inputWrapper, cardAnimStyle]}>
             <TextInput
               ref={inputRef}
               style={styles.input}
-              placeholder="Child's Name"
+              placeholder="Magic Name"
               placeholderTextColor="#CBD5E1"
               value={name}
               onChangeText={setName}
@@ -168,30 +179,38 @@ export default function KidName() {
               autoCapitalize="words"
               selectionColor={C.primary}
             />
-            {canContinue && (
-              <Animated.View entering={ZoomIn} style={[styles.checkCircle, { backgroundColor: C.primary }]}>
-                <Check size={20} color="#FFFFFF" strokeWidth={3} />
+            <Animated.View style={[styles.inputGlow, inputGlowStyle]} />
+            {canContinue ? (
+              <Animated.View entering={ZoomIn.springify()} style={[styles.checkCircle, { backgroundColor: C.primary }]}>
+                <Check size={20} color="#FFFFFF" strokeWidth={4} />
               </Animated.View>
+            ) : (
+                <View style={styles.emptyCheck} />
             )}
           </Animated.View>
 
           {!canContinue && name.length > 0 && (
-            <Animated.Text entering={FadeInDown} style={styles.errorHint}>
-              Keep typing! {charsNeeded} more letter{charsNeeded > 1 ? 's' : ''}...
+            <Animated.Text entering={FadeInDown.springify()} style={styles.errorHint}>
+               Almost there... {charsNeeded} more letter{charsNeeded > 1 ? 's' : ''} ✨
             </Animated.Text>
           )}
 
-          <Animated.Text entering={FadeInDown.delay(600)} style={styles.infoHint}>
-            This name will be used in every adventure! 🌟
-          </Animated.Text>
+          <Animated.View entering={FadeInUp.delay(700).springify()} style={styles.tipCard}>
+             <Sparkles size={16} color={C.primary} />
+             <Text style={styles.tipText}>This will be your name in all your stories!</Text>
+          </Animated.View>
         </View>
         </ScrollView>
 
         <Animated.View
-          entering={FadeInUp.delay(400)}
+          entering={FadeInUp.delay(400).springify()}
           style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
         >
-          <TouchableOpacity onPress={handleContinue} disabled={!canContinue} activeOpacity={0.8}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
+            style={styles.footerGradient}
+          />
+          <TouchableOpacity onPress={handleContinue} disabled={!canContinue} activeOpacity={0.9}>
             <LinearGradient
               colors={canContinue ? [C.primary, C.primaryDark] : ['#E2E8F0', '#CBD5E1']}
               style={styles.cta}
@@ -199,9 +218,13 @@ export default function KidName() {
               end={{ x: 1, y: 0 }}
             >
               <Text style={[styles.ctaText, !canContinue && { color: '#94A3B8' }]}>
-                {canContinue ? 'Continue' : 'Almost there...'}
+                {canContinue ? 'Continue Adventure' : 'Enter Your Name'}
               </Text>
-              {canContinue && <ChevronRight size={22} color="#FFFFFF" strokeWidth={3} />}
+              {canContinue && (
+                <View style={styles.ctaArrow}>
+                  <ChevronRight size={22} color="#FFFFFF" strokeWidth={3} />
+                </View>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -219,17 +242,26 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
     header: {
       paddingHorizontal: SPACING.xl,
       paddingBottom: SPACING.xxxl,
-      borderBottomLeftRadius: 40,
-      borderBottomRightRadius: 40,
+      borderBottomLeftRadius: 48,
+      borderBottomRightRadius: 48,
       alignItems: 'center',
-      ...SHADOWS.md,
+      ...SHADOWS.lg,
+      overflow: 'hidden',
+    },
+    headerMesh1: {
+      position: 'absolute', top: -50, right: -50, width: 200, height: 200,
+      borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.1)',
+    },
+    headerMesh2: {
+      position: 'absolute', bottom: -30, left: -40, width: 150, height: 150,
+      borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.05)',
     },
     topRow: {
       width: '100%',
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
-      marginBottom: SPACING.lg,
+      gap: 16,
+      marginBottom: SPACING.xl,
     },
     backButton: {
       width: 44,
@@ -239,49 +271,53 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    progressLine: {
+    progressLineOuter: {
       flex: 1,
-      height: 6,
+      height: 8,
       backgroundColor: 'rgba(255,255,255,0.2)',
-      borderRadius: 3,
+      borderRadius: 4,
       overflow: 'hidden',
     },
     progressFill: {
       height: '100%',
-      borderRadius: 3,
+      borderRadius: 4,
     },
     stepLabel: {
-      fontSize: 13,
-      fontFamily: FONTS.bold,
-      color: 'rgba(255,255,255,0.7)',
+      fontSize: 10,
+      fontFamily: FONTS.extrabold,
+      color: '#FFFFFF',
+      letterSpacing: 1.2,
+      opacity: 0.85,
     },
     characterContainer: {
-      width: 180,
-      height: 180,
+      width: 160,
+      height: 160,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
+      marginBottom: 8,
     },
     lottieRobot: {
-      width: 220,
-      height: 220,
+      width: 200,
+      height: 200,
     },
     nameSparkle: {
       position: 'absolute',
-      top: 20,
-      left: 0,
+      bottom: 20,
+      left: -20,
     },
     title: {
-      fontSize: 32,
-      fontFamily: 'Baloo2-Bold',
+      fontSize: 34,
+      fontFamily: FONTS.extrabold,
       color: '#FFFFFF',
       textAlign: 'center',
       marginBottom: 6,
+      letterSpacing: -0.5,
     },
     subtitle: {
-      fontSize: 17,
-      fontFamily: 'Baloo2-Medium',
-      color: 'rgba(255,255,255,0.85)',
+      fontSize: 16,
+      fontFamily: FONTS.medium,
+      color: 'rgba(255,255,255,0.9)',
       textAlign: 'center',
       lineHeight: 22,
     },
@@ -296,59 +332,101 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: '#FFFFFF',
-      borderRadius: 30,
-      paddingHorizontal: 24,
-      paddingVertical: Platform.OS === 'ios' ? 18 : 8,
-      borderWidth: 3,
+      borderRadius: 32,
+      paddingHorizontal: 28,
+      paddingVertical: Platform.OS === 'ios' ? 20 : 10,
+      borderWidth: 2,
       borderColor: '#F1F5F9',
       ...SHADOWS.md,
-      marginBottom: 16,
+      marginBottom: 20,
+    },
+    inputGlow: {
+      position: 'absolute',
+      top: -4, left: -4, right: -4, bottom: -4,
+      borderRadius: 36,
+      borderWidth: 2,
+      borderColor: C.primary + '40',
+      zIndex: -1,
     },
     input: {
       flex: 1,
-      fontSize: 24,
-      fontFamily: 'Baloo2-Bold',
+      fontSize: 26,
+      fontFamily: FONTS.extrabold,
       color: C.text.primary,
+      letterSpacing: -0.5,
       paddingRight: 12,
     },
     checkCircle: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...SHADOWS.sm,
+    },
+    emptyCheck: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: '#E2E8F0',
     },
     errorHint: {
       fontSize: 14,
-      fontFamily: FONTS.bold,
+      fontFamily: FONTS.extrabold,
       color: '#F59E0B',
-      marginBottom: 12,
+      marginBottom: 16,
+      letterSpacing: 0.3,
     },
-    infoHint: {
-      fontSize: 14,
-      fontFamily: FONTS.medium,
-      color: '#94A3B8',
-      textAlign: 'center',
-      marginTop: 8,
+    tipCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: C.primary + '08',
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: C.primary + '15',
+    },
+    tipText: {
+      fontSize: 13,
+      fontFamily: FONTS.bold,
+      color: C.text.secondary,
+      opacity: 0.8,
+    },
+    footerGradient: {
+      position: 'absolute',
+      top: -60, left: 0, right: 0, height: 120,
     },
     footer: {
       paddingHorizontal: SPACING.xl,
       paddingTop: SPACING.md,
-      backgroundColor: 'rgba(255,255,255,0.9)',
+      backgroundColor: 'transparent',
     },
     cta: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       paddingVertical: 20,
-      borderRadius: 30,
-      gap: 10,
+      borderRadius: 32,
+      gap: 12,
       ...SHADOWS.md,
     },
     ctaText: {
       fontSize: 20,
-      fontFamily: 'Baloo2-Bold',
+      fontFamily: FONTS.extrabold,
       color: '#FFFFFF',
+      letterSpacing: -0.2,
     },
-  }), [C, insets]);
+    ctaArrow: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: 4,
+    },
+  }), [C, insets, winWidth]);
 };

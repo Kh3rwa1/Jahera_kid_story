@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { Redirect } from 'expo-router';
 import {
   View,
   Text,
@@ -7,10 +8,11 @@ import {
   Pressable,
   useWindowDimensions,
   Platform,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BookOpen, Mic as Mic2, Zap } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS } from '@/constants/theme';
+import { BookOpen, Mic as Mic2, Zap, ChevronRight } from 'lucide-react-native';
+import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS, SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
@@ -23,6 +25,7 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeInUp,
+  ZoomIn,
   withTiming,
   Easing,
   interpolate,
@@ -104,17 +107,6 @@ export default function Welcome() {
     );
   }, []);
 
-  useEffect(() => {
-    if (authLoading || profileLoading || themeLoading) return;
-    if (isAuthenticated) {
-      if (profile) {
-        router.replace('/(tabs)');
-      } else {
-        router.replace('/onboarding/language-selection');
-      }
-    }
-  }, [authLoading, profileLoading, isAuthenticated, profile, themeLoading]);
-
   const handleTap = async () => {
     if (Platform.OS !== 'web') {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -137,25 +129,45 @@ export default function Welcome() {
   const badge3Style = useAnimatedStyle(() => ({ transform: [{ translateY: badge3Float.value }] }));
   const shimmerStyle = useAnimatedStyle(() => ({
     opacity: interpolate(shimmer.value, [0, 0.5, 1], [0, 1, 0]),
-    transform: [{ translateX: interpolate(shimmer.value, [0, 1], [-200, 200]) }],
+    transform: [{ translateX: interpolate(shimmer.value, [0, 1], [-250, 250]) }],
   }));
 
   if (authLoading || profileLoading || themeLoading) {
     return (
       <View style={styles.loadingScreen}>
         <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
-        <Animated.View entering={FadeIn.duration(600)}>
-          <LinearGradient
-            colors={[COLORS.primary, COLORS.primaryDark]}
-            style={styles.loadingOrb}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Text style={styles.loadingOrbText}>J</Text>
-          </LinearGradient>
+        <Animated.View entering={FadeIn.duration(800)}>
+          <View style={styles.loadingOrbOuter}>
+            <View 
+              style={[
+                styles.loadingOrb, 
+                { backgroundColor: COLORS.primary }
+              ]}
+            >
+               <Image 
+                  source={require('@/assets/images/icon.png')}
+                  style={{ 
+                    width: 150, 
+                    height: 150, 
+                    borderRadius: 75,
+                    borderWidth: 3,
+                    borderColor: '#FFFFFF'
+                  }}
+                  resizeMode="cover"
+               />
+            </View>
+          </View>
         </Animated.View>
       </View>
     );
+  }
+
+  // Auto-redirect authenticated users
+  if (isAuthenticated && profile) {
+    return <Redirect href="/(tabs)" />;
+  }
+  if (isAuthenticated && !profile && !profileLoading) {
+    return <Redirect href="/onboarding/language-selection" />;
   }
 
   return (
@@ -163,73 +175,68 @@ export default function Welcome() {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <LinearGradient
-        colors={[COLORS.backgroundGradient[1], COLORS.backgroundGradient[0], COLORS.primary + '15', COLORS.backgroundGradient[1]]}
-        locations={[0, 0.3, 0.7, 1]}
+        colors={[COLORS.backgroundGradient[1], COLORS.backgroundGradient[0], COLORS.primary + '10', COLORS.backgroundGradient[1]]}
+        locations={[0, 0.35, 0.75, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Primary glow — top right */}
+      {/* Living Background Blobs */}
       <Animated.View style={[styles.ambientBlob, styles.ambientTopRight, blob1Style]}>
         <LinearGradient
-          colors={[COLORS.primary + '30', COLORS.primary + '00']}
+          colors={[COLORS.primary + '35', COLORS.primary + '00']}
           style={{ flex: 1 }}
         />
       </Animated.View>
 
-      {/* Secondary wash — bottom left */}
       <Animated.View style={[styles.ambientBlob, styles.ambientBottomLeft, blob1Style]}>
         <LinearGradient
-          colors={[COLORS.primaryDark + '20', COLORS.primary + '00']}
+          colors={[COLORS.primaryDark + '25', COLORS.primary + '00']}
           style={{ flex: 1 }}
         />
       </Animated.View>
 
-      {/* Accent glow — mid right */}
       <Animated.View style={[styles.ambientBlob, styles.ambientMidRight]}>
         <LinearGradient
-          colors={[COLORS.primary + '18', COLORS.primary + '00']}
+          colors={[COLORS.primary + '20', COLORS.primary + '00']}
           style={{ flex: 1 }}
         />
       </Animated.View>
 
       {/* Floating feature badges */}
       <Animated.View style={[styles.floatingBadge, styles.badge1, badge1Style]}>
-        <Animated.View entering={FadeInDown.delay(1100).springify()} style={styles.badgeInner}>
-          <BookOpen size={13} color={COLORS.primaryDark} strokeWidth={2} />
-          <Text style={styles.badgeText}>100+ Languages</Text>
+        <Animated.View entering={FadeInDown.delay(1200).springify()} style={styles.badgeInner}>
+          <BookOpen size={12} color={COLORS.primaryDark} strokeWidth={2.5} />
+          <Text style={styles.badgeText}>100+ Stories</Text>
         </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.floatingBadge, styles.badge2, badge2Style]}>
-        <Animated.View entering={FadeInDown.delay(1350).springify()} style={styles.badgeInner}>
-          <Mic2 size={13} color={COLORS.primaryDark} strokeWidth={2} />
-          <Text style={styles.badgeText}>AI Narration</Text>
+        <Animated.View entering={FadeInDown.delay(1450).springify()} style={styles.badgeInner}>
+          <Mic2 size={12} color={COLORS.primaryDark} strokeWidth={2.5} />
+          <Text style={styles.badgeText}>AI Voice</Text>
         </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.floatingBadge, styles.badge3, badge3Style]}>
-        <Animated.View entering={FadeIn.delay(1600)} style={styles.badgeInner}>
-          <Zap size={13} color={COLORS.primaryDark} strokeWidth={2} />
-          <Text style={styles.badgeText}>Daily Quizzes</Text>
+        <Animated.View entering={FadeIn.delay(1700)} style={styles.badgeInner}>
+          <Zap size={12} color={COLORS.primaryDark} strokeWidth={2.5} />
+          <Text style={styles.badgeText}>Daily Magic</Text>
         </Animated.View>
       </Animated.View>
 
       {/* Center content */}
-      <View style={[styles.center, { paddingTop: insets.top + 20 }]}>
-        {/* Logo orb */}
+      <View style={[styles.center, { paddingTop: insets.top + 40 }]}>
+        {/* Cinematic Logo Area */}
         <Animated.View style={[styles.logoArea, logoStyle, orbStyle]}>
-          {/* Outer glow halo */}
           <Animated.View style={[styles.halo, glowStyle]}>
             <LinearGradient
-              colors={[COLORS.primary + '40', COLORS.primary + '00']}
+              colors={[COLORS.primary + '45', COLORS.primary + '00']}
               style={{ flex: 1, borderRadius: 160 }}
             />
           </Animated.View>
 
-          {/* Inner glow ring */}
           <View style={styles.glowRing} />
 
-          {/* Main orb */}
           <LinearGradient
             colors={[COLORS.cardBackground, COLORS.background]}
             style={styles.orbContainer}
@@ -242,19 +249,30 @@ export default function Welcome() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.orbLetter}>J</Text>
+              <Image 
+                source={require('@/assets/images/icon.png')} 
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+              <View style={styles.orbReflection} />
             </LinearGradient>
           </LinearGradient>
+
+          {/* Floating Particles around Logo */}
+          <View style={styles.logoParticleWrap}>
+             <View style={[styles.logoParticle, { top: -10, left: 20 }]} />
+             <View style={[styles.logoParticle, { bottom: 10, right: 30 }]} />
+             <View style={[styles.logoParticle, { top: 40, right: -10, width: 4, height: 4, opacity: 0.4 }]} />
+          </View>
         </Animated.View>
 
-        {/* App name */}
-        <Animated.View entering={FadeInUp.delay(350).springify()} style={styles.nameContainer}>
+        {/* Shimmering Title */}
+        <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.nameContainer}>
           <View style={styles.nameOverflow}>
-            <Text style={[styles.appName, { fontSize: Math.min(width * 0.18, 72) }]}>Jahera</Text>
-            {/* Shimmer overlay */}
+            <Text style={[styles.appName, { fontSize: Math.min(width * 0.2, 82) }]}>Jahera</Text>
             <Animated.View style={[styles.shimmerStripe, shimmerStyle]}>
               <LinearGradient
-                colors={['transparent', 'rgba(255,255,255,0.25)', 'transparent']}
+                colors={['transparent', 'rgba(255,255,255,0.4)', 'transparent']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{ flex: 1 }}
@@ -262,27 +280,26 @@ export default function Welcome() {
             </Animated.View>
           </View>
 
-          <Text style={styles.tagline}>Where every child becomes{'\n'}the hero of their story</Text>
+          <Text style={styles.tagline}>Create stories where your child{'\n'}is the hero of the adventure</Text>
         </Animated.View>
 
-        {/* Divider rule */}
-        <Animated.View entering={FadeIn.delay(700)} style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
+        {/* Premium Divider */}
+        <Animated.View entering={FadeIn.delay(850)} style={styles.dividerRow}>
+          <View style={[styles.dividerLine, { backgroundColor: COLORS.primary + '15' }]} />
           <LinearGradient
-            colors={[COLORS.primary + '00', COLORS.primary + '90', COLORS.primary + '00']}
+            colors={['transparent', COLORS.primary + '80', 'transparent']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.dividerGold}
           />
-          <View style={styles.dividerLine} />
+          <View style={[styles.dividerLine, { backgroundColor: COLORS.primary + '15' }]} />
         </Animated.View>
 
-        {/* Feature pills */}
-        <Animated.View entering={FadeInUp.delay(750).springify()} style={styles.pillRow}>
+        <Animated.View entering={FadeInUp.delay(900).springify()} style={styles.pillRow}>
           {[
-            { emoji: '📚', label: 'Stories' },
-            { emoji: '🎮', label: 'Quizzes' },
-            { emoji: '🌍', label: 'Languages' },
+            { emoji: '✨', label: 'Magic' },
+            { emoji: '🌙', label: 'Dreams' },
+            { emoji: '🧩', label: 'Learning' },
           ].map((item, i) => (
             <View key={i} style={styles.pill}>
               <Text style={styles.pillEmoji}>{item.emoji}</Text>
@@ -292,36 +309,42 @@ export default function Welcome() {
         </Animated.View>
       </View>
 
-      {/* Bottom CTA */}
+      {/* Tactile Bottom CTA */}
       <Animated.View
-        entering={FadeInUp.delay(950).springify()}
-        style={[styles.bottom, { paddingBottom: Math.max(insets.bottom + 44, 60) }]}
+        entering={FadeInUp.delay(1100).springify()}
+        style={[styles.bottom, { paddingBottom: Math.max(insets.bottom + 40, 56) }]}
       >
-        {/* CTA button */}
         <View style={styles.ctaWrapper}>
           <Animated.View style={[styles.ctaGlowHalo, ctaGlowStyle]}>
             <LinearGradient
-              colors={[COLORS.primary + '30', COLORS.primary + '00']}
-              style={{ flex: 1, borderRadius: 48 }}
+              colors={[COLORS.primary + '35', COLORS.primary + '00']}
+              style={{ flex: 1, borderRadius: 100 }}
             />
           </Animated.View>
+          
           <LinearGradient
             colors={[COLORS.primary, COLORS.primaryDark]}
             start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            end={{ x: 1, y: 0 }}
             style={styles.ctaButton}
           >
-            <Text style={styles.ctaText}>Begin Your Journey</Text>
+            <View style={styles.ctaInner}>
+              <Text style={styles.ctaText}>Start New Adventure</Text>
+              <View style={styles.ctaArrow}>
+                <ChevronRight size={20} color="#FFF" strokeWidth={3} />
+              </View>
+            </View>
           </LinearGradient>
         </View>
 
         <View style={styles.signInRow}>
-          <Text style={styles.signInLabel}>Already have an account?</Text>
+          <Text style={styles.signInLabel}>Already playing?</Text>
           <Pressable
             onPress={(e) => { e.stopPropagation?.(); router.push('/auth/login'); }}
-            hitSlop={8}
+            hitSlop={12}
+            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
           >
-            <Text style={[styles.signInLink, { color: COLORS.primaryDark }]}>Sign in</Text>
+            <Text style={[styles.signInLink, { color: COLORS.primaryDark }]}>Log In</Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -340,15 +363,37 @@ const useStyles = (C: any, insets: any, width: number) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    loadingOrb: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
+    loadingOrbOuter: {
+      width: 220,
+      height: 220,
+      borderRadius: 110,
+      borderWidth: 2,
+      borderColor: C.primary + '20',
       alignItems: 'center',
       justifyContent: 'center',
     },
+    loadingOrb: {
+      width: 180,
+      height: 180,
+      borderRadius: 90,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: C.primary,
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.4,
+      shadowRadius: 30,
+      elevation: 20,
+    },
+    loadingInnerOrb: {
+      position: 'absolute',
+      width: 240,
+      height: 240,
+      borderRadius: 120,
+      borderWidth: 2,
+      borderColor: C.primary + '30',
+    },
     loadingOrbText: {
-      fontSize: 36,
+      fontSize: 42,
       fontFamily: FONTS.extrabold,
       color: '#FFFFFF',
       letterSpacing: -1,
@@ -361,22 +406,22 @@ const useStyles = (C: any, insets: any, width: number) => {
       overflow: 'hidden',
     },
     ambientTopRight: {
-      width: 380,
-      height: 380,
-      top: -120,
-      right: -140,
+      width: 450,
+      height: 450,
+      top: -150,
+      right: -150,
     },
     ambientBottomLeft: {
-      width: 300,
-      height: 300,
+      width: 350,
+      height: 350,
       bottom: '10%',
-      left: -130,
+      left: -150,
     },
     ambientMidRight: {
-      width: 220,
-      height: 220,
-      top: '42%',
-      right: -80,
+      width: 250,
+      height: 250,
+      top: '45%',
+      right: -100,
     },
   
     // Floating badges
@@ -385,33 +430,34 @@ const useStyles = (C: any, insets: any, width: number) => {
       zIndex: 10,
     },
     badge1: {
-      top: '13%',
-      left: 20,
+      top: '15%',
+      left: 24,
     },
     badge2: {
-      top: '21%',
-      right: 18,
+      top: '25%',
+      right: 24,
     },
     badge3: {
-      top: '56%',
-      left: 16,
+      top: '55%',
+      left: 20,
     },
     badgeInner: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 7,
-      paddingHorizontal: 14,
-      paddingVertical: 9,
+      gap: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
       borderRadius: BORDER_RADIUS.pill,
-      backgroundColor: C.cardBackground + 'BF',
-      borderWidth: 1,
-      borderColor: C.primary + '40',
-    },
+      backgroundColor: 'rgba(255, 255, 255, 0.12)',
+      borderWidth: 1.5,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+      backdropFilter: 'blur(10px)',
+    } as any,
     badgeText: {
-      fontSize: 11,
-      fontFamily: FONTS.semibold,
-      color: C.text.secondary,
-      letterSpacing: 0.4,
+      fontSize: 12,
+      fontFamily: FONTS.extrabold,
+      color: '#FFFFFF',
+      letterSpacing: 0.5,
     },
   
     // Center layout
@@ -424,53 +470,76 @@ const useStyles = (C: any, insets: any, width: number) => {
   
     // Logo orb
     logoArea: {
-      width: 148,
-      height: 148,
+      width: 220,
+      height: 220,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: SPACING.xxl + 4,
+      marginBottom: SPACING.xxl + 8,
     },
     halo: {
       position: 'absolute',
-      width: 260,
-      height: 260,
-      borderRadius: 130,
+      width: 340,
+      height: 340,
+      borderRadius: 170,
     },
     glowRing: {
       position: 'absolute',
-      width: 158,
-      height: 158,
-      borderRadius: 79,
-      borderWidth: 1,
-      borderColor: C.primary + '30',
+      width: 230,
+      height: 230,
+      borderRadius: 115,
+      borderWidth: 1.5,
+      borderColor: C.primary + '25',
     },
     orbContainer: {
-      width: 130,
-      height: 130,
-      borderRadius: 65,
+      width: 200,
+      height: 200,
+      borderRadius: 100,
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 2,
-      borderColor: C.primary + '35',
+      borderColor: C.primary + '30',
       shadowColor: C.primary,
-      shadowOffset: { width: 0, height: 16 },
-      shadowOpacity: 0.4,
-      shadowRadius: 36,
-      elevation: 28,
+      shadowOffset: { width: 0, height: 20 },
+      shadowOpacity: 0.45,
+      shadowRadius: 40,
+      elevation: 32,
     },
     orbGold: {
-      width: 110,
-      height: 110,
-      borderRadius: 55,
+      width: 170,
+      height: 170,
+      borderRadius: 85,
       alignItems: 'center',
       justifyContent: 'center',
+      overflow: 'hidden',
     },
-    orbLetter: {
-      fontSize: 56,
-      fontFamily: FONTS.extrabold,
-      color: '#FFFFFF',
-      letterSpacing: -2,
-      lineHeight: 62,
+    logoImage: {
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      borderWidth: 3,
+      borderColor: '#FFFFFF',
+    },
+    orbReflection: {
+      position: 'absolute',
+      top: -20,
+      left: -20,
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+    },
+    logoParticleWrap: {
+      position: 'absolute',
+      width: '140%',
+      height: '140%',
+    },
+    logoParticle: {
+      position: 'absolute',
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: C.primary,
+      opacity: 0.6,
     },
   
     // App name
@@ -481,86 +550,84 @@ const useStyles = (C: any, insets: any, width: number) => {
     },
     nameOverflow: {
       overflow: 'hidden',
-      borderRadius: 6,
+      borderRadius: 12,
     },
     appName: {
-      fontSize: 72,
       fontFamily: FONTS.extrabold,
       color: C.text.primary,
-      letterSpacing: -3,
+      letterSpacing: -4,
       textAlign: 'center',
-      lineHeight: 78,
-      textShadowColor: C.primary + '30',
-      textShadowOffset: { width: 0, height: 3 },
-      textShadowRadius: 16,
+      lineHeight: 88,
+      textShadowColor: C.primary + '25',
+      textShadowOffset: { width: 0, height: 4 },
+      textShadowRadius: 20,
     },
     shimmerStripe: {
       position: 'absolute',
       top: 0,
       bottom: 0,
-      width: 200,
+      width: 250,
     },
     tagline: {
-      fontSize: FONT_SIZES.md,
+      fontSize: 17,
       fontFamily: FONTS.medium,
       color: C.text.secondary,
       textAlign: 'center',
-      lineHeight: 27,
-      letterSpacing: 0.1,
-      opacity: 0.65,
+      lineHeight: 26,
+      letterSpacing: 0.2,
+      opacity: 0.7,
     },
   
     // Divider
     dividerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      width: '80%',
+      width: '85%',
       marginBottom: SPACING.xl,
+      gap: 12,
     },
     dividerLine: {
       flex: 1,
-      height: 1,
-      backgroundColor: C.text.light + '20',
+      height: 1.5,
     },
     dividerGold: {
-      width: 60,
-      height: 1,
+      width: 80,
+      height: 2,
     },
   
     // Feature pills
     pillRow: {
       flexDirection: 'row',
-      gap: SPACING.sm,
-      flexWrap: 'wrap',
+      gap: SPACING.md,
       justifyContent: 'center',
     },
     pill: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
-      backgroundColor: C.cardBackground + '99',
-      borderWidth: 1,
-      borderColor: C.primary + '25',
-      paddingHorizontal: 14,
-      paddingVertical: 8,
+      gap: 6,
+      backgroundColor: C.cardBackground + 'B3',
+      borderWidth: 1.5,
+      borderColor: C.primary + '20',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
       borderRadius: BORDER_RADIUS.pill,
+      ...SHADOWS.sm,
     },
     pillEmoji: {
-      fontSize: 13,
+      fontSize: 14,
     },
     pillText: {
-      fontSize: 12,
-      fontFamily: FONTS.semibold,
+      fontSize: 13,
+      fontFamily: FONTS.extrabold,
       color: C.text.secondary,
-      letterSpacing: 0.3,
-      opacity: 0.8,
+      letterSpacing: 0.5,
     },
   
     // Bottom section
     bottom: {
       alignItems: 'center',
       paddingHorizontal: SPACING.xl,
-      gap: SPACING.lg,
+      gap: SPACING.xl,
     },
     ctaWrapper: {
       width: '100%',
@@ -568,45 +635,53 @@ const useStyles = (C: any, insets: any, width: number) => {
     },
     ctaGlowHalo: {
       position: 'absolute',
-      top: -18,
-      left: -18,
-      right: -18,
-      bottom: -18,
-      borderRadius: 56,
+      top: -24,
+      left: -24,
+      right: -24,
+      bottom: -24,
     },
     ctaButton: {
       width: '100%',
-      paddingVertical: 18,
-      borderRadius: 48,
+      borderRadius: 100,
+      ...SHADOWS.lg,
+    },
+    ctaInner: {
+      flexDirection: 'row',
       alignItems: 'center',
-      shadowColor: C.primaryDark,
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.4,
-      shadowRadius: 24,
-      elevation: 20,
+      justifyContent: 'space-between',
+      paddingLeft: 32,
+      paddingRight: 10,
+      paddingVertical: 10,
     },
     ctaText: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: FONTS.bold,
+      fontSize: 20,
+      fontFamily: FONTS.extrabold,
       color: '#FFFFFF',
-      letterSpacing: 0.4,
+      letterSpacing: -0.2,
+    },
+    ctaArrow: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     signInRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
+      gap: 8,
     },
     signInLabel: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: FONTS.regular,
+      fontSize: 15,
+      fontFamily: FONTS.medium,
       color: C.text.secondary,
-      letterSpacing: 0.2,
-      opacity: 0.6,
+      opacity: 0.7,
     },
     signInLink: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: FONTS.semibold,
-      letterSpacing: 0.2,
+      fontSize: 15,
+      fontFamily: FONTS.extrabold,
+      letterSpacing: 0.3,
     },
   }), [C, insets, width]);
 };

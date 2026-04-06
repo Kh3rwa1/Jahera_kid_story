@@ -195,20 +195,20 @@ export function CharacterManager({
       </View>
 
       {allCharacters.length === 0 ? (
-        <View style={[styles.emptyWrap, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '30' }]}>
+        <ReAnimated.View entering={FadeInUp.duration(400)} style={[styles.emptyWrap, { backgroundColor: COLORS.cardBackground + '80', borderColor: COLORS.text.light + '20' }]}>
           <Text style={[styles.emptyText, { color: COLORS.text.light }]}>No characters yet — add family or friends to include them in the story</Text>
-        </View>
+        </ReAnimated.View>
       ) : (
         <View style={styles.chipsWrap}>
           {allCharacters.map((char, i) => (
-            <ReAnimated.View key={char.id} entering={FadeInUp.delay(i * 40).springify()}>
+            <ReAnimated.View key={char.id} entering={FadeInUp.delay(i * 50).springify()}>
                 <View style={[
                   styles.chip,
                   char.type === 'family'
-                    ? { backgroundColor: COLORS.info + '12', borderColor: COLORS.info + '25' }
-                    : { backgroundColor: COLORS.success + '12', borderColor: COLORS.success + '25' }
+                    ? { backgroundColor: COLORS.info + '1A', borderColor: COLORS.info + '30' }
+                    : { backgroundColor: COLORS.success + '1A', borderColor: COLORS.success + '30' }
                 ]}>
-                  <TouchableOpacity onPress={() => openEdit(char.id, char.type, char.name)} activeOpacity={0.7}>
+                  <TouchableOpacity onPress={() => openEdit(char.id, char.type, char.name)} activeOpacity={0.7} style={styles.chipPressable}>
                     <View style={styles.chipInner}>
                       <Text style={[
                         styles.chipText,
@@ -216,11 +216,12 @@ export function CharacterManager({
                       ]}>
                         {char.name}
                       </Text>
-                      <Edit2 size={10} color={char.type === 'family' ? COLORS.info : COLORS.success} strokeWidth={2.5} />
+                      <Edit2 size={10} color={char.type === 'family' ? COLORS.info : COLORS.success} strokeWidth={3} />
                     </View>
                   </TouchableOpacity>
+                  <View style={[styles.chipDivider, { backgroundColor: char.type === 'family' ? COLORS.info + '20' : COLORS.success + '20' }]} />
                   <TouchableOpacity onPress={() => handleDelete(char.id, char.type)} style={styles.chipDelete} activeOpacity={0.7}>
-                    <X size={12} color={char.type === 'family' ? COLORS.info : COLORS.success} strokeWidth={2.5} />
+                    <X size={14} color={char.type === 'family' ? COLORS.info : COLORS.success} strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
             </ReAnimated.View>
@@ -392,25 +393,25 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.pill,
     borderWidth: 1.5,
     overflow: 'hidden',
+    ...SHADOWS.xs,
   },
-  chipFamily: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
-  },
-  chipFriend: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
+  chipPressable: {
+    height: '100%',
   },
   chipInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingLeft: 10,
-    paddingRight: 6,
-    paddingVertical: 6,
+    gap: 5,
+    paddingLeft: 12,
+    paddingRight: 8,
+    paddingVertical: 8,
+  },
+  chipDivider: {
+    width: 1,
+    height: '60%',
   },
   chipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: FONTS.semibold,
   },
   chipTextFamily: { color: '#0369A1' },

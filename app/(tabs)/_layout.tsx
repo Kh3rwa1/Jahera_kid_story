@@ -1,7 +1,20 @@
 import { useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Tabs, usePathname, useRouter } from 'expo-router';
+import { UIProvider } from '@/contexts/UIContext';
 import { FloatingTabBar } from '@/components/FloatingTabBar';
+import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useSharedValue, runOnJS } from 'react-native-reanimated';
+import { hapticFeedback } from '@/utils/haptics';
+
+const TAB_ORDER = ['index', 'history', 'profile', 'settings'] as const;
+
+const TAB_ROUTES: Record<string, string> = {
+  index: '/(tabs)/',
+  history: '/(tabs)/history',
+  profile: '/(tabs)/profile',
+  settings: '/(tabs)/settings',
+};
 
 const ROUTE_TO_TAB: Record<string, string> = {
   '/': 'index',
@@ -20,10 +33,15 @@ function getActiveTab(pathname: string): string {
   return 'index';
 }
 
+const EmptyTabBar = () => null;
+
+const SWIPE_THRESHOLD = 50;
+
 export default function TabLayout() {
   const pathname = usePathname();
   const router = useRouter();
   const activeTab = getActiveTab(pathname);
+  const hasSwiped = useSharedValue(0); // 0 = not swiped, 1 = swiped (worklet-safe)
 
   const handleTabPress = useCallback(
     (route: string) => {
@@ -32,20 +50,64 @@ export default function TabLayout() {
     [router]
   );
 
+  const navigateToTab = useCallback((tabName: string) => {
+    const route = TAB_ROUTES[tabName];
+    if (route) {
+      hapticFeedback.selection();
+      router.push(route as any);
+    }
+  }, [router]);
+
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX([-20, 20])
+    .failOffsetY([-15, 15])
+    .onBegin(() => {
+      'worklet';
+      hasSwiped.value = 0;
+    })
+    .onUpdate((event) => {
+      'worklet';
+      if (hasSwiped.value === 1) return;
+      if (Math.abs(event.translationX) > SWIPE_THRESHOLD) {
+        hasSwiped.value = 1;
+        const currentIndex = TAB_ORDER.indexOf(activeTab as any);
+        if (currentIndex === -1) return;
+
+        let nextIndex: number;
+        if (event.translationX < 0) {
+          nextIndex = Math.min(currentIndex + 1, TAB_ORDER.length - 1);
+        } else {
+          nextIndex = Math.max(currentIndex - 1, 0);
+        }
+
+        if (nextIndex !== currentIndex) {
+          runOnJS(navigateToTab)(TAB_ORDER[nextIndex]);
+        }
+      }
+    });
+
   return (
-    <View style={styles.container}>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: { display: 'none' },
-        }}>
-        <Tabs.Screen name="index" />
-        <Tabs.Screen name="history" />
-        <Tabs.Screen name="profile" />
-        <Tabs.Screen name="settings" />
-      </Tabs>
-      <FloatingTabBar activeTab={activeTab} onTabPress={handleTabPress} />
-    </View>
+    <GestureHandlerRootView style={styles.container}>
+      <UIProvider>
+        <View style={styles.container}>
+          <GestureDetector gesture={swipeGesture}>
+            <View style={styles.container}>
+              <Tabs
+                tabBar={EmptyTabBar}
+                screenOptions={{
+                  headerShown: false,
+                }}>
+                <Tabs.Screen name="index" />
+                <Tabs.Screen name="history" />
+                <Tabs.Screen name="profile" />
+                <Tabs.Screen name="settings" />
+              </Tabs>
+            </View>
+          </GestureDetector>
+          <FloatingTabBar activeTab={activeTab} onTabPress={handleTabPress} />
+        </View>
+      </UIProvider>
+    </GestureHandlerRootView>
   );
 }
 

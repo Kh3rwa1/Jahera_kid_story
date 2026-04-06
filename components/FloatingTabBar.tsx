@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   StyleSheet,
   Platform,
@@ -13,13 +13,17 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
   interpolate,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { House, Library, Award, Settings } from 'lucide-react-native';
+import { House, Library, Award, Settings, Play, Pause, Disc } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { FONTS } from '@/constants/theme';
 import { hapticFeedback } from '@/utils/haptics';
+import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
+import { useUI } from '@/contexts/UIContext';
+import { useRouter } from 'expo-router';
 
 const TABS = [
   { name: 'index',    icon: House,   label: 'Home',     route: '/(tabs)/' },
@@ -47,26 +51,18 @@ function TabItem({
 
   useEffect(() => {
     progress.value = withSpring(focused ? 1 : 0, {
-      damping: 16,
-      stiffness: 380,
-      mass: 0.7,
+      damping: 18,
+      stiffness: 300,
+      mass: 0.8,
     });
   }, [focused]);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [
-      { scale: interpolate(progress.value, [0, 1], [1, 1.12]) },
-      { translateY: interpolate(progress.value, [0, 1], [0, -1]) },
+      { scale: interpolate(progress.value, [0, 1], [1, 1.25]) },
+      { translateY: interpolate(progress.value, [0, 1], [0, -2]) },
     ],
-  }));
-
-  const labelStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.5, 1], [0, 0, 1]),
-    transform: [
-      { translateY: interpolate(progress.value, [0, 1], [6, 0]) },
-      { scale: interpolate(progress.value, [0, 1], [0.85, 1]) },
-    ],
-    maxHeight: interpolate(progress.value, [0, 0.4, 1], [0, 0, 16]),
+    opacity: interpolate(progress.value, [0, 1], [0.5, 1]),
   }));
 
   return (
@@ -77,22 +73,12 @@ function TabItem({
     >
       <Animated.View style={[styles.tabContent, iconStyle]}>
         <Icon
-          size={26}
+          size={28}
           color={focused ? activeColor : inactiveColor}
           strokeWidth={focused ? 2.5 : 1.8}
         />
         {focused && <Animated.View style={[styles.activeDot, { backgroundColor: activeColor }]} />}
       </Animated.View>
-      <Animated.Text
-        style={[
-          styles.tabLabel,
-          { color: activeColor, fontFamily: FONTS.displayBold },
-          labelStyle,
-        ]}
-        numberOfLines={1}
-      >
-        {tab.label}
-      </Animated.Text>
     </Pressable>
   );
 }
@@ -109,12 +95,27 @@ export function FloatingTabBar({
   const COLORS = currentTheme.colors;
   const isDark = COLORS.background < '#888888';
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
-  const BAR_WIDTH = Math.min(winWidth - 28, 440);
+  const { activeStory, isPlaying, playPause } = useAudio();
+  const { isUIDormant } = useUI();
+
+  const showPlayer = isUIDormant && activeStory !== null;
+
+  const BAR_WIDTH = Math.min(winWidth - 40, 360); 
   const TAB_WIDTH = BAR_WIDTH / TABS.length;
-  const PILL_WIDTH = TAB_WIDTH - 10;
-  const PILL_HEIGHT = 62;
-  const HALO_SIZE = BAR_WIDTH + 40;
+  const PILL_WIDTH = TAB_WIDTH - 8;
+  const PILL_HEIGHT = 50;
+  const HALO_SIZE = BAR_WIDTH + 60;
+
+  const modeProgress = useSharedValue(0); // 0 = Tabs, 1 = Player
+
+  useEffect(() => {
+    modeProgress.value = withSpring(showPlayer ? 1 : 0, {
+      damping: 20,
+      stiffness: 300,
+    });
+  }, [showPlayer]);
 
   const handleTabPress = (route: string) => {
     hapticFeedback.selection();
@@ -124,115 +125,165 @@ export function FloatingTabBar({
   const activeIndex = TABS.findIndex(t => t.name === activeTab);
   const safeActiveIndex = activeIndex === -1 ? 0 : activeIndex;
 
-  const pillX = useSharedValue(safeActiveIndex * TAB_WIDTH + 6);
+  const pillX = useSharedValue(safeActiveIndex * TAB_WIDTH + 4);
 
   useEffect(() => {
-    pillX.value = withSpring(safeActiveIndex * TAB_WIDTH + 6, {
-      damping: 18,
-      stiffness: 400,
-      mass: 0.7,
+    pillX.value = withSpring(safeActiveIndex * TAB_WIDTH + 4, {
+      damping: 20,
+      stiffness: 350,
+      mass: 0.6,
     });
   }, [safeActiveIndex, TAB_WIDTH]);
 
-  const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: pillX.value }],
-    width: PILL_WIDTH,
+  const pillStyle = useAnimatedStyle(() => {
+    // When in player mode, the pill expands to fill the entire bar
+    const width = interpolate(modeProgress.value, [0, 1], [PILL_WIDTH, BAR_WIDTH - 8]);
+    const translateX = interpolate(modeProgress.value, [0, 1], [pillX.value, 4]);
+
+    return {
+      transform: [{ translateX }],
+      width,
+    };
+  });
+
+  const tabsContainerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(modeProgress.value, [0, 0.5], [1, 0]),
+    transform: [
+      { scale: interpolate(modeProgress.value, [0, 0.5], [1, 0.9]) },
+      { translateY: interpolate(modeProgress.value, [0, 0.5], [0, 10]) }
+    ],
+    pointerEvents: showPlayer ? 'none' : 'auto',
   }));
 
-  const bottomOffset = insets.bottom > 0 ? insets.bottom + 10 : 18;
+  const playerContainerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(modeProgress.value, [0.5, 1], [0, 1]),
+    transform: [
+      { scale: interpolate(modeProgress.value, [0.5, 1], [0.9, 1]) },
+      { translateY: interpolate(modeProgress.value, [0.5, 1], [-10, 0]) }
+    ],
+    pointerEvents: showPlayer ? 'auto' : 'none',
+  }));
 
-  const glowColor = COLORS.primary + '45';
-  const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.7)';
-  const bgColor = isDark ? 'rgba(18,18,26,0.92)' : 'rgba(255,255,255,0.88)';
+  const bottomOffset = insets.bottom > 0 ? insets.bottom + 8 : 20;
+  const glowColor = COLORS.primary + '35';
+  const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
+  const bgColor = isDark ? 'rgba(12,12,18,0.95)' : 'rgba(255,255,255,0.92)';
+
 
   return (
     <View
       style={[styles.wrapper, { bottom: bottomOffset }]}
       pointerEvents="box-none"
     >
-      {/* Outer glow halo */}
       <View style={[styles.glowHalo, { backgroundColor: glowColor, width: HALO_SIZE }]} />
 
-      {/* Shadow layers (stacked for depth) */}
-      <View style={[styles.shadow1, { width: BAR_WIDTH - 16 }]} />
-      <View style={[styles.shadow2, { width: BAR_WIDTH }]} />
-
-      {/* Main pill container */}
       <View
         style={[
           styles.barContainer,
           {
             borderColor,
             width: BAR_WIDTH,
+            backgroundColor: bgColor,
           },
         ]}
       >
-        {/* Background blur / solid */}
-        {Platform.OS !== 'web' ? (
+        {Platform.OS !== 'web' && (
           <BlurView
-            intensity={isDark ? 80 : 90}
+            intensity={isDark ? 60 : 70}
             tint={isDark ? 'dark' : 'extraLight'}
             style={StyleSheet.absoluteFillObject}
           />
-        ) : (
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: bgColor }]} />
         )}
 
-        {/* Subtle inner top highlight */}
-        <View
-          style={[
-            styles.innerHighlight,
-            {
-              backgroundColor: isDark
-                ? 'rgba(255,255,255,0.04)'
-                : 'rgba(255,255,255,0.55)',
-            },
-          ]}
-        />
-
-        {/* Sliding active pill */}
         <Animated.View
           style={[
             styles.activePill,
-            {
-              height: PILL_HEIGHT,
-            },
+            { height: PILL_HEIGHT },
             pillStyle,
           ]}
         >
           <LinearGradient
-            colors={[COLORS.primary, COLORS.primaryDark] as [string, string]}
+            colors={[COLORS.primary + '20', COLORS.primary + '05'] as [string, string]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[StyleSheet.absoluteFillObject, { borderRadius: 25, opacity: isDark ? 0.28 : 0.2 }]}
+            style={[StyleSheet.absoluteFillObject, { borderRadius: 25 }]}
           />
-          <View style={[StyleSheet.absoluteFillObject, {
-            borderRadius: 25,
-            borderWidth: 1.5,
-            borderColor: COLORS.primary + (isDark ? '40' : '35'),
-          }]} />
         </Animated.View>
 
-        {/* Tab items */}
-        <View style={styles.tabsRow}>
-          {TABS.map((tab, index) => (
-            <TabItem
-              key={tab.name}
-              tab={tab}
-              index={index}
-              focused={activeTab === tab.name}
-              onPress={() => handleTabPress(tab.route)}
-              activeColor={COLORS.primary}
-              inactiveColor={
-                isDark ? 'rgba(255,255,255,0.35)' : 'rgba(30,30,40,0.32)'
-              }
-            />
-          ))}
-        </View>
+        {/* TABS MODE */}
+        <Animated.View style={[StyleSheet.absoluteFill, tabsContainerStyle, { justifyContent: 'center' }]}>
+          <View style={styles.tabsRow}>
+            {TABS.map((tab, index) => (
+              <TabItem
+                key={tab.name}
+                tab={tab}
+                index={index}
+                focused={activeTab === tab.name}
+                onPress={() => handleTabPress(tab.route)}
+                activeColor={COLORS.primary}
+                inactiveColor={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(30,30,40,0.35)'}
+              />
+            ))}
+          </View>
+        </Animated.View>
+
+        {/* PLAYER MODE */}
+        <Animated.View style={[StyleSheet.absoluteFill, playerContainerStyle, styles.playerRow]}>
+          <Pressable 
+            style={styles.playerInfo} 
+            onPress={() => router.push({ pathname: '/story/playback', params: { storyId: activeStory?.id } })}
+          >
+            <View style={[styles.discIconBg, { backgroundColor: COLORS.primary + '15' }]}>
+              <Disc size={20} color={COLORS.primary} />
+            </View>
+            <View style={styles.playerTextCol}>
+              <Text style={[styles.playerTitle, { color: COLORS.text.primary }]} numberOfLines={1}>
+                {activeStory?.title || 'Loading Story...'}
+              </Text>
+              <Text style={[styles.playerSub, { color: COLORS.text.secondary }]} numberOfLines={1}>
+                {activeStory?.theme || 'Custom'} Concept
+              </Text>
+            </View>
+          </Pressable>
+
+          <Pressable 
+            style={styles.playerBtn}
+            onPress={playPause}
+          >
+            {isPlaying ? (
+              <Pause size={24} color={COLORS.primary} fill={COLORS.primary} />
+            ) : (
+              <Play size={24} color={COLORS.primary} fill={COLORS.primary} />
+            )}
+          </Pressable>
+          
+          {/* Mini progress bar at the bottom */}
+          <MiniProgressBar color={COLORS.primary} />
+        </Animated.View>
       </View>
     </View>
   );
 }
+
+const MiniProgressBar = React.memo(({ color }: { color: string }) => {
+  const { position, duration } = useAudioProgress();
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    const pct = duration > 0 ? (position / duration) : 0;
+    progress.value = withTiming(pct, { duration: 250 }); // smooth transition between 200ms updates
+  }, [position, duration]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${progress.value * 100}%`,
+  }));
+
+  return (
+    <View style={styles.miniProgressBarContainer}>
+      <Animated.View style={[styles.miniProgressBar, { backgroundColor: color }, animatedStyle]} />
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -242,97 +293,107 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 999,
   },
-
-  /* Layered depth shadows */
   glowHalo: {
     position: 'absolute',
-    height: 72,
-    borderRadius: 44,
-    bottom: -10,
+    height: 80,
+    borderRadius: 50,
+    bottom: -15,
     alignSelf: 'center',
-    opacity: 0.5,
+    opacity: 0.6,
   },
-  shadow1: {
-    position: 'absolute',
-    height: 60,
-    borderRadius: 36,
-    bottom: 2,
-    alignSelf: 'center',
-    backgroundColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.22,
-    shadowRadius: 40,
-    elevation: Platform.OS === 'android' ? 0 : 24,
-  },
-  shadow2: {
-    position: 'absolute',
-    height: 60,
-    borderRadius: 36,
-    bottom: 0,
-    alignSelf: 'center',
-    backgroundColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: Platform.OS === 'android' ? 0 : 12,
-  },
-
   barContainer: {
-    borderRadius: 36,
+    borderRadius: 30,
     overflow: 'hidden',
     borderWidth: 1,
     position: 'relative',
+    height: 66,
+    ...(Platform.OS !== 'web' ? {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.15,
+      shadowRadius: 20,
+      elevation: 10,
+    } : {}),
   },
-
-  innerHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    borderRadius: 36,
-  },
-
   activePill: {
     position: 'absolute',
-    top: 9, // Manual centering for 68 height - 50 pill height
-    borderRadius: 25,
+    top: 8,
+    borderRadius: 22,
     overflow: 'hidden',
   },
-
   tabsRow: {
     flexDirection: 'row',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    height: 80,
+    height: '100%',
     alignItems: 'center',
+    paddingHorizontal: 4,
   },
-
   tabItem: {
     flex: 1,
-    height: 62,
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
   },
-
   tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
-
   activeDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
+    marginTop: 2,
   },
-
-  tabLabel: {
-    fontSize: 13,
-    letterSpacing: 0.1,
-    lineHeight: 16,
+  playerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
   },
+  playerInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  discIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playerTextCol: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  playerTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+    marginBottom: 2,
+  },
+  playerSub: {
+    fontFamily: FONTS.medium,
+    fontSize: 11,
+  },
+  playerBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniProgressBarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 16,
+    right: 16,
+    height: 2,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 1,
+    overflow: 'hidden',
+  },
+  miniProgressBar: {
+    height: '100%',
+    borderRadius: 1,
+  }
 });

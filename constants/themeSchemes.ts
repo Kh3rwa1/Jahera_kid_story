@@ -620,8 +620,97 @@ export const ORANGE_THEME: ColorScheme = {
   },
 };
 
+// Crimson Magic Theme (Red)
+export const RED_THEME: ColorScheme = {
+  id: 'red',
+  name: 'Crimson Magic',
+  emoji: '🏮',
+  colors: {
+    primary: '#FF4B4B',
+    primaryDark: '#D92D2D',
+    primaryLight: '#FF7D7D',
+    secondary: '#FFDEDE',
+    secondaryDark: '#FFBEBE',
+    secondaryLight: '#FFF5F5',
+    background: '#FFF5F5',
+    backgroundGradient: ['#FFFBFA', '#FFF5F5', '#FFE0E0'],
+    cardBackground: '#FFFFFF',
+    cardGradient: ['#FFFFFF', '#FFFBFA'],
+    text: {
+      primary: '#330D0D',
+      secondary: '#7A2424',
+      light: '#C07575',
+      inverse: '#FFFFFF',
+      gradient: ['#FF4B4B', '#FF7D7D'],
+    },
+    categoryColors: {
+      green: '#52D98A',
+      greenGradient: ['#CFFCE1', '#52D98A', '#29C470'],
+      teal: '#00C4B4',
+      tealGradient: ['#AAFFF4', '#00C4B4', '#00A89A'],
+      peach: '#FF8C8F',
+      peachGradient: ['#FFD0D2', '#FF8C8F', '#FF6B6F'],
+      purple: '#AC8EFF',
+      purpleGradient: ['#E5DCFF', '#AC8EFF', '#8B6BFF'],
+      blue: '#4CB8FF',
+      blueGradient: ['#C0E8FF', '#4CB8FF', '#22A3FF'],
+    },
+    accent: {
+      gold: '#FFCC00',
+      goldGradient: ['#FFF5B8', '#FFCC00', '#FFB300'],
+      rose: '#FF4B4B',
+      roseGradient: ['#FFBBD4', '#FF4B4B', '#D92D2D'],
+      mint: '#7BFFE8',
+      mintGradient: ['#D0FAF8', '#7BFFE8', '#56F5DA'],
+      lavender: '#C87FFF',
+      lavenderGradient: ['#F0D9FF', '#C87FFF', '#B25FFF'],
+    },
+    success: '#00C853',
+    successLight: '#69F0AE',
+    error: '#FF1744',
+    errorLight: '#FF8A80',
+    warning: '#FF9500',
+    warningLight: '#FFD180',
+    info: '#2979FF',
+    infoLight: '#82B1FF',
+    gradients: {
+      primary: ['#FF7D7D', '#FF4B4B', '#D92D2D'],
+      secondary: ['#FFF5F5', '#FFDEDE', '#FFBEBE'],
+      sunset: ['#FF4B4B', '#FF9500', '#FFCC00'],
+      sunrise: ['#FFDEDE', '#FF7D7D', '#FF4B4B'],
+      ocean: ['#4CB8FF', '#2979FF', '#1A5FE0'],
+      forest: ['#69F0AE', '#00C853', '#00A844'],
+      magic: ['#C87FFF', '#FF4B4B', '#FFCC00'],
+      royal: ['#FF7D7D', '#FF4B4B', '#990000'],
+      success: ['#69F0AE', '#00C853', '#00A844'],
+      premium: ['#FFCC00', '#FF4B4B', '#D92D2D'],
+      glassMorphism: ['rgba(255, 255, 255, 0.75)', 'rgba(255, 255, 255, 0.35)'],
+      glassMorphismDark: ['rgba(0, 0, 0, 0.2)', 'rgba(0, 0, 0, 0.1)'],
+    },
+    shadow: {
+      light: 'rgba(255, 75, 75, 0.06)',
+      medium: 'rgba(255, 75, 75, 0.14)',
+      dark: 'rgba(0, 0, 0, 0.18)',
+      darker: 'rgba(0, 0, 0, 0.3)',
+      colored: 'rgba(255, 75, 75, 0.35)',
+      coloredLight: 'rgba(255, 75, 75, 0.2)',
+      purple: 'rgba(172, 142, 255, 0.4)',
+      blue: 'rgba(76, 184, 255, 0.4)',
+      green: 'rgba(82, 217, 138, 0.4)',
+    },
+    glass: {
+      background: 'rgba(255, 255, 255, 0.75)',
+      backgroundDark: 'rgba(255, 255, 255, 0.55)',
+      border: 'rgba(255, 255, 255, 0.85)',
+      borderDark: 'rgba(255, 255, 255, 0.35)',
+      overlay: 'rgba(255, 75, 75, 0.05)',
+    },
+  },
+};
+
 // All available themes
 export const COLOR_SCHEMES: ColorScheme[] = [
+  RED_THEME,
   MINT_THEME,
   PURPLE_THEME,
   BLUE_THEME,
@@ -631,7 +720,7 @@ export const COLOR_SCHEMES: ColorScheme[] = [
 ];
 
 // Default theme
-export const DEFAULT_THEME = MINT_THEME;
+export const DEFAULT_THEME = RED_THEME;
 
 // Helper function to get theme by ID
 export function getThemeById(id: string): ColorScheme {

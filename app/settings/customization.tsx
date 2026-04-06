@@ -34,13 +34,14 @@ import { ColorWheelPicker } from '@/components/ColorWheelPicker';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-function ThemeCard({
+const ThemeCard = React.memo(({
   scheme,
   isSelected,
   onPress,
   index,
   winWidth,
   styles,
+  C,
 }: {
   scheme: (typeof COLOR_SCHEMES)[0];
   isSelected: boolean;
@@ -48,13 +49,23 @@ function ThemeCard({
   index: number;
   winWidth: number;
   styles: any;
-}) {
+  C: any;
+}) => {
   const scale = useSharedValue(1);
+  const shadowOpacity = useSharedValue(isSelected ? 0.4 : 0.1);
+  
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+    shadowOpacity: withTiming(isSelected ? 0.45 : 0.12),
+  }));
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: withSpring(isSelected ? 1 : 0),
+    transform: [{ scale: withSpring(isSelected ? 1 : 0.9) }],
   }));
 
   const handlePress = () => {
+    hapticFeedback.light();
     scale.value = withSequence(
       withSpring(0.94, { damping: 10, stiffness: 500 }),
       withSpring(1, { damping: 12, stiffness: 300 })
@@ -65,14 +76,23 @@ function ThemeCard({
   return (
     <Animated.View
       entering={FadeInUp.delay(80 + index * 50).springify()}
-      style={animStyle}
+      style={[animStyle, { position: 'relative' }]}
     >
+      {/* Premium Glow Effect */}
+      <Animated.View 
+        style={[
+          glowStyle, 
+          styles.themeGlow, 
+          { backgroundColor: scheme.colors.primary + '30', shadowColor: scheme.colors.primary }
+        ]} 
+      />
+
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.92}
         style={[
           styles.themeCard,
-          { width: winWidth * 0.72 },
+          { width: winWidth * 0.82 }, // Increased width for 'peek' effect
           isSelected && styles.themeCardSelected,
         ]}
       >
@@ -118,9 +138,9 @@ function ThemeCard({
       </TouchableOpacity>
     </Animated.View>
   );
-}
+});
 
-function IconCard({
+const IconCard = React.memo(({
   icon,
   isSelected,
   onPress,
@@ -136,7 +156,7 @@ function IconCard({
   index: number;
   winWidth: number;
   styles: any;
-}) {
+}) => {
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
 
@@ -145,6 +165,7 @@ function IconCard({
   }));
 
   const handlePress = () => {
+    hapticFeedback.selection();
     scale.value = withSequence(
       withSpring(0.85, { damping: 8, stiffness: 500 }),
       withSpring(1.08, { damping: 10, stiffness: 300 }),
@@ -168,7 +189,7 @@ function IconCard({
             {
               backgroundColor: isSelected ? C.primary + '15' : C.cardBackground,
               borderColor: isSelected ? C.primary : C.text.light + '25',
-              borderWidth: isSelected ? 2 : 1,
+              borderWidth: isSelected ? 2.5 : 1, // Slightly thicker border for premium feel
               width: (winWidth - SPACING.xl * 2 - SPACING.md * 3) / 4,
               height: (winWidth - SPACING.xl * 2 - SPACING.md * 3) / 4,
             },
@@ -196,7 +217,7 @@ function IconCard({
       </TouchableOpacity>
     </Animated.View>
   );
-}
+});
 
 function SectionLabel({
   icon: Icon,
@@ -373,19 +394,18 @@ export default function CustomizationScreen() {
           <LinearGradient
             colors={C.gradients.primary as [string, string, ...string[]]}
             start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            end={{ x: 1, y: 0 }}
             style={styles.heroBannerGrad}
           >
             <View style={styles.heroLeft}>
-              <Text style={styles.heroTitle}>Design Your{'\n'}Experience</Text>
+              <View style={styles.heroPill}>
+                <Sparkles size={10} color="#FFFFFF" />
+                <Text style={styles.heroPillText}>PREMIUM ENGINE</Text>
+              </View>
+              <Text style={styles.heroTitle}>Design Your Experience</Text>
               <Text style={styles.heroSub}>
-                Choose from curated themes or craft your own with the color picker
+                Choose curated themes or craft your own unique world
               </Text>
-            </View>
-            <View style={styles.heroRight}>
-              <View style={styles.heroCircle1} />
-              <View style={styles.heroCircle2} />
-              <Sparkles size={32} color="rgba(255,255,255,0.9)" />
             </View>
           </LinearGradient>
         </Animated.View>
@@ -405,7 +425,7 @@ export default function CustomizationScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.themeScroll}
           decelerationRate="fast"
-          snapToInterval={winWidth * 0.72 + 20}
+          snapToInterval={winWidth * 0.82 + 20}
           snapToAlignment="start"
         >
           {COLOR_SCHEMES.map((scheme, index) => (
@@ -417,6 +437,7 @@ export default function CustomizationScreen() {
               index={index}
               winWidth={winWidth}
               styles={styles}
+              C={C}
             />
           ))}
         </ScrollView>
@@ -433,40 +454,42 @@ export default function CustomizationScreen() {
           <Animated.View entering={FadeInUp.delay(220).springify()}>
             <TouchableOpacity
               onPress={handleColorWheelToggle}
-              activeOpacity={0.85}
+              activeOpacity={0.9}
               style={[
                 styles.colorToggleRow,
                 showColorWheel && styles.colorToggleRowActive
               ]}
             >
-              <LinearGradient
-                colors={
-                  showColorWheel
-                    ? (C.gradients.primary as [string, string, ...string[]])
-                    : (['#E8E8E8', '#D8D8D8'] as [string, string])
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.colorToggleIcon}
-              >
-                <Pipette size={17} color="#FFFFFF" strokeWidth={2.5} />
-              </LinearGradient>
+              <View style={styles.colorPillStack}>
+                 <LinearGradient
+                   colors={['#FF5F6D', '#FFC371']}
+                   style={styles.colorPill}
+                 />
+                 <LinearGradient
+                   colors={['#2193b0', '#6dd5ed']}
+                   style={[styles.colorPill, { marginLeft: -12 }]}
+                 />
+                 <LinearGradient
+                   colors={['#ee9ca7', '#ffdde1']}
+                   style={[styles.colorPill, { marginLeft: -12 }]}
+                 />
+              </View>
 
               <View style={styles.colorToggleContent}>
                 <Text style={styles.colorToggleTitle}>
-                  {showColorWheel ? 'Color Wheel Active' : 'Open Color Wheel'}
+                  Creative Color Lab
                 </Text>
                 <Text style={styles.colorToggleSub}>
-                  {showColorWheel
-                    ? 'Drag to pick your perfect hue'
-                    : 'Create a fully custom theme'}
+                  Mix any color to generate a custom palette
                 </Text>
               </View>
 
-              <View style={[styles.colorToggleArrow, showColorWheel && styles.colorToggleArrowActive]}>
-                <Text style={[styles.colorToggleArrowText, { color: showColorWheel ? C.primary : C.text.secondary }]}>
-                  {showColorWheel ? '▲' : '▼'}
-                </Text>
+              <View style={[styles.colorToggleAction, { backgroundColor: C.primary }]}>
+                 {showColorWheel ? (
+                   <Check size={18} color="#FFF" strokeWidth={3} />
+                 ) : (
+                   <Pipette size={18} color="#FFF" strokeWidth={2.5} />
+                 )}
               </View>
             </TouchableOpacity>
           </Animated.View>
@@ -553,25 +576,38 @@ const useStyles = (C: any, insets: any) => {
     toastText: { color: '#FFF', fontSize: 13, fontFamily: FONTS.semibold },
     scrollContent: { paddingBottom: 120 },
     heroBanner: { marginHorizontal: SPACING.xl, marginBottom: SPACING.xxl, borderRadius: BORDER_RADIUS.xxl, overflow: 'hidden', ...SHADOWS.lg },
-    heroBannerGrad: { flexDirection: 'row', alignItems: 'center', padding: SPACING.xl, paddingVertical: 28, gap: SPACING.lg },
-    heroLeft: { flex: 1 },
-    heroTitle: { fontSize: 22, fontFamily: FONTS.bold, color: '#FFFFFF', lineHeight: 28, letterSpacing: -0.3, marginBottom: SPACING.sm },
-    heroSub: { fontSize: 13, fontFamily: FONTS.regular, color: 'rgba(255,255,255,0.82)', lineHeight: 18 },
-    heroRight: { width: 72, height: 72, alignItems: 'center', justifyContent: 'center' },
-    heroCircle1: { position: 'absolute', width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.15)' },
-    heroCircle2: { position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.1)' },
+    heroBannerGrad: { flexDirection: 'row', alignItems: 'center', padding: SPACING.xl, paddingVertical: 24, gap: SPACING.lg },
+    heroLeft: { flex: 1, gap: 4 },
+    heroPill: { 
+      flexDirection: 'row', alignItems: 'center', gap: 4, 
+      backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 8, 
+      paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start',
+      marginBottom: 4,
+    },
+    heroPillText: { fontSize: 9, fontFamily: FONTS.extrabold, color: '#FFFFFF', letterSpacing: 1 },
+    heroTitle: { fontSize: 24, fontFamily: FONTS.bold, color: '#FFFFFF', letterSpacing: -0.5 },
+    heroSub: { fontSize: 13, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.85)', lineHeight: 18 },
     section: { paddingHorizontal: SPACING.xl },
     sectionLabel: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: 4 },
     sectionLabelIcon: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
     sectionLabelText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, letterSpacing: -0.2 },
     sectionDesc: { fontSize: 12, fontFamily: FONTS.regular, marginBottom: SPACING.lg, marginLeft: 4, color: C.text.secondary },
-    themeScroll: { paddingHorizontal: SPACING.xl, paddingBottom: 4, gap: 20 },
+    themeScroll: { paddingHorizontal: SPACING.xl, paddingBottom: 12, gap: 20 },
+    themeGlow: {
+      position: 'absolute',
+      top: 10, left: 10, right: 10, bottom: 10,
+      borderRadius: BORDER_RADIUS.xl,
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.5,
+      shadowRadius: 24,
+      elevation: 20,
+    },
     themeCard: {
       borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', backgroundColor: C.cardBackground,
-      borderWidth: 2, borderColor: 'transparent', ...SHADOWS.md,
+      borderWidth: 1.5, borderColor: 'transparent', ...SHADOWS.md,
     },
-    themeCardSelected: { borderColor: C.primary, ...SHADOWS.lg },
-    themeGradient: { height: 130, justifyContent: 'flex-end', padding: SPACING.md },
+    themeCardSelected: { borderColor: C.primary },
+    themeGradient: { height: 140, justifyContent: 'flex-end', padding: SPACING.md },
     themeCardInner: { position: 'absolute', top: SPACING.lg, left: SPACING.lg, right: SPACING.lg },
     themeCardDots: { flexDirection: 'row', gap: 5, marginBottom: SPACING.md },
     themeDot90: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.9)' },
@@ -594,18 +630,17 @@ const useStyles = (C: any, insets: any) => {
     activeChipText: { fontSize: 11, fontFamily: FONTS.semibold },
     colorToggleRow: {
       flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-      padding: SPACING.lg, borderRadius: BORDER_RADIUS.xl,
-      borderWidth: 1.5, backgroundColor: C.cardBackground, borderColor: C.text.light + '30', ...SHADOWS.sm,
+      padding: 16, borderRadius: 24,
+      borderWidth: 1, backgroundColor: C.cardBackground, borderColor: C.text.light + '20', ...SHADOWS.sm,
     },
-    colorToggleRowActive: { backgroundColor: C.primary + '12', borderColor: C.primary },
-    colorToggleIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-    colorToggleContent: { flex: 1 },
-    colorToggleTitle: { fontSize: 15, fontFamily: FONTS.bold, color: C.text.primary },
-    colorToggleSub: { fontSize: 12, fontFamily: FONTS.regular, color: C.text.secondary, marginTop: 2 },
-    colorToggleArrow: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: C.text.light + '18' },
-    colorToggleArrowActive: { backgroundColor: C.primary + '20' },
-    colorToggleArrowText: { fontSize: 10, fontFamily: FONTS.bold },
-    colorWheelWrap: { marginTop: SPACING.lg },
+    colorToggleRowActive: { borderColor: C.primary, backgroundColor: C.primary + '05' },
+    colorPillStack: { flexDirection: 'row', alignItems: 'center', marginRight: 4 },
+    colorPill: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: '#FFF', ...SHADOWS.xs },
+    colorToggleContent: { flex: 1, gap: 2 },
+    colorToggleTitle: { fontSize: 16, fontFamily: FONTS.bold, color: C.text.primary, letterSpacing: -0.3 },
+    colorToggleSub: { fontSize: 12, fontFamily: FONTS.medium, color: C.text.secondary },
+    colorToggleAction: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', ...SHADOWS.sm },
+    colorWheelWrap: { marginTop: SPACING.lg, paddingBottom: 20 },
     iconsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, paddingHorizontal: SPACING.xl },
     iconCardOuter: { alignItems: 'center', gap: SPACING.xs },
     iconCard: { borderRadius: BORDER_RADIUS.xl, alignItems: 'center', justifyContent: 'center', ...SHADOWS.xs },

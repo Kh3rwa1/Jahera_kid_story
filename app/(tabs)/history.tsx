@@ -19,6 +19,7 @@ import Animated, {
 import { useEntranceSequence, useSpringPress, usePulse, useFloat } from '@/utils/animations';
 import { FloatingParticles } from '@/components/FloatingParticles';
 import { useApp } from '@/contexts/AppContext';
+import { useUI } from '@/contexts/UIContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag, getLanguageNativeName } from '@/utils/languageUtils';
 import {
@@ -42,6 +43,8 @@ import { hapticFeedback } from '@/utils/haptics';
 import { talkative } from '@/utils/talkative';
 import { Container } from '@/components/Container';
 import { BREAKPOINTS } from '@/constants/theme';
+import { LoadingSkeleton, Skeleton } from '@/components/LoadingSkeleton';
+import { ErrorState } from '@/components/ErrorState';
 
 // Responsive constants - Denser for premium agency look
 const COLUMN_GAP = 12;
@@ -147,6 +150,7 @@ export default function HistoryScreen() {
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
   const { stories, refreshStories, setStories } = useApp();
+  const { wakeUI } = useUI();
   const insets = useSafeAreaInsets();
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -155,6 +159,7 @@ export default function HistoryScreen() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const { isLoading, error, refreshAll } = useApp();
 
   const { width: winWidth } = useWindowDimensions();
   const isTablet = winWidth >= BREAKPOINTS.tablet;
@@ -185,6 +190,61 @@ export default function HistoryScreen() {
     },
     [router]
   );
+
+  if (isLoading) {
+    return (
+      <Container 
+        maxWidth 
+        gradient 
+        gradientColors={COLORS.backgroundGradient}
+        safeAreaEdges={['top']}
+        scroll
+        scrollProps={{
+          contentContainerStyle: styles.scroll,
+        }}
+      >
+        <MeshBackground primaryColor={COLORS.primary} />
+        <FloatingParticles count={15} />
+        
+        <View style={[styles.header, { marginBottom: 24 }]}>
+          <Skeleton width={140} height={28} borderRadius={8} color="rgba(0,0,0,0.08)" />
+          <Skeleton width={40} height={40} borderRadius={20} color="rgba(0,0,0,0.05)" />
+        </View>
+
+        <View style={{ marginBottom: 24 }}>
+          <Skeleton width="100%" height={50} borderRadius={25} color="rgba(0,0,0,0.05)" />
+        </View>
+
+        <View style={{ marginBottom: 24, flexDirection: 'row', gap: 12 }}>
+          <Skeleton width={80} height={36} borderRadius={18} color="rgba(0,0,0,0.05)" />
+          <Skeleton width={80} height={36} borderRadius={18} color="rgba(0,0,0,0.05)" />
+          <Skeleton width={80} height={36} borderRadius={18} color="rgba(0,0,0,0.05)" />
+        </View>
+
+        <LoadingSkeleton type={viewMode === 'grid' ? 'grid' : 'list'} count={6} />
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container 
+        maxWidth 
+        gradient 
+        gradientColors={COLORS.backgroundGradient}
+        safeAreaEdges={['top']}
+      >
+        <MeshBackground primaryColor={COLORS.primary} />
+        <ErrorState 
+          type="general" 
+          title="Oopsy Daisy!" 
+          message={error} 
+          onRetry={refreshAll} 
+          onGoHome={() => router.replace('/')} 
+        />
+      </Container>
+    );
+  }
 
   const languages = useMemo(
     () => Array.from(new Set((stories || []).map(s => s.language_code))),
@@ -221,6 +281,8 @@ export default function HistoryScreen() {
       safeAreaEdges={['top']}
       scroll
       scrollProps={{
+        onScroll: wakeUI,
+        scrollEventThrottle: 16,
         refreshControl: <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />,
         contentContainerStyle: styles.scroll,
         stickyHeaderIndices: [2]

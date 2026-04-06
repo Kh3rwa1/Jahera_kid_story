@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
 import { Models } from 'react-native-appwrite';
 import { account, ID } from '@/lib/appwrite';
 
@@ -71,19 +71,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
   }, []);
 
+  const value = useMemo(() => ({
+    user,
+    session,
+    isLoading,
+    isAuthenticated: !!user,
+    signUp,
+    signIn,
+    signOut,
+    refreshUser,
+  }), [user, session, isLoading, signUp, signIn, signOut, refreshUser]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        isLoading,
-        isAuthenticated: !!user,
-        signUp,
-        signIn,
-        signOut,
-        refreshUser,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

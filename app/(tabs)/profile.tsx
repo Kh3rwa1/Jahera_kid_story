@@ -26,6 +26,7 @@ import Animated, {
 import { useEntranceSequence, useProgressBar, useGlowPulse, usePulse } from '@/utils/animations';
 import { FloatingParticles } from '@/components/FloatingParticles';
 import { useApp } from '@/contexts/AppContext';
+import { useUI } from '@/contexts/UIContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import {
@@ -36,7 +37,8 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES, COLORS as THEME_COLORS } from '@/constants/theme';
-import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { Container } from '@/components/Container';
+import { LoadingSkeleton, Skeleton, HeroSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { MeshBackground } from '@/components/MeshBackground';
@@ -74,6 +76,7 @@ export default function ProfileScreen() {
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
   const { profile, stories, quizAttempts, isLoading, error, refreshAll } = useApp();
+  const { wakeUI } = useUI();
   const insets = useSafeAreaInsets();
   const styles = useStyles(COLORS, insets);
 
@@ -125,12 +128,36 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
-        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
-        <View style={styles.loadingWrap}>
-          <LoadingSkeleton type="card" count={3} />
+      <Container 
+        maxWidth 
+        gradient 
+        gradientColors={COLORS.backgroundGradient}
+        safeAreaEdges={['top']}
+        scroll
+        scrollProps={{
+          contentContainerStyle: styles.scroll,
+        }}
+      >
+        <MeshBackground primaryColor={COLORS.primary} />
+        <FloatingParticles count={15} />
+
+        <HeroSkeleton />
+
+        <View style={styles.sectionHead}>
+          <Skeleton width={120} height={28} borderRadius={8} color="rgba(0,0,0,0.08)" />
         </View>
-      </SafeAreaView>
+        <View style={{ marginBottom: 24 }}>
+          <LoadingSkeleton type="stats" count={3} />
+        </View>
+
+        <View style={styles.sectionHead}>
+          <Skeleton width={140} height={28} borderRadius={8} color="rgba(0,0,0,0.08)" />
+        </View>
+        <View style={{ gap: 12 }}>
+          <Skeleton width="100%" height={80} borderRadius={20} color="rgba(0,0,0,0.05)" />
+          <Skeleton width="100%" height={80} borderRadius={20} color="rgba(0,0,0,0.05)" />
+        </View>
+      </Container>
     );
   }
 
@@ -161,6 +188,8 @@ export default function ProfileScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
+        onScroll={wakeUI}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={COLORS.primary} />
         }
@@ -206,14 +235,6 @@ export default function ProfileScreen() {
                     )}
                   </View>
                 )}
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={() => router.push('/settings/edit-profile')}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[styles.editBtnText, { color: COLORS.text.secondary }]}>Edit Profile</Text>
-                  <ChevronRight size={12} color={COLORS.text.light} strokeWidth={2.5} />
-                </TouchableOpacity>
               </View>
             </View>
 
