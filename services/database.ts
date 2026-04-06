@@ -440,3 +440,18 @@ export const quizService = {
     }
   },
 };
+
+export const configService = {
+  async getByKey(key: string): Promise<string | null> {
+    try {
+      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.CONFIG, [
+        Query.equal('key', key),
+        Query.limit(1)
+      ]);
+      return response.documents.length ? response.documents[0].value : null;
+    } catch (error) {
+      console.error(`Error fetching config for key ${key}:`, error);
+      return null;
+    }
+  }
+};

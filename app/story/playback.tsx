@@ -31,7 +31,7 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 import { storyService, quizService } from '@/services/database';
-import { generateAudio } from '@/services/audioService';
+import { STORAGE_BUCKETS, APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, storage, Query } from '@/lib/appwrite';
 import { Story } from '@/types/database';
 import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -212,6 +212,7 @@ export default function StoryPlayback() {
   const [tab, setTab] = useState<TabMode>('audio');
   const [showSettings, setShowSettings] = useState(false);
   const [isPlayingRequested, setIsPlayingRequested] = useState(true); // Auto-play by default
+  const [dynamicVideoUrl, setDynamicVideoUrl] = useState<string | null>(null);
 
   const lastSentenceRef = useRef<number>(-1);
 
@@ -345,7 +346,22 @@ export default function StoryPlayback() {
     }
   }, [activeParaIndex, tab]);
 
-  useEffect(() => { loadStory(); }, []);
+  useEffect(() => { 
+    loadStory(); 
+    
+    // Dynamically fetch ANY uploaded video from the Appwrite assets bucket (MP4 or WebM)
+    storage.listFiles(STORAGE_BUCKETS.APP_ASSETS, [Query.limit(1)])
+      .then(res => {
+        if (res.files.length > 0) {
+          const fileId = res.files[0].$id;
+          const url = `${APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKETS.APP_ASSETS}/files/${fileId}/view?project=${APPWRITE_PROJECT_ID}`;
+          setDynamicVideoUrl(url);
+        }
+      })
+      .catch(err => {
+        console.log('Appwrite asset video fetch error:', err);
+      });
+  }, []);
 
   const loadStory = async () => {
     try {
@@ -450,11 +466,12 @@ export default function StoryPlayback() {
 
   if (isLoading) {
     const screen = Dimensions.get('screen');
+    
     return (
       <View style={{ flex: 1, backgroundColor: '#000' }}>
         <StatusBar barStyle="light-content" hidden />
         <Video
-          source={require('@/assets/jahera.mp4')}
+          source={dynamicVideoUrl ? { uri: dynamicVideoUrl } : require('@/assets/jahera.mp4')}
           style={{
             width: screen.width,
             height: screen.height,

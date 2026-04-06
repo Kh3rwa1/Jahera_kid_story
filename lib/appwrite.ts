@@ -41,6 +41,7 @@ export const COLLECTIONS = {
 
 export const STORAGE_BUCKETS = {
   AVATARS: 'avatars',
+  APP_ASSETS: 'app_assets',
 } as const;
 
 export { ID, Query };
