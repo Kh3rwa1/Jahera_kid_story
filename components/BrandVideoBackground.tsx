@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, ViewStyle, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, StyleSheet, Dimensions, ViewStyle, Platform, Image } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { STORAGE_BUCKETS, storage } from '@/lib/appwrite';
+import { STORAGE_BUCKETS, storage, APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID } from '@/lib/appwrite';
 
 interface BrandVideoBackgroundProps {
   /** The ID of the file in the app_assets bucket (e.g., 'onboarding_video') */
@@ -14,54 +14,89 @@ interface BrandVideoBackgroundProps {
   overlayOpacity?: number;
 }
 
-export function BrandVideoBackground({ videoId, fallbackSource, style, overlayOpacity = 0.3 }: BrandVideoBackgroundProps) {
-  const { width, height } = Dimensions.get('screen');
+/**
+ * Resolves the best available video source.
+ * Priority: Appwrite remote URL > local bundled asset
+ *
+ * Key insight: `useVideoPlayer` only reads the initial source once.
+ * We MUST resolve the URI *before* passing it to the hook.
+ */
+function useResolvedVideoSource(videoId: string, fallbackSource: any) {
+  const [resolvedSource, setResolvedSource] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(true);
 
-  // Use local fallback directly — makes the video play immediately
-  // Appwrite remote upgrade is attempted in the background
-  const [source, setSource] = useState<any>(fallbackSource ?? null);
-
-  // Try to upgrade to Appwrite-hosted video (non-blocking, optional)
   useEffect(() => {
     let isMounted = true;
 
-    const resolveRemoteVideo = async () => {
+    const resolve = async () => {
+      // 1. Try Appwrite remote URL first
       try {
         await storage.getFile(STORAGE_BUCKETS.APP_ASSETS, videoId);
         const url = storage.getFileView(STORAGE_BUCKETS.APP_ASSETS, videoId).toString();
         if (isMounted && url) {
-          setSource({ uri: url });
+          setResolvedSource(url);
+          setIsResolving(false);
+          return;
         }
       } catch {
-        // Remote not available — keep using local fallback (already set)
+        // Remote not available
+      }
+
+      // 2. Use local asset URI resolved via Asset API
+      if (fallbackSource) {
+        try {
+          const { Asset } = require('expo-asset');
+          const [asset] = await Asset.loadAsync(fallbackSource);
+          if (isMounted && asset?.localUri) {
+            setResolvedSource(asset.localUri);
+            setIsResolving(false);
+            return;
+          }
+        } catch {
+          // Asset loading failed
+        }
+      }
+
+      // 3. Nothing worked
+      if (isMounted) {
+        setIsResolving(false);
       }
     };
 
-    resolveRemoteVideo();
+    resolve();
     return () => { isMounted = false; };
-  }, [videoId]);
+  }, [videoId, fallbackSource]);
 
-  const player = useVideoPlayer(source, (p) => {
+  return { resolvedSource, isResolving };
+}
+
+export function BrandVideoBackground({ videoId, fallbackSource, style, overlayOpacity = 0.3 }: BrandVideoBackgroundProps) {
+  const { width, height } = Dimensions.get('screen');
+  const { resolvedSource, isResolving } = useResolvedVideoSource(videoId, fallbackSource);
+
+  // Only create the player once the source is fully resolved
+  const player = useVideoPlayer(resolvedSource, (p) => {
     p.loop = true;
     p.muted = true;
     p.play();
   });
 
-  // Ensure player starts playing (handle edge cases where autoplay fails)
+  // Safety retry — ensure playback starts
   useEffect(() => {
-    if (player) {
+    if (player && resolvedSource) {
       const timer = setTimeout(() => {
         try {
           player.muted = true;
           player.loop = true;
           player.play();
         } catch {}
-      }, 300);
+      }, 500);
       return () => clearTimeout(timer);
     }
-  }, [player]);
+  }, [player, resolvedSource]);
 
-  if (!source) {
+  // While resolving or if no source, show dark placeholder
+  if (isResolving || !resolvedSource) {
     return <View style={[styles.container, style, { backgroundColor: '#0F172A' }]} />;
   }
 
