@@ -33,7 +33,7 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 import { storyService, quizService } from '@/services/database';
-import { STORAGE_BUCKETS, APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, storage, Query } from '@/lib/appwrite';
+import { STORAGE_BUCKETS, storage, Query } from '@/lib/appwrite';
 import { Story } from '@/types/database';
 import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -377,9 +377,9 @@ export default function StoryPlayback() {
     // Dynamically fetch ANY uploaded video from the Appwrite assets bucket (MP4 or WebM)
     storage.listFiles(STORAGE_BUCKETS.APP_ASSETS, [Query.limit(1)])
       .then(res => {
-        if (res.files.length > 0) {
-          const fileId = res.files[0].$id;
-          const url = `${APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKETS.APP_ASSETS}/files/${fileId}/view?project=${APPWRITE_PROJECT_ID}`;
+        const videoFile = res.files.find(file => (file.mimeType ?? '').startsWith('video/'));
+        if (videoFile) {
+          const url = storage.getFileView(STORAGE_BUCKETS.APP_ASSETS, videoFile.$id).toString();
           setDynamicVideoUrl(url);
         }
       })
