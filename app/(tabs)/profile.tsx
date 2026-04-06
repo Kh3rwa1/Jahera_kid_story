@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,7 +37,7 @@ import {
   Zap,
   ChevronRight,
 } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES, COLORS as THEME_COLORS } from '@/constants/theme';
+import { BREAKPOINTS, LAYOUT, SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES, COLORS as THEME_COLORS } from '@/constants/theme';
 import { Container } from '@/components/Container';
 import { LoadingSkeleton, Skeleton, HeroSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
@@ -78,7 +79,10 @@ export default function ProfileScreen() {
   const { profile, stories, quizAttempts, isLoading, error, refreshAll } = useApp();
   const { wakeUI } = useUI();
   const insets = useSafeAreaInsets();
-  const styles = useStyles(COLORS, insets);
+  const { width: winWidth } = useWindowDimensions();
+  const isTablet = winWidth >= BREAKPOINTS.tablet;
+  const isDesktop = winWidth >= BREAKPOINTS.desktop;
+  const styles = useStyles(COLORS, insets, isTablet, isDesktop);
 
   const avatarPulseStyle = usePulse(0.97, 1.03);
   const streakPinPulseStyle = usePulse(0.92, 1.1);
@@ -396,22 +400,25 @@ export default function ProfileScreen() {
   );
 }
 
-const useStyles = (C: any, insets: any) => {
+const useStyles = (C: any, insets: any, isTablet: boolean, isDesktop: boolean) => {
   return useMemo(() => StyleSheet.create({
     container: { flex: 1 },
     loadingWrap: { padding: SPACING.xl },
     scroll: {
-      paddingHorizontal: SPACING.xl,
+      paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
       paddingTop: SPACING.sm,
       paddingBottom: 120,
-      gap: SPACING.xl,
+      gap: isTablet ? SPACING.xxl : SPACING.xl,
+      width: '100%',
+      maxWidth: isDesktop ? 1040 : LAYOUT.maxWidth + 120,
+      alignSelf: 'center',
     },
 
     pageHeader: { paddingTop: SPACING.xs },
     pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    pageTitleEmoji: { fontSize: 32 },
+    pageTitleEmoji: { fontSize: isTablet ? 38 : 32 },
     pageTitle: {
-      fontSize: 34,
+      fontSize: isTablet ? 42 : 34,
       fontFamily: FONTS.display,
       letterSpacing: -0.6,
     },
@@ -425,8 +432,8 @@ const useStyles = (C: any, insets: any) => {
     heroTop: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: SPACING.xl,
-      paddingBottom: SPACING.lg,
+      padding: isTablet ? SPACING.xxl : SPACING.xl,
+      paddingBottom: isTablet ? SPACING.xl : SPACING.lg,
       gap: SPACING.xl,
     },
     heroAvatarWrap: { position: 'relative' },
@@ -448,10 +455,10 @@ const useStyles = (C: any, insets: any) => {
     streakPinText: { fontSize: 10, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
     heroMeta: { flex: 1, gap: SPACING.xs },
     heroName: {
-      fontSize: 42,
+      fontSize: isTablet ? 50 : 42,
       fontFamily: FONTS.display,
       letterSpacing: -0.8,
-      lineHeight: 48,
+      lineHeight: isTablet ? 56 : 48,
     },
     langPill: {
       flexDirection: 'row',
@@ -489,7 +496,7 @@ const useStyles = (C: any, insets: any) => {
       justifyContent: 'center',
       marginBottom: 2,
     },
-    heroStatVal: { fontSize: 28, fontFamily: FONTS.display, letterSpacing: -0.4 },
+    heroStatVal: { fontSize: isTablet ? 34 : 28, fontFamily: FONTS.display, letterSpacing: -0.4 },
     heroStatLbl: {
       fontSize: 10,
       fontFamily: FONTS.extrabold,
@@ -505,9 +512,9 @@ const useStyles = (C: any, insets: any) => {
       marginBottom: SPACING.md,
       paddingHorizontal: 2,
     },
-    sectionEmoji: { fontSize: 28 },
+    sectionEmoji: { fontSize: isTablet ? 34 : 28 },
     sectionTitle: {
-      fontSize: 24,
+      fontSize: isTablet ? 30 : 24,
       fontFamily: FONTS.display,
       letterSpacing: -0.3,
       flex: 1,
@@ -519,7 +526,7 @@ const useStyles = (C: any, insets: any) => {
     },
     sectionBadgeText: { fontSize: 11, fontFamily: FONTS.extrabold },
 
-    achieveRow: { flexDirection: 'row', gap: SPACING.md },
+    achieveRow: { flexDirection: 'row', gap: isTablet ? SPACING.lg : SPACING.md },
     achieveCard: {
       flex: 1,
       borderRadius: BORDER_RADIUS.xxl,
@@ -530,19 +537,19 @@ const useStyles = (C: any, insets: any) => {
     },
     achieveCardInner: {
       alignItems: 'center',
-      padding: SPACING.md,
-      paddingVertical: SPACING.xl + 2,
+      padding: isTablet ? SPACING.lg : SPACING.md,
+      paddingVertical: isTablet ? SPACING.xxl : SPACING.xl + 2,
       gap: 4,
     },
-    achieveEmoji: { fontSize: 44, marginBottom: 8 },
+    achieveEmoji: { fontSize: isTablet ? 52 : 44, marginBottom: 8 },
     achieveValue: {
-      fontSize: 32,
+      fontSize: isTablet ? 40 : 32,
       fontFamily: FONTS.display,
       color: '#FFFFFF',
       letterSpacing: -0.6,
     },
-    achieveLabel: { fontSize: 13, fontFamily: FONTS.extrabold, color: 'rgba(255,255,255,0.92)' },
-    achieveSub: { fontSize: 10, fontFamily: FONTS.bold, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' },
+    achieveLabel: { fontSize: isTablet ? 15 : 13, fontFamily: FONTS.extrabold, color: 'rgba(255,255,255,0.92)' },
+    achieveSub: { fontSize: isTablet ? 11 : 10, fontFamily: FONTS.bold, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' },
 
     section: { gap: SPACING.sm },
 
@@ -555,36 +562,36 @@ const useStyles = (C: any, insets: any) => {
     quizRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: SPACING.xl,
-      paddingVertical: 16,
+      paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
+      paddingVertical: isTablet ? 20 : 16,
       gap: SPACING.lg,
     },
     rowDivider: { height: 1, marginHorizontal: SPACING.xl },
     scorePill: {
-      width: 60,
-      height: 42,
+      width: isTablet ? 70 : 60,
+      height: isTablet ? 50 : 42,
       borderRadius: BORDER_RADIUS.lg,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    scorePillText: { fontSize: 14, fontFamily: FONTS.extrabold },
+    scorePillText: { fontSize: isTablet ? 16 : 14, fontFamily: FONTS.extrabold },
     quizInfo: { flex: 1, gap: 2 },
-    quizTitle: { fontSize: 17, fontFamily: FONTS.bold, letterSpacing: -0.1 },
-    quizSub: { fontSize: 14, fontFamily: FONTS.medium },
+    quizTitle: { fontSize: isTablet ? 20 : 17, fontFamily: FONTS.bold, letterSpacing: -0.1 },
+    quizSub: { fontSize: isTablet ? 16 : 14, fontFamily: FONTS.medium },
     quizPerfectEmoji: { fontSize: 24 },
 
     langScroll: { gap: SPACING.md, paddingRight: SPACING.xs },
     langCard: {
-      width: 130,
-      padding: SPACING.lg,
+      width: isTablet ? 160 : 130,
+      padding: isTablet ? SPACING.xl : SPACING.lg,
       borderRadius: BORDER_RADIUS.xxl,
       gap: 4,
       alignItems: 'flex-start',
       ...SHADOWS.sm,
     },
-    langFlag: { fontSize: 44, marginBottom: 6 },
-    langName: { fontSize: 16, fontFamily: FONTS.extrabold, letterSpacing: -0.2 },
-    langCount: { fontSize: 13, fontFamily: FONTS.medium },
+    langFlag: { fontSize: isTablet ? 50 : 44, marginBottom: 6 },
+    langName: { fontSize: isTablet ? 18 : 16, fontFamily: FONTS.extrabold, letterSpacing: -0.2 },
+    langCount: { fontSize: isTablet ? 14 : 13, fontFamily: FONTS.medium },
     langBar: {
       width: '100%',
       height: 5,
@@ -609,7 +616,7 @@ const useStyles = (C: any, insets: any) => {
     xpCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 24,
+      padding: isTablet ? 30 : 24,
       borderRadius: 32,
       gap: SPACING.xl,
       borderWidth: 1,
@@ -617,7 +624,7 @@ const useStyles = (C: any, insets: any) => {
       ...SHADOWS.lg,
     },
     xpEmojiRow: { alignItems: 'center' },
-    xpEmoji: { fontSize: 64 },
+    xpEmoji: { fontSize: isTablet ? 74 : 64 },
     xpBadge: { 
       backgroundColor: 'rgba(255,255,255,0.2)', 
       paddingHorizontal: 8, 
@@ -628,11 +635,11 @@ const useStyles = (C: any, insets: any) => {
     },
     xpBadgeText: { fontSize: 9, fontFamily: FONTS.extrabold, color: '#FFFFFF', letterSpacing: 0.5 },
     xpText: { flex: 1, gap: 2 },
-    xpTitle: { fontSize: 24, fontFamily: FONTS.display, color: '#FFFFFF', letterSpacing: -0.4 },
-    xpSub: { fontSize: 14, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.9)', lineHeight: 20 },
+    xpTitle: { fontSize: isTablet ? 30 : 24, fontFamily: FONTS.display, color: '#FFFFFF', letterSpacing: -0.4 },
+    xpSub: { fontSize: isTablet ? 16 : 14, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.9)', lineHeight: isTablet ? 24 : 20 },
     xpCtaIcon: {
       width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.25)',
       alignItems: 'center', justifyContent: 'center',
     },
-  }), [C, insets]);
+  }), [C, insets, isTablet, isDesktop]);
 };
