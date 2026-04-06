@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -43,7 +44,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { useUI } from '@/contexts/UIContext';
-import { SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '@/constants/theme';
+import { BREAKPOINTS, LAYOUT, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { MeshBackground } from '@/components/MeshBackground';
 import { hapticFeedback } from '@/utils/haptics';
@@ -68,7 +69,7 @@ interface SettingGroup {
   rows: SettingRow[];
 }
 
-function RowItem({ row, COLORS, onPress, rowIndex }: { row: SettingRow; COLORS: any; onPress: () => void; rowIndex: number }) {
+function RowItem({ row, COLORS, onPress, rowIndex, styles }: { row: SettingRow; COLORS: any; onPress: () => void; rowIndex: number; styles: any }) {
   const scale = useSharedValue(1);
   const iconScale = useSharedValue(1);
   const rowStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -144,6 +145,10 @@ export default function SettingsTab() {
   const { clearProfile, profile, stories } = useApp();
   const { wakeUI } = useUI();
   const COLORS = currentTheme.colors;
+  const { width: winWidth } = useWindowDimensions();
+  const isTablet = winWidth >= BREAKPOINTS.tablet;
+  const isDesktop = winWidth >= BREAKPOINTS.desktop;
+  const styles = useStyles(isTablet, isDesktop);
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = () => {
@@ -363,6 +368,7 @@ export default function SettingsTab() {
                   <RowItem
                     row={row}
                     COLORS={COLORS}
+                    styles={styles}
                     onPress={row.onPress ?? (() => row.route && router.push(row.route as any))}
                     rowIndex={rIdx}
                   />
@@ -425,23 +431,27 @@ export default function SettingsTab() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.sm,
-    paddingBottom: 140,
-    gap: SPACING.xl,
-  },
+const useStyles = (isTablet: boolean, isDesktop: boolean) => {
+  return useMemo(() => StyleSheet.create({
+    container: { flex: 1 },
+    scroll: {
+      paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
+      paddingTop: SPACING.sm,
+      paddingBottom: 140,
+      gap: isTablet ? SPACING.xxl : SPACING.xl,
+      width: '100%',
+      maxWidth: isDesktop ? 1040 : LAYOUT.maxWidth + 120,
+      alignSelf: 'center',
+    },
 
-  pageHeader: { paddingTop: SPACING.xs, paddingBottom: 0 },
+    pageHeader: { paddingTop: SPACING.xs, paddingBottom: 0 },
   pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  pageTitleEmoji: { fontSize: 24 },
-  pageTitle: {
-    fontSize: 34,
+    pageTitleEmoji: { fontSize: isTablet ? 28 : 24 },
+    pageTitle: {
+    fontSize: isTablet ? 40 : 34,
     fontFamily: FONTS.display,
     letterSpacing: -0.6,
-  },
+    },
 
   heroGlass: {
     borderRadius: BORDER_RADIUS.xxl + 4,
@@ -449,35 +459,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     ...(Platform.OS === 'ios' ? SHADOWS.md : {}),
   },
-  heroTop: {
+    heroTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.xl,
-    paddingBottom: SPACING.lg,
+    padding: isTablet ? SPACING.xxl : SPACING.xl,
+    paddingBottom: isTablet ? SPACING.xl : SPACING.lg,
     gap: SPACING.lg,
-  },
+    },
   heroAvatarWrap: { position: 'relative' },
-  crownBadge: {
+    crownBadge: {
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: isTablet ? 28 : 22,
+    height: isTablet ? 28 : 22,
+    borderRadius: isTablet ? 14 : 11,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
     ...SHADOWS.sm,
-  },
-  heroInfo: { flex: 1, gap: 2 },
-  heroName: {
-    fontSize: 22,
+    },
+    heroInfo: { flex: 1, gap: 2 },
+    heroName: {
+    fontSize: isTablet ? 28 : 22,
     fontFamily: FONTS.display,
     letterSpacing: -0.4,
   },
-  heroEmail: {
-    fontSize: 12,
+    heroEmail: {
+    fontSize: isTablet ? 14 : 12,
     fontFamily: FONTS.medium,
     opacity: 0.8,
   },
@@ -491,8 +501,8 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.pill,
     marginTop: 4,
   },
-  heroPlanText: {
-    fontSize: 10,
+    heroPlanText: {
+    fontSize: isTablet ? 11 : 10,
     fontFamily: FONTS.extrabold,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -508,28 +518,28 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.extrabold,
     color: '#FFFFFF',
   },
-  heroStats: {
+    heroStats: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    marginHorizontal: SPACING.xl,
-    paddingVertical: SPACING.xl,
-  },
+    marginHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
+    paddingVertical: isTablet ? SPACING.xxl : SPACING.xl,
+    },
   heroStat: { flex: 1, alignItems: 'center', gap: 4 },
-  heroStatIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    heroStatIcon: {
+    width: isTablet ? 40 : 32,
+    height: isTablet ? 40 : 32,
+    borderRadius: isTablet ? 20 : 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
   },
-  heroStatVal: {
-    fontSize: 18,
+    heroStatVal: {
+    fontSize: isTablet ? 24 : 18,
     fontFamily: FONTS.display,
     letterSpacing: -0.2,
   },
-  heroStatLbl: {
-    fontSize: 10,
+    heroStatLbl: {
+    fontSize: isTablet ? 11 : 10,
     fontFamily: FONTS.extrabold,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -540,8 +550,8 @@ const styles = StyleSheet.create({
     borderRadius: 0.5,
   },
 
-  premiumBanner: {
-    padding: SPACING.xl, 
+    premiumBanner: {
+    padding: isTablet ? SPACING.xxl : SPACING.xl, 
     borderRadius: BORDER_RADIUS.xxl + 4,
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -550,17 +560,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.15)',
   },
-  premiumIconBox: {
-    width: 48, height: 48, borderRadius: 16,
+    premiumIconBox: {
+    width: isTablet ? 56 : 48, height: isTablet ? 56 : 48, borderRadius: isTablet ? 20 : 16,
     backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center', justifyContent: 'center',
   },
   premiumBody: { flex: 1, gap: 2 },
-  premiumTitle: {
-    fontSize: 20, fontFamily: FONTS.display,
+    premiumTitle: {
+    fontSize: isTablet ? 24 : 20, fontFamily: FONTS.display,
     color: '#FFFFFF', letterSpacing: -0.3,
   },
-  premiumDesc: { fontSize: 14, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.9)' },
+    premiumDesc: { fontSize: isTablet ? 16 : 14, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.9)' },
   premiumAction: {
     paddingHorizontal: 16, paddingVertical: 10,
     backgroundColor: '#FFF', borderRadius: BORDER_RADIUS.pill,
@@ -569,31 +579,31 @@ const styles = StyleSheet.create({
   premiumActionText: { fontSize: 13, fontFamily: FONTS.extrabold, color: '#F59E0B' },
 
   referralCard: { width: '100%' },
-  referralInner: {
+    referralInner: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.lg,
-    padding: SPACING.xl, borderRadius: 28,
+    padding: isTablet ? SPACING.xxl : SPACING.xl, borderRadius: 28,
     overflow: 'hidden', borderWidth: 1, ...SHADOWS.sm,
   },
-  referralIcon: {
-    width: 58, height: 58, borderRadius: 29,
+    referralIcon: {
+    width: isTablet ? 66 : 58, height: isTablet ? 66 : 58, borderRadius: isTablet ? 33 : 29,
     alignItems: 'center', justifyContent: 'center',
   },
   referralContent: { flex: 1, gap: 2 },
-  referralTitle: { fontSize: 18, fontFamily: FONTS.display, letterSpacing: -0.3 },
-  referralSub: { fontSize: 13, fontFamily: FONTS.medium, lineHeight: 18 },
+    referralTitle: { fontSize: isTablet ? 22 : 18, fontFamily: FONTS.display, letterSpacing: -0.3 },
+    referralSub: { fontSize: isTablet ? 15 : 13, fontFamily: FONTS.medium, lineHeight: isTablet ? 21 : 18 },
   referralBtn: {
     width: 42, height: 42, borderRadius: 21,
     alignItems: 'center', justifyContent: 'center', ...SHADOWS.sm,
   },
 
   wisdomCard: { alignItems: 'center', marginVertical: SPACING.lg, gap: SPACING.sm },
-  wisdomBubble: {
-    padding: 20,
+    wisdomBubble: {
+    padding: isTablet ? 24 : 20,
     borderRadius: 24, width: '100%',
     flexDirection: 'row', alignItems: 'center', gap: SPACING.lg,
     borderWidth: 1, ...SHADOWS.sm,
   },
-  wisdomText: { flex: 1, fontSize: 14, fontFamily: FONTS.medium, lineHeight: 22 },
+    wisdomText: { flex: 1, fontSize: isTablet ? 16 : 14, fontFamily: FONTS.medium, lineHeight: isTablet ? 24 : 22 },
   wisdomTail: {
     position: 'absolute', bottom: -10, left: '50%', marginLeft: -10,
     width: 0, height: 0, borderLeftWidth: 10, borderRightWidth: 10,
@@ -605,8 +615,8 @@ const styles = StyleSheet.create({
   group: { gap: 10 },
   groupLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: SPACING.md },
   groupEmoji: { fontSize: 22 },
-  groupLabel: {
-    fontSize: 15,
+    groupLabel: {
+    fontSize: isTablet ? 16 : 15,
     fontFamily: FONTS.extrabold,
     letterSpacing: 0.8,
   },
@@ -616,29 +626,29 @@ const styles = StyleSheet.create({
     ...SHADOWS.sm,
   },
 
-  row: {
+    row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: 20,
+    paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
+    paddingVertical: isTablet ? 24 : 20,
     gap: SPACING.lg,
-    minHeight: 82,
-  },
-  rowIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
+    minHeight: isTablet ? 94 : 82,
+    },
+    rowIcon: {
+    width: isTablet ? 62 : 54,
+    height: isTablet ? 62 : 54,
+    borderRadius: isTablet ? 22 : 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rowBody: { flex: 1, gap: 2 },
-  rowLabel: {
-    fontSize: 18,
+    rowLabel: {
+    fontSize: isTablet ? 21 : 18,
     fontFamily: FONTS.bold,
     letterSpacing: -0.3,
   },
-  rowSub: {
-    fontSize: 14,
+    rowSub: {
+    fontSize: isTablet ? 16 : 14,
     fontFamily: FONTS.medium,
     opacity: 0.75,
   },
@@ -647,10 +657,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
   },
-  divider: {
+    divider: {
     height: 1,
-    marginHorizontal: SPACING.xl,
-  },
+    marginHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
+    },
   badge: {
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -680,8 +690,8 @@ const styles = StyleSheet.create({
   },
 
   supportCard: { width: '100%' },
-  supportInner: {
-    padding: 24, borderRadius: 28,
+    supportInner: {
+    padding: isTablet ? 28 : 24, borderRadius: 28,
     gap: 16, borderWidth: 1,
   },
   supportHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -690,11 +700,12 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     ...SHADOWS.sm,
   },
-  supportTitle: { fontSize: 18, fontFamily: FONTS.display, letterSpacing: -0.4 },
-  supportDesc: { fontSize: 14, fontFamily: FONTS.medium, lineHeight: 22 },
+    supportTitle: { fontSize: isTablet ? 22 : 18, fontFamily: FONTS.display, letterSpacing: -0.4 },
+    supportDesc: { fontSize: isTablet ? 16 : 14, fontFamily: FONTS.medium, lineHeight: isTablet ? 24 : 22 },
   supportBtn: {
     paddingVertical: 14, borderRadius: BORDER_RADIUS.pill,
     alignItems: 'center', justifyContent: 'center', ...SHADOWS.md,
   },
-  supportBtnText: { fontSize: 15, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
-});
+    supportBtnText: { fontSize: isTablet ? 17 : 15, fontFamily: FONTS.extrabold, color: '#FFFFFF' },
+  }), [isTablet, isDesktop]);
+};
