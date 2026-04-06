@@ -69,7 +69,8 @@
         {
           "microphonePermission": "Allow Jahera to access your microphone for voice features."
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true

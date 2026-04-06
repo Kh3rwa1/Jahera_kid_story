@@ -36,11 +36,16 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ReadingPreferencesProvider } from '@/contexts/ReadingPreferencesContext';
 import { AudioProvider } from '@/contexts/AudioContext';
+import { revenueCatService } from '@/services/revenueCatService';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useFrameworkReady();
+
+  useEffect(() => {
+    revenueCatService.configure();
+  }, []);
 
   const [fontsLoaded, fontError] = useFonts({
     'Nunito-Regular': Nunito_400Regular,

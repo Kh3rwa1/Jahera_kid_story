@@ -12,7 +12,8 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { Audio, Video, ResizeMode } from 'expo-av';
+import { Audio } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -227,6 +228,16 @@ export default function StoryPlayback() {
   const [showSettings, setShowSettings] = useState(false);
   const [isPlayingRequested, setIsPlayingRequested] = useState(true); // Auto-play by default
   const [dynamicVideoUrl, setDynamicVideoUrl] = useState<string | null>(null);
+
+  const videoSource = useMemo(() => {
+    return dynamicVideoUrl ? { uri: dynamicVideoUrl } : require('@/assets/jahera.mp4');
+  }, [dynamicVideoUrl]);
+
+  const loadingPlayer = useVideoPlayer(videoSource, player => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+  });
 
   const lastSentenceRef = useRef<number>(-1);
 
@@ -485,20 +496,14 @@ export default function StoryPlayback() {
     return (
       <View style={{ flex: 1, backgroundColor: '#000' }}>
         <StatusBar barStyle="light-content" hidden />
-        <Video
-          source={dynamicVideoUrl ? { uri: dynamicVideoUrl } : require('@/assets/jahera.mp4')}
+        <VideoView
+          player={loadingPlayer}
           style={{
             width: screen.width,
             height: screen.height,
           }}
-          videoStyle={{
-            width: screen.width,
-            height: screen.height,
-          }}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay
-          isLooping
-          isMuted
+          contentFit="cover"
+          nativeControls={false}
         />
       </View>
     );

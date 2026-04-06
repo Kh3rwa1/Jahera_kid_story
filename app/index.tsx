@@ -34,6 +34,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -173,34 +174,9 @@ export default function Welcome() {
   return (
     <AnimatedPressable style={[styles.root, tapScaleStyle]} onPress={handleTap}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <BrandVideoBackground videoId="onboarding_video" fallbackSource={require('@/assets/jahera.mp4')} overlayOpacity={0.25} />
 
-      <LinearGradient
-        colors={[COLORS.backgroundGradient[1], COLORS.backgroundGradient[0], COLORS.primary + '10', COLORS.backgroundGradient[1]]}
-        locations={[0, 0.35, 0.75, 1]}
-        style={StyleSheet.absoluteFill}
-      />
 
-      {/* Living Background Blobs */}
-      <Animated.View style={[styles.ambientBlob, styles.ambientTopRight, blob1Style]}>
-        <LinearGradient
-          colors={[COLORS.primary + '35', COLORS.primary + '00']}
-          style={{ flex: 1 }}
-        />
-      </Animated.View>
-
-      <Animated.View style={[styles.ambientBlob, styles.ambientBottomLeft, blob1Style]}>
-        <LinearGradient
-          colors={[COLORS.primaryDark + '25', COLORS.primary + '00']}
-          style={{ flex: 1 }}
-        />
-      </Animated.View>
-
-      <Animated.View style={[styles.ambientBlob, styles.ambientMidRight]}>
-        <LinearGradient
-          colors={[COLORS.primary + '20', COLORS.primary + '00']}
-          style={{ flex: 1 }}
-        />
-      </Animated.View>
 
       {/* Floating feature badges */}
       <Animated.View style={[styles.floatingBadge, styles.badge1, badge1Style]}>
@@ -331,7 +307,7 @@ export default function Welcome() {
             <View style={styles.ctaInner}>
               <Text style={styles.ctaText}>Start New Adventure</Text>
               <View style={styles.ctaArrow}>
-                <ChevronRight size={20} color="#FFF" strokeWidth={3} />
+                <ChevronRight size={20} color={COLORS.primaryDark} strokeWidth={3} />
               </View>
             </View>
           </LinearGradient>
@@ -356,7 +332,7 @@ const useStyles = (C: any, insets: any, width: number) => {
   return useMemo(() => StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: C.background,
+      backgroundColor: '#000',
     },
     loadingScreen: {
       flex: 1,
@@ -448,15 +424,18 @@ const useStyles = (C: any, insets: any, width: number) => {
       paddingHorizontal: 16,
       paddingVertical: 10,
       borderRadius: BORDER_RADIUS.pill,
-      backgroundColor: 'rgba(255, 255, 255, 0.12)',
-      borderWidth: 1.5,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
-      backdropFilter: 'blur(10px)',
+      backgroundColor: 'rgba(255, 255, 255, 0.85)',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.5)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
     } as any,
     badgeText: {
       fontSize: 12,
       fontFamily: FONTS.extrabold,
-      color: '#FFFFFF',
+      color: C.primaryDark,
       letterSpacing: 0.5,
     },
   
@@ -554,13 +533,13 @@ const useStyles = (C: any, insets: any, width: number) => {
     },
     appName: {
       fontFamily: FONTS.extrabold,
-      color: C.text.primary,
+      color: '#FFFFFF',
       letterSpacing: -4,
       textAlign: 'center',
       lineHeight: 88,
-      textShadowColor: C.primary + '25',
+      textShadowColor: 'rgba(0,0,0,0.5)',
       textShadowOffset: { width: 0, height: 4 },
-      textShadowRadius: 20,
+      textShadowRadius: 15,
     },
     shimmerStripe: {
       position: 'absolute',
@@ -571,11 +550,14 @@ const useStyles = (C: any, insets: any, width: number) => {
     tagline: {
       fontSize: 17,
       fontFamily: FONTS.medium,
-      color: C.text.secondary,
+      color: '#FFFFFF',
       textAlign: 'center',
       lineHeight: 26,
       letterSpacing: 0.2,
-      opacity: 0.7,
+      opacity: 0.9,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 8,
     },
   
     // Divider
@@ -605,13 +587,16 @@ const useStyles = (C: any, insets: any, width: number) => {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      backgroundColor: C.cardBackground + 'B3',
-      borderWidth: 1.5,
-      borderColor: C.primary + '20',
+      backgroundColor: 'rgba(255, 255, 255, 0.85)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.5)',
       paddingHorizontal: 16,
       paddingVertical: 10,
       borderRadius: BORDER_RADIUS.pill,
-      ...SHADOWS.sm,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
     },
     pillEmoji: {
       fontSize: 14,
@@ -619,7 +604,7 @@ const useStyles = (C: any, insets: any, width: number) => {
     pillText: {
       fontSize: 13,
       fontFamily: FONTS.extrabold,
-      color: C.text.secondary,
+      color: C.primaryDark,
       letterSpacing: 0.5,
     },
   
@@ -642,8 +627,15 @@ const useStyles = (C: any, insets: any, width: number) => {
     },
     ctaButton: {
       width: '100%',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
       borderRadius: 100,
-      ...SHADOWS.lg,
+      padding: 4,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.7)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.2,
+      shadowRadius: 20,
     },
     ctaInner: {
       flexDirection: 'row',
@@ -656,14 +648,14 @@ const useStyles = (C: any, insets: any, width: number) => {
     ctaText: {
       fontSize: 20,
       fontFamily: FONTS.extrabold,
-      color: '#FFFFFF',
+      color: C.primaryDark,
       letterSpacing: -0.2,
     },
     ctaArrow: {
       width: 44,
       height: 44,
       borderRadius: 22,
-      backgroundColor: 'rgba(255,255,255,0.2)',
+      backgroundColor: C.primary + '15',
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -675,13 +667,20 @@ const useStyles = (C: any, insets: any, width: number) => {
     signInLabel: {
       fontSize: 15,
       fontFamily: FONTS.medium,
-      color: C.text.secondary,
-      opacity: 0.7,
+      color: '#FFFFFF',
+      opacity: 0.8,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 4,
     },
     signInLink: {
       fontSize: 15,
       fontFamily: FONTS.extrabold,
+      color: '#FFFFFF',
       letterSpacing: 0.3,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 4,
     },
   }), [C, insets, width]);
 };

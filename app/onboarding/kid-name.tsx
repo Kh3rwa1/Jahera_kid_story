@@ -30,6 +30,7 @@ import { ArrowLeft, ChevronRight, Check, Sparkles } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
 import { generateAudio } from '@/services/audioService';
+import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 
 export default function KidName() {
   const router = useRouter();
@@ -121,6 +122,8 @@ export default function KidName() {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <BrandVideoBackground videoId="onboarding_video" fallbackSource={require('@/assets/jahera.mp4')} overlayOpacity={0.25} />
+      
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
         <ScrollView
           style={styles.scroll}
@@ -128,14 +131,7 @@ export default function KidName() {
           keyboardShouldPersistTaps="handled"
           scrollEnabled={false}
         >
-        <LinearGradient
-          colors={[C.primary, C.primaryDark]}
-          style={[styles.header, { paddingTop: insets.top + SPACING.md }]}
-        >
-           {/* Mesh Gradient Accents */}
-          <View style={styles.headerMesh1} />
-          <View style={styles.headerMesh2} />
-
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
           <View style={styles.topRow}>
             <TouchableOpacity onPress={handleBack} style={styles.backButton}>
               <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
@@ -164,7 +160,7 @@ export default function KidName() {
           <Animated.Text entering={FadeInDown.delay(300).springify()} style={styles.subtitle}>
             Enter your name so I can make you{'\n'}the star of every adventure!
           </Animated.Text>
-        </LinearGradient>
+        </View>
 
         <View style={styles.body}>
           <Animated.View entering={FadeInUp.delay(500).springify()} style={[styles.inputWrapper, cardAnimStyle]}>
@@ -207,17 +203,17 @@ export default function KidName() {
           style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
         >
           <LinearGradient
-            colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
+            colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)']}
             style={styles.footerGradient}
           />
           <TouchableOpacity onPress={handleContinue} disabled={!canContinue} activeOpacity={0.9}>
             <LinearGradient
-              colors={canContinue ? [C.primary, C.primaryDark] : ['#E2E8F0', '#CBD5E1']}
+              colors={canContinue ? ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.95)'] : ['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.4)']}
               style={styles.cta}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Text style={[styles.ctaText, !canContinue && { color: '#94A3B8' }]}>
+              <Text style={[styles.ctaText, { color: canContinue ? C.primaryDark : '#CBD5E1' }]}>
                 {canContinue ? 'Continue Adventure' : 'Enter Your Name'}
               </Text>
               {canContinue && (
@@ -235,17 +231,14 @@ export default function KidName() {
 
 const useStyles = (C: any, insets: any, winWidth: number) => {
   return useMemo(() => StyleSheet.create({
-    root: { flex: 1, backgroundColor: C.background },
+    root: { flex: 1, backgroundColor: '#000' },
     kav: { flex: 1 },
     scroll: { flex: 1 },
     scrollContent: { flexGrow: 1 },
     header: {
       paddingHorizontal: SPACING.xl,
       paddingBottom: SPACING.xxxl,
-      borderBottomLeftRadius: 48,
-      borderBottomRightRadius: 48,
       alignItems: 'center',
-      ...SHADOWS.lg,
       overflow: 'hidden',
     },
     headerMesh1: {
@@ -313,13 +306,19 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       textAlign: 'center',
       marginBottom: 6,
       letterSpacing: -0.5,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 4 },
+      textShadowRadius: 10,
     },
     subtitle: {
       fontSize: 16,
       fontFamily: FONTS.medium,
-      color: 'rgba(255,255,255,0.9)',
+      color: '#FFFFFF',
       textAlign: 'center',
       lineHeight: 22,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 6,
     },
     body: {
       flex: 1,
@@ -331,13 +330,16 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       width: '100%',
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#FFFFFF',
+      backgroundColor: 'rgba(255,255,255,0.85)',
       borderRadius: 32,
       paddingHorizontal: 28,
       paddingVertical: Platform.OS === 'ios' ? 20 : 10,
-      borderWidth: 2,
-      borderColor: '#F1F5F9',
-      ...SHADOWS.md,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.5)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
       marginBottom: 20,
     },
     inputGlow: {
@@ -382,12 +384,16 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 10,
-      backgroundColor: C.primary + '08',
+      backgroundColor: 'rgba(255,255,255,0.85)',
       paddingHorizontal: 20,
       paddingVertical: 14,
       borderRadius: 20,
       borderWidth: 1,
-      borderColor: C.primary + '15',
+      borderColor: 'rgba(255,255,255,0.5)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
     },
     tipText: {
       fontSize: 13,
@@ -411,19 +417,24 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       paddingVertical: 20,
       borderRadius: 32,
       gap: 12,
-      ...SHADOWS.md,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.7)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.2,
+      shadowRadius: 20,
     },
     ctaText: {
       fontSize: 20,
       fontFamily: FONTS.extrabold,
-      color: '#FFFFFF',
+      color: C.primaryDark,
       letterSpacing: -0.2,
     },
     ctaArrow: {
       width: 44,
       height: 44,
       borderRadius: 22,
-      backgroundColor: 'rgba(255,255,255,0.2)',
+      backgroundColor: C.primary + '15',
       alignItems: 'center',
       justifyContent: 'center',
       marginLeft: 4,

@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 
 export default function Login() {
   const router = useRouter();
@@ -63,8 +64,8 @@ export default function Login() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <BrandVideoBackground videoId="onboarding_video" fallbackSource={require('@/assets/jahera.mp4')} overlayOpacity={0.25} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
         <ScrollView
@@ -82,14 +83,14 @@ export default function Login() {
                 />
               </LinearGradient>
             </View>
-            <Text style={[styles.title, { color: COLORS.text.primary }]}>Welcome back</Text>
-            <Text style={[styles.subtitle, { color: COLORS.text.secondary }]}>
+            <Text style={[styles.title, { color: '#FFFFFF' }]}>Welcome back</Text>
+            <Text style={[styles.subtitle, { color: '#E2E8F0' }]}>
               Sign in to continue your adventures
             </Text>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.form}>
-            <View style={[styles.inputGroup, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={styles.inputGroup}>
               <Mail size={20} color={COLORS.text.light} strokeWidth={2} />
               <TextInput
                 style={[styles.input, { color: COLORS.text.primary }]}
@@ -104,7 +105,7 @@ export default function Login() {
               />
             </View>
 
-            <View style={[styles.inputGroup, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={styles.inputGroup}>
               <Lock size={20} color={COLORS.text.light} strokeWidth={2} />
               <TextInput
                 style={[styles.input, { color: COLORS.text.primary }]}
@@ -133,17 +134,17 @@ export default function Login() {
 
             <TouchableOpacity onPress={handleLogin} activeOpacity={0.88} disabled={isLoading}>
               <LinearGradient
-                colors={isLoading ? [COLORS.text.light, COLORS.text.light] : [COLORS.primary, COLORS.primaryDark]}
+                colors={isLoading ? ['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.4)'] : ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.95)']}
                 style={styles.ctaButton}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
                 {isLoading
-                   ? <ActivityIndicator color="#FFFFFF" size="small" />
-                   : (
+                  ? <ActivityIndicator color={COLORS.primaryDark} size="small" />
+                  : (
                     <>
-                      <Text style={styles.ctaText}>Sign In</Text>
-                      <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} />
+                      <Text style={[styles.ctaText, { color: COLORS.primaryDark }]}>Sign In</Text>
+                      <ArrowRight size={20} color={COLORS.primaryDark} strokeWidth={2.5} />
                     </>
                   )
                 }
@@ -151,8 +152,8 @@ export default function Login() {
             </TouchableOpacity>
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.footer}>
-            <Text style={[styles.footerText, { color: COLORS.text.secondary }]}>
+           <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.footer}>
+            <Text style={[styles.footerText, { color: '#F1F5F9' }]}>
               Don't have an account?{' '}
             </Text>
             <TouchableOpacity onPress={() => router.push('/auth/register')}>
@@ -167,7 +168,7 @@ export default function Login() {
 
 const useStyles = (COLORS: any, insets: any) => {
   return useMemo(() => StyleSheet.create({
-    root: { flex: 1 },
+    root: { flex: 1, backgroundColor: '#000' },
     kav: { flex: 1 },
     scroll: {
       flexGrow: 1,
@@ -202,12 +203,18 @@ const useStyles = (COLORS: any, insets: any) => {
       letterSpacing: -0.5,
       marginBottom: SPACING.sm,
       textAlign: 'center',
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 4 },
+      textShadowRadius: 10,
     },
     subtitle: {
       fontSize: FONT_SIZES.md,
       fontFamily: FONTS.medium,
       textAlign: 'center',
       lineHeight: 22,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 6,
     },
     form: {
       gap: SPACING.md,
@@ -220,7 +227,13 @@ const useStyles = (COLORS: any, insets: any) => {
       paddingHorizontal: SPACING.lg,
       paddingVertical: SPACING.md,
       gap: SPACING.md,
-      ...SHADOWS.sm,
+      backgroundColor: 'rgba(255, 255, 255, 0.85)',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.5)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
     },
     input: {
       flex: 1,
@@ -242,11 +255,16 @@ const useStyles = (COLORS: any, insets: any) => {
       paddingVertical: SPACING.xl,
       borderRadius: BORDER_RADIUS.pill,
       marginTop: SPACING.sm,
-      ...SHADOWS.xl,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.7)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.2,
+      shadowRadius: 20,
       minHeight: 58,
     },
     ctaText: {
-      color: '#FFFFFF',
+      color: COLORS.primaryDark,
       fontSize: FONT_SIZES.lg,
       fontFamily: FONTS.bold,
       letterSpacing: 0.3,
@@ -260,10 +278,16 @@ const useStyles = (COLORS: any, insets: any) => {
     footerText: {
       fontSize: FONT_SIZES.md,
       fontFamily: FONTS.medium,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 6,
     },
     linkText: {
       fontSize: FONT_SIZES.md,
       fontFamily: FONTS.bold,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 6,
     },
   }), [COLORS, insets]);
 };
