@@ -44,7 +44,7 @@ const THEME_PROMPTS = {
   adventure: 'an exciting adventure with exploration and discovery',
   fantasy: 'a magical fantasy world with spells, dragons, and wonder',
   magic: 'a magical world with spells and wonder',
-  animals: 'friendly animals as the main characters',
+  animals: 'a world with friendly animals as companions and helpers (the child and named family/friends remain human main characters)',
   space: 'outer space, stars, and planets',
   ocean: 'the deep ocean and colourful sea creatures',
   forest: 'an enchanted forest full of secrets',
@@ -102,7 +102,7 @@ function buildPrompt(profile, languageCode, context, options, dynamicSystemPromp
   const characterNames = [...familyMembers.map(m => m.name), ...friends.map(f => f.name)];
   
   const characterContext = characterNames.length > 0
-    ? `You MUST include these specific characters as major, active participants in the adventure: ${characterNames.join(', ')}. They should have dialogue and play key roles in resolving the story hooks.`
+    ? `You MUST include these specific characters as major, active participants in the adventure: ${characterNames.join(', ')}. They should have dialogue and play key roles in resolving the story hooks. CRITICAL: These named characters are human children/family/friends and must never be rewritten as animals, creatures, or objects.`
     : '';
 
   const themeDesc = options?.theme ? (THEME_PROMPTS[options.theme] || options.theme) : 'an adventure';
@@ -137,6 +137,7 @@ Story Configuration:
 - Supporting Cast: ${characterNames.length > 0 ? characterNames.join(', ') : 'None'} (Include them as active partners in the journey!)
 ${locationLine}
 ${characterContext}
+- Character Safety Rule: ${profile.kid_name}${characterNames.length > 0 ? `, ${characterNames.join(', ')}` : ''} are humans. Never transform, recast, or describe them as animals/creatures/objects. If the theme is animals, animals can be side characters only.
 
 Focus on vivid sensory details, emotional warmth, and a satisfying conclusion where the characters learn something positive or find a wonderful surprise.
 
