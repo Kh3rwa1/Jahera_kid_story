@@ -37,10 +37,6 @@ function buildPlans(offerings: RCOffering): Plan[] {
   const yearlyPrice = offerings.yearly?.product?.priceString ?? '$49.99';
   const familyPrice = offerings.family?.product?.priceString ?? '$9.99';
 
-  const yearlyMonthly = offerings.yearly?.product?.price
-    ? `$${(offerings.yearly.product.price / 12).toFixed(2)}`
-    : '$4.17';
-
   return [
     {
       id: 'weekly',
@@ -159,8 +155,8 @@ export default function PaywallScreen() {
             <Text style={[styles.tableLabel, { color: colors.text.light }]}>Free</Text>
             <Text style={[styles.tableLabel, { color: colors.primary, fontFamily: FONTS.bold }]}>Pro</Text>
           </View>
-          {FREE_VS_PRO.map((item, idx) => (
-            <View key={idx} style={styles.tableRow}>
+          {FREE_VS_PRO.map((item) => (
+            <View key={item.label} style={styles.tableRow}>
               <Text style={[styles.rowLabel, { color: colors.text.secondary }]}>{item.label}</Text>
               <Text style={[styles.rowValue, { color: colors.text.light }]}>{item.free}</Text>
               <Text style={[styles.rowValue, { color: colors.text.primary, fontFamily: FONTS.bold }]}>{item.pro}</Text>

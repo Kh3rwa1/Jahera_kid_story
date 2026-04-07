@@ -27,7 +27,7 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
-  const { profile, updateProfile, refreshAll } = useApp();
+  const { profile, updateProfile } = useApp();
   const insets = useSafeAreaInsets();
   const styles = useStyles(C, insets);
 

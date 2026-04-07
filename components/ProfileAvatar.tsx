@@ -34,7 +34,6 @@ export function ProfileAvatar({
   const radius = dims.container / 2;
   const ringPadding = size === 'large' ? 4 : size === 'medium' ? 3 : 2;
   const ringSize = dims.container + ringPadding * 2;
-  const initial = name?.charAt(0)?.toUpperCase() || '?';
 
   const content = (
     <Animated.View entering={ZoomIn.delay(100).springify()}>
@@ -162,10 +161,6 @@ const styles = StyleSheet.create({
   fallback: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  initial: {
-    fontFamily: FONTS.bold,
-    color: '#FFFFFF',
   },
   uploadingOverlay: {
     position: 'absolute',

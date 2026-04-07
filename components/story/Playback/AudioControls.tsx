@@ -84,9 +84,6 @@ export function AudioControls({ accentColor, themeGradient, colors }: Readonly<A
     ],
   }));
 
-  const makeWaveStyle = (anim: SharedValue<number>) =>
-    useAnimatedStyle(() => ({ transform: [{ scaleY: anim.value }] }));
-
   const handlePlayPause = () => {
     playScale.value = withSequence(withSpring(0.88, { damping: 8 }), withSpring(1, { damping: 10 }));
     playPause();

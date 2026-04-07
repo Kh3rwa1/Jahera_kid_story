@@ -224,7 +224,7 @@ export default function Friends() {
                 <View style={styles.emojiRow}>
                   {['🧒', '👧', '🧑'].map((e, i) => (
                     <Animated.Text 
-                      key={i} 
+                      key={`${e}-${i}`} 
                       entering={ZoomIn.delay(700 + i * 100).springify()} 
                       style={styles.emptyEmoji}
                     >
@@ -239,7 +239,7 @@ export default function Friends() {
               <View style={styles.grid}>
                 {friends.map((friend, idx) => (
                   <Animated.View 
-                    key={`${friend}-${idx}`} 
+                    key={friend} 
                     entering={ZoomIn.delay(idx * 50).springify()} 
                     exiting={FadeOutUp}
                     style={styles.stickerWrapper}

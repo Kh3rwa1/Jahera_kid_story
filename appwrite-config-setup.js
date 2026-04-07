@@ -21,10 +21,7 @@ const databases = new sdk.Databases(client);
 const DB_ID = 'jahera_db';
 const COLL_ID = 'config';
 
-async function setup() {
-  console.log(`🚀 Starting Appwrite Configuration Setup for Project: ${PROJECT_ID}...`);
-
-  // 1. Create Collection
+async function ensureCollection() {
   try {
     await databases.createCollection(DB_ID, COLL_ID, 'App Configuration', [
       sdk.Permission.read(sdk.Role.any()),
@@ -33,42 +30,37 @@ async function setup() {
     ]);
     console.log(`✅ Collection [${COLL_ID}] created.`);
   } catch (err) {
-    if (err.code === 409) console.log(`ℹ️ Collection [${COLL_ID}] already exists.`);
-    else { console.error(`❌ Error creating collection:`, err.message); process.exit(1); }
-  }
-
-  // 2. Add Attributes
-  const attributes = [
-    { key: 'key', type: 'string', size: 255, required: true },
-    { key: 'value', type: 'string', size: 1000000, required: true } // Increased size for large prompts
-  ];
-
-  for (const attr of attributes) {
-    try {
-      // Check if attribute already exists
-      const existing = await databases.listAttributes(DB_ID, COLL_ID);
-      const isExist = existing.attributes.some(a => a.key === attr.key);
-      
-      if (!isExist) {
-        if (attr.type === 'string') {
-          await databases.createStringAttribute(DB_ID, COLL_ID, attr.key, attr.size, attr.required);
-          console.log(`✅ Attribute [${attr.key}] created.`);
-        }
-      } else {
-        console.log(`ℹ️ Attribute [${attr.key}] already exists.`);
-      }
-    } catch (err) {
-      if (err.code === 409) console.log(`ℹ️ Attribute [${attr.key}] already exists (Conflict).`);
-      else console.error(`❌ Error adding attribute [${attr.key}]:`, err.message);
+    if (err.code === 409) {
+      console.log(`ℹ️ Collection [${COLL_ID}] already exists.`);
+      return;
     }
+    console.error('❌ Error creating collection:', err.message);
+    process.exit(1);
   }
+}
 
-  console.log('⏳ Waiting 3 seconds for attributes to propagate...');
-  await new Promise(resolve => setTimeout(resolve, 3000));
+async function ensureAttribute(attr) {
+  try {
+    const existing = await databases.listAttributes(DB_ID, COLL_ID);
+    const isExist = existing.attributes.some(a => a.key === attr.key);
 
-  // 3. Add Default Document
+    if (isExist) {
+      console.log(`ℹ️ Attribute [${attr.key}] already exists.`);
+      return;
+    }
+
+    if (attr.type === 'string') {
+      await databases.createStringAttribute(DB_ID, COLL_ID, attr.key, attr.size, attr.required);
+      console.log(`✅ Attribute [${attr.key}] created.`);
+    }
+  } catch (err) {
+    if (err.code === 409) console.log(`ℹ️ Attribute [${attr.key}] already exists (Conflict).`);
+    else console.error(`❌ Error adding attribute [${attr.key}]:`, err.message);
+  }
+}
+
+async function ensureDefaultDocument() {
   const defaultPrompt = `You are a creative children's story writer. You write engaging, age-appropriate stories for children aged 4-10. Always respond with valid JSON only — no markdown, no code fences, no extra text.`;
-
   try {
     await databases.createDocument(DB_ID, COLL_ID, sdk.ID.unique(), {
       key: 'story_system_prompt',
@@ -79,8 +71,29 @@ async function setup() {
     if (err.code === 409) console.log('ℹ️ Document already exists.');
     else console.error('❌ Error creating document:', err.message);
   }
+}
 
+async function setup() {
+  console.log(`🚀 Starting Appwrite Configuration Setup for Project: ${PROJECT_ID}...`);
+
+  await ensureCollection();
+
+  const attributes = [
+    { key: 'key', type: 'string', size: 255, required: true },
+    { key: 'value', type: 'string', size: 1000000, required: true }
+  ];
+
+  for (const attr of attributes) {
+    await ensureAttribute(attr);
+  }
+
+  console.log('⏳ Waiting 3 seconds for attributes to propagate...');
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
+  await ensureDefaultDocument();
   console.log('\n✨ Setup Complete! You can now edit the "story_system_prompt" in your Appwrite Console.');
 }
 
-setup();
+(async () => {
+  await setup();
+})();

@@ -65,4 +65,6 @@ async function diagnose() {
     console.log('\n✨ Diagnostics Complete.');
 }
 
-diagnose();
+(async () => {
+  await diagnose();
+})();

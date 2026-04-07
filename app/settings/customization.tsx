@@ -50,8 +50,6 @@ const ThemeCard = React.memo(({
   C: any;
 }) => {
   const scale = useSharedValue(1);
-  const shadowOpacity = useSharedValue(isSelected ? 0.4 : 0.1);
-  
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     shadowOpacity: withTiming(isSelected ? 0.45 : 0.12),

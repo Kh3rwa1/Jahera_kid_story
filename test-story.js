@@ -49,4 +49,6 @@ async function testStory() {
   }
 }
 
-testStory();
+(async () => {
+  await testStory();
+})();
