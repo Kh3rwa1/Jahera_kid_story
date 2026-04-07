@@ -1,4 +1,5 @@
 import { Container } from '@/components/Container';
+import { QuizAttempt, Story } from '@/types/database';
 import { ErrorState } from '@/components/ErrorState';
 import { FloatingParticles } from '@/components/FloatingParticles';
 import { HeroSkeleton,LoadingSkeleton,Skeleton } from '@/components/LoadingSkeleton';
@@ -75,7 +76,7 @@ function AnimatedLangProgressBar({ pct, primaryColor, delay, styles }: Readonly<
   );
 }
 
-const computeQuizStats = (quizAttempts: any[] | null) => {
+const computeQuizStats = (quizAttempts: QuizAttempt[] | null) => {
   const totalQuizzes = quizAttempts?.length || 0;
   const perfectScores = quizAttempts?.filter(q => (q.score / q.total_questions) >= 0.9).length || 0;
   const avgScore =
@@ -88,7 +89,7 @@ const computeQuizStats = (quizAttempts: any[] | null) => {
   return { totalQuizzes, perfectScores, avgScore };
 };
 
-const computeStreak = (stories: any[] | null) => {
+const computeStreak = (stories: Story[] | null) => {
   if (!stories || stories.length === 0) return 0;
   const uniqueDays = new Set(
     stories.map(s => new Date(s.generated_at || s.created_at).toDateString())
