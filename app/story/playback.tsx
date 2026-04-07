@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Award,RefreshCw,RefreshCw as VolumeRetry } from 'lucide-react-native';
-import React,{ useMemo,useState } from 'react';
+import { useMemo,useState } from 'react';
 import {
 ActivityIndicator,
 StatusBar,
