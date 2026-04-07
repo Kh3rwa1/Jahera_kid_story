@@ -44,7 +44,7 @@ export interface RCOffering {
   monthly: RCPackage | null;
   yearly: RCPackage | null;
   family: RCPackage | null;
-  raw: any | null;
+  raw: unknown;
 }
 
 export interface RCCustomerInfo {

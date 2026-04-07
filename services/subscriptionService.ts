@@ -202,9 +202,9 @@ export const streakService = {
       }
 
       const longestStreak = Math.max(doc.longest_streak || 0, newStreak);
-      const totalDaysActive = lastDate !== today
-        ? (doc.total_days_active || 0) + 1
-        : doc.total_days_active;
+      const totalDaysActive = lastDate === today
+        ? doc.total_days_active
+        : (doc.total_days_active || 0) + 1;
 
       const updated = await databases.updateDocument(
         DATABASE_ID,

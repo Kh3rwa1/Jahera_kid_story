@@ -47,10 +47,10 @@ export const shareStory = async (storyTitle: string, storyContent: string) => {
       ? await webShare(shareText, storyTitle)
       : await nativeShare(shareText);
 
-    if (!shared) {
-      Alert.alert('Sharing not available', 'Could not share on this device.');
-    } else {
+    if (shared) {
       analytics.trackEngagement('story_shared', { story_title: storyTitle });
+    } else {
+      Alert.alert('Sharing not available', 'Could not share on this device.');
     }
   } catch (error) {
     console.error('Failed to share story:', error);

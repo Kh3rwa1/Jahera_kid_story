@@ -13,12 +13,10 @@ interface EmptyStateProps {
 }
 
 const getIconForType = (type: string = 'general') => {
-  switch (type) {
-    case 'stories':
-      return BookOpen;
-    default:
-      return Sparkles;
+  if (type === 'stories') {
+    return BookOpen;
   }
+  return Sparkles;
 };
 
 export const EmptyState = ({ type = 'general', title, description, action }: Readonly<EmptyStateProps>) => {

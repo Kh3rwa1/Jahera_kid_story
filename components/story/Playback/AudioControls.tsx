@@ -10,7 +10,6 @@ ActivityIndicator,
 StyleSheet,
 Text,
 TouchableOpacity,
-useWindowDimensions,
 View,
 } from 'react-native';
 import Animated, {
@@ -32,7 +31,6 @@ interface AudioControlsProps {
 }
 
 export function AudioControls({ accentColor, themeGradient, colors }: Readonly<AudioControlsProps>) {
-  const { width: winWidth, height: winHeight } = useWindowDimensions();
   const { 
     isPlaying, isBuffering, sound, 
     playPause, seek 
@@ -57,7 +55,7 @@ export function AudioControls({ accentColor, themeGradient, colors }: Readonly<A
       );
       vinylElevation.value = withSpring(1, { damping: 12 });
       [waveAnim1, waveAnim2, waveAnim3, waveAnim4, waveAnim5, waveAnim6].forEach((anim, i) => {
-        const heights = [0.4, 0.9, 0.6, 1.0, 0.5, 0.75];
+        const heights = [0.4, 0.9, 0.6, 1, 0.5, 0.75];
         const durations = [320, 420, 380, 460, 340, 400];
         anim.value = withRepeat(
           withSequence(

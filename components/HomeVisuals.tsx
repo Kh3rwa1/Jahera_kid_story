@@ -4,22 +4,20 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
   Easing,
-  withDelay,
   cancelAnimation,
   interpolate,
   withSpring,
 } from 'react-native-reanimated';
 import { useFloat, usePulse } from '@/utils/animations';
 
-export function FloatAnim({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
+export function FloatAnim({ children, delay = 0 }: Readonly<{ children: ReactNode; delay?: number }>) {
   const floatStyle = useFloat(7, 2800, delay);
   return <Animated.View style={floatStyle}>{children}</Animated.View>;
 }
 
-export function HeroShimmer({ styles }: { styles: { shimmerOverlay: StyleProp<ViewStyle> } }) {
+export function HeroShimmer({ styles }: Readonly<{ styles: { shimmerOverlay: StyleProp<ViewStyle> } }>) {
   const x = useSharedValue(-1);
   useEffect(() => {
     x.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.linear }), -1, false);
@@ -35,7 +33,7 @@ export function HeroShimmer({ styles }: { styles: { shimmerOverlay: StyleProp<Vi
   );
 }
 
-export function AnimatedStreakChip({ count, styles }: { count: number; styles: { streakChip: StyleProp<ViewStyle>; streakChipText: StyleProp<TextStyle> } }) {
+export function AnimatedStreakChip({ count, styles }: Readonly<{ count: number; styles: { streakChip: StyleProp<ViewStyle>; streakChipText: StyleProp<TextStyle> } }>) {
   const scale = useSharedValue(0.7);
   const opacity = useSharedValue(0);
   const pulseStyle = usePulse(0.95, 1.05);

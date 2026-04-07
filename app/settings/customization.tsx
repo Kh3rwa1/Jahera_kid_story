@@ -221,13 +221,13 @@ function SectionLabel({
   color,
   delay = 0,
   styles,
-}: {
+}: Readonly<{
   icon: any;
   label: string;
   color: string;
   delay?: number;
   styles: any;
-}) {
+}>) {
   return (
     <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.sectionLabel}>
       <View style={[styles.sectionLabelIcon, { backgroundColor: color + '18' }]}>

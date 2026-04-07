@@ -77,12 +77,12 @@ function useResolvedVideoSource(fallbackSource: any) {
  * Inner component — only mounts once we have a valid source URI.
  * This guarantees `useVideoPlayer` always gets a real string.
  */
-function VideoPlayerInner({ source, width, height, overlayOpacity }: { 
+function VideoPlayerInner({ source, width, height, overlayOpacity }: Readonly<{ 
   source: string; 
   width: number; 
   height: number; 
   overlayOpacity: number;
-}) {
+}>) {
   const player = useVideoPlayer(source, (p) => {
     p.loop = true;
     p.muted = true;

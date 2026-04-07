@@ -43,7 +43,7 @@ import { getLanguageFlag } from '@/utils/languageUtils';
 import { getTimeOfDay } from '@/utils/contextUtils';
 import { getRelativeTime, getSeasonPalette } from '@/utils/dateUtils';
 import { talkative } from '@/utils/talkative';
-import { useFloat, usePulse, useRotate } from '@/utils/animations';
+import { usePulse } from '@/utils/animations';
 import { randomInt } from '@/utils/secureRandom';
 
 // Styles

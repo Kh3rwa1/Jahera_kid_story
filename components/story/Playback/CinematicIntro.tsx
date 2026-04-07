@@ -3,8 +3,7 @@ import { Story } from '@/types/database';
 import { VideoView,useVideoPlayer } from 'expo-video';
 import { BookOpen,Sparkles } from 'lucide-react-native';
 import {
-Dimensions,
-Platform,
+  Platform,
 StyleSheet,
 Text,
 TouchableOpacity,

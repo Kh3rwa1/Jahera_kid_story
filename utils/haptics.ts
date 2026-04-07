@@ -24,7 +24,7 @@ export const hapticFeedback = {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
-      // Haptics not supported on device
+      logger.debug('Haptics typically unsupported on this device simulator', { error });
     }
   },
 
@@ -35,7 +35,7 @@ export const hapticFeedback = {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch (error) {
-      // Haptics not supported on device
+      logger.debug('Haptics typically unsupported on this device simulator', { error });
     }
   },
 

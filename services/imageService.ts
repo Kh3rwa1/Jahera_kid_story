@@ -45,7 +45,12 @@ export async function uploadAvatar(
   try {
     const uriParts = imageUri.split('.');
     const ext = uriParts[uriParts.length - 1]?.split('?')[0] || 'jpg';
-    const mimeType = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
+    const getMimeType = (extension: string) => {
+      if (extension === 'png') return 'image/png';
+      if (extension === 'gif') return 'image/gif';
+      return 'image/jpeg';
+    };
+    const mimeType = getMimeType(ext);
     
     // Create a safe 36 char custom ID
     const fileId = profileId.replace(/[^a-zA-Z0-9.\-_]/g, '_').substring(0, 36);

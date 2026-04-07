@@ -35,7 +35,7 @@ ZoomIn
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-function ProgressDot({ active, styles }: { active: boolean; styles: any }) {
+function ProgressDot({ active, styles }: Readonly<{ active: boolean; styles: any }>) {
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: active ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
     transform: [{ scale: withSpring(active ? 1.2 : 1) }],

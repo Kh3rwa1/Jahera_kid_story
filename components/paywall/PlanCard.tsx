@@ -23,18 +23,25 @@ interface PlanCardProps {
   colors: ThemeColors;
 }
 
-function PlanInfo({ plan, selected, colors, featured }: { plan: Plan; selected: boolean; colors: ThemeColors; featured?: boolean }) {
+function PlanInfo({ plan, selected, colors, featured }: Readonly<{ plan: Plan; selected: boolean; colors: ThemeColors; featured?: boolean }>) {
+  const isFeaturedSelected = featured && selected;
+  const labelColor = isFeaturedSelected ? "#FFF" : colors.text.primary;
+  const periodColor = isFeaturedSelected ? "rgba(255,255,255,0.8)" : colors.text.light;
+  const checkBgFeatured = selected ? "#FFF" : "rgba(0,0,0,0.05)";
+  const checkBgNormal = selected ? colors.primary : "rgba(0,0,0,0.05)";
+  const checkBg = featured ? checkBgFeatured : checkBgNormal;
+
   return (
     <View style={styles.planInfo}>
       <View>
-        <Text style={[styles.planLabel, { color: featured && selected ? "#FFF" : colors.text.primary }]}>
+        <Text style={[styles.planLabel, { color: labelColor }]}>
           {plan.label}
         </Text>
-        <Text style={[styles.planPeriod, { color: featured && selected ? "rgba(255,255,255,0.8)" : colors.text.light }]}>
+        <Text style={[styles.planPeriod, { color: periodColor }]}>
           {plan.price} / {plan.period}
         </Text>
       </View>
-      <View style={[styles.checkCircle, { backgroundColor: featured ? (selected ? "#FFF" : "rgba(0,0,0,0.05)") : (selected ? colors.primary : "rgba(0,0,0,0.05)") }]}>
+      <View style={[styles.checkCircle, { backgroundColor: checkBg }]}>
         {selected && <Check size={featured ? 14 : 12} color={featured ? "#FF5C00" : "#FFFFFF"} strokeWidth={3} />}
       </View>
     </View>
