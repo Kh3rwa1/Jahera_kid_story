@@ -1,4 +1,4 @@
-import { SUPPORTED_LANGUAGES, Language } from '@/constants/languages';
+import { Language,SUPPORTED_LANGUAGES } from '@/constants/languages';
 
 export function getLanguageByCode(code: string): Language | undefined {
   return SUPPORTED_LANGUAGES.find(lang => lang.code === code);

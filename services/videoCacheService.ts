@@ -9,15 +9,15 @@
  *   await videoCacheService.prefetch();          // Call once at app startup
  *   const uri = videoCacheService.getCachedUri(); // Get the local file URI
  */
+import { Query,storage,STORAGE_BUCKETS } from '@/lib/appwrite';
 import {
-  cacheDirectory,
-  getInfoAsync,
-  makeDirectoryAsync,
-  downloadAsync,
-  deleteAsync,
-  moveAsync,
+cacheDirectory,
+deleteAsync,
+downloadAsync,
+getInfoAsync,
+makeDirectoryAsync,
+moveAsync,
 } from 'expo-file-system/legacy';
-import { storage, STORAGE_BUCKETS, Query } from '@/lib/appwrite';
 
 const CACHE_DIR = `${cacheDirectory}video/`;
 const CACHED_VIDEO_PATH = `${CACHE_DIR}brand_video.mp4`;

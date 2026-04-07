@@ -1,27 +1,27 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  Platform,
-  Modal,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { ArrowLeft, Plus, X, Save, Globe, Users, UserPlus, Camera, Image as ImageIcon, Trash2 } from 'lucide-react-native';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { SUPPORTED_LANGUAGES } from '@/constants/languages';
+import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { profileService, languageService, familyMemberService, friendService } from '@/services/database';
-import { pickImage, uploadAvatar, deleteAvatar } from '@/services/imageService';
-import { SUPPORTED_LANGUAGES } from '@/constants/languages';
+import { familyMemberService,friendService,languageService,profileService } from '@/services/database';
+import { deleteAvatar,pickImage,uploadAvatar } from '@/services/imageService';
 import { getLanguageFlag } from '@/utils/languageUtils';
-import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
-import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { ArrowLeft,Camera,Globe,Image as ImageIcon,Plus,Save,Trash2,UserPlus,Users,X } from 'lucide-react-native';
+import React,{ useCallback,useState } from 'react';
+import {
+Modal,
+Platform,
+ScrollView,
+StyleSheet,
+Text,
+TextInput,
+TouchableOpacity,
+View,
+} from 'react-native';
+import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
+import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function EditProfileScreen() {
   const router = useRouter();

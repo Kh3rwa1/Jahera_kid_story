@@ -1,40 +1,40 @@
-import { useState, useMemo, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  StatusBar,
-  useWindowDimensions,
-} from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import LottieView from 'lottie-react-native';
-import { X, UserPlus, ArrowLeft, Plus, Sparkles, Star } from 'lucide-react-native';
-import { profileService, languageService, familyMemberService, friendService } from '@/services/database';
-import { useAuth } from '@/contexts/AuthContext';
-import { useApp } from '@/contexts/AppContext';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import Animated, { 
-  FadeInDown, 
-  FadeInUp, 
-  FadeOutUp, 
-  ZoomIn,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
+import { FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useNarrationAudio } from '@/hooks/useNarrationAudio';
+import { familyMemberService,friendService,languageService,profileService } from '@/services/database';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams,useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
+import { ArrowLeft,Plus,Sparkles,Star,UserPlus,X } from 'lucide-react-native';
+import { useEffect,useMemo,useState } from 'react';
+import {
+ActivityIndicator,
+KeyboardAvoidingView,
+Platform,
+ScrollView,
+StatusBar,
+StyleSheet,
+Text,
+TextInput,
+TouchableOpacity,
+View,
+useWindowDimensions,
+} from 'react-native';
+import Animated,{
+FadeInDown,
+FadeInUp,
+FadeOutUp,
+ZoomIn,
+useAnimatedStyle,
+useSharedValue,
+withSequence,
+withSpring
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const FRIEND_EMOJIS = ['🧒', '👦', '👧', '🧑', '👶', '🧓', '🌟', '🌈'];
 

@@ -1,15 +1,15 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { View, StyleSheet, PanResponder, useWindowDimensions, Text, TouchableOpacity } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  FadeIn,
-  FadeInDown,
-} from 'react-native-reanimated';
+import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Check, RotateCcw } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
+import { Check,RotateCcw } from 'lucide-react-native';
+import React,{ useCallback,useRef,useState } from 'react';
+import { PanResponder,StyleSheet,Text,TouchableOpacity,useWindowDimensions,View } from 'react-native';
+import Animated,{
+FadeIn,
+FadeInDown,
+useAnimatedStyle,
+useSharedValue,
+withSpring,
+} from 'react-native-reanimated';
 
 function hslToHex(h: number, s: number, l: number): string {
   const sn = s / 100;
@@ -26,11 +26,12 @@ function hslToHex(h: number, s: number, l: number): string {
 }
 
 function hexToHsl(hex: string): [number, number, number] {
-  const result = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  const colorRegex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
+  const result = colorRegex.exec(hex);
   if (!result) return [0, 70, 50];
-  let r = parseInt(result[1], 16) / 255;
-  let g = parseInt(result[2], 16) / 255;
-  let b = parseInt(result[3], 16) / 255;
+  let r = Number.parseInt(result[1], 16) / 255;
+  let g = Number.parseInt(result[2], 16) / 255;
+  let b = Number.parseInt(result[3], 16) / 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
   let h = 0, s = 0;
   const l = (max + min) / 2;
@@ -77,7 +78,7 @@ export function ColorWheelPicker({
   textPrimary,
   textSecondary,
   cardBg,
-}: ColorWheelPickerProps) {
+}: Readonly<ColorWheelPickerProps>) {
   const { width: winWidth } = useWindowDimensions();
   const WHEEL_SIZE = Math.min(winWidth - 80, 280);
   const WHEEL_RADIUS = WHEEL_SIZE / 2;
@@ -387,4 +388,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export { generatePalette, hslToHex, hexToHsl };
+export { generatePalette,hexToHsl,hslToHex };

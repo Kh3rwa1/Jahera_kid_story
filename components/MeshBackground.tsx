@@ -1,15 +1,13 @@
-import React, { useEffect, useMemo } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withDelay,
-  Easing,
-  interpolate,
+import React,{ useEffect,useMemo } from 'react';
+import { StyleSheet,useWindowDimensions,View } from 'react-native';
+import Animated,{
+Easing,
+useAnimatedStyle,
+useSharedValue,
+withDelay,
+withRepeat,
+withTiming
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface Orb {
   id: number;

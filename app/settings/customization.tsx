@@ -1,35 +1,33 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  useWindowDimensions,
-  Platform,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  FadeIn,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
-  withTiming,
-  interpolate,
-  Extrapolation,
-} from 'react-native-reanimated';
-import { ArrowLeft, Check, Palette, Pipette, Sparkles, Wand as Wand2, AppWindow } from 'lucide-react-native';
-import { useTheme } from '@/contexts/ThemeContext';
-import { COLOR_SCHEMES } from '@/constants/themeSchemes';
-import { APP_ICONS } from '@/contexts/ThemeContext';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS, SHADOWS } from '@/constants/theme';
-import { hapticFeedback } from '@/utils/haptics';
 import { ColorWheelPicker } from '@/components/ColorWheelPicker';
+import { BORDER_RADIUS,FONT_SIZES,FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { COLOR_SCHEMES } from '@/constants/themeSchemes';
+import { APP_ICONS,useTheme } from '@/contexts/ThemeContext';
+import { hapticFeedback } from '@/utils/haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { AppWindow,ArrowLeft,Check,Palette,Pipette,Sparkles,Wand as Wand2 } from 'lucide-react-native';
+import React,{ useCallback,useState } from 'react';
+import {
+ScrollView,
+StyleSheet,
+Text,
+TouchableOpacity,
+useWindowDimensions,
+View
+} from 'react-native';
+import Animated,{
+Extrapolation,
+FadeIn,
+FadeInDown,
+FadeInUp,
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withSequence,
+withSpring,
+withTiming,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);

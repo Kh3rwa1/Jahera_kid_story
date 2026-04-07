@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Text, View, StyleSheet, Animated, Easing, StyleProp, TextStyle, ViewStyle } from 'react-native';
+import { useEffect,useRef,useState } from 'react';
+import { Animated,Easing,StyleProp,StyleSheet,TextStyle,View,ViewStyle } from 'react-native';
 
 interface MarqueeTextProps {
   text: string;
@@ -17,7 +17,7 @@ export function MarqueeText({
   speed = 40,
   delay = 1200,
   pauseAfterScroll = 1400,
-}: MarqueeTextProps) {
+}: Readonly<MarqueeTextProps>) {
   const [containerWidth, setContainerWidth] = useState(0);
   const [textWidth, setTextWidth] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;

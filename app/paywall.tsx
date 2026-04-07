@@ -1,28 +1,28 @@
-import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-  useWindowDimensions,
-  Image,
-} from 'react-native';
-import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { X, RotateCcw } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { RotateCcw,X } from 'lucide-react-native';
+import React,{ useMemo } from 'react';
+import {
+Image,
+Platform,
+ScrollView,
+StyleSheet,
+Text,
+TouchableOpacity,
+useWindowDimensions,
+View,
+} from 'react-native';
+import Animated,{ FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTheme } from '@/contexts/ThemeContext';
-import { usePurchase, Plan, PlanId } from '@/hooks/usePurchase';
-import { PlanCard } from '@/components/paywall/PlanCard';
 import { FeatureList } from '@/components/paywall/FeatureList';
+import { PlanCard } from '@/components/paywall/PlanCard';
 import { ShimmerCta } from '@/components/ui/ShimmerCta';
-import { SPACING, BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
-import { ThemeColors, EdgeInsets } from '@/types/theme';
+import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Plan,usePurchase } from '@/hooks/usePurchase';
 import { RCOffering } from '@/services/revenueCatService';
+import { EdgeInsets,ThemeColors } from '@/types/theme';
 
 const FREE_VS_PRO = [
   { label: 'Stories/month', free: '3', pro: 'Unlimited' },

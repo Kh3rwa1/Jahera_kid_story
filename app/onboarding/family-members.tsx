@@ -1,36 +1,36 @@
-import { useState, useMemo, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StatusBar,
-  useWindowDimensions,
-} from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import LottieView from 'lottie-react-native';
-import { X, Users, ArrowLeft, Plus, ChevronRight, Heart } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import Animated, { 
-  FadeInDown, 
-  FadeInUp, 
-  FadeOutUp, 
-  ZoomIn, 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withSequence 
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
+import { FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useNarrationAudio } from '@/hooks/useNarrationAudio';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams,useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
+import { ArrowLeft,ChevronRight,Heart,Plus,Users,X } from 'lucide-react-native';
+import { useEffect,useMemo,useState } from 'react';
+import {
+KeyboardAvoidingView,
+Platform,
+ScrollView,
+StatusBar,
+StyleSheet,
+Text,
+TextInput,
+TouchableOpacity,
+View,
+useWindowDimensions,
+} from 'react-native';
+import Animated,{
+FadeInDown,
+FadeInUp,
+FadeOutUp,
+ZoomIn,
+useAnimatedStyle,
+useSharedValue,
+withSequence,
+withSpring
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MEMBER_EMOJIS = ['👨', '👩', '👧', '👦', '👴', '👵', '🐶', '🐱'];
 

@@ -1,42 +1,39 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-  Platform,
-  useWindowDimensions,
-  TextInput,
-  ActivityIndicator,
-  Keyboard,
-} from 'react-native';
+import { BrandVideoBackground } from '@/components/BrandVideoBackground';
+import { Language,MAX_LANGUAGES,SUPPORTED_LANGUAGES } from '@/constants/languages';
+import { FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useNarrationAudio } from '@/hooks/useNarrationAudio';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import { SUPPORTED_LANGUAGES, MAX_LANGUAGES, Language } from '@/constants/languages';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS, SHADOWS } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  useAnimatedStyle,
-  withSpring,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-  interpolate,
-  ZoomIn,
-  FadeIn,
+import { Check,ChevronRight,MapPin,Search,Sparkles,X } from 'lucide-react-native';
+import { useCallback,useEffect,useMemo,useState } from 'react';
+import {
+ActivityIndicator,
+Keyboard,
+Platform,
+ScrollView,
+StatusBar,
+StyleSheet,
+Text,
+TextInput,
+TouchableOpacity,
+useWindowDimensions,
+View,
+} from 'react-native';
+import Animated,{
+FadeIn,
+FadeInDown,
+FadeInUp,
+useAnimatedStyle,
+useSharedValue,
+withSequence,
+withSpring,
+ZoomIn
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
-import * as Location from 'expo-location';
-import { ChevronRight, Check, Sparkles, Search, MapPin, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNarrationAudio } from '@/hooks/useNarrationAudio';
-import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 
 // ── Country → Language mapping ───────────────────────────────────────────────
 // Maps ISO 3166 country names to language codes that are commonly spoken there.

@@ -1,15 +1,15 @@
-import React, { useEffect, useMemo } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
-  interpolate,
-  Easing,
-} from 'react-native-reanimated';
 import { COLORS } from '@/constants/theme';
-import { randomBool, randomChoice, randomFloat } from '@/utils/secureRandom';
+import { randomBool,randomChoice,randomFloat } from '@/utils/secureRandom';
+import React,{ useEffect,useMemo } from 'react';
+import { StyleSheet,useWindowDimensions,View } from 'react-native';
+import Animated,{
+Easing,
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withDelay,
+withTiming,
+} from 'react-native-reanimated';
 
 const CONFETTI_COLORS = [
   COLORS.primary,

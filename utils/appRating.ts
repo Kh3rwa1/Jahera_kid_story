@@ -1,6 +1,6 @@
-import { Platform, Alert, Linking } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { analytics } from '@/services/analyticsService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert,Linking,Platform } from 'react-native';
 
 const RATING_STORAGE_KEY = 'app_rating_data';
 const MIN_STORIES_FOR_RATING = 3;

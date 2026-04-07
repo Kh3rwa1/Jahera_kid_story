@@ -1,24 +1,24 @@
+import { useLocalSearchParams,useRouter } from 'expo-router';
 import React from 'react';
 import {
-  View,
-  StyleSheet,
-  StatusBar,
+StatusBar,
+StyleSheet,
+View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 
-import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useStoryGeneration } from '@/hooks/useStoryGeneration';
 import { formatLocationLabel } from '@/services/locationService';
 
-import { OptionsView } from '@/components/story/Generate/OptionsView';
-import { GenerationLoading } from '@/components/story/Generate/GenerationLoading';
 import { ErrorState } from '@/components/ErrorState';
+import { GenerationLoading } from '@/components/story/Generate/GenerationLoading';
+import { OptionsView } from '@/components/story/Generate/OptionsView';
+import { BORDER_RADIUS,FONTS,SHADOWS } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Zap, Sparkles } from 'lucide-react-native';
-import { FONTS, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
-import { Text, TouchableOpacity } from 'react-native';
+import { Sparkles,Zap } from 'lucide-react-native';
+import { Text,TouchableOpacity } from 'react-native';
 
 export default function GenerateStoryScreen() {
   const router = useRouter();

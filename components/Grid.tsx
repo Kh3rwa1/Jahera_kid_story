@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, ViewStyle, useWindowDimensions } from 'react-native';
 import { SPACING } from '@/constants/theme';
+import React from 'react';
+import { View,ViewStyle,useWindowDimensions } from 'react-native';
 
 interface GridProps {
   children: React.ReactNode;

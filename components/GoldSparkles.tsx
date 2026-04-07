@@ -1,16 +1,16 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  withDelay,
-  Easing,
+import { randomBool,randomFloat } from '@/utils/secureRandom';
+import { Sparkles,Star } from 'lucide-react-native';
+import React,{ useEffect } from 'react';
+import { StyleSheet,View } from 'react-native';
+import Animated,{
+Easing,
+useAnimatedStyle,
+useSharedValue,
+withDelay,
+withRepeat,
+withSequence,
+withTiming,
 } from 'react-native-reanimated';
-import { Star, Sparkles } from 'lucide-react-native';
-import { randomBool, randomFloat } from '@/utils/secureRandom';
 
 interface Sparkle {
   id: number;

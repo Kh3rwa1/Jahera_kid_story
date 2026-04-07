@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hapticFeedback } from '@/utils/haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface Achievement {
   id: string;

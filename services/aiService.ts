@@ -1,7 +1,7 @@
+import { functions } from '@/lib/appwrite';
+import { LocationContext } from '@/services/locationService';
 import { ProfileWithRelations } from '@/types/database';
 import { StoryContext } from '@/utils/contextUtils';
-import { LocationContext } from '@/services/locationService';
-import { functions } from '@/lib/appwrite';
 
 export class QuotaExceededError extends Error {
   constructor(message: string) {

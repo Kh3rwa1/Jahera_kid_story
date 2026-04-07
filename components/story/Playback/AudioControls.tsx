@@ -1,30 +1,30 @@
-import React, { useEffect, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  useWindowDimensions,
-  ActivityIndicator,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withRepeat,
-  withTiming,
-  withSequence,
-  cancelAnimation,
-  Easing,
-  interpolate,
-  SharedValue,
-} from 'react-native-reanimated';
-import { Play, Pause, SkipBack, SkipForward, BookOpen } from 'lucide-react-native';
-import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
-import { hapticFeedback } from '@/utils/haptics';
-import { SPACING, BORDER_RADIUS, FONTS } from '@/constants/theme';
+import { FONTS } from '@/constants/theme';
+import { useAudio,useAudioProgress } from '@/contexts/AudioContext';
 import { ThemeColors } from '@/types/theme';
+import { hapticFeedback } from '@/utils/haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BookOpen,Pause,Play,SkipBack,SkipForward } from 'lucide-react-native';
+import React,{ useEffect } from 'react';
+import {
+ActivityIndicator,
+StyleSheet,
+Text,
+TouchableOpacity,
+useWindowDimensions,
+View,
+} from 'react-native';
+import Animated,{
+cancelAnimation,
+Easing,
+interpolate,
+SharedValue,
+useAnimatedStyle,
+useSharedValue,
+withRepeat,
+withSequence,
+withSpring,
+withTiming,
+} from 'react-native-reanimated';
 
 interface AudioControlsProps {
   accentColor: string;
@@ -32,7 +32,7 @@ interface AudioControlsProps {
   colors: ThemeColors;
 }
 
-export function AudioControls({ accentColor, themeGradient, colors }: AudioControlsProps) {
+export function AudioControls({ accentColor, themeGradient, colors }: Readonly<AudioControlsProps>) {
   const { width: winWidth, height: winHeight } = useWindowDimensions();
   const { 
     isPlaying, isBuffering, sound, 

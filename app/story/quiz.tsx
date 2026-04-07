@@ -1,49 +1,49 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  useWindowDimensions,
-} from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSequence,
-  withSpring,
-  withRepeat,
-  withDelay,
-  FadeInDown,
-  FadeInUp,
-  ZoomIn,
-  Easing,
-} from 'react-native-reanimated';
-import { storyService, quizService } from '@/services/database';
-import { useApp } from '@/contexts/AppContext';
-import { Story, QuizQuestionWithAnswers } from '@/types/database';
-import {
-  CircleCheck as CheckCircle2,
-  Circle as XCircle,
-  BookOpen,
-  House as Home,
-  ArrowLeft,
-  Star,
-  Zap,
-  Volume2,
-  Loader2,
-} from 'lucide-react-native';
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
-import { SPACING, BORDER_RADIUS, FONTS, SHADOWS, BREAKPOINTS, LAYOUT } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import { hapticFeedback } from '@/utils/haptics';
-import { Audio } from 'expo-av';
-import { generateAudio } from '@/services/audioService';
-import { talkative } from '@/utils/talkative';
 import { MeshBackground } from '@/components/MeshBackground';
+import { BORDER_RADIUS,BREAKPOINTS,FONTS,LAYOUT,SHADOWS,SPACING } from '@/constants/theme';
+import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { generateAudio } from '@/services/audioService';
+import { quizService,storyService } from '@/services/database';
+import { QuizQuestionWithAnswers,Story } from '@/types/database';
+import { hapticFeedback } from '@/utils/haptics';
+import { talkative } from '@/utils/talkative';
+import { Audio } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams,useRouter } from 'expo-router';
+import {
+ArrowLeft,
+BookOpen,
+CircleCheck as CheckCircle2,
+House as Home,
+Loader2,
+Star,
+Volume2,
+Circle as XCircle,
+Zap,
+} from 'lucide-react-native';
+import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
+import {
+Pressable,
+StyleSheet,
+Text,
+useWindowDimensions,
+View,
+} from 'react-native';
+import Animated,{
+Easing,
+FadeInDown,
+FadeInUp,
+useAnimatedStyle,
+useSharedValue,
+withDelay,
+withRepeat,
+withSequence,
+withSpring,
+withTiming,
+ZoomIn,
+} from 'react-native-reanimated';
+import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ─── Animated bounce star ───────────────────────────────────────────────
 function BounceStar({ delay = 0, color }: { delay?: number; color: string }) {

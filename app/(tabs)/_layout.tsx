@@ -1,11 +1,11 @@
-import { useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Tabs, usePathname, useRouter } from 'expo-router';
-import { UIProvider } from '@/contexts/UIContext';
 import { FloatingTabBar } from '@/components/FloatingTabBar';
-import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { useSharedValue, runOnJS } from 'react-native-reanimated';
+import { UIProvider } from '@/contexts/UIContext';
 import { hapticFeedback } from '@/utils/haptics';
+import { Tabs,usePathname,useRouter } from 'expo-router';
+import { useCallback } from 'react';
+import { StyleSheet,View } from 'react-native';
+import { Gesture,GestureDetector,GestureHandlerRootView } from 'react-native-gesture-handler';
+import { runOnJS,useSharedValue } from 'react-native-reanimated';
 
 const TAB_ORDER = ['index', 'history', 'profile', 'settings'] as const;
 
