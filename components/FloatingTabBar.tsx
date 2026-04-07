@@ -73,11 +73,19 @@ function TabItem({
     >
       <Animated.View style={[styles.tabContent, iconStyle]}>
         <Icon
-          size={28}
+          size={focused ? 26 : 28}
           color={focused ? activeColor : inactiveColor}
           strokeWidth={focused ? 2.5 : 1.8}
         />
-        {focused && <Animated.View style={[styles.activeDot, { backgroundColor: activeColor }]} />}
+        {focused && (
+          <Animated.Text
+            entering={require('react-native-reanimated').FadeIn.duration(200)}
+            style={[styles.tabLabel, { color: activeColor }]}
+          >
+            {tab.label}
+          </Animated.Text>
+        )}
+        {!focused && <Animated.View style={[styles.activeDot, { backgroundColor: 'transparent' }]} />}
       </Animated.View>
     </Pressable>
   );
@@ -234,7 +242,18 @@ export function FloatingTabBar({
             onPress={() => router.push({ pathname: '/story/playback', params: { storyId: activeStory?.id } })}
           >
             <View style={[styles.discIconBg, { backgroundColor: COLORS.primary + '15' }]}>
-              <Disc size={20} color={COLORS.primary} />
+              {isPlaying ? (
+                <View style={styles.eqContainer}>
+                  {[14, 10, 16, 8].map((h, i) => (
+                    <Animated.View
+                      key={i}
+                      style={[styles.eqBar, { backgroundColor: COLORS.primary, height: h }]}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Disc size={20} color={COLORS.primary} />
+              )}
             </View>
             <View style={styles.playerTextCol}>
               <Text style={[styles.playerTitle, { color: COLORS.text.primary }]} numberOfLines={1}>
@@ -343,6 +362,22 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     marginTop: 2,
+  },
+  tabLabel: {
+    fontSize: 10,
+    fontFamily: FONTS.bold,
+    marginTop: 1,
+    letterSpacing: 0.3,
+  },
+  eqContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 2,
+    height: 20,
+  },
+  eqBar: {
+    width: 3,
+    borderRadius: 1.5,
   },
   playerRow: {
     flexDirection: 'row',

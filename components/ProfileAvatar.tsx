@@ -32,89 +32,107 @@ export function ProfileAvatar({
   const COLORS = currentTheme.colors;
   const dims = SIZE_MAP[size];
   const radius = dims.container / 2;
+  const ringPadding = size === 'large' ? 4 : size === 'medium' ? 3 : 2;
+  const ringSize = dims.container + ringPadding * 2;
   const initial = name?.charAt(0)?.toUpperCase() || '?';
 
   const content = (
     <Animated.View entering={ZoomIn.delay(100).springify()}>
-      <View
+      {/* Gradient ring border */}
+      <LinearGradient
+        colors={COLORS.gradients.primary}
         style={[
-          styles.container,
+          styles.ringGradient,
           {
-            width: dims.container,
-            height: dims.container,
-            borderRadius: radius,
+            width: ringSize,
+            height: ringSize,
+            borderRadius: ringSize / 2,
+            padding: ringPadding,
           },
           size === 'large' && SHADOWS.md,
           size !== 'large' && SHADOWS.sm,
         ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        {avatarUrl ? (
-          <Image
-            source={{ uri: avatarUrl }}
-            style={[
-              styles.image,
-              {
-                width: dims.container,
-                height: dims.container,
-                borderRadius: radius,
-              },
-            ]}
-          />
-        ) : (
-          <LinearGradient
-            colors={COLORS.gradients.primary}
-            style={[
-              styles.fallback,
-              {
-                width: dims.container,
-                height: dims.container,
-                borderRadius: radius,
-                overflow: 'hidden',
-              },
-            ]}
-          >
-            <Image 
-              source={require('@/assets/images/icon.png')} 
-              style={{ 
-                width: dims.container, 
-                height: dims.container,
-              }} 
-              resizeMode="cover"
+        <View
+          style={[
+            styles.container,
+            {
+              width: dims.container,
+              height: dims.container,
+              borderRadius: radius,
+            },
+          ]}
+        >
+          {avatarUrl ? (
+            <Image
+              source={{ uri: avatarUrl }}
+              style={[
+                styles.image,
+                {
+                  width: dims.container,
+                  height: dims.container,
+                  borderRadius: radius,
+                },
+              ]}
             />
-          </LinearGradient>
-        )}
+          ) : (
+            <LinearGradient
+              colors={COLORS.gradients.primary}
+              style={[
+                styles.fallback,
+                {
+                  width: dims.container,
+                  height: dims.container,
+                  borderRadius: radius,
+                  overflow: 'hidden',
+                },
+              ]}
+            >
+              <Image 
+                source={require('@/assets/images/icon.png')} 
+                style={{ 
+                  width: dims.container, 
+                  height: dims.container,
+                }} 
+                resizeMode="cover"
+              />
+            </LinearGradient>
+          )}
 
-        {isUploading && (
-          <View
-            style={[
-              styles.uploadingOverlay,
-              {
-                width: dims.container,
-                height: dims.container,
-                borderRadius: radius,
-              },
-            ]}
-          >
-            <ActivityIndicator color="#FFFFFF" size={size === 'small' ? 'small' : 'large'} />
-          </View>
-        )}
+          {isUploading && (
+            <View
+              style={[
+                styles.uploadingOverlay,
+                {
+                  width: dims.container,
+                  height: dims.container,
+                  borderRadius: radius,
+                },
+              ]}
+            >
+              <ActivityIndicator color="#FFFFFF" size={size === 'small' ? 'small' : 'large'} />
+            </View>
+          )}
 
-        {editable && !isUploading && (
-          <View
-            style={[
-              styles.cameraButton,
-              {
-                width: dims.cameraWrap,
-                height: dims.cameraWrap,
-                borderRadius: dims.cameraWrap / 2,
-                backgroundColor: COLORS.primary,
-              },
-            ]}
-          >
-            <Camera size={dims.camera} color="#FFFFFF" />
-          </View>
-        )}
-      </View>
+          {editable && !isUploading && (
+            <View
+              style={[
+                styles.cameraButton,
+                {
+                  width: dims.cameraWrap,
+                  height: dims.cameraWrap,
+                  borderRadius: dims.cameraWrap / 2,
+                  backgroundColor: COLORS.primary,
+                },
+              ]}
+            >
+              <Camera size={dims.camera} color="#FFFFFF" />
+            </View>
+          )}
+        </View>
+      </LinearGradient>
     </Animated.View>
   );
 
@@ -130,6 +148,10 @@ export function ProfileAvatar({
 }
 
 const styles = StyleSheet.create({
+  ringGradient: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: {
     overflow: 'visible',
     position: 'relative',

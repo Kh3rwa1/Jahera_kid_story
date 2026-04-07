@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Audio } from 'expo-av';
+import { Audio, AVPlaybackStatus } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Story } from '@/types/database';
 import { storyService } from '@/services/database';
 import { generateAudio } from '@/services/audioService';
 import { hapticFeedback } from '@/utils/haptics';
+import { logger } from '@/utils/logger';
 
 interface AudioContextType {
   activeStory: Story | null;
@@ -42,18 +43,25 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const audioPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastPositionRef = useRef<number>(0);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const isMountedRef = useRef(true);
 
   // Setup Audio Mode globally once
   useEffect(() => {
+    isMountedRef.current = true;
     Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
       staysActiveInBackground: true,
       shouldDuckAndroid: true,
       playThroughEarpieceAndroid: false
-    }).catch(console.warn);
+    }).catch(err => logger.warn('[AudioContext] setAudioModeAsync error:', err));
     
     return () => {
-      if (sound) sound.unloadAsync().catch(() => {});
+      isMountedRef.current = false;
+      const currentSound = soundRef.current;
+      if (currentSound) {
+        currentSound.unloadAsync().catch(() => {});
+      }
       if (audioPollingRef.current) clearInterval(audioPollingRef.current);
       if (progressSaveTimerRef.current) clearInterval(progressSaveTimerRef.current);
     };
@@ -72,7 +80,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       await AsyncStorage.setItem(`${PROGRESS_KEY_PREFIX}${story.id}`, JSON.stringify(progress));
       await AsyncStorage.setItem('last_active_story_id', story.id);
     } catch (err) {
-      console.warn('[AudioContext] Failed to save progress:', err);
+      logger.warn('[AudioContext] Failed to save progress:', err);
     }
   }, []);
 
@@ -90,7 +98,9 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [isPlaying, duration, activeStory, saveProgress]);
 
-  const onPlaybackStatusUpdate = (status: any) => {
+  const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    if (!isMountedRef.current) return;
+
     if (status.isLoaded) {
       const newPos: number = status.positionMillis ?? 0;
       // throttle React state updates to 250ms jumps unless just finished
@@ -107,14 +117,19 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
         lastPositionRef.current = 0; 
       }
     } else if (status.error) {
+      logger.error('[AudioContext] Playback status error:', status.error);
       setAudioError(true); 
       setIsPlaying(false);
     }
   };
 
-  const loadAudioFromUrl = async (audioPath: string, story: Story) => {
+  const loadAudioFromUrl = async (audioPath: string, story: Story, retryCount = 0) => {
     try {
       if (sound) {
+        // Crossfade: fade out old audio before unloading
+        try { await sound.setVolumeAsync(0.3); } catch {}
+        await new Promise(resolve => setTimeout(resolve, 150));
+        try { await sound.setVolumeAsync(0); } catch {}
         await sound.unloadAsync();
         setSound(null);
       }
@@ -135,24 +150,47 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       const { sound: audioSound } = await Audio.Sound.createAsync(
         { uri: audioPath },
         { 
-          shouldPlay: true, 
+          shouldPlay: false, 
           positionMillis: startPosition,
-          progressUpdateIntervalMillis: 200 
+          progressUpdateIntervalMillis: 200,
+          volume: 0, // Start silent for fade-in
         },
         onPlaybackStatusUpdate
       );
       
+      if (!isMountedRef.current) {
+        audioSound.unloadAsync().catch(() => {});
+        return;
+      }
+
+      soundRef.current = audioSound;
       setSound(audioSound);
       setActiveStory(story);
       setAudioError(false);
       lastPositionRef.current = startPosition;
       setPosition(startPosition);
       
+      // Smooth volume fade-in
       await audioSound.playAsync();
       setIsPlaying(true);
+      // Fade in over 400ms
+      await audioSound.setVolumeAsync(0.5);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await audioSound.setVolumeAsync(0.8);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await audioSound.setVolumeAsync(1.0);
     } catch (err) {
-      console.error('[AudioContext] Failed to load audio:', err);
-      setAudioError(true);
+      logger.error('[AudioContext] Failed to load audio:', err);
+      // Auto-retry up to 2 times with exponential backoff
+      if (retryCount < 2 && isMountedRef.current) {
+        const delay = (retryCount + 1) * 1500;
+        logger.info(`[AudioContext] Retrying audio load in ${delay}ms (attempt ${retryCount + 2})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        if (isMountedRef.current) {
+          return loadAudioFromUrl(audioPath, story, retryCount + 1);
+        }
+      }
+      if (isMountedRef.current) setAudioError(true);
     }
   };
 
@@ -177,7 +215,9 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       await loadAudioFromUrl(story.audio_url, story);
     } else {
       setAudioPolling(true);
-      generateAudio(story.content, story.language_code || 'en', story.id).catch(console.error);
+      generateAudio(story.content, story.language_code || 'en', story.id).catch(err => 
+        logger.error('[AudioContext] generateAudio error:', err)
+      );
 
       let polls = 0;
       const MAX_POLLS = 25; // 75s
@@ -185,9 +225,19 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       if (audioPollingRef.current) clearInterval(audioPollingRef.current);
       
       audioPollingRef.current = setInterval(async () => {
+        if (!isMountedRef.current) {
+          if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+          return;
+        }
+
         polls++;
         try {
           const fresh = await storyService.getById(story.id);
+          if (!isMountedRef.current) {
+             if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+             return;
+          }
+
           if (fresh?.audio_url) {
             if (audioPollingRef.current) clearInterval(audioPollingRef.current);
             setAudioPolling(false);
@@ -197,7 +247,8 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
             setAudioPolling(false);
             setAudioError(true);
           }
-        } catch {
+        } catch (err) {
+          logger.warn('[AudioContext] Polling error:', err);
           if (polls >= MAX_POLLS) {
             if (audioPollingRef.current) clearInterval(audioPollingRef.current);
             setAudioPolling(false);
@@ -258,21 +309,42 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       if (audioPollingRef.current) clearInterval(audioPollingRef.current);
       
       audioPollingRef.current = setInterval(async () => {
+        if (!isMountedRef.current) {
+          if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+          return;
+        }
+
         polls++;
-        const fresh = await storyService.getById(activeStory.id);
-        if (fresh?.audio_url) {
-          if (audioPollingRef.current) clearInterval(audioPollingRef.current);
-          setAudioPolling(false);
-          await loadAudioFromUrl(fresh.audio_url, activeStory);
-        } else if (polls >= MAX_POLLS) {
-          if (audioPollingRef.current) clearInterval(audioPollingRef.current);
-          setAudioPolling(false);
-          setAudioError(true);
+        try {
+          const fresh = await storyService.getById(activeStory.id);
+          if (!isMountedRef.current) {
+            if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+            return;
+          }
+
+          if (fresh?.audio_url) {
+            if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+            setAudioPolling(false);
+            await loadAudioFromUrl(fresh.audio_url, activeStory);
+          } else if (polls >= MAX_POLLS) {
+            if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+            setAudioPolling(false);
+            setAudioError(true);
+          }
+        } catch (err) {
+          logger.warn('[AudioContext] Retry polling error:', err);
+          if (polls >= MAX_POLLS) {
+            if (audioPollingRef.current) clearInterval(audioPollingRef.current);
+            setAudioPolling(false);
+            setAudioError(true);
+          }
         }
       }, 3000);
     } catch (err) {
-      setAudioError(true);
-      setAudioPolling(false);
+      if (isMountedRef.current) {
+        setAudioError(true);
+        setAudioPolling(false);
+      }
     }
   };
 

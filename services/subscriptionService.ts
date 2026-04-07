@@ -1,6 +1,7 @@
 import { databases, COLLECTIONS, DATABASE_ID, ID, Query } from '@/lib/appwrite';
 import { SubscriptionStatus, Streak } from '@/types/database';
 import { revenueCatService, PlanType } from '@/services/revenueCatService';
+import { logger } from '@/utils/logger';
 
 const PLAN_LIMITS: Record<string, number> = {
   free: 3,
@@ -8,19 +9,37 @@ const PLAN_LIMITS: Record<string, number> = {
   family: 9999,
 };
 
-function rowToStreak(row: any): Streak {
-  if (!row) return null as any;
-  const { $id, $createdAt, $updatedAt, current_streak, longest_streak, last_activity_date, total_days_active, profile_id } = row;
+interface AppwriteStreakDoc {
+  $id: string;
+  $createdAt: string;
+  $updatedAt: string;
+  profile_id: string;
+  current_streak: number;
+  longest_streak: number;
+  last_activity_date: string | null;
+  total_days_active: number;
+}
+
+function rowToStreak(row: AppwriteStreakDoc | null): Streak {
+  if (!row) return null as unknown as Streak;
   return {
-    id: $id,
-    profile_id: profile_id,
-    current_streak: current_streak || 0,
-    longest_streak: longest_streak || 0,
-    last_activity_date: last_activity_date ?? null,
-    total_days_active: total_days_active || 0,
-    created_at: $createdAt,
-    updated_at: $updatedAt,
+    id: row.$id,
+    profile_id: row.profile_id,
+    current_streak: row.current_streak || 0,
+    longest_streak: row.longest_streak || 0,
+    last_activity_date: row.last_activity_date ?? null,
+    total_days_active: row.total_days_active || 0,
+    created_at: row.$createdAt,
+    updated_at: row.$updatedAt,
   };
+}
+
+interface SubscriptionPayload {
+  profile_id: string;
+  plan: string;
+  stories_limit: number;
+  is_active: boolean;
+  trial_ends_at?: string;
 }
 
 async function upsertSubscription(
@@ -35,7 +54,7 @@ async function upsertSubscription(
       Query.limit(1)
     ]);
 
-    const payload: any = {
+    const payload: SubscriptionPayload = {
       profile_id: profileId,
       plan,
       stories_limit: storiesLimit,
@@ -50,7 +69,7 @@ async function upsertSubscription(
     }
     return true;
   } catch (error) {
-    console.error('Error upserting subscription:', error);
+    logger.error('Error upserting subscription:', error);
     return false;
   }
 }
@@ -136,7 +155,7 @@ export const streakService = {
         Query.limit(1)
       ]);
       if (response.documents.length === 0) return null;
-      return rowToStreak(response.documents[0]);
+      return rowToStreak(response.documents[0] as unknown as AppwriteStreakDoc);
     } catch {
       return null;
     }
@@ -166,30 +185,31 @@ export const streakService = {
               total_days_active: 1,
             }
         );
-        return rowToStreak(created);
+        return rowToStreak(created as unknown as AppwriteStreakDoc);
       }
 
-      const lastDate = existing.last_activity_date;
+      const doc = response.documents[0] as unknown as AppwriteStreakDoc;
+      const lastDate = doc.last_activity_date;
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-      let newStreak = existing.current_streak || 0;
+      let newStreak = doc.current_streak || 0;
       if (lastDate === yesterdayStr) {
         newStreak += 1;
       } else if (lastDate !== today) {
         newStreak = 1;
       }
 
-      const longestStreak = Math.max(existing.longest_streak || 0, newStreak);
+      const longestStreak = Math.max(doc.longest_streak || 0, newStreak);
       const totalDaysActive = lastDate !== today
-        ? (existing.total_days_active || 0) + 1
-        : existing.total_days_active;
+        ? (doc.total_days_active || 0) + 1
+        : doc.total_days_active;
 
       const updated = await databases.updateDocument(
         DATABASE_ID,
         COLLECTIONS.STREAKS,
-        existing.$id,
+        doc.$id,
         {
           current_streak: newStreak,
           longest_streak: longestStreak,
@@ -198,7 +218,7 @@ export const streakService = {
         }
       );
 
-      return rowToStreak(updated);
+      return rowToStreak(updated as unknown as AppwriteStreakDoc);
     } catch {
       return null;
     }
@@ -211,7 +231,7 @@ export const interestService = {
       const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILE_INTERESTS, [
         Query.equal('profile_id', profileId)
       ]);
-      return response.documents.map((row: any) => row.interest);
+      return response.documents.map((row) => (row as Record<string, unknown>).interest as string);
     } catch {
       return [];
     }
@@ -223,18 +243,24 @@ export const interestService = {
         Query.equal('profile_id', profileId)
       ]);
 
-      for (const doc of existing.documents) {
-        await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROFILE_INTERESTS, doc.$id);
-      }
+      // Parallel delete all existing interests
+      await Promise.all(
+        existing.documents.map((doc) =>
+          databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROFILE_INTERESTS, doc.$id)
+        )
+      );
 
-      for (const interest of interests) {
-        await databases.createDocument(
+      // Parallel create all new interests
+      await Promise.all(
+        interests.map((interest) =>
+          databases.createDocument(
             DATABASE_ID,
             COLLECTIONS.PROFILE_INTERESTS,
             ID.unique(),
             { profile_id: profileId, interest }
-        );
-      }
+          )
+        )
+      );
       return true;
     } catch {
       return false;

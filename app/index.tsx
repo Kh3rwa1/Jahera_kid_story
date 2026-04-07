@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Redirect } from 'expo-router';
 import {
   View,
@@ -35,6 +35,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
+import { logger } from '@/utils/logger';
+import { ThemeColors, EdgeInsets } from '@/types/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -61,6 +63,12 @@ export default function Welcome() {
   const badge1Float = useSharedValue(0);
   const badge2Float = useSharedValue(0);
   const badge3Float = useSharedValue(0);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   useEffect(() => {
     glowPulse.value = withRepeat(
@@ -116,7 +124,9 @@ export default function Welcome() {
       withSpring(0.975, { damping: 15 }),
       withSpring(1, { damping: 12 })
     );
-    setTimeout(() => router.push('/auth/register'), 40);
+    setTimeout(() => {
+      if (isMounted.current) router.push('/auth/register');
+    }, 40);
   };
 
   const glowStyle = useAnimatedStyle(() => ({ opacity: glowPulse.value }));
@@ -328,7 +338,7 @@ export default function Welcome() {
   );
 }
 
-const useStyles = (C: any, insets: any, width: number) => {
+const useStyles = (C: ThemeColors, insets: EdgeInsets, width: number) => {
   return useMemo(() => StyleSheet.create({
     root: {
       flex: 1,

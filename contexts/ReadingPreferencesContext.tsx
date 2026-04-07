@@ -14,6 +14,8 @@ export interface ReadingPreferences {
   fontFamily: FontFamily;
 }
 
+export type ReadingPrefs = ReadingPreferences;
+
 const DEFAULTS: ReadingPreferences = {
   fontSize: 17,
   lineSpacing: 'normal',

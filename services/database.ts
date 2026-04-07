@@ -11,8 +11,9 @@ import {
   QuizAttempt,
   QuizQuestionWithAnswers,
 } from '@/types/database';
+import { logger } from '@/utils/logger';
 
-function mapDoc<T>(doc: any): T {
+function mapDoc<T>(doc: Record<string, unknown>): T {
   if (!doc) return null as unknown as T;
   const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...rest } = doc;
   return {
@@ -34,7 +35,7 @@ export const profileService = {
       );
       return mapDoc(data);
     } catch (error) {
-      console.error('Error creating profile:', error);
+      logger.error('Error creating profile:', error);
       return null;
     }
   },
@@ -44,7 +45,7 @@ export const profileService = {
       const data = await databases.getDocument(DATABASE_ID, COLLECTIONS.PROFILES, id);
       return mapDoc(data);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      logger.error('Error fetching profile:', error);
       return null;
     }
   },
@@ -57,7 +58,7 @@ export const profileService = {
       ]);
       return response.documents.length ? mapDoc(response.documents[0]) : null;
     } catch (error) {
-      console.error('Error fetching profile by userId:', error);
+      logger.error('Error fetching profile by userId:', error);
       return null;
     }
   },
@@ -97,7 +98,7 @@ export const profileService = {
       );
       return mapDoc(data);
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile:', error);
       return null;
     }
   },
@@ -111,13 +112,13 @@ export const profileService = {
       await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROFILES, id);
       return true;
     } catch (error) {
-      console.error('Error deleting profile:', error);
+      logger.error('Error deleting profile:', error);
       return false;
     }
   },
 
   async uploadAvatar(_profileId: string, _fileUri: string, _mimeType: string): Promise<string | null> {
-    console.warn('Avatar upload via storage should be used instead of Profile Service');
+    logger.warn('Avatar upload via storage should be used instead of Profile Service');
     return null;
   },
 };
@@ -133,7 +134,7 @@ export const languageService = {
       );
       return mapDoc(data);
     } catch (error) {
-      console.error('Error adding language:', error);
+      logger.error('Error adding language:', error);
       return null;
     }
   },
@@ -145,7 +146,7 @@ export const languageService = {
       ]);
       return response.documents.map(doc => mapDoc<UserLanguage>(doc));
     } catch (error) {
-      console.error('Error fetching languages:', error);
+      logger.error('Error fetching languages:', error);
       return null;
     }
   },
@@ -155,7 +156,7 @@ export const languageService = {
       await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, id);
       return true;
     } catch (error) {
-      console.error('Error deleting language:', error);
+      logger.error('Error deleting language:', error);
       return false;
     }
   },
@@ -167,12 +168,14 @@ export const languageService = {
         Query.equal('language_code', languageCode)
       ]);
       
-      for (const doc of response.documents) {
-        await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, doc.$id);
-      }
+      await Promise.all(
+        response.documents.map((doc) =>
+          databases.deleteDocument(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, doc.$id)
+        )
+      );
       return true;
     } catch (error) {
-      console.error('Error deleting language by code:', error);
+      logger.error('Error deleting language by code:', error);
       return false;
     }
   },
@@ -189,7 +192,7 @@ export const familyMemberService = {
       );
       return mapDoc(data);
     } catch (error) {
-      console.error('Error adding family member:', error);
+      logger.error('Error adding family member:', error);
       return null;
     }
   },
@@ -201,7 +204,7 @@ export const familyMemberService = {
       ]);
       return response.documents.map(doc => mapDoc<FamilyMember>(doc));
     } catch (error) {
-      console.error('Error fetching family members:', error);
+      logger.error('Error fetching family members:', error);
       return null;
     }
   },
@@ -211,7 +214,7 @@ export const familyMemberService = {
       await databases.deleteDocument(DATABASE_ID, COLLECTIONS.FAMILY_MEMBERS, id);
       return true;
     } catch (error) {
-      console.error('Error deleting family member:', error);
+      logger.error('Error deleting family member:', error);
       return false;
     }
   },
@@ -228,7 +231,7 @@ export const friendService = {
       );
       return mapDoc(data);
     } catch (error) {
-      console.error('Error adding friend:', error);
+      logger.error('Error adding friend:', error);
       return null;
     }
   },
@@ -240,7 +243,7 @@ export const friendService = {
       ]);
       return response.documents.map(doc => mapDoc<Friend>(doc));
     } catch (error) {
-      console.error('Error fetching friends:', error);
+      logger.error('Error fetching friends:', error);
       return null;
     }
   },
@@ -250,7 +253,7 @@ export const friendService = {
       await databases.deleteDocument(DATABASE_ID, COLLECTIONS.FRIENDS, id);
       return true;
     } catch (error) {
-      console.error('Error deleting friend:', error);
+      logger.error('Error deleting friend:', error);
       return false;
     }
   },
@@ -283,7 +286,7 @@ export const storyService = {
       );
       return mapDoc(data);
     } catch (error) {
-      console.error('Error creating story:', error);
+      logger.error('Error creating story:', error);
       return null;
     }
   },
@@ -293,7 +296,7 @@ export const storyService = {
       const data = await databases.getDocument(DATABASE_ID, COLLECTIONS.STORIES, id);
       return mapDoc(data);
     } catch (error) {
-      console.error('Error fetching story:', error);
+      logger.error('Error fetching story:', error);
       return null;
     }
   },
@@ -306,7 +309,7 @@ export const storyService = {
       ]);
       return response.documents.map(doc => mapDoc<Story>(doc));
     } catch (error) {
-      console.error('Error fetching stories:', error);
+      logger.error('Error fetching stories:', error);
       return null;
     }
   },
@@ -320,7 +323,7 @@ export const storyService = {
       ]);
       return response.documents.map(doc => mapDoc<Story>(doc));
     } catch (error) {
-      console.error('Error fetching stories by language:', error);
+      logger.error('Error fetching stories by language:', error);
       return null;
     }
   },
@@ -335,7 +338,7 @@ export const storyService = {
       );
       return mapDoc(data);
     } catch (error) {
-      console.error('Error updating story:', error);
+      logger.error('Error updating story:', error);
       return null;
     }
   },
@@ -345,7 +348,7 @@ export const storyService = {
       await databases.deleteDocument(DATABASE_ID, COLLECTIONS.STORIES, id);
       return true;
     } catch (error) {
-      console.error('Error deleting story:', error);
+      logger.error('Error deleting story:', error);
       return false;
     }
   },
@@ -362,7 +365,7 @@ export const quizService = {
       );
       return mapDoc(data);
     } catch (error) {
-      console.error('Error creating quiz question:', error);
+      logger.error('Error creating quiz question:', error);
       return null;
     }
   },
@@ -377,7 +380,7 @@ export const quizService = {
       );
       return mapDoc(data);
     } catch (error) {
-      console.error('Error creating quiz answer:', error);
+      logger.error('Error creating quiz answer:', error);
       return null;
     }
   },
@@ -389,19 +392,35 @@ export const quizService = {
         Query.orderAsc('question_order')
       ]);
 
-      const questionsWithAnswers = await Promise.all(
-        qResponse.documents.map(async (qDoc) => {
-          const aResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUIZ_ANSWERS, [
-            Query.equal('question_id', qDoc.$id),
-            Query.orderAsc('answer_order')
-          ]);
-          return { ...mapDoc<QuizQuestion>(qDoc), answers: aResponse.documents.map(mapDoc<QuizAnswer>) } as QuizQuestionWithAnswers;
-        })
-      );
+      if (qResponse.documents.length === 0) return [];
 
-      return questionsWithAnswers;
+      // Batch-fetch ALL answers for ALL questions in ONE query (eliminates N+1)
+      const questionIds = qResponse.documents.map((q) => q.$id);
+      const aResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUIZ_ANSWERS, [
+        Query.equal('question_id', questionIds),
+        Query.orderAsc('answer_order'),
+        Query.limit(500),
+      ]);
+
+      // Group answers by question_id
+      const answersByQuestion = new Map<string, QuizAnswer[]>();
+      for (const aDoc of aResponse.documents) {
+        const qId = aDoc.question_id as string;
+        const mapped = mapDoc<QuizAnswer>(aDoc as Record<string, unknown>);
+        const existing = answersByQuestion.get(qId);
+        if (existing) {
+          existing.push(mapped);
+        } else {
+          answersByQuestion.set(qId, [mapped]);
+        }
+      }
+
+      return qResponse.documents.map((qDoc) => ({
+        ...mapDoc<QuizQuestion>(qDoc as Record<string, unknown>),
+        answers: answersByQuestion.get(qDoc.$id) ?? [],
+      }));
     } catch (error) {
-      console.error('Error fetching quiz questions with answers:', error);
+      logger.error('Error fetching quiz questions with answers:', error);
       return null;
     }
   },
@@ -422,7 +441,7 @@ export const quizService = {
       );
       return mapDoc(data);
     } catch (error) {
-      console.error('Error creating quiz attempt:', error);
+      logger.error('Error creating quiz attempt:', error);
       return null;
     }
   },
@@ -435,7 +454,7 @@ export const quizService = {
       ]);
       return response.documents.map(doc => mapDoc<QuizAttempt>(doc));
     } catch (error) {
-      console.error('Error fetching quiz attempts:', error);
+      logger.error('Error fetching quiz attempts:', error);
       return null;
     }
   },
@@ -450,7 +469,7 @@ export const configService = {
       ]);
       return response.documents.length ? response.documents[0].value : null;
     } catch (error) {
-      console.error(`Error fetching config for key ${key}:`, error);
+      logger.error(`Error fetching config for key ${key}:`, error);
       return null;
     }
   }

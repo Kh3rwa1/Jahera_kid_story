@@ -35,8 +35,12 @@ import { profileService } from '@/services/database';
 import { SPACING, BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { hashPin, constantTimeEqual, PinRateLimiter } from '@/utils/pinSecurity';
+import { logger } from '@/utils/logger';
+import { ThemeColors, EdgeInsets } from '@/types/theme';
 
-const DEFAULT_PIN = '1234';
+const DEFAULT_PIN_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // SHA-256 for '1234'
+const limiter = new PinRateLimiter(5, 60_000);
 
 export default function ParentDashboard() {
   const router = useRouter();
@@ -55,14 +59,26 @@ export default function ParentDashboard() {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
 
-  const savedPin = profile?.parent_pin || DEFAULT_PIN;
+  const savedPin = profile?.parent_pin || DEFAULT_PIN_HASH;
 
-  const handleUnlock = () => {
-    if (pin === savedPin) {
+  const handleUnlock = async () => {
+    if (limiter.isLocked()) {
+      setPinError(`Too many attempts. Try again in ${limiter.getRemainingLockoutSeconds()}s`);
+      return;
+    }
+
+    const inputHash = await hashPin(pin);
+    if (constantTimeEqual(inputHash, savedPin)) {
       setUnlocked(true);
       setPinError('');
+      limiter.recordSuccess();
     } else {
-      setPinError('Incorrect PIN. Try again.');
+      limiter.recordFailure();
+      const remaining = limiter.getAttemptsRemaining();
+      setPinError(remaining > 0 
+        ? `Incorrect PIN. ${remaining} attempts remaining.`
+        : `Too many attempts. Locked for 1 minute.`
+      );
       setPin('');
     }
   };
@@ -78,11 +94,12 @@ export default function ParentDashboard() {
     }
     if (!profile) return;
 
-    await profileService.update(profile.id, { parent_pin: newPin });
+    const hashed = await hashPin(newPin);
+    await profileService.update(profile.id, { parent_pin: hashed });
     setIsSettingPin(false);
     setNewPin('');
     setConfirmPin('');
-    Alert.alert('PIN Updated', 'Your parent PIN has been saved.');
+    Alert.alert('PIN Updated', 'Your parent PIN has been saved securely.');
   };
 
   const stats = useMemo(() => {
@@ -97,14 +114,14 @@ export default function ParentDashboard() {
       return d > weekAgo;
     }).length;
 
-    const languageCounts = stories.reduce((acc, s) => {
+    const storiesByLanguage = stories.reduce((acc, s) => {
       acc[s.language_code] = (acc[s.language_code] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    const topLanguage = Object.entries(languageCounts).sort((a, b) => b[1] - a[1])[0];
+    const topLanguage = Object.entries(storiesByLanguage).sort((a, b) => b[1] - a[1])[0];
 
-    return { totalQuizzes, perfectScores, avgScore, thisWeek, topLanguage };
+    return { totalQuizzes, perfectScores, avgScore, thisWeek, storiesByLanguage, topLanguage };
   }, [stories, quizAttempts]);
 
   const recentActivity = useMemo(() => {
@@ -342,10 +359,9 @@ export default function ParentDashboard() {
             <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Languages Practiced</Text>
             <View style={[styles.languagesCard, { backgroundColor: COLORS.cardBackground }]}>
               {profile.languages.map((lang, idx) => {
-                const count = stories.filter(s => s.language_code === lang.language_code).length;
-                const maxCount = Math.max(1, ...profile.languages.map(l =>
-                  stories.filter(s => s.language_code === l.language_code).length
-                ));
+                const count = stats.storiesByLanguage[lang.language_code] || 0;
+                const counts = Object.values(stats.storiesByLanguage);
+                const maxCount = counts.length > 0 ? Math.max(1, ...counts) : 1;
                 return (
                   <View key={lang.id} style={[styles.langRow, idx > 0 && { borderTopWidth: 1, borderTopColor: COLORS.text.light + '15' }]}>
                     <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
@@ -448,7 +464,7 @@ export default function ParentDashboard() {
   );
 }
 
-const useStyles = (C: any, insets: any, winWidth: number) => {
+const useStyles = (C: ThemeColors, insets: EdgeInsets, winWidth: number) => {
   return useMemo(() => StyleSheet.create({
     container: { flex: 1 },
     header: {

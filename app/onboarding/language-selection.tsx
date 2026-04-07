@@ -188,7 +188,7 @@ export default function LanguageSelection() {
   const btnAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
 
   const toggleLanguage = async (language: Language) => {
-    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const isSelected = selectedLanguages.some(l => l.code === language.code);
     if (isSelected) {
       setSelectedLanguages(selectedLanguages.filter(l => l.code !== language.code));
@@ -197,7 +197,12 @@ export default function LanguageSelection() {
         if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         return;
       }
-      setSelectedLanguages([...selectedLanguages, language]);
+      const newSelection = [...selectedLanguages, language];
+      setSelectedLanguages(newSelection);
+      // Satisfying success haptic on first language selection
+      if (newSelection.length === 1 && Platform.OS !== 'web') {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
       speak(language.name, language.code);
     }
   };

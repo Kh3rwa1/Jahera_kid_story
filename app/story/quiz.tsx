@@ -258,9 +258,17 @@ export default function QuizScreen() {
       hapticFeedback.success();
       scoreRef.current += 1;
       setScore(scoreRef.current);
-      scoreScale.value = withSequence(withSpring(1.5, { damping: 5, stiffness: 600 }), withSpring(1, { damping: 12 }));
+      scoreScale.value = withSequence(withSpring(1.6, { damping: 4, stiffness: 700 }), withSpring(1, { damping: 12 }));
     } else {
       hapticFeedback.error();
+      // Shake animation for incorrect answer
+      cardScale.value = withSequence(
+        withTiming(1.02, { duration: 50 }),
+        withTiming(0.98, { duration: 80 }),
+        withTiming(1.01, { duration: 60 }),
+        withTiming(0.99, { duration: 60 }),
+        withSpring(1, { damping: 12 }),
+      );
     }
     // Slide up feedback
     feedbackSlide.value = withSpring(0, { damping: 18, stiffness: 300 });
@@ -558,13 +566,13 @@ export default function QuizScreen() {
                   Correct!
                 </Text>
                 <Text style={[styles.feedbackSub, { color: C.text.secondary, fontFamily: FONTS.displayMedium }]}>
-                  Excellent! Keep it up!
+                  Brilliant! You're on fire! 🔥
                 </Text>
               </View>
               <View style={styles.feedbackStars}>
+                <Text style={{ fontSize: 26 }}>⭐</Text>
                 <Text style={{ fontSize: 22 }}>⭐</Text>
-                <Text style={{ fontSize: 22 }}>⭐</Text>
-                <Text style={{ fontSize: 22 }}>⭐</Text>
+                <Text style={{ fontSize: 26 }}>⭐</Text>
               </View>
             </View>
           ) : (
