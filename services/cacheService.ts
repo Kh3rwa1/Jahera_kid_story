@@ -66,16 +66,14 @@ class CacheService {
       }
     }
 
-    if (expiredKeys.length === 0) {
-      return;
-    }
+    if (expiredKeys.length === 0) return;
 
     expiredKeys.forEach((key) => this.memoryCache.delete(key));
 
     try {
       await AsyncStorage.multiRemove(expiredKeys.map((key) => `cache_${key}`));
     } catch (error) {
-      console.error('Failed to cleanup expired cache entries:', error);
+      console.error('[CacheService] Cleanup error:', error);
     }
   }
 
@@ -104,28 +102,29 @@ class CacheService {
   }
 
   private async enforceMaxEntries(): Promise<void> {
-    if (this.memoryCache.size <= this.maxEntries) {
-      return;
-    }
+    if (this.memoryCache.size <= this.maxEntries) return;
 
-    const keysToEvict: string[] = [];
-    while (this.memoryCache.size - keysToEvict.length > this.maxEntries) {
-      const evictionKey = this.selectEvictionKey();
-      if (!evictionKey) {
-        break;
-      }
-      this.memoryCache.delete(evictionKey);
-      keysToEvict.push(evictionKey);
-    }
+    const entries = Array.from(this.memoryCache.entries()).map(([key, entry]) => ({
+      key,
+      score: this.evictionStrategy === 'lru'
+        ? (entry.lastAccessedAt ?? entry.timestamp)
+        : (entry.insertedAt ?? entry.timestamp),
+    }));
 
-    if (keysToEvict.length === 0) {
-      return;
-    }
+    // Sort by score (ascending)
+    entries.sort((a, b) => a.score - b.score);
+
+    const numToEvict = this.memoryCache.size - this.maxEntries;
+    const keysToEvict = entries.slice(0, numToEvict).map(e => e.key);
+
+    if (keysToEvict.length === 0) return;
+
+    keysToEvict.forEach(key => this.memoryCache.delete(key));
 
     try {
-      await AsyncStorage.multiRemove(keysToEvict.map((key) => `cache_${key}`));
+      await AsyncStorage.multiRemove(keysToEvict.map(key => `cache_${key}`));
     } catch (error) {
-      console.error('Failed to evict cache entries:', error);
+      console.error('[CacheService] Eviction error:', error);
     }
   }
 

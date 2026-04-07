@@ -74,35 +74,50 @@ export function GenerationLoading({
   }, [orbRotate, pulseScale]);
 
 
-  useEffect(() => {
-    return () => {
-      if (sound) {
-        sound.unloadAsync().catch(() => undefined);
-      }
-    };
-  }, [sound]);
-
   // Speak fun fact whenever it changes
   useEffect(() => {
-    const text = FUN_FACTS[funFactIndex];
     let mounted = true;
-    (async () => {
+    let activeSound: Audio.Sound | null = null;
+
+    const playFact = async () => {
+      const text = FUN_FACTS[funFactIndex];
       try {
-        if (sound) {
-          await sound.stopAsync();
-          await sound.unloadAsync();
-        }
         setIsPlayingFact(true);
         const url = await generateAudio(text, languageCode, undefined, true);
         if (!url || !mounted) return;
-        const { sound: newSound } = await Audio.Sound.createAsync({ uri: url }, { shouldPlay: true });
+
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri: url },
+          { shouldPlay: true }
+        );
+        
+        if (!mounted) {
+          await newSound.unloadAsync().catch(() => {});
+          return;
+        }
+
+        activeSound = newSound;
         setSound(newSound);
+
+        newSound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            setIsPlayingFact(false);
+          }
+        });
       } catch (e) {
-        setIsPlayingFact(false);
+        if (mounted) setIsPlayingFact(false);
       }
-    })();
-    return () => { mounted = false; };
-  }, [funFactIndex, languageCode, sound]);
+    };
+
+    playFact();
+
+    return () => {
+      mounted = false;
+      if (activeSound) {
+        activeSound.unloadAsync().catch(() => {});
+      }
+    };
+  }, [funFactIndex, languageCode]);
 
   const orbStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${orbRotate.value}deg` }],
