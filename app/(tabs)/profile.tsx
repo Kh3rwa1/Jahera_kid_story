@@ -34,8 +34,7 @@ import Animated,{
 FadeInDown,
 FadeInRight,
 FadeInUp,
-ZoomIn,
-useSharedValue
+ZoomIn
 } from 'react-native-reanimated';
 import { ColorScheme } from '@/constants/themeSchemes';
 import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,7 +49,7 @@ interface AchievementCardData {
 
 type ProfileStyles = ReturnType<typeof useStyles>;
 
-function AnimatedAchievementCard({ card, index, styles }: { card: AchievementCardData; index: number; styles: ProfileStyles }) {
+function AnimatedAchievementCard({ card, index, styles }: Readonly<{ card: AchievementCardData; index: number; styles: ProfileStyles }>) {
   const entrance = useEntranceSequence(index, 120, 70);
   const glowStyle = useGlowPulse(0.85, 1, 2000 + index * 300);
 
@@ -67,7 +66,7 @@ function AnimatedAchievementCard({ card, index, styles }: { card: AchievementCar
   );
 }
 
-function AnimatedLangProgressBar({ pct, primaryColor, delay, styles }: { pct: number; primaryColor: string; delay: number; styles: ProfileStyles }) {
+function AnimatedLangProgressBar({ pct, primaryColor, delay, styles }: Readonly<{ pct: number; primaryColor: string; delay: number; styles: ProfileStyles }>) {
   const barStyle = useProgressBar(Math.max(pct, 10), 1000, delay);
   return (
     <View style={[styles.langBar, { backgroundColor: primaryColor + '15' }]}>
@@ -75,6 +74,43 @@ function AnimatedLangProgressBar({ pct, primaryColor, delay, styles }: { pct: nu
     </View>
   );
 }
+
+const computeQuizStats = (quizAttempts: any[] | null) => {
+  const totalQuizzes = quizAttempts?.length || 0;
+  const perfectScores = quizAttempts?.filter(q => (q.score / q.total_questions) >= 0.9).length || 0;
+  const avgScore =
+    totalQuizzes > 0
+      ? Math.round(
+          quizAttempts!.reduce((sum, a) => sum + (a.score / a.total_questions) * 100, 0) /
+            totalQuizzes
+        )
+      : 0;
+  return { totalQuizzes, perfectScores, avgScore };
+};
+
+const computeStreak = (stories: any[] | null) => {
+  if (!stories || stories.length === 0) return 0;
+  const uniqueDays = new Set(
+    stories.map(s => new Date(s.generated_at || s.created_at).toDateString())
+  );
+  const sortedDays = Array.from(uniqueDays)
+    .map(d => new Date(d as string).getTime())
+    .sort((a, b) => b - a);
+  const todayMs = new Date(new Date().toDateString()).getTime();
+  const dayMs = 86400000;
+  const startMs = sortedDays[0] === todayMs ? todayMs : (sortedDays[0] === todayMs - dayMs ? todayMs - dayMs : null);
+  if (startMs === null) return 0;
+  let count = 0;
+  for (let i = 0; i < sortedDays.length; i++) {
+    const expected = startMs - i * dayMs;
+    if (sortedDays[i] === expected) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  return count;
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -91,42 +127,8 @@ export default function ProfileScreen() {
   const avatarPulseStyle = usePulse(0.97, 1.03);
   const streakPinPulseStyle = usePulse(0.92, 1.1);
 
-  const stats = useMemo(() => {
-    const totalQuizzes = quizAttempts?.length || 0;
-    const perfectScores = quizAttempts?.filter(q => (q.score / q.total_questions) >= 0.9).length || 0;
-    const avgScore =
-      totalQuizzes > 0
-        ? Math.round(
-            quizAttempts.reduce((sum, a) => sum + (a.score / a.total_questions) * 100, 0) /
-              totalQuizzes
-          )
-        : 0;
-    return { totalQuizzes, perfectScores, avgScore };
-  }, [quizAttempts]);
-
-  const streak = useMemo(() => {
-    if (!stories || stories.length === 0) return 0;
-    const uniqueDays = new Set(
-      stories.map(s => new Date(s.generated_at || s.created_at).toDateString())
-    );
-    const sortedDays = Array.from(uniqueDays)
-      .map(d => new Date(d as string).getTime())
-      .sort((a, b) => b - a);
-    const todayMs = new Date(new Date().toDateString()).getTime();
-    const dayMs = 86400000;
-    const startMs = sortedDays[0] === todayMs ? todayMs : (sortedDays[0] === todayMs - dayMs ? todayMs - dayMs : null);
-    if (startMs === null) return 0;
-    let count = 0;
-    for (let i = 0; i < sortedDays.length; i++) {
-      const expected = startMs - i * dayMs;
-      if (sortedDays[i] === expected) {
-        count++;
-      } else {
-        break;
-      }
-    }
-    return count;
-  }, [stories]);
+  const stats = useMemo(() => computeQuizStats(quizAttempts), [quizAttempts]);
+  const streak = useMemo(() => computeStreak(stories), [stories]);
 
   const recentQuizzes = useMemo(() => (quizAttempts || []).slice(0, 5), [quizAttempts]);
 
@@ -203,7 +205,7 @@ export default function ProfileScreen() {
         }
       >
 
-        {/* ── Hero Glasmorphic Banner ── */}
+        {/* Hero Glasmorphic Banner */}
         <Animated.View entering={FadeInDown.delay(200).springify()}>
           <View style={[styles.heroGlass, { backgroundColor: COLORS.cardBackground + '73', borderColor: COLORS.text.light + '20' }]}>
             <LinearGradient
@@ -265,7 +267,7 @@ export default function ProfileScreen() {
           </View>
         </Animated.View>
 
-        {/* ── Section: Achievements ── */}
+        {/* Section: Achievements */}
         <Animated.View entering={FadeInDown.delay(300).springify()}>
           <View style={styles.sectionHead}>
             <Text style={styles.sectionEmoji}>🎖️</Text>
@@ -282,7 +284,7 @@ export default function ProfileScreen() {
           </View>
         </Animated.View>
 
-        {/* ── Quiz history ── */}
+        {/* Quiz history */}
         {(recentQuizzes?.length || 0) > 0 && (
           <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.section}>
             <View style={styles.sectionHead}>
@@ -338,7 +340,7 @@ export default function ProfileScreen() {
           </Animated.View>
         )}
 
-        {/* ── Languages ── */}
+        {/* Languages */}
         {(profile.languages?.length || 0) > 0 && (
           <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.section}>
             <View style={styles.sectionHead}>
@@ -370,7 +372,7 @@ export default function ProfileScreen() {
           </Animated.View>
         )}
 
-        {/* ── XP / Streak Card ── */}
+        {/* XP / Streak Card */}
         <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.section}>
           <TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/(tabs)')}>
             <LinearGradient

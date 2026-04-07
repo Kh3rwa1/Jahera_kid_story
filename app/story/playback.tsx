@@ -8,7 +8,6 @@ StyleSheet,
 Text,
 TouchableOpacity,
 View,
-useWindowDimensions,
 } from 'react-native';
 import Animated,{ SlideInDown } from 'react-native-reanimated';
 import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';

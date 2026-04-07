@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import { useMemo, memo, ReactNode } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Play, Sparkles, TrendingUp } from 'lucide-react-native';
 import { useEntranceSequence, useSpringPress } from '@/utils/animations';
@@ -8,7 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 interface QuickActionItemProps {
   item: { 
-    icon: React.ReactNode; 
+    icon: ReactNode; 
     label: string; 
     sublabel: string; 
     grad: readonly [string, string, ...string[]]; 
@@ -20,7 +20,7 @@ interface QuickActionItemProps {
   styles: any;
 }
 
-const QuickActionItem = React.memo(({ item, index, styles }: QuickActionItemProps) => {
+const QuickActionItem = memo(({ item, index, styles }: QuickActionItemProps) => {
   const entranceStyle = useEntranceSequence(index, 160, 60);
   const { style: pressStyle, onPressIn, onPressOut } = useSpringPress();
 
@@ -59,7 +59,7 @@ interface QuickActionsProps {
   styles: any;
 }
 
-export const QuickActions = React.memo(({ 
+export const QuickActions = memo(({ 
   handleLastStory, 
   handleGenerateStory, 
   storiesCount, 

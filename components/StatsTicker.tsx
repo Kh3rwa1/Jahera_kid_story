@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import { useCallback, useRef, memo } from 'react';
 import { View, Text } from 'react-native';
 import Animated, {
   FadeInDown,
@@ -22,7 +22,7 @@ interface StatsTickerProps {
   styles: any;
 }
 
-export const StatsTicker = React.memo(({ 
+export const StatsTicker = memo(({ 
   stories, 
   languages, 
   characters, 

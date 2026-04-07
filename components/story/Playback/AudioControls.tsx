@@ -13,17 +13,16 @@ TouchableOpacity,
 useWindowDimensions,
 View,
 } from 'react-native';
-import Animated,{
-cancelAnimation,
-Easing,
-interpolate,
-SharedValue,
-useAnimatedStyle,
-useSharedValue,
-withRepeat,
-withSequence,
-withSpring,
-withTiming,
+import Animated, {
+  cancelAnimation,
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 interface AudioControlsProps {

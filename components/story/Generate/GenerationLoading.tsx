@@ -40,12 +40,7 @@ interface GenerationLoadingProps {
 export function GenerationLoading({
   colors, status, progress, steps, locationCtx, languageCode, profile
 }: Readonly<GenerationLoadingProps>) {
-  const { width: winWidth } = Dimensions.get('window');
-  
   const [funFactIndex, setFunFactIndex] = useState(0);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlayingFact, setIsPlayingFact] = useState(false);
-  
   const pulseScale = useSharedValue(1);
   const orbRotate = useSharedValue(0);
 
@@ -93,7 +88,6 @@ export function GenerationLoading({
     const playFact = async () => {
       const text = FUN_FACTS[funFactIndex];
       try {
-        setIsPlayingFact(true);
         const url = await generateAudio(text, languageCode, undefined, true);
         if (!url || !mounted) return;
 
@@ -108,15 +102,14 @@ export function GenerationLoading({
         }
 
         activeSound = newSound;
-        setSound(newSound);
 
         newSound.setOnPlaybackStatusUpdate((status) => {
           if (status.isLoaded && status.didJustFinish) {
-            setIsPlayingFact(false);
+            // Fact finished
           }
         });
       } catch (e) {
-        if (mounted) setIsPlayingFact(false);
+        if (mounted) {}
       }
     };
 

@@ -143,11 +143,12 @@ export default function QuizScreen() {
       const pct = Math.round((finalScore / questions.length) * 100);
       const isPerfect = pct === 100;
       const isGreat = pct >= 66;
-      const msg = isPerfect
-        ? 'Perfect Score! You are a genius!'
-        : isGreat
-        ? "Great Work! You're a superstar!"
-        : 'Good Effort! Keep practicing!';
+      let msg = 'Good Effort! Keep practicing!';
+      if (isPerfect) {
+        msg = 'Perfect Score! You are a genius!';
+      } else if (isGreat) {
+        msg = "Great Work! You're a superstar!";
+      }
       const timer = setTimeout(() => talkative.speak(msg, story?.language_code || 'en'), 1000);
       return () => clearTimeout(timer);
     }
@@ -326,14 +327,22 @@ export default function QuizScreen() {
     const pct = Math.round((finalScore / questions.length) * 100);
     const isPerfect = pct === 100;
     const isGreat = pct >= 66;
-    const resultEmoji = isPerfect ? '🏆' : isGreat ? '🌟' : '💪';
-    const resultTitle = isPerfect ? 'PERFECT!' : isGreat ? 'GREAT JOB!' : 'GOOD TRY!';
-    const resultSub = isPerfect
-      ? "You got every answer right! You're a genius! 🎉"
-      : isGreat
-      ? "Amazing work! You're on a roll! 🚀"
-      : "Every try makes you smarter! 🧠✨";
-    const resultGradient = isPerfect ? C.gradients.success : isGreat ? C.gradients.primary : C.gradients.secondary;
+    let resultEmoji = '💪';
+    let resultTitle = 'GOOD TRY!';
+    let resultSub = "Every try makes you smarter! 🧠✨";
+    let resultGradient = C.gradients.secondary;
+
+    if (isPerfect) {
+      resultEmoji = '🏆';
+      resultTitle = 'PERFECT!';
+      resultSub = "You got every answer right! You're a genius! 🎉";
+      resultGradient = C.gradients.success;
+    } else if (isGreat) {
+      resultEmoji = '🌟';
+      resultTitle = 'GREAT JOB!';
+      resultSub = "Amazing work! You're on a roll! 🚀";
+      resultGradient = C.gradients.primary;
+    }
 
     return (
       <LinearGradient colors={C.backgroundGradient} style={styles.fill}>
@@ -486,6 +495,55 @@ export default function QuizScreen() {
             const isFaded = selectedAnswer !== null && !isSelected && !answer.is_correct;
             const label = ['A', 'B', 'C', 'D'][idx] ?? answer.answer_order;
 
+            let answerContent;
+            if (showCorrect) {
+              answerContent = (
+                <LinearGradient
+                  colors={C.gradients.success}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={[styles.answerCard, styles.answerCardActive]}
+                >
+                  <View style={styles.answerIconWrap}>
+                    <CheckCircle2 size={40} color="#fff" strokeWidth={2.5} />
+                  </View>
+                  <Text style={[styles.answerText, { color: '#fff', fontFamily: FONTS.displayBold }]}>
+                    {answer.answer_text}
+                  </Text>
+                </LinearGradient>
+              );
+            } else if (showWrong) {
+              answerContent = (
+                <LinearGradient
+                  colors={[C.error, C.error + 'CC']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={[styles.answerCard, styles.answerCardActive]}
+                >
+                  <View style={styles.answerIconWrap}>
+                    <XCircle size={40} color="#fff" strokeWidth={2.5} />
+                  </View>
+                  <Text style={[styles.answerText, { color: '#fff', fontFamily: FONTS.displayBold }]}>
+                    {answer.answer_text}
+                  </Text>
+                </LinearGradient>
+              );
+            } else {
+              answerContent = (
+                <View style={[styles.answerCard, styles.answerCardDefault, { backgroundColor: C.cardBackground, borderColor: isSelected ? C.primary : C.glass.border }]}>
+                  <LinearGradient
+                    colors={isSelected ? C.gradients.primary : [C.primary + '22', C.primary + '0C']}
+                    style={styles.answerLabelBadge}
+                  >
+                    <Text style={[styles.answerLabelText, { color: isSelected ? '#fff' : C.primary, fontFamily: FONTS.display }]}>
+                      {label}
+                    </Text>
+                  </LinearGradient>
+                  <Text style={[styles.answerText, { color: C.text.primary, fontFamily: FONTS.displayBold }]}>
+                    {answer.answer_text}
+                  </Text>
+                </View>
+              );
+            }
+
             return (
               <Animated.View
                 key={answer.id}
@@ -497,47 +555,7 @@ export default function QuizScreen() {
                   disabled={selectedAnswer !== null}
                   style={({ pressed }) => [{ flex: 1, transform: [{ scale: pressed && !selectedAnswer ? 0.97 : 1 }] }]}
                 >
-                  {showCorrect ? (
-                    <LinearGradient
-                      colors={C.gradients.success}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                      style={[styles.answerCard, styles.answerCardActive]}
-                    >
-                      <View style={styles.answerIconWrap}>
-                        <CheckCircle2 size={40} color="#fff" strokeWidth={2.5} />
-                      </View>
-                      <Text style={[styles.answerText, { color: '#fff', fontFamily: FONTS.displayBold }]}>
-                        {answer.answer_text}
-                      </Text>
-                    </LinearGradient>
-                  ) : showWrong ? (
-                    <LinearGradient
-                      colors={[C.error, C.error + 'CC']}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                      style={[styles.answerCard, styles.answerCardActive]}
-                    >
-                      <View style={styles.answerIconWrap}>
-                        <XCircle size={40} color="#fff" strokeWidth={2.5} />
-                      </View>
-                      <Text style={[styles.answerText, { color: '#fff', fontFamily: FONTS.displayBold }]}>
-                        {answer.answer_text}
-                      </Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={[styles.answerCard, styles.answerCardDefault, { backgroundColor: C.cardBackground, borderColor: isSelected ? C.primary : C.glass.border }]}>
-                      <LinearGradient
-                        colors={isSelected ? C.gradients.primary : [C.primary + '22', C.primary + '0C']}
-                        style={styles.answerLabelBadge}
-                      >
-                        <Text style={[styles.answerLabelText, { color: isSelected ? '#fff' : C.primary, fontFamily: FONTS.display }]}>
-                          {label}
-                        </Text>
-                      </LinearGradient>
-                      <Text style={[styles.answerText, { color: C.text.primary, fontFamily: FONTS.displayBold }]}>
-                        {answer.answer_text}
-                      </Text>
-                    </View>
-                  )}
+                  {answerContent}
                 </Pressable>
               </Animated.View>
             );
@@ -609,6 +627,16 @@ export default function QuizScreen() {
 }
 
 function useStyles(C: any, winWidth: number, winHeight: number, isTablet: boolean, insets: any) {
+  let qFontSize = 40;
+  let qLineHeight = 52;
+  if (isTablet) {
+    qFontSize = 44;
+    qLineHeight = 56;
+  } else if (winHeight < 700) {
+    qFontSize = 32;
+    qLineHeight = 42;
+  }
+
   return useMemo(() => StyleSheet.create({
     fill: { flex: 1 },
 
@@ -699,8 +727,8 @@ function useStyles(C: any, winWidth: number, winHeight: number, isTablet: boolea
       borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
     },
     questionText: {
-      fontSize: isTablet ? 44 : winHeight < 700 ? 32 : 40,
-      lineHeight: isTablet ? 56 : winHeight < 700 ? 42 : 52,
+      fontSize: qFontSize,
+      lineHeight: qLineHeight,
       letterSpacing: -0.5,
     },
 

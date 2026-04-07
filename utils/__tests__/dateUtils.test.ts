@@ -98,7 +98,7 @@ describe('getSeasonPalette', () => {
 
   // Edge case / error tests
   it('handles undefined season and theme', () => {
-    const palette = getSeasonPalette(undefined, undefined, undefined);
+    const palette = getSeasonPalette(undefined);
     expect(palette.emoji).toBe('📖');
     expect(palette.colors).toHaveLength(3);
   });
