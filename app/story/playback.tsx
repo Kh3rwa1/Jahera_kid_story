@@ -166,7 +166,6 @@ export default function StoryPlaybackScreen() {
       {showCinematicIntro && (
         <CinematicIntro 
           story={story}
-          videoUri={null} // Caching handled in hook
           audioPolling={audioPolling}
           isBuffering={isBuffering}
           onDismiss={dismissCinematicIntro}

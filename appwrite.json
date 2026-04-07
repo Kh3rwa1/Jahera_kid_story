@@ -38,5 +38,7 @@
             ],
             "path": "appwrite/functions/generate-audio"
         }
-    ]
+    ],
+    "tablesDB": [],
+    "tables": []
 }

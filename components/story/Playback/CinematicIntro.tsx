@@ -1,20 +1,18 @@
+import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 import { FONTS,SPACING } from '@/constants/theme';
 import { Story } from '@/types/database';
-import { VideoView,useVideoPlayer } from 'expo-video';
 import { BookOpen,Sparkles } from 'lucide-react-native';
 import {
-  Platform,
 StyleSheet,
 Text,
 TouchableOpacity,
 View
 } from 'react-native';
-import Animated,{ FadeIn,FadeInUp } from 'react-native-reanimated';
+import Animated,{ FadeIn,FadeInUp,useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CinematicIntroProps {
   story: Story | null;
-  videoUri: string | null;
   audioPolling: boolean;
   isBuffering: boolean;
   onDismiss: () => void;
@@ -23,7 +21,6 @@ interface CinematicIntroProps {
 
 export function CinematicIntro({
   story,
-  videoUri,
   audioPolling,
   isBuffering,
   onDismiss,
@@ -31,28 +28,17 @@ export function CinematicIntro({
 }: Readonly<CinematicIntroProps>) {
   const insets = useSafeAreaInsets();
 
-  const player = useVideoPlayer(videoUri ?? '', p => {
-    if (videoUri) {
-      p.loop = true;
-      p.muted = true;
-      p.play();
-    }
-  });
-
-  const animatedStyle = {
+  const animatedStyle = useAnimatedStyle(() => ({
     opacity: introOpacity.value,
-  };
+  }));
 
   return (
     <Animated.View style={[StyleSheet.absoluteFill, animatedStyle, { backgroundColor: '#000' }]}>
-      <VideoView
-        player={player}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        nativeControls={false}
-        {...(Platform.OS === 'android' ? { surfaceType: 'textureView' } : {})}
+      <BrandVideoBackground
+        videoId="onboarding_video"
+        fallbackSource={require('@/assets/jahera.mp4')}
+        overlayOpacity={0.45}
       />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }]} />
 
       {story ? (
         <Animated.View
@@ -92,7 +78,7 @@ export function CinematicIntro({
               </>
             ) : (
               <>
-                <View style={[styles.dot, { backgroundColor: '#4ADE80' } ]} />
+                <View style={[styles.dot, { backgroundColor: '#4ADE80' }]} />
                 <Text style={styles.statusText}>✨ Audio ready</Text>
               </>
             )}
