@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeInDown, FadeInUp, ZoomIn, FadeIn,
   useSharedValue, useAnimatedStyle, withSpring, interpolate,
@@ -52,9 +52,19 @@ const PAGE_PADDING = 20;
 
 type SortOption = 'newest' | 'oldest' | 'language';
 type ViewMode = 'grid' | 'list';
+type ThemeColors = ReturnType<typeof useTheme>['currentTheme']['colors'];
+type StoryItem = ReturnType<typeof useApp>['stories'][number];
+type SeasonPalette = ReturnType<typeof getSeasonPalette>;
+type HistoryStyles = ReturnType<typeof useStyles>;
 
 function AnimatedFilterChip({ label, flag, active, COLORS, styles, onPress, index }: {
-  label: string; flag?: string; active: boolean; COLORS: any; styles: any; onPress: () => void; index: number;
+  label: string;
+  flag?: string;
+  active: boolean;
+  COLORS: ThemeColors;
+  styles: HistoryStyles;
+  onPress: () => void;
+  index: number;
 }) {
   const scale = useSharedValue(active ? 1.05 : 1);
   const entrance = useEntranceSequence(index, 140, 50);
@@ -94,7 +104,23 @@ function AnimatedFilterChip({ label, flag, active, COLORS, styles, onPress, inde
   );
 }
 
-const AnimatedStoryGridCard = React.memo(function AnimatedStoryGridCard({ story, idx, palette, onPress, onLongPress, COLORS, styles }: any) {
+const AnimatedStoryGridCard = React.memo(function AnimatedStoryGridCard({
+  story,
+  idx,
+  palette,
+  onPress,
+  onLongPress,
+  COLORS,
+  styles,
+}: {
+  story: StoryItem;
+  idx: number;
+  palette: SeasonPalette;
+  onPress: () => void;
+  onLongPress: () => void;
+  COLORS: ThemeColors;
+  styles: HistoryStyles;
+}) {
   const entrance = useEntranceSequence(idx, 60, 40);
   const { style: springStyle, onPressIn, onPressOut } = useSpringPress();
 
@@ -575,7 +601,7 @@ export default function HistoryScreen() {
   );
 }
 
-const useStyles = (C: any, insets: any, isTablet: boolean, isDesktop: boolean, winWidth: number) => {
+const useStyles = (C: ThemeColors, insets: EdgeInsets, isTablet: boolean, isDesktop: boolean, winWidth: number) => {
   return useMemo(() => {
     const PADDING = isTablet ? 32 : 20;
     const GAP = isTablet ? 16 : 12;
