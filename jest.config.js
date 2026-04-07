@@ -1,6 +1,13 @@
 module.exports = {
   preset: 'jest-expo',
-  setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
+  moduleNameMapper: {
+    '^node-appwrite$': '<rootDir>/jest.setup.js',
+    '^react-native-reanimated$': require.resolve('react-native-reanimated/mock'),
+  },
+  setupFilesAfterEnv: [
+    '@testing-library/jest-native/extend-expect',
+    '<rootDir>/jest.setup.js'
+  ],
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|lucide-react-native|react-native-appwrite)',
   ],
@@ -11,14 +18,25 @@ module.exports = {
     '!**/node_modules/**',
     '!**/babel.config.js',
     '!**/jest.setup.js',
+    '!**/infrastructure-scripts/**',
+    '!**/appwrite/**',
+  ],
+  roots: [
+    '<rootDir>/app',
+    '<rootDir>/components',
+    '<rootDir>/hooks',
+    '<rootDir>/services',
+    '<rootDir>/utils',
+    '<rootDir>/contexts',
+    '<rootDir>/constants',
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
-    '<rootDir>/appwrite-init.js',
-    '<rootDir>/test-.*\\.js',
+    '<rootDir>/infrastructure-scripts/',
     '<rootDir>/appwrite/',
-    '<rootDir>/diagnose-appwrite.js',
-    '<rootDir>/get-executions.js',
-    '<rootDir>/appwrite-config-setup.js'
+  ],
+  modulePathIgnorePatterns: [
+    '<rootDir>/infrastructure-scripts/',
+    '<rootDir>/appwrite/',
   ],
 };

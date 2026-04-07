@@ -122,7 +122,7 @@ export default function HomeScreen() {
           setContinueStory(null);
         }
       } catch (e) {
-        console.warn('[home] Error checking story progress:', e);
+        // Silent fail for progress check to avoid UI noise
       }
     };
 

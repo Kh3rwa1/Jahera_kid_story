@@ -16,6 +16,7 @@ Text,
 View
 } from 'react-native';
 import Animated,{
+cancelAnimation,
 FadeInUp,
 Easing as ReEasing,
 useAnimatedStyle,
@@ -70,6 +71,8 @@ export function GenerationLoading({
 
     return () => {
       clearInterval(factInterval);
+      cancelAnimation(orbRotate);
+      cancelAnimation(pulseScale);
     };
   }, [orbRotate, pulseScale]);
 

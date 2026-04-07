@@ -28,7 +28,7 @@ function hslToHex(h: number, s: number, l: number): string {
 const HEX_COLOR_REGEX = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
 
 function hexToHsl(hex: string): [number, number, number] {
-  const result = HEX_COLOR_REGEX.exec(hex);
+  const result = hex.match(HEX_COLOR_REGEX);
   if (!result) return [0, 70, 50];
   let r = Number.parseInt(result[1], 16) / 255;
   let g = Number.parseInt(result[2], 16) / 255;
