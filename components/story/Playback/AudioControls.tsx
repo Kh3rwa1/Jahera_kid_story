@@ -4,7 +4,7 @@ import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BookOpen,Pause,Play,SkipBack,SkipForward } from 'lucide-react-native';
-import React,{ useEffect } from 'react';
+import { useEffect } from 'react';
 import {
 ActivityIndicator,
 StyleSheet,

@@ -2,7 +2,6 @@ import { FONTS,SPACING } from '@/constants/theme';
 import { Story } from '@/types/database';
 import { VideoView,useVideoPlayer } from 'expo-video';
 import { BookOpen,Sparkles } from 'lucide-react-native';
-import React from 'react';
 import {
 Dimensions,
 Platform,

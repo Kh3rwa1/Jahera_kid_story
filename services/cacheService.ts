@@ -68,6 +68,7 @@ class CacheService {
 
     if (expiredKeys.length === 0) return;
 
+    // ⚡ Batch-safe: forEach operates on in-memory Map only; storage uses multiRemove below
     expiredKeys.forEach((key) => this.memoryCache.delete(key));
 
     try {
@@ -119,6 +120,7 @@ class CacheService {
 
     if (keysToEvict.length === 0) return;
 
+    // ⚡ Batch-safe: forEach operates on in-memory Map only; storage uses multiRemove below
     keysToEvict.forEach(key => this.memoryCache.delete(key));
 
     try {
@@ -257,6 +259,7 @@ class CacheService {
 
     // Clear memory cache
     const memoryKeys = Array.from(this.memoryCache.keys());
+    // ⚡ Batch-safe: forEach operates on in-memory Map only; storage uses multiRemove below
     memoryKeys.forEach((key) => {
       if (key.startsWith(prefix)) {
         this.memoryCache.delete(key);

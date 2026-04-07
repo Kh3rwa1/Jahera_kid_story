@@ -8,7 +8,7 @@ import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import { Check,MapPin,Sparkles } from 'lucide-react-native';
-import React,{ useEffect,useState } from 'react';
+import { useEffect,useState } from 'react';
 import {
 Dimensions,
 StyleSheet,
