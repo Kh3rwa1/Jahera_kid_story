@@ -1,14 +1,14 @@
-import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-  interpolate,
-} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import React,{ useEffect } from 'react';
+import { StyleSheet } from 'react-native';
+import Animated,{
+Easing,
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withRepeat,
+withTiming,
+} from 'react-native-reanimated';
 
 interface ShimmerEffectProps {
   width?: number | string;

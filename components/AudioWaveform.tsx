@@ -1,14 +1,14 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
 import { COLORS } from '@/constants/theme';
+import React,{ useEffect } from 'react';
+import { StyleSheet,View } from 'react-native';
+import Animated,{
+Easing,
+useAnimatedStyle,
+useSharedValue,
+withRepeat,
+withSequence,
+withTiming,
+} from 'react-native-reanimated';
 
 interface WaveBarProps {
   color: string;
@@ -16,7 +16,7 @@ interface WaveBarProps {
   isPlaying: boolean;
 }
 
-const WaveBar = ({ color, index, isPlaying }: WaveBarProps) => {
+const WaveBar = ({ color, index, isPlaying }: Readonly<WaveBarProps>) => {
   const scaleY = useSharedValue(0.3);
 
   useEffect(() => {

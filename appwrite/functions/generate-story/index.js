@@ -1,5 +1,5 @@
-const https = require('https');
-const url = require('url');
+const https = require('node:https');
+const url = require('node:url');
 const { Client, Databases, Query } = require('node-appwrite');
 
 /**
@@ -180,7 +180,7 @@ function parseStoryJson(raw) {
   return { ...story, quiz: validQuiz };
 }
 
-module.exports = async ({ req, res, log, error }) => {
+async function generateStoryHandler({ req, res, log, error }) {
   try {
     let body = {};
     if (req.body) {
@@ -382,3 +382,5 @@ module.exports = async ({ req, res, log, error }) => {
     return res.json({ error: err.message }, 500);
   }
 };
+
+module.exports = generateStoryHandler;

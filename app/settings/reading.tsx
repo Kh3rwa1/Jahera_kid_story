@@ -1,19 +1,19 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
-import { ArrowLeft, RotateCcw, Check } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/contexts/ThemeContext';
+import { BORDER_RADIUS,FONTS,FONT_SIZES,SHADOWS,SPACING } from '@/constants/theme';
 import {
-  useReadingPreferences,
-  LINE_SPACING_VALUES,
-  FONT_FAMILY_VALUES,
-  LineSpacing,
-  TextAlign,
-  FontFamily,
+FONT_FAMILY_VALUES,
+FontFamily,
+LINE_SPACING_VALUES,
+LineSpacing,
+TextAlign,
+useReadingPreferences,
 } from '@/contexts/ReadingPreferencesContext';
-import { SPACING, BORDER_RADIUS, FONTS, FONT_SIZES, SHADOWS } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { hapticFeedback } from '@/utils/haptics';
+import { useRouter } from 'expo-router';
+import { ArrowLeft,Check,RotateCcw } from 'lucide-react-native';
+import React from 'react';
+import { ScrollView,StyleSheet,Text,TouchableOpacity,View,useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const PREVIEW_TEXT =
   "Once upon a time, in a forest filled with sparkling fireflies, a young child discovered a hidden door between two ancient oak trees. Behind it lay a world of wonders waiting to be explored.";

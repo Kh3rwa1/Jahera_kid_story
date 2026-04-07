@@ -37,9 +37,9 @@ function darkenColor(hex: string, amount: number): string {
   const base = hex.replace('#', '');
   
   // Convert to RGB
-  let r = parseInt(base.substring(0, 2), 16);
-  let g = parseInt(base.substring(2, 4), 16);
-  let b = parseInt(base.substring(4, 6), 16);
+  let r = Number.parseInt(base.substring(0, 2), 16);
+  let g = Number.parseInt(base.substring(2, 4), 16);
+  let b = Number.parseInt(base.substring(4, 6), 16);
 
   // Darken each channel
   r = Math.floor(Math.max(0, r * (1 - amount)));
@@ -74,7 +74,7 @@ export function getSeasonPalette(
       base,
       darkenColor(base, 0.12),
       darkenColor(base, 0.24)
-    ] as const as readonly [string, string, string],
+    ] as readonly [string, string, string],
     accent: darkenColor(base, 0.35),
     emoji: '📖'
   };

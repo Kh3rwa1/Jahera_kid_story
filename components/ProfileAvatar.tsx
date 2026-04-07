@@ -1,9 +1,9 @@
-import { View, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { ZoomIn } from 'react-native-reanimated';
-import { Camera } from 'lucide-react-native';
+import { FONTS,SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
-import { SHADOWS } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Camera } from 'lucide-react-native';
+import { ActivityIndicator,Image,StyleSheet,TouchableOpacity,View } from 'react-native';
+import Animated,{ ZoomIn } from 'react-native-reanimated';
 
 interface ProfileAvatarProps {
   avatarUrl?: string | null;
@@ -27,7 +27,7 @@ export function ProfileAvatar({
   editable = false,
   onPress,
   isUploading = false,
-}: ProfileAvatarProps) {
+}: Readonly<ProfileAvatarProps>) {
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
   const dims = SIZE_MAP[size];

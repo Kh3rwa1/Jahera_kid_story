@@ -1,42 +1,39 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { Redirect } from 'expo-router';
-import {
-  View,
-  Text,
-  StyleSheet,
-  StatusBar,
-  Pressable,
-  useWindowDimensions,
-  Platform,
-  Image,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { BookOpen, Mic as Mic2, Zap, ChevronRight } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS, SHADOWS } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { useApp } from '@/contexts/AppContext';
-import Animated, {
-  useAnimatedStyle,
-  withSpring,
-  withRepeat,
-  withSequence,
-  useSharedValue,
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  ZoomIn,
-  withTiming,
-  Easing,
-  interpolate,
-  withDelay,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
-import { logger } from '@/utils/logger';
-import { ThemeColors, EdgeInsets } from '@/types/theme';
+import { BORDER_RADIUS,FONTS,SPACING } from '@/constants/theme';
+import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { EdgeInsets,ThemeColors } from '@/types/theme';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Redirect,useRouter } from 'expo-router';
+import { BookOpen,ChevronRight,Mic as Mic2,Zap } from 'lucide-react-native';
+import { useEffect,useMemo,useRef } from 'react';
+import {
+Image,
+Platform,
+Pressable,
+StatusBar,
+StyleSheet,
+Text,
+useWindowDimensions,
+View,
+} from 'react-native';
+import Animated,{
+Easing,
+FadeIn,
+FadeInDown,
+FadeInUp,
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withDelay,
+withRepeat,
+withSequence,
+withSpring,
+withTiming
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

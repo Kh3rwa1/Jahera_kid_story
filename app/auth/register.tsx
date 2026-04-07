@@ -1,26 +1,26 @@
-import { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  StatusBar,
-  ScrollView,
-  Image,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Sparkles, Mail, Lock, User, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS, FONTS } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useAuth } from '@/contexts/AuthContext';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
+import { BORDER_RADIUS,FONT_SIZES,FONTS,SPACING } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { ArrowLeft,ArrowRight,Eye,EyeOff,Lock,Mail,User } from 'lucide-react-native';
+import { useMemo,useState } from 'react';
+import {
+ActivityIndicator,
+Image,
+KeyboardAvoidingView,
+Platform,
+ScrollView,
+StatusBar,
+StyleSheet,
+Text,
+TextInput,
+TouchableOpacity,
+View,
+} from 'react-native';
+import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Register() {
   const router = useRouter();

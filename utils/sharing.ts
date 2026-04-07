@@ -1,5 +1,5 @@
-import { Platform, Alert, Clipboard } from 'react-native';
 import { analytics } from '@/services/analyticsService';
+import { Alert,Platform } from 'react-native';
 
 const webShare = async (text: string, title: string): Promise<boolean> => {
   if (typeof navigator !== 'undefined' && navigator.share) {

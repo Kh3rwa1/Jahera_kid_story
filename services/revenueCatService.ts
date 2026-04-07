@@ -1,5 +1,5 @@
-import { Platform } from 'react-native';
 import { logger } from '@/utils/logger';
+import { Platform } from 'react-native';
 
 let Purchases: any = null;
 let PurchasesPackage: any = null;

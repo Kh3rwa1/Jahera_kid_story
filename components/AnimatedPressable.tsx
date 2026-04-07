@@ -1,10 +1,10 @@
-import React, { ReactNode } from 'react';
-import { TouchableOpacity, ViewStyle, StyleProp } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
+import React,{ ReactNode } from 'react';
+import { StyleProp,TouchableOpacity,ViewStyle } from 'react-native';
+import Animated,{
+useAnimatedStyle,
+useSharedValue,
+withSequence,
+withSpring,
 } from 'react-native-reanimated';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -29,7 +29,7 @@ export function AnimatedPressable({
   scaleDown = 0.96,
   delayLongPress,
   disabled,
-}: AnimatedPressableProps) {
+}: Readonly<AnimatedPressableProps>) {
   const scale = useSharedValue(1);
 
   const animStyle = useAnimatedStyle(() => ({

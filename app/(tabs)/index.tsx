@@ -1,58 +1,53 @@
-import React, { useCallback, useMemo, useEffect, useRef } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  RefreshControl,
-  Text,
-  useWindowDimensions,
-  Dimensions,
-  Platform,
-  StyleProp,
-  ViewStyle,
-  TextStyle,
-} from 'react-native';
-import { useRouter, Redirect } from 'expo-router';
-import { useIsFocused } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Audio } from 'expo-av';
-import { generateAudio } from '@/services/audioService';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInRight,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-  withDelay,
-  withSpring,
-  Easing,
-  cancelAnimation,
-  interpolate,
-} from 'react-native-reanimated';
-import { useFloat, useEntranceSequence, useSpringPress, usePulse, useRotate } from '@/utils/animations';
+import { AnimatedPressable } from '@/components/AnimatedPressable';
+import { Container } from '@/components/Container';
+import { ErrorState } from '@/components/ErrorState';
 import { FloatingParticles } from '@/components/FloatingParticles';
-import { Sparkles, BookOpen, ChevronRight, Globe, Users, Volume2, Clock, Play, Shuffle, Settings, Crown, ArrowRight, Wand as Wand2, TrendingUp, Award } from 'lucide-react-native';
+import { LoadingSkeleton,Skeleton } from '@/components/LoadingSkeleton';
+import { MeshBackground } from '@/components/MeshBackground';
+import { BORDER_RADIUS,BREAKPOINTS,FONTS,LAYOUT,SHADOWS,SPACING } from '@/constants/theme';
 import { useApp } from '@/contexts/AppContext';
-import { useUI } from '@/contexts/UIContext';
 import { useAudio } from '@/contexts/AudioContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { BREAKPOINTS, LAYOUT, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
-import { LoadingSkeleton, Skeleton } from '@/components/LoadingSkeleton';
-import { ErrorState } from '@/components/ErrorState';
-import { getLanguageFlag } from '@/utils/languageUtils';
+import { useUI } from '@/contexts/UIContext';
+import { useEntranceSequence,useFloat,usePulse,useRotate,useSpringPress } from '@/utils/animations';
 import { getTimeOfDay } from '@/utils/contextUtils';
-import { AnimatedPressable } from '@/components/AnimatedPressable';
-import { ProfileAvatar } from '@/components/ProfileAvatar';
-import { getRelativeTime, getSeasonPalette } from '@/utils/dateUtils';
+import { getRelativeTime,getSeasonPalette } from '@/utils/dateUtils';
+import { getLanguageFlag } from '@/utils/languageUtils';
 import { talkative } from '@/utils/talkative';
-import { MeshBackground } from '@/components/MeshBackground';
-import { Container } from '@/components/Container';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIsFocused } from '@react-navigation/native';
+import { Audio } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Redirect,useRouter } from 'expo-router';
+import { ArrowRight,Award,BookOpen,ChevronRight,Clock,Crown,Globe,Play,Sparkles,TrendingUp,Users,Wand as Wand2 } from 'lucide-react-native';
+import React,{ useCallback,useEffect,useMemo,useRef } from 'react';
+import {
+Platform,
+RefreshControl,
+ScrollView,
+StyleProp,
+StyleSheet,
+Text,
+TextStyle,
+TouchableOpacity,
+View,
+ViewStyle,
+useWindowDimensions
+} from 'react-native';
+import Animated,{
+Easing,
+FadeIn,
+FadeInDown,
+FadeInRight,
+cancelAnimation,
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withRepeat,
+withSpring,
+withTiming
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DISCOVERY_TAGS = [
   { label: 'Space Adventure', emoji: '🚀', theme: 'Space' },
@@ -141,7 +136,7 @@ interface StatsTickerProps {
   styles: any;
 }
 
-function StatsTicker({ stories, languages, characters, primaryColor, cardBackground, textPrimary, textSecondary, styles }: StatsTickerProps) {
+function StatsTicker({ stories, languages, characters, primaryColor, cardBackground, textPrimary, textSecondary, styles }: Readonly<StatsTickerProps>) {
   const translateX = useSharedValue(0);
   const halfWidth = useSharedValue(0);
   const ready = useRef(false);

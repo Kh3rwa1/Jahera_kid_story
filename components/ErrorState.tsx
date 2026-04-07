@@ -1,12 +1,12 @@
+import { BORDER_RADIUS,COLORS,SPACING } from '@/constants/theme';
+import { useSlideInUp } from '@/utils/animations';
+import { AlertCircle,Home,RefreshCw,Server,WifiOff } from 'lucide-react-native';
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet,View } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { AlertCircle, RefreshCw, Home, WifiOff, Server } from 'lucide-react-native';
-import { Typography } from './Typography';
 import { PremiumButton } from './PremiumButton';
 import { PremiumCard } from './PremiumCard';
-import { COLORS, SPACING, BORDER_RADIUS } from '@/constants/theme';
-import { useSlideInUp } from '@/utils/animations';
+import { Typography } from './Typography';
 
 type ErrorType = 'network' | 'server' | 'notFound' | 'general';
 

@@ -1,43 +1,43 @@
-import { useEffect } from 'react';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useFonts } from 'expo-font';
-import {
-  Nunito_400Regular,
-  Nunito_500Medium,
-  Nunito_600SemiBold,
-  Nunito_700Bold,
-  Nunito_800ExtraBold,
-} from '@expo-google-fonts/nunito';
-import {
-  Merriweather_400Regular,
-  Merriweather_700Bold,
-} from '@expo-google-fonts/merriweather';
-import {
-  ComicNeue_400Regular,
-  ComicNeue_700Bold,
-} from '@expo-google-fonts/comic-neue';
-import {
-  AtkinsonHyperlegible_400Regular,
-  AtkinsonHyperlegible_700Bold,
-} from '@expo-google-fonts/atkinson-hyperlegible';
-import {
-  Baloo2_400Regular,
-  Baloo2_500Medium,
-  Baloo2_600SemiBold,
-  Baloo2_700Bold,
-  Baloo2_800ExtraBold,
-} from '@expo-google-fonts/baloo-2';
-import * as SplashScreen from 'expo-splash-screen';
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AppProvider } from '@/contexts/AppContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { AudioProvider } from '@/contexts/AudioContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ReadingPreferencesProvider } from '@/contexts/ReadingPreferencesContext';
-import { AudioProvider } from '@/contexts/AudioContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { revenueCatService } from '@/services/revenueCatService';
 import { videoCacheService } from '@/services/videoCacheService';
+import {
+AtkinsonHyperlegible_400Regular,
+AtkinsonHyperlegible_700Bold,
+} from '@expo-google-fonts/atkinson-hyperlegible';
+import {
+Baloo2_400Regular,
+Baloo2_500Medium,
+Baloo2_600SemiBold,
+Baloo2_700Bold,
+Baloo2_800ExtraBold,
+} from '@expo-google-fonts/baloo-2';
+import {
+ComicNeue_400Regular,
+ComicNeue_700Bold,
+} from '@expo-google-fonts/comic-neue';
+import {
+Merriweather_400Regular,
+Merriweather_700Bold,
+} from '@expo-google-fonts/merriweather';
+import {
+Nunito_400Regular,
+Nunito_500Medium,
+Nunito_600SemiBold,
+Nunito_700Bold,
+Nunito_800ExtraBold,
+} from '@expo-google-fonts/nunito';
+import { useFonts } from 'expo-font';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 
 SplashScreen.preventAutoHideAsync();
 

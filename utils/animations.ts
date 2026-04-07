@@ -1,18 +1,17 @@
+import { ANIMATION } from '@/constants/theme';
 import { useEffect } from 'react';
 import {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  withRepeat,
-  withSequence,
-  withDelay,
-  Easing,
-  interpolate,
-  SharedValue,
-  cancelAnimation,
+cancelAnimation,
+Easing,
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withDelay,
+withRepeat,
+withSequence,
+withSpring,
+withTiming
 } from 'react-native-reanimated';
-import { ANIMATION } from '@/constants/theme';
 
 export const useFadeIn = (duration = ANIMATION.normal, delay = 0) => {
   const opacity = useSharedValue(0);

@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-  interpolate,
-  cancelAnimation,
-} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import React,{ useEffect,useState } from 'react';
+import { StyleSheet } from 'react-native';
+import Animated,{
+cancelAnimation,
+Easing,
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withRepeat,
+withTiming,
+} from 'react-native-reanimated';
 
 type GradientSet = readonly [string, string, ...string[]];
 

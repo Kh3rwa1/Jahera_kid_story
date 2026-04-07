@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, useWindowDimensions, Animated as RNAnimated } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-  interpolate,
-} from 'react-native-reanimated';
+import { BORDER_RADIUS,SPACING } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import React,{ useEffect } from 'react';
+import { StyleSheet,useWindowDimensions,View } from 'react-native';
+import Animated,{
+Easing,
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withRepeat,
+withTiming,
+} from 'react-native-reanimated';
 
 interface SkeletonProps {
   width?: number | string;
@@ -27,7 +27,7 @@ export const Skeleton = ({
   style,
   color = '#E8E8E8',
   shimmerColor = 'rgba(255, 255, 255, 0.5)'
-}: SkeletonProps) => {
+}: Readonly<SkeletonProps>) => {
   const { width: winWidth } = useWindowDimensions();
   const shimmerProgress = useSharedValue(-1);
 

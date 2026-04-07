@@ -1,21 +1,21 @@
+import { BORDER_RADIUS,FONTS,SHADOWS } from '@/constants/theme';
+import { Plan } from '@/hooks/usePurchase';
+import { ThemeColors } from '@/types/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Check } from 'lucide-react-native';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
+StyleSheet,
+Text,
+TouchableOpacity,
+View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
+import Animated,{
+useAnimatedStyle,
+useSharedValue,
+withSequence,
+withSpring,
 } from 'react-native-reanimated';
-import { Check } from 'lucide-react-native';
-import { Plan } from '@/hooks/usePurchase';
-import { BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
-import { ThemeColors } from '@/types/theme';
 
 interface PlanCardProps {
   plan: Plan;
@@ -24,6 +24,7 @@ interface PlanCardProps {
   colors: ThemeColors;
 }
 
+export function PlanCard({ plan, selected, onSelect, colors }: Readonly<PlanCardProps>) {
 function PlanInfo({ plan, selected, colors, featured }: { plan: Plan; selected: boolean; colors: ThemeColors; featured?: boolean }) {
   return (
     <View style={styles.planInfo}>

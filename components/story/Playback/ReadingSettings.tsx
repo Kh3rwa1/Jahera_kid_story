@@ -1,23 +1,22 @@
+import { BORDER_RADIUS,FONTS,SPACING } from '@/constants/theme';
+import {
+FONT_FAMILY_VALUES,
+FontFamily,
+LineSpacing,
+useReadingPreferences
+} from '@/contexts/ReadingPreferencesContext';
+import { ThemeColors } from '@/types/theme';
+import { hapticFeedback } from '@/utils/haptics';
+import { Minus,Plus } from 'lucide-react-native';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+ScrollView,
+StyleSheet,
+Text,
+TouchableOpacity,
+View,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Minus, Plus, AlignLeft, TextAlignJustify as AlignJustify } from 'lucide-react-native';
-import { 
-  useReadingPreferences, 
-  LINE_SPACING_VALUES, 
-  FONT_FAMILY_VALUES,
-  FontFamily,
-  LineSpacing,
-} from '@/contexts/ReadingPreferencesContext';
-import { hapticFeedback } from '@/utils/haptics';
-import { FONTS, SPACING, BORDER_RADIUS } from '@/constants/theme';
-import { ThemeColors } from '@/types/theme';
+import Animated,{ FadeInDown } from 'react-native-reanimated';
 
 const FONT_FAMILIES: FontFamily[] = ['nunito', 'merriweather', 'comic-neue', 'atkinson'];
 const LINE_SPACINGS: LineSpacing[] = ['compact', 'normal', 'relaxed'];
@@ -27,7 +26,7 @@ interface ReadingSettingsProps {
   accentColor: string;
 }
 
-export function ReadingSettings({ colors, accentColor }: ReadingSettingsProps) {
+export function ReadingSettings({ colors, accentColor }: Readonly<ReadingSettingsProps>) {
   const { prefs, setFontSize, setFontFamily, setLineSpacing, setTextAlign } = useReadingPreferences();
 
   return (

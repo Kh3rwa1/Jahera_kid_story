@@ -1,5 +1,5 @@
-import { Client, Account, Databases, Storage, Functions, ID, Query } from 'react-native-appwrite';
 import { Platform } from 'react-native';
+import { Account,Client,Databases,Functions,Storage } from 'react-native-appwrite';
 
 const ENDPOINT = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || 'https://sfo.cloud.appwrite.io/v1';
 const PROJECT_ID = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || '69b5657c000d2c28a436';
@@ -44,4 +44,4 @@ export const STORAGE_BUCKETS = {
   APP_ASSETS: 'app_assets',
 } as const;
 
-export { ID, Query };
+export { ID, Query } from 'react-native-appwrite';

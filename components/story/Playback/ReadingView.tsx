@@ -1,21 +1,21 @@
-import React, { useRef, useMemo } from 'react';
+import { BORDER_RADIUS,FONTS,SPACING } from '@/constants/theme';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
-import { Sparkles } from 'lucide-react-native';
-import { splitIntoTokens, getScriptFontOverride } from '@/hooks/useWordHighlighting';
-import { FONTS, SPACING, BORDER_RADIUS } from '@/constants/theme';
-import { ThemeColors } from '@/types/theme';
-import { 
-  ReadingPrefs, 
-  LINE_SPACING_VALUES, 
-  FONT_FAMILY_VALUES,
-  LineSpacing,
-  FontFamily
+FONT_FAMILY_VALUES,
+FontFamily,
+LINE_SPACING_VALUES,
+LineSpacing,
+ReadingPrefs
 } from '@/contexts/ReadingPreferencesContext';
+import { getScriptFontOverride,splitIntoTokens } from '@/hooks/useWordHighlighting';
+import { ThemeColors } from '@/types/theme';
+import { Sparkles } from 'lucide-react-native';
+import React,{ useMemo,useRef } from 'react';
+import {
+ScrollView,
+StyleSheet,
+Text,
+View,
+} from 'react-native';
 
 interface ReadingViewProps {
   content: string;
@@ -40,7 +40,7 @@ export function ReadingView({
   languageCode,
   storyTheme,
   storyMood
-}: ReadingViewProps) {
+}: Readonly<ReadingViewProps>) {
   const scrollRef = useRef<ScrollView>(null);
   const paraOffsets = useRef<number[]>([]);
   

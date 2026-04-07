@@ -1,54 +1,52 @@
-import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Platform,
-  useWindowDimensions,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  FadeInDown,
-  FadeIn,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  withSequence,
-  withDelay,
-  Easing,
-  interpolate,
-  cancelAnimation,
-} from 'react-native-reanimated';
-import { useEntranceSequence, usePulse } from '@/utils/animations';
 import { FloatingParticles } from '@/components/FloatingParticles';
-import {
-  Key,
-  Palette,
-  ChevronRight,
-  UserCog,
-  LogOut,
-  Star,
-  Crown,
-  Zap,
-  Shield,
-  BookOpen,
-  Globe,
-} from 'lucide-react-native';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { useApp } from '@/contexts/AppContext';
-import { useUI } from '@/contexts/UIContext';
-import { BREAKPOINTS, LAYOUT, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
-import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { MeshBackground } from '@/components/MeshBackground';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { BORDER_RADIUS,BREAKPOINTS,FONTS,LAYOUT,SHADOWS,SPACING } from '@/constants/theme';
+import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useUI } from '@/contexts/UIContext';
+import { usePulse } from '@/utils/animations';
 import { hapticFeedback } from '@/utils/haptics';
-import { Gift, Heart, HelpCircle, MessageCircle, Share2, Sparkles, Trophy } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import {
+BookOpen,
+ChevronRight,
+Crown,
+Gift,
+Globe,
+Heart,
+LogOut,
+MessageCircle,
+Palette,
+Share2,
+Shield,
+Sparkles,
+Star,
+UserCog,
+Zap
+} from 'lucide-react-native';
+import React,{ useMemo,useState } from 'react';
+import {
+Alert,
+Platform,
+ScrollView,
+StyleSheet,
+Text,
+TouchableOpacity,
+useWindowDimensions,
+View,
+} from 'react-native';
+import Animated,{
+FadeIn,
+FadeInDown,
+useAnimatedStyle,
+useSharedValue,
+withSequence,
+withSpring
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SettingRow {
   id: string;
@@ -154,7 +152,7 @@ export default function SettingsTab() {
   const handleSignOut = () => {
     hapticFeedback.warning();
     if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to sign out?')) {
+      if (globalThis.confirm('Are you sure you want to sign out?')) {
         setSigningOut(true);
         clearProfile();
         signOut().then(() => router.replace('/'));

@@ -1,36 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Switch,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { BORDER_RADIUS,FONT_SIZES,FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { generateAudio } from '@/services/audioService';
+import { profileService } from '@/services/database';
+import Slider from '@react-native-community/slider';
+import { Audio } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
-  ArrowLeft,
-  Volume2,
-  Mic2,
-  Settings2,
-  Play,
-  Save,
-  Wand2,
-  HelpCircle,
-  AlertCircle,
+AlertCircle,
+ArrowLeft,
+HelpCircle,
+Mic2,
+Play,
+Save,
+Settings2,
+Volume2,
+Wand2,
 } from 'lucide-react-native';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useApp } from '@/contexts/AppContext';
-import { profileService } from '@/services/database';
-import { generateAudio } from '@/services/audioService';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS, SHADOWS } from '@/constants/theme';
-import { LinearGradient } from 'expo-linear-gradient';
+import React,{ useEffect,useState } from 'react';
+import {
+ActivityIndicator,
+Alert,
+ScrollView,
+StyleSheet,
+Switch,
+Text,
+TextInput,
+TouchableOpacity,
+View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Audio } from 'expo-av';
-import Slider from '@react-native-community/slider';
 
 const RECOMMENDED_VOICES = [
   { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', description: 'Warm, calm, & storytelling', gender: 'Female' },

@@ -1,7 +1,7 @@
-import React, { Component, ReactNode } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SPACING } from '@/constants/theme';
 import { AlertCircle } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
+import React,{ Component,ReactNode } from 'react';
+import { StyleSheet,Text,TouchableOpacity,View } from 'react-native';
 
 interface Props {
   children: ReactNode;
