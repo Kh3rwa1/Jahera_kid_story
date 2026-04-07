@@ -32,4 +32,6 @@ async function run() {
     console.error(err);
   }
 }
-run();
+(async () => {
+  await run();
+})();

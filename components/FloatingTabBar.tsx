@@ -246,7 +246,7 @@ export function FloatingTabBar({
                 <View style={styles.eqContainer}>
                   {[14, 10, 16, 8].map((h, i) => (
                     <Animated.View
-                      key={i}
+                      key={`eq-${h}-${i}`}
                       style={[styles.eqBar, { backgroundColor: COLORS.primary, height: h }]}
                     />
                   ))}

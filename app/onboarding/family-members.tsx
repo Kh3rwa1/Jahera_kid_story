@@ -185,7 +185,7 @@ export default function FamilyMembers() {
                 <View style={styles.emojiRow}>
                   {['👨', '👩', '👴', '👵'].map((e, i) => (
                     <Animated.Text 
-                      key={i} 
+                      key={`${e}-${i}`} 
                       entering={ZoomIn.delay(700 + i * 100).springify()} 
                       style={styles.emptyEmoji}
                     >
@@ -200,7 +200,7 @@ export default function FamilyMembers() {
               <View style={styles.grid}>
                 {familyMembers.map((member, idx) => (
                   <Animated.View 
-                    key={`${member}-${idx}`} 
+                    key={member} 
                     entering={ZoomIn.delay(idx * 50).springify()} 
                     exiting={FadeOutUp}
                     style={styles.stickerWrapper}

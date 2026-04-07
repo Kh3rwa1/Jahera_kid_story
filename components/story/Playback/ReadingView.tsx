@@ -90,7 +90,7 @@ export function ReadingView({
         const tokens = splitIntoTokens(para);
         return (
           <Text
-            key={`para-${paraIdx}`}
+            key={`para-${para.slice(0, 24)}-${paraIdx}`}
             onLayout={(e) => { paraOffsets.current[paraIdx] = e.nativeEvent.layout.y; }}
             style={[
               styles.paragraph,

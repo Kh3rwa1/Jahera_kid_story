@@ -182,7 +182,7 @@ function StatsTicker({ stories, languages, characters, primaryColor, cardBackgro
         }}
       >
         {items.map((s, i) => (
-          <View key={i} style={[styles.statsTickerPill, { backgroundColor: cardBackground }]}>
+          <View key={`${s.label}-${i}`} style={[styles.statsTickerPill, { backgroundColor: cardBackground }]}>
             <View style={[styles.statsTickerIcon, { backgroundColor: s.color + '20' }]}>
               {s.icon}
             </View>
@@ -250,6 +250,14 @@ const QuickActions = React.memo(function QuickActions({
 
   const isCurrentActive = activeStoryId === continueStory?.id;
 
+  const playLabel = isCurrentActive ? (isPlaying ? 'Pause' : 'Resume') : continueStory ? 'Continue' : 'Play';
+  const playSubLabel = continueStory
+    ? (continueStory.title.length > 12 ? continueStory.title.substring(0, 10) + '...' : continueStory.title)
+    : 'Last story';
+  const playGradient = (isCurrentActive && isPlaying)
+    ? (['#EC4899', '#8B5CF6'] as [string, string])
+    : (['#6366F1', '#4F46E5'] as [string, string]);
+
   const actions = useMemo(() => [
     { 
       icon: (isCurrentActive && isPlaying) 
@@ -258,16 +266,16 @@ const QuickActions = React.memo(function QuickActions({
             <View style={{ width: 8, height: 26, backgroundColor: '#FFF', borderRadius: 2 }} />
           </View>
         : <Play size={26} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />, 
-      label: isCurrentActive ? (isPlaying ? 'Pause' : 'Resume') : (continueStory ? 'Continue' : 'Play'), 
-      sublabel: continueStory ? (continueStory.title.length > 12 ? continueStory.title.substring(0, 10) + '...' : continueStory.title) : 'Last story', 
-      grad: (isCurrentActive && isPlaying) ? (['#EC4899', '#8B5CF6'] as [string, string]) : (['#6366F1', '#4F46E5'] as [string, string]), 
+      label: playLabel,
+      sublabel: playSubLabel,
+      grad: playGradient,
       onPress: isCurrentActive ? playPause : handleLastStory, 
       textPrimary, 
       textSecondary 
     },
     { icon: <Sparkles size={26} color="#FFFFFF" strokeWidth={2.5} />, label: 'Create', sublabel: 'New story', grad: ['#F59E0B', '#D97706'] as [string, string], onPress: handleGenerateStory, textPrimary, textSecondary },
     { icon: <TrendingUp size={26} color="#FFFFFF" strokeWidth={2.5} />, label: 'Library', sublabel: `${storiesCount} stories`, grad: ['#10B981', '#059669'] as [string, string], onPress: onLibrary, textPrimary, textSecondary },
-  ], [handleLastStory, handleGenerateStory, storiesCount, textPrimary, textSecondary, onLibrary, continueStory, isCurrentActive, isPlaying, playPause]);
+  ], [handleLastStory, handleGenerateStory, storiesCount, textPrimary, textSecondary, onLibrary, isCurrentActive, isPlaying, playPause, playLabel, playSubLabel, playGradient]);
 
   return (
     <View style={styles.quickWrapper}>
@@ -309,7 +317,6 @@ export default function HomeScreen() {
 
   const isFocused = useIsFocused();
   const [continueStory, setContinueStory] = React.useState<{ id: string; title: string; progress: number } | null>(null);
-  const [sound, setSound] = React.useState<Audio.Sound | null>(null);
 
   // Fetch continue story metadata
   useEffect(() => {
@@ -344,12 +351,6 @@ export default function HomeScreen() {
 
     checkProgress();
   }, [isFocused, stories]);
-
-  useEffect(() => {
-    return () => {
-      if (sound) { sound.unloadAsync().catch(() => {}); }
-    };
-  }, [sound]);
 
   // Welcome Narration
   useEffect(() => {
@@ -485,7 +486,6 @@ export default function HomeScreen() {
   }
 
   const { line1, line2 } = getGreeting(profile.kid_name || 'Friend');
-  const storiesLeft = subscription?.stories_remaining ?? 0;
   const isPro = subscription?.plan !== 'free';
 
   return (
@@ -660,7 +660,9 @@ export default function HomeScreen() {
                   <AnimatedPressable onPress={() => handleStoryPress(story.id)} style={{ width: CARD_W }}>
                     <View style={[styles.storyCard, { backgroundColor: C.cardBackground, height: isTablet ? 280 : 260 }]}>
                       <LinearGradient colors={palette.colors} style={styles.storyArt}>
-                        <Text style={styles.storyArtEmoji}>{story.theme === 'Space' ? '🚀' : story.theme === 'Animals' ? '🦁' : '📖'}</Text>
+                        <Text style={styles.storyArtEmoji}>
+                          {story.theme === 'Space' ? '🚀' : story.theme === 'Animals' ? '🦁' : '📖'}
+                        </Text>
                         <View style={styles.storyBadgesTop}>
                           <View style={styles.storyFlagBadge}>
                             <Text style={styles.storyFlag}>{getLanguageFlag(story.language_code)}</Text>

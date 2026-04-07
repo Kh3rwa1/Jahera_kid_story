@@ -146,7 +146,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'card',
   return (
     <View style={type === 'grid' || type === 'stats' ? styles.gridRow : styles.column}>
       {Array.from({ length: count }).map((_, index) => (
-        <View key={index} style={type === 'grid' ? { width: '48%', marginBottom: 16 } : null}>
+        <View key={`${type}-${index}`} style={type === 'grid' ? { width: '48%', marginBottom: 16 } : null}>
           {renderItem()}
         </View>
       ))}

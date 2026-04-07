@@ -34,7 +34,6 @@ export default function StoryPlaybackScreen() {
   const { currentTheme } = useTheme();
   const colors = currentTheme.colors;
   const insets = useSafeAreaInsets();
-  const { width: winWidth, height: winHeight } = useWindowDimensions();
   
   const { 
     story, isLoading, hasQuiz, tab, setTab,
@@ -42,7 +41,7 @@ export default function StoryPlaybackScreen() {
     handleBack, handleGoToQuiz, handleNewStory, retryAudio
   } = usePlayback();
 
-  const { isPlaying, isBuffering, audioPolling, audioError } = useAudio();
+  const { isBuffering, audioPolling, audioError } = useAudio();
   const { position, duration } = useAudioProgress();
   const { prefs } = useReadingPreferences();
 
@@ -51,9 +50,7 @@ export default function StoryPlaybackScreen() {
   const {
     paragraphs,
     allWords,
-    sentences,
     activeWordIndex,
-    activeSentenceIndex,
     activeParaIndex
   } = useWordHighlighting(story?.content ?? '', position, duration);
 
