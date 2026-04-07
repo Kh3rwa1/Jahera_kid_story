@@ -33,15 +33,21 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
 
   useEffect(() => {
     let currentIndex = 0;
+    let mounted = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    const interval = setInterval(() => {
+    const cycle = () => {
+      if (!mounted) return;
       const nextIndex = (currentIndex + 1) % colorSets.length;
       const afterNextIndex = (nextIndex + 1) % colorSets.length;
 
       setCurrentColorSet(colorSets[nextIndex]);
       setNextColorSet(colorSets[afterNextIndex]);
       currentIndex = nextIndex;
-    }, duration);
+      timeoutId = setTimeout(cycle, duration);
+    };
+
+    timeoutId = setTimeout(cycle, duration);
 
     opacity.value = withRepeat(
       withTiming(1, {
@@ -53,10 +59,11 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
     );
 
     return () => {
-      clearInterval(interval);
+      mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
       cancelAnimation(opacity);
     };
-  }, [colorSets, duration]);
+  }, [colorSets, duration, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => {
     'worklet';

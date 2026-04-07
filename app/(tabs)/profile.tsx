@@ -37,7 +37,8 @@ FadeInUp,
 ZoomIn,
 useSharedValue
 } from 'react-native-reanimated';
-import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ColorScheme } from '@/constants/themeSchemes';
+import { EdgeInsets,SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface AchievementCardData {
   label: string;
@@ -47,7 +48,9 @@ interface AchievementCardData {
   emoji: string;
 }
 
-function AnimatedAchievementCard({ card, index, styles }: { card: AchievementCardData; index: number; styles: any }) {
+type ProfileStyles = ReturnType<typeof useStyles>;
+
+function AnimatedAchievementCard({ card, index, styles }: { card: AchievementCardData; index: number; styles: ProfileStyles }) {
   const entrance = useEntranceSequence(index, 120, 70);
   const glowStyle = useGlowPulse(0.85, 1, 2000 + index * 300);
 
@@ -64,7 +67,7 @@ function AnimatedAchievementCard({ card, index, styles }: { card: AchievementCar
   );
 }
 
-function AnimatedLangProgressBar({ pct, primaryColor, delay, styles }: { pct: number; primaryColor: string; delay: number; styles: any }) {
+function AnimatedLangProgressBar({ pct, primaryColor, delay, styles }: { pct: number; primaryColor: string; delay: number; styles: ProfileStyles }) {
   const barStyle = useProgressBar(Math.max(pct, 10), 1000, delay);
   return (
     <View style={[styles.langBar, { backgroundColor: primaryColor + '15' }]}>
@@ -401,7 +404,7 @@ export default function ProfileScreen() {
   );
 }
 
-const useStyles = (C: any, insets: any, isTablet: boolean, isDesktop: boolean) => {
+const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets, isTablet: boolean, isDesktop: boolean) => {
   return useMemo(() => StyleSheet.create({
     container: { flex: 1 },
     loadingWrap: { padding: SPACING.xl },
