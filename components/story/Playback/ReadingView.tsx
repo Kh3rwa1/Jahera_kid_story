@@ -9,7 +9,7 @@ ReadingPrefs
 import { getScriptFontOverride,splitIntoTokens } from '@/hooks/useWordHighlighting';
 import { ThemeColors } from '@/types/theme';
 import { Sparkles } from 'lucide-react-native';
-import React,{ useMemo,useRef } from 'react';
+import { useMemo,useRef } from 'react';
 import {
 ScrollView,
 StyleSheet,

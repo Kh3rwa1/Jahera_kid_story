@@ -10,6 +10,7 @@
  *   const uri = videoCacheService.getCachedUri(); // Get the local file URI
  */
 import { Query,storage,STORAGE_BUCKETS } from '@/lib/appwrite';
+import { logger } from '@/utils/logger';
 import {
 cacheDirectory,
 deleteAsync,
@@ -40,11 +41,6 @@ class VideoCacheService {
   /**
    * Prefetch the brand video from Appwrite and cache it locally.
    * Safe to call multiple times — deduplicates concurrent calls.
-   * 
-   * Strategy:
-   * 1. Check if a local cached copy already exists → use it immediately
-   * 2. Resolve the bundled fallback asset → use it as interim
-   * 3. Download from Appwrite in the background → update local cache
    */
   async prefetch(): Promise<void> {
     if (this._prefetchPromise) return this._prefetchPromise;
@@ -62,11 +58,10 @@ class VideoCacheService {
 
       // 1. Check if we already have a cached copy
       const fileInfo = await getInfoAsync(CACHED_VIDEO_PATH);
-      if (fileInfo.exists && (fileInfo as any).size > 10000) {
+      if (fileInfo.exists && (fileInfo as unknown as { size: number }).size > 10000) {
         this._cachedUri = CACHED_VIDEO_PATH;
         this._isReady = true;
-        console.log('[VideoCache] Using existing cached video');
-        // Still try to refresh from Appwrite in background
+        logger.info('[VideoCache] Using existing cached video');
         this._backgroundRefresh().catch(() => {});
         return;
       }
@@ -78,17 +73,17 @@ class VideoCacheService {
         if (asset?.localUri) {
           this._cachedUri = asset.localUri;
           this._isReady = true;
-          console.log('[VideoCache] Using bundled asset while downloading');
+          logger.info('[VideoCache] Using bundled asset while downloading');
         }
       } catch (e) {
-        console.log('[VideoCache] Bundled asset fallback failed:', e);
+        logger.warn('[VideoCache] Bundled asset fallback failed:', e);
       }
 
       // 3. Download from Appwrite
       await this._downloadFromAppwrite();
 
     } catch (err) {
-      console.log('[VideoCache] Prefetch error:', err);
+      logger.error('[VideoCache] Prefetch error:', err);
       if (this._cachedUri) this._isReady = true;
     }
   }
@@ -96,27 +91,27 @@ class VideoCacheService {
   private async _downloadFromAppwrite(): Promise<void> {
     try {
       const res = await storage.listFiles(STORAGE_BUCKETS.APP_ASSETS, [Query.limit(10)]);
-      const videoFile = res.files.find((f: any) => (f.mimeType ?? '').startsWith('video/'));
+      const videoFile = res.files.find((f: { mimeType?: string }) => (f.mimeType ?? '').startsWith('video/'));
       
       if (!videoFile) {
-        console.log('[VideoCache] No video file found in Appwrite');
+        logger.warn('[VideoCache] No video file found in Appwrite');
         return;
       }
 
       const url = storage.getFileView(STORAGE_BUCKETS.APP_ASSETS, videoFile.$id).toString();
-      console.log('[VideoCache] Downloading video from Appwrite...');
+      logger.info('[VideoCache] Downloading video from Appwrite...');
 
       const result = await downloadAsync(url, CACHED_VIDEO_PATH);
       
       if (result.status === 200) {
         this._cachedUri = CACHED_VIDEO_PATH;
         this._isReady = true;
-        console.log('[VideoCache] ✅ Video cached successfully');
+        logger.info('[VideoCache] ✅ Video cached successfully');
       } else {
-        console.log('[VideoCache] Download failed with status:', result.status);
+        logger.warn('[VideoCache] Download failed with status:', result.status);
       }
     } catch (err) {
-      console.log('[VideoCache] Appwrite download error:', err);
+      logger.error('[VideoCache] Appwrite download error:', err);
     }
   }
 
@@ -126,11 +121,11 @@ class VideoCacheService {
   private async _backgroundRefresh(): Promise<void> {
     try {
       const res = await storage.listFiles(STORAGE_BUCKETS.APP_ASSETS, [Query.limit(10)]);
-      const videoFile = res.files.find((f: any) => (f.mimeType ?? '').startsWith('video/'));
+      const videoFile = res.files.find((f: { mimeType?: string }) => (f.mimeType ?? '').startsWith('video/'));
       if (!videoFile) return;
 
       const localInfo = await getInfoAsync(CACHED_VIDEO_PATH);
-      if (localInfo.exists && (localInfo as any).size === videoFile.sizeOriginal) {
+      if (localInfo.exists && (localInfo as unknown as { size: number }).size === videoFile.sizeOriginal) {
         return; // Same size → same file, skip
       }
 
@@ -142,10 +137,10 @@ class VideoCacheService {
         try { await deleteAsync(CACHED_VIDEO_PATH, { idempotent: true }); } catch {}
         await moveAsync({ from: tempPath, to: CACHED_VIDEO_PATH });
         this._cachedUri = CACHED_VIDEO_PATH;
-        console.log('[VideoCache] ✅ Background refresh complete');
+        logger.info('[VideoCache] ✅ Background refresh complete');
       }
     } catch (err) {
-      console.log('[VideoCache] Background refresh failed:', err);
+      logger.warn('[VideoCache] Background refresh failed:', err);
     }
   }
 

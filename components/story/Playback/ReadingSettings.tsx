@@ -8,7 +8,6 @@ useReadingPreferences
 import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { Minus,Plus } from 'lucide-react-native';
-import React from 'react';
 import {
 ScrollView,
 StyleSheet,
