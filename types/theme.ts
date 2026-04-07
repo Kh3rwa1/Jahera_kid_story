@@ -1,5 +1,4 @@
 import type { EdgeInsets } from 'react-native-safe-area-context';
-import type { ViewStyle, TextStyle } from 'react-native';
 
 /** Re-export EdgeInsets so consumers don't need the extra import */
 export type { EdgeInsets };

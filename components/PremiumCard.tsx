@@ -1,14 +1,14 @@
-import React from 'react';
-import { View, StyleSheet, Pressable, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import { BORDER_RADIUS,COLORS,SHADOWS,SPACING } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { Pressable,View,ViewStyle } from 'react-native';
+import Animated,{
+useAnimatedStyle,
+useSharedValue,
+withSpring,
+withTiming,
+} from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

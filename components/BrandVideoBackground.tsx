@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, ViewStyle, Platform } from 'react-native';
-import { useVideoPlayer, VideoView } from 'expo-video';
 import { videoCacheService } from '@/services/videoCacheService';
+import { useVideoPlayer,VideoView } from 'expo-video';
+import React,{ useEffect,useState } from 'react';
+import { Dimensions,Platform,StyleSheet,View,ViewStyle } from 'react-native';
 
 interface BrandVideoBackgroundProps {
   /** The ID of the file in the app_assets bucket (e.g., 'onboarding_video') */
@@ -114,7 +114,7 @@ function VideoPlayerInner({ source, width, height, overlayOpacity }: {
   );
 }
 
-export function BrandVideoBackground({ videoId, fallbackSource, style, overlayOpacity = 0.3 }: BrandVideoBackgroundProps) {
+export function BrandVideoBackground({ videoId, fallbackSource, style, overlayOpacity = 0.3 }: Readonly<BrandVideoBackgroundProps>) {
   const { width, height } = Dimensions.get('screen');
   const { resolvedSource, isResolving } = useResolvedVideoSource(fallbackSource);
 

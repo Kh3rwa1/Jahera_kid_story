@@ -1,43 +1,39 @@
-import { useState, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  Platform,
-  useWindowDimensions,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import {
-  Shield,
-  ArrowLeft,
-  BookOpen,
-  Award,
-  Flame,
-  Globe,
-  Target,
-  TrendingUp,
-  Star,
-  Lock,
-  Eye,
-  EyeOff,
-  Crown,
-} from 'lucide-react-native';
-import { useTheme } from '@/contexts/ThemeContext';
+import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { profileService } from '@/services/database';
-import { SPACING, BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
+import { EdgeInsets,ThemeColors } from '@/types/theme';
 import { getLanguageFlag } from '@/utils/languageUtils';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { hashPin, constantTimeEqual, PinRateLimiter } from '@/utils/pinSecurity';
-import { logger } from '@/utils/logger';
-import { ThemeColors, EdgeInsets } from '@/types/theme';
+import { constantTimeEqual,hashPin,PinRateLimiter } from '@/utils/pinSecurity';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import {
+ArrowLeft,
+Award,
+BookOpen,
+Crown,
+Eye,
+EyeOff,
+Flame,
+Lock,
+Shield,
+Star,
+Target,
+TrendingUp
+} from 'lucide-react-native';
+import { useMemo,useState } from 'react';
+import {
+Alert,
+ScrollView,
+StyleSheet,
+Text,
+TextInput,
+TouchableOpacity,
+useWindowDimensions,
+View
+} from 'react-native';
+import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
+import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DEFAULT_PIN_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // SHA-256 for '1234'
 const limiter = new PinRateLimiter(5, 60_000);

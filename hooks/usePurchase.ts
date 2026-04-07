@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { revenueCatService, RCOffering, RCPackage } from '@/services/revenueCatService';
-import { subscriptionService } from '@/services/subscriptionService';
 import { useApp } from '@/contexts/AppContext';
+import { RCOffering,RCPackage,revenueCatService } from '@/services/revenueCatService';
+import { subscriptionService } from '@/services/subscriptionService';
 import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
+import { useRouter } from 'expo-router';
+import { useCallback,useEffect,useRef,useState } from 'react';
+import { Alert } from 'react-native';
 
 export type PlanId = 'weekly' | 'monthly' | 'yearly' | 'family';
 

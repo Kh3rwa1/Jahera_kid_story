@@ -1,7 +1,7 @@
+import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SPACING } from '@/constants/theme';
+import { BookOpen,Sparkles } from 'lucide-react-native';
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { BookOpen, Sparkles } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
+import { StyleSheet,Text,TouchableOpacity,View } from 'react-native';
 
 interface EmptyStateProps {
   type?: 'stories' | 'general';
@@ -22,7 +22,7 @@ const getIconForType = (type: string = 'general') => {
   }
 };
 
-export const EmptyState = ({ type = 'general', title, description, action }: EmptyStateProps) => {
+export const EmptyState = ({ type = 'general', title, description, action }: Readonly<EmptyStateProps>) => {
   const Icon = getIconForType(type);
 
   return (

@@ -1,6 +1,6 @@
+import { COLORS,TYPOGRAPHY } from '@/constants/theme';
 import React from 'react';
-import { Text, TextStyle, StyleSheet } from 'react-native';
-import { COLORS, TYPOGRAPHY } from '@/constants/theme';
+import { Text,TextStyle } from 'react-native';
 
 type TypographyVariant =
   | 'displayLarge'

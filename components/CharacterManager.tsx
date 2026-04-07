@@ -1,22 +1,21 @@
+import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { familyMemberService,friendService } from '@/services/database';
+import { FamilyMember,Friend } from '@/types/database';
+import { hapticFeedback } from '@/utils/haptics';
+import { Check,CreditCard as Edit2,UserPlus,Users,X } from 'lucide-react-native';
 import { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
+KeyboardAvoidingView,
+Modal,
+Platform,
+StyleSheet,
+Text,
+TextInput,
+TouchableOpacity,
+View
 } from 'react-native';
-import ReAnimated, { FadeInUp, ZoomIn, FadeOut } from 'react-native-reanimated';
-import { Users, UserPlus, X, Check, CreditCard as Edit2 } from 'lucide-react-native';
-import { SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants/theme';
-import { FamilyMember, Friend } from '@/types/database';
-import { familyMemberService, friendService } from '@/services/database';
-import { hapticFeedback } from '@/utils/haptics';
-import { useTheme } from '@/contexts/ThemeContext';
+import ReAnimated,{ FadeInUp,ZoomIn } from 'react-native-reanimated';
 
 type CharacterType = 'family' | 'friend';
 
@@ -51,7 +50,7 @@ export function CharacterManager({
   friends,
   onFamilyMembersChange,
   onFriendsChange,
-}: CharacterManagerProps) {
+}: Readonly<CharacterManagerProps>) {
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
   const [addModal, setAddModal] = useState<AddModalState>({

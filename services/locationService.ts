@@ -1,6 +1,5 @@
-import * as Location from 'expo-location';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
 
 export interface LocationContext {
   city: string | null;

@@ -1,29 +1,29 @@
-import React, { useEffect } from 'react';
-import {
-  StyleSheet,
-  Platform,
-  View,
-  Pressable,
-  useWindowDimensions,
-  Text,
-} from 'react-native';
+import { FONTS } from '@/constants/theme';
+import { useAudio,useAudioProgress } from '@/contexts/AudioContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useUI } from '@/contexts/UIContext';
+import { hapticFeedback } from '@/utils/haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  interpolate,
+import { useRouter } from 'expo-router';
+import { Award,Disc,House,Library,Pause,Play,Settings } from 'lucide-react-native';
+import React,{ useEffect } from 'react';
+import {
+Platform,
+Pressable,
+StyleSheet,
+Text,
+useWindowDimensions,
+View,
+} from 'react-native';
+import Animated,{
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withSpring,
+withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { House, Library, Award, Settings, Play, Pause, Disc } from 'lucide-react-native';
-import { useTheme } from '@/contexts/ThemeContext';
-import { FONTS } from '@/constants/theme';
-import { hapticFeedback } from '@/utils/haptics';
-import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
-import { useUI } from '@/contexts/UIContext';
-import { useRouter } from 'expo-router';
 
 const TABS = [
   { name: 'index',    icon: House,   label: 'Home',     route: '/(tabs)/' },

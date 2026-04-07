@@ -1,34 +1,33 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import {
-  ArrowLeft,
-  Key,
-  Palette,
-  Info,
-  ChevronRight,
-  Shield,
-  Crown,
-  Zap,
-  BookOpen,
-  RotateCcw,
-  CreditCard,
-  Volume2,
-} from 'lucide-react-native';
-import { useTheme } from '@/contexts/ThemeContext';
+import { BORDER_RADIUS,FONT_SIZES,FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { revenueCatService } from '@/services/revenueCatService';
 import { subscriptionService } from '@/services/subscriptionService';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, FONTS, SHADOWS } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import {
+ArrowLeft,
+BookOpen,
+ChevronRight,
+CreditCard,
+Crown,
+Info,
+Palette,
+RotateCcw,
+Shield,
+Volume2,
+Zap
+} from 'lucide-react-native';
+import React,{ useState } from 'react';
+import {
+ActivityIndicator,
+Alert,
+ScrollView,
+StyleSheet,
+Text,
+TouchableOpacity,
+View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ENTITLEMENT_PRO = 'pro';

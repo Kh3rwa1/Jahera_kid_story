@@ -1,16 +1,16 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withDelay,
-  Easing,
-  withSequence,
-} from 'react-native-reanimated';
+import { randomChoice,randomFloat } from '@/utils/secureRandom';
 import { LinearGradient } from 'expo-linear-gradient';
-import { randomChoice, randomFloat } from '@/utils/secureRandom';
+import React,{ useEffect } from 'react';
+import { StyleSheet,useWindowDimensions,View } from 'react-native';
+import Animated,{
+Easing,
+useAnimatedStyle,
+useSharedValue,
+withDelay,
+withRepeat,
+withSequence,
+withTiming,
+} from 'react-native-reanimated';
 
 interface Particle {
   id: number;

@@ -1,22 +1,21 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  useWindowDimensions,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInUp, ZoomIn } from 'react-native-reanimated';
-import { Check, Globe, MapPin, Wand as Wand2, Sparkles, ChevronLeft } from 'lucide-react-native';
-import { THEMES, MOODS, LENGTHS } from '@/constants/storyOptions';
-import { SUPPORTED_LANGUAGES } from '@/constants/languages';
 import { CharacterManager } from '@/components/CharacterManager';
 import { ShimmerCta } from '@/components/ui/ShimmerCta';
-import { FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import { SUPPORTED_LANGUAGES } from '@/constants/languages';
+import { LENGTHS,MOODS,THEMES } from '@/constants/storyOptions';
+import { FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Check,ChevronLeft,MapPin,Wand as Wand2 } from 'lucide-react-native';
+import React from 'react';
+import {
+ScrollView,
+StyleSheet,
+Text,
+TouchableOpacity,
+useWindowDimensions,
+View,
+} from 'react-native';
 
 interface OptionsViewProps {
   colors: ThemeColors;
@@ -48,7 +47,7 @@ export function OptionsView({
   familyMembers, friends, onFamilyMembersChange, onFriendsChange,
   locationLabel, onStart, onBack,
   subscription, profileId
-}: OptionsViewProps) {
+}: Readonly<OptionsViewProps>) {
   const { width: winWidth } = useWindowDimensions();
   const CARD_SIZE = (winWidth - SPACING.xl * 2 - SPACING.sm * 3) / 4;
   const isPro = subscription?.plan !== 'free';

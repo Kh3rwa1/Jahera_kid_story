@@ -1,5 +1,5 @@
-import { useWindowDimensions } from 'react-native';
 import { BREAKPOINTS } from '@/constants/theme';
+import { useWindowDimensions } from 'react-native';
 
 export type DeviceType = 'mobile' | 'tablet' | 'desktop' | 'wide';
 

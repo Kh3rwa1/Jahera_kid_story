@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Platform } from 'react-native';
 
 export function splitIntoParagraphs(content: string): string[] {

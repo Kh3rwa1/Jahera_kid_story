@@ -1,19 +1,18 @@
+import { FONTS,SPACING } from '@/constants/theme';
+import { Story } from '@/types/database';
+import { VideoView,useVideoPlayer } from 'expo-video';
+import { BookOpen,Sparkles } from 'lucide-react-native';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-  Platform,
-  ActivityIndicator,
+Dimensions,
+Platform,
+StyleSheet,
+Text,
+TouchableOpacity,
+View
 } from 'react-native';
-import { VideoView, useVideoPlayer } from 'expo-video';
-import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
-import { Sparkles, BookOpen } from 'lucide-react-native';
+import Animated,{ FadeIn,FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Story } from '@/types/database';
-import { FONTS, SPACING, BORDER_RADIUS } from '@/constants/theme';
 
 interface CinematicIntroProps {
   story: Story | null;
@@ -31,7 +30,7 @@ export function CinematicIntro({
   isBuffering,
   onDismiss,
   introOpacity,
-}: CinematicIntroProps) {
+}: Readonly<CinematicIntroProps>) {
   const insets = useSafeAreaInsets();
   const screen = Dimensions.get('screen');
 

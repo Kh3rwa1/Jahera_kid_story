@@ -1,7 +1,7 @@
 const sdk = require('node-appwrite');
 const fetch = require('node-fetch');
 const { EdgeTTS } = require('@andresaya/edge-tts');
-const nodeCrypto = require('crypto');
+const nodeCrypto = require('node:crypto');
 
 const DATABASE_ID = 'jahera_db';
 const STORIES_COLLECTION = 'stories';
@@ -119,7 +119,7 @@ function prepareText(text, maxChars = 4500) {
 
 // Strip markdown formatting for cleaner speech
 function cleanTextForSpeech(text) {
-  return text.replace(/[*_#`~\[\]]/g, '').replace(/\n{2,}/g, '. ').trim();
+  return text.replaceAll(/[*_#`~\[\]]/g, '').replace(/\n{2,}/g, '. ').trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ async function generateWithElevenLabs(text, lang, apiKey, options, log) {
       model_id: model,
       voice_settings: {
         stability: stability ?? 0.65,
-        similarity_boost: similarity ?? 0.80,
+        similarity_boost: similarity ?? 0.8,
         style: style ?? 0.35,
         use_speaker_boost: speakerBoost ?? true,
       },
@@ -194,7 +194,7 @@ async function generateWithEdgeTTS(text, lang, log) {
 // Main Function Handler
 // ─────────────────────────────────────────────────────────────────────────────
 
-module.exports = async ({ req, res, log, error }) => {
+async function generateAudioHandler({ req, res, log, error }) {
   try {
     // ── Parse request ──
     let body;
@@ -349,3 +349,5 @@ module.exports = async ({ req, res, log, error }) => {
     return res.json({ success: false, error: err.message }, 500);
   }
 };
+
+module.exports = generateAudioHandler;

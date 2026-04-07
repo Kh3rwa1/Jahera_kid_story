@@ -1,34 +1,34 @@
-import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  useWindowDimensions,
-  StatusBar,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
-import { Headphones, Award, RefreshCw, VolumeX, RefreshCw as VolumeRetry } from 'lucide-react-native';
+import { Award,RefreshCw,RefreshCw as VolumeRetry } from 'lucide-react-native';
+import React,{ useMemo,useState } from 'react';
+import {
+ActivityIndicator,
+StatusBar,
+StyleSheet,
+Text,
+TouchableOpacity,
+View,
+useWindowDimensions,
+} from 'react-native';
+import Animated,{ SlideInDown } from 'react-native-reanimated';
+import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTheme } from '@/contexts/ThemeContext';
-import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
+import { useAudio,useAudioProgress } from '@/contexts/AudioContext';
 import { useReadingPreferences } from '@/contexts/ReadingPreferencesContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { usePlayback } from '@/hooks/usePlayback';
-import { useWordHighlighting, getScriptFontOverride } from '@/hooks/useWordHighlighting';
+import { useWordHighlighting } from '@/hooks/useWordHighlighting';
 
-import { PlaybackHeader } from '@/components/story/Playback/PlaybackHeader';
 import { AudioControls } from '@/components/story/Playback/AudioControls';
-import { ReadingView } from '@/components/story/Playback/ReadingView';
-import { ReadingSettings } from '@/components/story/Playback/ReadingSettings';
 import { CinematicIntro } from '@/components/story/Playback/CinematicIntro';
-import { PlaybackProgress, formatTime } from '@/components/story/Playback/PlaybackProgress';
+import { PlaybackHeader } from '@/components/story/Playback/PlaybackHeader';
+import { PlaybackProgress,formatTime } from '@/components/story/Playback/PlaybackProgress';
+import { ReadingSettings } from '@/components/story/Playback/ReadingSettings';
+import { ReadingView } from '@/components/story/Playback/ReadingView';
 import { THEMES } from '@/constants/storyOptions';
 
-import { FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
-import { ThemeColors, EdgeInsets } from '@/types/theme';
+import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { ThemeColors } from '@/types/theme';
 
 export default function StoryPlaybackScreen() {
   const { currentTheme } = useTheme();

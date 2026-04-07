@@ -1,7 +1,7 @@
-import React from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SPACING } from '@/constants/theme';
 import { AlertTriangle } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
+import React from 'react';
+import { Modal,StyleSheet,Text,TouchableOpacity,TouchableWithoutFeedback,View } from 'react-native';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -23,7 +23,7 @@ export const ConfirmDialog = ({
   onConfirm,
   onCancel,
   destructive = false,
-}: ConfirmDialogProps) => {
+}: Readonly<ConfirmDialogProps>) => {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <TouchableWithoutFeedback onPress={onCancel}>

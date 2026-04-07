@@ -1,5 +1,4 @@
-import { functions, databases, COLLECTIONS, DATABASE_ID } from '@/lib/appwrite';
-import { Profile } from '@/types/database';
+import { COLLECTIONS,DATABASE_ID,databases,functions } from '@/lib/appwrite';
 
 export interface AudioSettings {
   voiceId?: string | null;

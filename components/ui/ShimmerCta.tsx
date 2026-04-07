@@ -1,24 +1,24 @@
-import React, { useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  ViewStyle,
-  TextStyle,
-} from 'react-native';
+import { BORDER_RADIUS,FONTS,SHADOWS } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withSpring,
-  interpolate,
-  Easing,
+import React,{ useEffect } from 'react';
+import {
+ActivityIndicator,
+StyleSheet,
+Text,
+TextStyle,
+TouchableOpacity,
+View,
+ViewStyle,
+} from 'react-native';
+import Animated,{
+Easing,
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withRepeat,
+withSpring,
+withTiming,
 } from 'react-native-reanimated';
-import { BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
 
 interface ShimmerCtaProps {
   onPress: () => void;
@@ -42,7 +42,7 @@ export function ShimmerCta({
   textStyle,
   renderIcon,
   disabled = false,
-}: ShimmerCtaProps) {
+}: Readonly<ShimmerCtaProps>) {
   const shimmerX = useSharedValue(-1);
   const scale = useSharedValue(1);
 
