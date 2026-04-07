@@ -1,48 +1,43 @@
-import React, { useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-  Platform,
-  useWindowDimensions,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  FadeInRight,
-  ZoomIn,
-  useAnimatedStyle,
-  withDelay,
-  withTiming,
-  withSpring,
-  Easing,
-} from 'react-native-reanimated';
-import { useEntranceSequence, useProgressBar, useGlowPulse, usePulse } from '@/utils/animations';
-import { FloatingParticles } from '@/components/FloatingParticles';
-import { useApp } from '@/contexts/AppContext';
-import { useUI } from '@/contexts/UIContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import { getLanguageFlag } from '@/utils/languageUtils';
-import {
-  BookOpen,
-  Award,
-  Flame,
-  Zap,
-  ChevronRight,
-} from 'lucide-react-native';
-import { BREAKPOINTS, LAYOUT, SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES, COLORS as THEME_COLORS } from '@/constants/theme';
 import { Container } from '@/components/Container';
-import { LoadingSkeleton, Skeleton, HeroSkeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
-import { ProfileAvatar } from '@/components/ProfileAvatar';
-import { MeshBackground } from '@/components/MeshBackground';
+import { FloatingParticles } from '@/components/FloatingParticles';
+import { HeroSkeleton,LoadingSkeleton,Skeleton } from '@/components/LoadingSkeleton';
 import { MarqueeText } from '@/components/MarqueeText';
+import { MeshBackground } from '@/components/MeshBackground';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { BORDER_RADIUS,BREAKPOINTS,FONTS,LAYOUT,SHADOWS,SPACING } from '@/constants/theme';
+import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useUI } from '@/contexts/UIContext';
+import { useEntranceSequence,useGlowPulse,useProgressBar,usePulse } from '@/utils/animations';
+import { getLanguageFlag } from '@/utils/languageUtils';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import {
+Award,
+BookOpen,
+ChevronRight,
+Flame
+} from 'lucide-react-native';
+import React,{ useCallback,useMemo } from 'react';
+import {
+Platform,
+RefreshControl,
+ScrollView,
+StyleSheet,
+Text,
+TouchableOpacity,
+View,
+useWindowDimensions,
+} from 'react-native';
+import Animated,{
+FadeInDown,
+FadeInRight,
+FadeInUp,
+ZoomIn,
+useSharedValue
+} from 'react-native-reanimated';
+import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function AnimatedAchievementCard({ card, index, styles }: { card: any; index: number; styles: any }) {
   const entrance = useEntranceSequence(index, 120, 70);

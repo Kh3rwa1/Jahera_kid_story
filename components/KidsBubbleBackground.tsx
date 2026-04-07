@@ -1,16 +1,16 @@
-import React, { useEffect, useMemo } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withDelay,
-  withSequence,
-  Easing,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { randomFloat } from '@/utils/secureRandom';
+import { LinearGradient } from 'expo-linear-gradient';
+import React,{ useEffect,useMemo } from 'react';
+import { StyleSheet,useWindowDimensions,View } from 'react-native';
+import Animated,{
+Easing,
+useAnimatedStyle,
+useSharedValue,
+withDelay,
+withRepeat,
+withSequence,
+withTiming,
+} from 'react-native-reanimated';
 
 const BUBBLE_COLORS: ReadonlyArray<readonly [string, string]> = [
   ['rgba(255, 182, 193, 0.45)', 'rgba(255, 182, 193, 0)'],

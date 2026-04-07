@@ -1,50 +1,53 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  TextInput,
-  useWindowDimensions,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView, useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
-import Animated, {
-  FadeInDown, FadeInUp, ZoomIn, FadeIn,
-  useSharedValue, useAnimatedStyle, withSpring, interpolate,
-} from 'react-native-reanimated';
-import { useEntranceSequence, useSpringPress, usePulse, useFloat } from '@/utils/animations';
-import { FloatingParticles } from '@/components/FloatingParticles';
-import { useApp } from '@/contexts/AppContext';
-import { useUI } from '@/contexts/UIContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import { getLanguageFlag, getLanguageNativeName } from '@/utils/languageUtils';
-import {
-  BookOpen,
-  Play,
-  Search,
-  SlidersHorizontal,
-  Volume2,
-  Sparkles,
-  ChevronRight,
-  Grid2x2,
-  List,
-} from 'lucide-react-native';
-import { SPACING, SHADOWS, FONTS, LAYOUT, BORDER_RADIUS } from '@/constants/theme';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { MeshBackground } from '@/components/MeshBackground';
-import { storyService } from '@/services/database';
-import { getRelativeTime, getSeasonPalette } from '@/utils/dateUtils';
-import { hapticFeedback } from '@/utils/haptics';
-import { talkative } from '@/utils/talkative';
 import { Container } from '@/components/Container';
-import { BREAKPOINTS } from '@/constants/theme';
-import { LoadingSkeleton, Skeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
+import { FloatingParticles } from '@/components/FloatingParticles';
+import { LoadingSkeleton,Skeleton } from '@/components/LoadingSkeleton';
+import { MeshBackground } from '@/components/MeshBackground';
+import { BORDER_RADIUS,BREAKPOINTS,FONTS,LAYOUT,SHADOWS,SPACING } from '@/constants/theme';
+import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useUI } from '@/contexts/UIContext';
+import { storyService } from '@/services/database';
+import { useEntranceSequence,useFloat,usePulse,useSpringPress } from '@/utils/animations';
+import { getRelativeTime,getSeasonPalette } from '@/utils/dateUtils';
+import { hapticFeedback } from '@/utils/haptics';
+import { getLanguageFlag,getLanguageNativeName } from '@/utils/languageUtils';
+import { talkative } from '@/utils/talkative';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import {
+ChevronRight,
+Grid2x2,
+List,
+Play,
+Search,
+SlidersHorizontal,
+Sparkles,
+Volume2
+} from 'lucide-react-native';
+import React,{ useCallback,useEffect,useMemo,useState } from 'react';
+import {
+RefreshControl,
+ScrollView,
+StyleSheet,
+Text,
+TextInput,
+TouchableOpacity,
+useWindowDimensions,
+View,
+} from 'react-native';
+import Animated,{
+FadeIn,
+FadeInDown,FadeInUp,
+interpolate,
+useAnimatedStyle,
+useSharedValue,
+withSpring,
+ZoomIn,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets,type EdgeInsets } from 'react-native-safe-area-context';
 
 // Responsive constants - Denser for premium agency look
 const COLUMN_GAP = 12;

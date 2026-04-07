@@ -1,11 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, useWindowDimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
+import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SHADOWS,SPACING } from '@/constants/theme';
 import { Achievement } from '@/services/achievementService';
-import { PremiumButton } from './PremiumButton';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { Modal,Pressable,StyleSheet,Text,useWindowDimensions,View } from 'react-native';
 import { CelebrationOverlay } from './CelebrationOverlay';
+import { PremiumButton } from './PremiumButton';
 
 interface AchievementModalProps {
   visible: boolean;

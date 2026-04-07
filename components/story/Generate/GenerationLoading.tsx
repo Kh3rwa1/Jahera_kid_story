@@ -1,35 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withSequence,
-  withSpring,
-  interpolate,
-  Easing as ReEasing,
-  FadeInUp,
-  ZoomIn,
-  SlideInDown,
-} from 'react-native-reanimated';
-import LottieView from 'lottie-react-native';
-import { Check, Sparkles, Wand as Wand2, MapPin, Volume2 } from 'lucide-react-native';
-import { Audio } from 'expo-av';
-import { generateAudio } from '@/services/audioService';
-import { formatLocationLabel, LocationContext } from '@/services/locationService';
 import { FUN_FACTS } from '@/constants/storyOptions';
-import { FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
-import { ThemeColors } from '@/types/theme';
+import { FONTS,SHADOWS } from '@/constants/theme';
 import { GenerationStep } from '@/hooks/useStoryGeneration';
-import { hapticFeedback } from '@/utils/haptics';
+import { generateAudio } from '@/services/audioService';
+import { formatLocationLabel,LocationContext } from '@/services/locationService';
+import { ThemeColors } from '@/types/theme';
+import { Audio } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
+import LottieView from 'lottie-react-native';
+import { Check,MapPin,Sparkles } from 'lucide-react-native';
+import React,{ useEffect,useState } from 'react';
+import {
+Dimensions,
+StyleSheet,
+Text,
+View
+} from 'react-native';
+import Animated,{
+FadeInUp,
+Easing as ReEasing,
+useAnimatedStyle,
+useSharedValue,
+withRepeat,
+withSequence,
+withTiming,
+ZoomIn
+} from 'react-native-reanimated';
 
 interface GenerationLoadingProps {
   colors: ThemeColors;
@@ -43,7 +38,7 @@ interface GenerationLoadingProps {
 
 export function GenerationLoading({
   colors, status, progress, steps, locationCtx, languageCode, profile
-}: GenerationLoadingProps) {
+}: Readonly<GenerationLoadingProps>) {
   const { width: winWidth } = Dimensions.get('window');
   
   const [funFactIndex, setFunFactIndex] = useState(0);

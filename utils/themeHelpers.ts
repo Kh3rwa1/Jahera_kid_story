@@ -5,8 +5,8 @@
  * and prevents the common "COLORS is not defined" error.
  */
 
+import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SHADOWS,SPACING } from '@/constants/theme';
 import { StyleSheet } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '@/constants/theme';
 
 /**
  * Creates a function that generates dynamic styles based on theme

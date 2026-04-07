@@ -1,7 +1,7 @@
-import { Platform } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { storage,STORAGE_BUCKETS } from '@/lib/appwrite';
 import * as FileSystem from 'expo-file-system';
-import { storage, STORAGE_BUCKETS } from '@/lib/appwrite';
+import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
 
 export type ImageSource = 'camera' | 'library';
 

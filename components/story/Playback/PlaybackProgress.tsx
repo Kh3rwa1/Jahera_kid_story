@@ -1,13 +1,12 @@
+import { FONTS,SPACING } from '@/constants/theme';
+import { useAudio,useAudioProgress } from '@/contexts/AudioContext';
+import { ThemeColors } from '@/types/theme';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
+StyleSheet,
+Text,
+View
 } from 'react-native';
-import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
-import { FONTS, SPACING } from '@/constants/theme';
-import { ThemeColors } from '@/types/theme';
 
 interface PlaybackProgressProps {
   accentColor: string;
@@ -15,14 +14,14 @@ interface PlaybackProgressProps {
 }
 
 export function formatTime(ms: number) {
-  if (isNaN(ms) || ms < 0) return '0:00';
+  if (Number.isNaN(ms) || ms < 0) return '0:00';
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-export function PlaybackProgress({ accentColor, colors }: PlaybackProgressProps) {
+export function PlaybackProgress({ accentColor, colors }: Readonly<PlaybackProgressProps>) {
   const { seek } = useAudio();
   const { position, duration } = useAudioProgress();
 

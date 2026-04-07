@@ -1,35 +1,35 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
-  StatusBar,
-  useWindowDimensions,
-} from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import LottieView from 'lottie-react-native';
-import { SPACING, BORDER_RADIUS, FONT_SIZES, FONTS, SHADOWS } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import Animated, { 
-  FadeInDown, 
-  FadeInUp, 
-  ZoomIn, 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withSequence 
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
-import { ArrowLeft, ChevronRight, Check, Sparkles } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
+import { FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useNarrationAudio } from '@/hooks/useNarrationAudio';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams,useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
+import { ArrowLeft,Check,ChevronRight,Sparkles } from 'lucide-react-native';
+import { useEffect,useMemo,useRef,useState } from 'react';
+import {
+KeyboardAvoidingView,
+Platform,
+ScrollView,
+StatusBar,
+StyleSheet,
+Text,
+TextInput,
+TouchableOpacity,
+useWindowDimensions,
+View,
+} from 'react-native';
+import Animated,{
+FadeInDown,
+FadeInUp,
+useAnimatedStyle,
+useSharedValue,
+withSequence,
+withSpring,
+ZoomIn
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function KidName() {
   const router = useRouter();

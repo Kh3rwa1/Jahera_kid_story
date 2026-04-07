@@ -1,18 +1,17 @@
+import { MarqueeText } from '@/components/MarqueeText';
+import { BORDER_RADIUS,FONTS,SPACING } from '@/constants/theme';
+import { TabMode } from '@/hooks/usePlayback';
+import { ThemeColors } from '@/types/theme';
+import { hapticFeedback } from '@/utils/haptics';
+import { ArrowLeft,BookMarked,Headphones,Share2,Type } from 'lucide-react-native';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Platform,
+StyleSheet,
+Text,
+TouchableOpacity,
+View
 } from 'react-native';
-import { ArrowLeft, Headphones, BookMarked, Share2, Type } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MarqueeText } from '@/components/MarqueeText';
-import { FONTS, SPACING, BORDER_RADIUS } from '@/constants/theme';
-import { ThemeColors } from '@/types/theme';
-import { TabMode } from '@/hooks/usePlayback';
-import { hapticFeedback } from '@/utils/haptics';
 
 interface PlaybackHeaderProps {
   tab: TabMode;
@@ -40,7 +39,7 @@ export function PlaybackHeader({
   colors,
   accentColor,
   isAudioMode = false,
-}: PlaybackHeaderProps) {
+}: Readonly<PlaybackHeaderProps>) {
   if (isAudioMode) {
     return (
       <SafeAreaView edges={['top']} style={styles.audioTopBar}>
