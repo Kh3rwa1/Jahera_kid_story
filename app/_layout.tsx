@@ -37,6 +37,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ReadingPreferencesProvider } from '@/contexts/ReadingPreferencesContext';
 import { AudioProvider } from '@/contexts/AudioContext';
 import { revenueCatService } from '@/services/revenueCatService';
+import { videoCacheService } from '@/services/videoCacheService';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,6 +46,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     revenueCatService.configure();
+    // Prefetch brand video from Appwrite on first launch
+    videoCacheService.prefetch();
   }, []);
 
   const [fontsLoaded, fontError] = useFonts({
@@ -86,19 +89,20 @@ export default function RootLayout() {
             <Stack screenOptions={{
               headerShown: false,
               animation: 'slide_from_right',
-              animationDuration: 250,
+              animationDuration: 300,
               gestureEnabled: true,
               fullScreenGestureEnabled: true,
+              gestureDirection: 'horizontal',
             }}>
-              <Stack.Screen name="index" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 200 }} />
-            <Stack.Screen name="paywall" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: 300 }} />
+              <Stack.Screen name="index" options={{ animation: 'fade', animationDuration: 200 }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 250 }} />
+            <Stack.Screen name="paywall" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: 350 }} />
             <Stack.Screen name="parent-dashboard" />
-              <Stack.Screen name="auth/login" />
-              <Stack.Screen name="auth/register" />
-              <Stack.Screen name="story/generate" options={{ animation: 'fade_from_bottom', animationDuration: 280 }} />
-              <Stack.Screen name="story/playback" options={{ animation: 'fade_from_bottom', animationDuration: 280 }} />
-              <Stack.Screen name="story/quiz" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
+              <Stack.Screen name="auth/login" options={{ animation: 'fade', animationDuration: 280 }} />
+              <Stack.Screen name="auth/register" options={{ animation: 'fade', animationDuration: 280 }} />
+              <Stack.Screen name="story/generate" options={{ animation: 'fade_from_bottom', animationDuration: 320 }} />
+              <Stack.Screen name="story/playback" options={{ animation: 'fade_from_bottom', animationDuration: 320 }} />
+              <Stack.Screen name="story/quiz" options={{ animation: 'slide_from_right', animationDuration: 300 }} />
               <Stack.Screen name="+not-found" />
             </Stack>
             <StatusBar style="auto" />

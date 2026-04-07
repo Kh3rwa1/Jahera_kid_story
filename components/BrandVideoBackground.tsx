@@ -1,48 +1,51 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Dimensions, ViewStyle, Platform, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Dimensions, ViewStyle, Platform } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { STORAGE_BUCKETS, storage, APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID } from '@/lib/appwrite';
+import { videoCacheService } from '@/services/videoCacheService';
 
 interface BrandVideoBackgroundProps {
   /** The ID of the file in the app_assets bucket (e.g., 'onboarding_video') */
   videoId: string;
-  /** A fallback local asset if the Appwrite fetch fails (e.g., require('@/assets/jahera.mp4')) */
+  /** A fallback local asset if the Appwrite fetch fails */
   fallbackSource?: any;
   /** Optional styling for the container */
   style?: ViewStyle;
-  /** Overlay opacity (0 to 1) to darken the video so white text is readable. Default is 0.3 */
+  /** Overlay opacity (0 to 1). Default is 0.3 */
   overlayOpacity?: number;
 }
 
 /**
- * Resolves the best available video source.
- * Priority: Appwrite remote URL > local bundled asset
- *
- * Key insight: `useVideoPlayer` only reads the initial source once.
- * We MUST resolve the URI *before* passing it to the hook.
+ * Hook that returns the best video URI.
+ * Priority: videoCacheService (already downloaded) → bundled asset fallback
  */
-function useResolvedVideoSource(videoId: string, fallbackSource: any) {
-  const [resolvedSource, setResolvedSource] = useState<string | null>(null);
-  const [isResolving, setIsResolving] = useState(true);
+function useResolvedVideoSource(fallbackSource: any) {
+  const [resolvedSource, setResolvedSource] = useState<string | null>(() => {
+    // Sync check: if the cache already has a URI, use it immediately
+    return videoCacheService.getCachedUri();
+  });
+  const [isResolving, setIsResolving] = useState(!videoCacheService.isReady);
 
   useEffect(() => {
+    if (resolvedSource) {
+      setIsResolving(false);
+      return;
+    }
+
     let isMounted = true;
 
     const resolve = async () => {
-      // 1. Try Appwrite remote URL first
+      // 1. Wait for the cache service to finish its prefetch
       try {
-        await storage.getFile(STORAGE_BUCKETS.APP_ASSETS, videoId);
-        const url = storage.getFileView(STORAGE_BUCKETS.APP_ASSETS, videoId).toString();
-        if (isMounted && url) {
-          setResolvedSource(url);
+        await videoCacheService.prefetch();
+        const cached = videoCacheService.getCachedUri();
+        if (isMounted && cached) {
+          setResolvedSource(cached);
           setIsResolving(false);
           return;
         }
-      } catch {
-        // Remote not available
-      }
+      } catch {}
 
-      // 2. Use local asset URI resolved via Asset API
+      // 2. Fallback: resolve the bundled asset
       if (fallbackSource) {
         try {
           const { Asset } = require('expo-asset');
@@ -52,68 +55,81 @@ function useResolvedVideoSource(videoId: string, fallbackSource: any) {
             setIsResolving(false);
             return;
           }
-        } catch {
-          // Asset loading failed
-        }
+        } catch {}
       }
 
-      // 3. Nothing worked
-      if (isMounted) {
-        setIsResolving(false);
-      }
+      if (isMounted) setIsResolving(false);
     };
 
     resolve();
     return () => { isMounted = false; };
-  }, [videoId, fallbackSource]);
+  }, [fallbackSource, resolvedSource]);
 
   return { resolvedSource, isResolving };
 }
 
-export function BrandVideoBackground({ videoId, fallbackSource, style, overlayOpacity = 0.3 }: BrandVideoBackgroundProps) {
-  const { width, height } = Dimensions.get('screen');
-  const { resolvedSource, isResolving } = useResolvedVideoSource(videoId, fallbackSource);
-
-  // Only create the player once the source is fully resolved
-  const player = useVideoPlayer(resolvedSource, (p) => {
+/**
+ * Inner component — only mounts once we have a valid source URI.
+ * This guarantees `useVideoPlayer` always gets a real string.
+ */
+function VideoPlayerInner({ source, width, height, overlayOpacity }: { 
+  source: string; 
+  width: number; 
+  height: number; 
+  overlayOpacity: number;
+}) {
+  const player = useVideoPlayer(source, (p) => {
     p.loop = true;
     p.muted = true;
     p.play();
   });
 
-  // Safety retry — ensure playback starts
+  // Safety retry
   useEffect(() => {
-    if (player && resolvedSource) {
+    if (player) {
       const timer = setTimeout(() => {
         try {
           player.muted = true;
           player.loop = true;
           player.play();
         } catch {}
-      }, 500);
+      }, 600);
       return () => clearTimeout(timer);
     }
-  }, [player, resolvedSource]);
+  }, [player]);
 
-  // While resolving or if no source, show dark placeholder
+  return (
+    <>
+      <VideoView
+        player={player}
+        style={{ width, height }}
+        contentFit="cover"
+        nativeControls={false}
+        {...(Platform.OS === 'android' ? { surfaceType: 'textureView' } : {})}
+      />
+      {overlayOpacity > 0 && (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: `rgba(0,0,0,${overlayOpacity})` }]} />
+      )}
+    </>
+  );
+}
+
+export function BrandVideoBackground({ videoId, fallbackSource, style, overlayOpacity = 0.3 }: BrandVideoBackgroundProps) {
+  const { width, height } = Dimensions.get('screen');
+  const { resolvedSource, isResolving } = useResolvedVideoSource(fallbackSource);
+
   if (isResolving || !resolvedSource) {
     return <View style={[styles.container, style, { backgroundColor: '#0F172A' }]} />;
   }
 
   return (
     <View style={[styles.container, style]}>
-      <VideoView
-        player={player}
-        style={{ width, height }}
-        contentFit="cover"
-        nativeControls={false}
-        // On Android, textureView is needed when video is behind other views
-        // (e.g. as a background). SurfaceView (default) can cause z-order issues.
-        {...(Platform.OS === 'android' ? { surfaceType: 'textureView' } : {})}
+      <VideoPlayerInner
+        source={resolvedSource}
+        width={width}
+        height={height}
+        overlayOpacity={overlayOpacity}
       />
-      {overlayOpacity > 0 && (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: `rgba(0,0,0,${overlayOpacity})` }]} />
-      )}
     </View>
   );
 }

@@ -8,6 +8,7 @@ import {
   Text,
   useWindowDimensions,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
@@ -772,6 +773,8 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
       minHeight: isTablet ? 300 : 220,
       overflow: 'hidden',
       position: 'relative',
+      borderWidth: 1.5,
+      borderColor: 'rgba(255,255,255,0.15)',
       ...SHADOWS.lg,
     },
     orb: { position: 'absolute', borderRadius: 999 },
@@ -901,6 +904,8 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
       borderRadius: BORDER_RADIUS.pill,
       borderWidth: 1.5,
       ...SHADOWS.sm,
+      // Frosted glass effect
+      ...(Platform.OS !== 'web' ? { shadowColor: C.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 } : {}),
     },
     discoveryEmoji: { fontSize: isTablet ? 24 : 22 },
     discoveryLabel: { fontSize: isTablet ? 18 : 16, fontFamily: FONTS.displayBold },
@@ -922,9 +927,9 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
     carousel: { paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl, gap: SPACING.md },
     storyCard: {
       borderRadius: 28, overflow: 'hidden', ...SHADOWS.md,
-      borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)',
+      borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.06)',
     },
-    storyArt: { width: '100%', height: isTablet ? 170 : 155, alignItems: 'center', justifyContent: 'center' },
+    storyArt: { width: '100%', height: isTablet ? 170 : 155, alignItems: 'center', justifyContent: 'center', position: 'relative' },
     storyArtEmoji: { fontSize: isTablet ? 80 : 68 },
     storyBadgesTop: { position: 'absolute', top: 12, left: 12 },
     storyFlagBadge: { width: isTablet ? 44 : 36, height: isTablet ? 44 : 36, borderRadius: isTablet ? 22 : 18, backgroundColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center', ...SHADOWS.xs },
@@ -943,9 +948,9 @@ const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
 
     /* Empty state */
     emptyWrap: { paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl },
-    emptyCard: { borderRadius: 32, padding: isTablet ? 60 : SPACING.xxxl, alignItems: 'center', gap: SPACING.lg, ...SHADOWS.sm },
-    emptyIconRing: { width: isTablet ? 120 : 80, height: isTablet ? 120 : 80, borderRadius: isTablet ? 60 : 40, backgroundColor: '#FFF9E6', alignItems: 'center', justifyContent: 'center' },
-    emptyEmoji: { fontSize: isTablet ? 60 : 40 },
+    emptyCard: { borderRadius: 32, padding: isTablet ? 60 : SPACING.xxxl, alignItems: 'center', gap: SPACING.lg, ...SHADOWS.sm, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)' },
+    emptyIconRing: { width: isTablet ? 120 : 90, height: isTablet ? 120 : 90, borderRadius: isTablet ? 60 : 45, backgroundColor: '#FFF9E6', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#FBBF2430' },
+    emptyEmoji: { fontSize: isTablet ? 60 : 44 },
     emptyTitle: { fontSize: isTablet ? 32 : 24, fontFamily: FONTS.display, letterSpacing: -0.5 },
     emptySub: { fontSize: isTablet ? 18 : 14, fontFamily: FONTS.displayMedium, textAlign: 'center', lineHeight: isTablet ? 26 : 22, opacity: 0.7 },
     emptyAction: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 32, paddingVertical: 18, borderRadius: BORDER_RADIUS.pill, marginTop: 12, ...SHADOWS.md },

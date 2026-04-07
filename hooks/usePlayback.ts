@@ -1,0 +1,125 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { storyService, quizService } from '@/services/database';
+import { Story } from '@/types/database';
+import { useAudio } from '@/contexts/AudioContext';
+import { Easing, withTiming, useSharedValue } from 'react-native-reanimated';
+import { logger } from '@/utils/logger';
+import { videoCacheService } from '@/services/videoCacheService';
+
+export type TabMode = 'audio' | 'text';
+
+export function usePlayback() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const { loadAndPlayAudio, stopAudio, retryAudio } = useAudio();
+
+  const [story, setStory] = useState<Story | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasQuiz, setHasQuiz] = useState(false);
+  const [tab, setTab] = useState<TabMode>('audio');
+  const [showCinematicIntro, setShowCinematicIntro] = useState(true);
+  const [videoUri, setVideoUri] = useState<string | null>(() => videoCacheService.getCachedUri());
+  
+  const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const introOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    if (videoUri) return;
+    let mounted = true;
+    (async () => {
+      await videoCacheService.prefetch();
+      const cached = videoCacheService.getCachedUri();
+      if (mounted && cached) {
+        setVideoUri(cached);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [videoUri]);
+
+  const loadStory = useCallback(async () => {
+    try {
+      const storyId = params.storyId as string;
+      if (!storyId) {
+        setIsLoading(false);
+        setShowCinematicIntro(false);
+        return;
+      }
+
+      const storyData = await storyService.getById(storyId);
+      if (!storyData) {
+        setIsLoading(false);
+        setShowCinematicIntro(false);
+        return;
+      }
+      setStory(storyData);
+      
+      const quizData = await quizService.getQuestionsByStoryId(storyId);
+      setHasQuiz(!!quizData && quizData.length > 0);
+
+      // Start audio generation/play immediately
+      loadAndPlayAudio(storyData);
+      
+      setIsLoading(false);
+      
+      // Minimum duration for the cinematic intro
+      introTimerRef.current = setTimeout(() => {
+        dismissCinematicIntro();
+      }, 5000);
+    } catch (err) {
+      logger.error('[usePlayback] Failed to load story:', err);
+      setIsLoading(false);
+      setShowCinematicIntro(false);
+    }
+  }, [params.storyId, loadAndPlayAudio]);
+
+  const dismissCinematicIntro = useCallback(() => {
+    if (introTimerRef.current) {
+      clearTimeout(introTimerRef.current);
+      introTimerRef.current = null;
+    }
+    introOpacity.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) });
+    setTimeout(() => setShowCinematicIntro(false), 600);
+  }, [introOpacity]);
+
+  useEffect(() => {
+    loadStory();
+    return () => {
+      if (introTimerRef.current) clearTimeout(introTimerRef.current);
+    };
+  }, [loadStory]);
+
+  const handleBack = useCallback(() => {
+    router.back();
+  }, [router]);
+
+  const handleGoToQuiz = useCallback(() => {
+    if (!story) return;
+    stopAudio();
+    router.push({ pathname: '/story/quiz', params: { storyId: story.id } });
+  }, [stopAudio, story, router]);
+
+  const handleNewStory = useCallback(() => {
+    if (!story) return;
+    stopAudio();
+    router.push({ 
+      pathname: '/story/generate', 
+      params: { profileId: story.profile_id, languageCode: story.language_code } 
+    });
+  }, [stopAudio, story, router]);
+
+  return {
+    story,
+    isLoading,
+    hasQuiz,
+    tab,
+    setTab,
+    showCinematicIntro,
+    introOpacity,
+    dismissCinematicIntro,
+    handleBack,
+    handleGoToQuiz,
+    handleNewStory,
+    retryAudio
+  };
+}

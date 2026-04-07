@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { logger } from '@/utils/logger';
 
 let Purchases: any = null;
 let PurchasesPackage: any = null;
@@ -25,11 +26,24 @@ if (Platform.OS !== 'web') {
 
 export type PlanType = 'free' | 'pro' | 'family';
 
+export interface RCPackage {
+  identifier: string;
+  packageType: string;
+  product: {
+    identifier: string;
+    description: string;
+    title: string;
+    price: number;
+    priceString: string;
+    currencyCode: string;
+  };
+}
+
 export interface RCOffering {
-  weekly: any | null;
-  monthly: any | null;
-  yearly: any | null;
-  family: any | null;
+  weekly: RCPackage | null;
+  monthly: RCPackage | null;
+  yearly: RCPackage | null;
+  family: RCPackage | null;
   raw: any | null;
 }
 
@@ -88,7 +102,7 @@ export const revenueCatService = {
         await Purchases.logIn(userId);
       }
     } catch (err) {
-      console.warn('[RevenueCat] configure error:', err);
+      logger.warn('[RevenueCat] configure error:', err);
     }
   },
 
@@ -97,7 +111,7 @@ export const revenueCatService = {
     try {
       await Purchases.logIn(userId);
     } catch (err) {
-      console.warn('[RevenueCat] identify error:', err);
+      logger.warn('[RevenueCat] identify error:', err);
     }
   },
 

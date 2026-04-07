@@ -33,7 +33,7 @@ export const Skeleton = ({
 
   useEffect(() => {
     shimmerProgress.value = withRepeat(
-      withTiming(1, { duration: 1500, easing: Easing.bezier(0.4, 0, 0.6, 1) }),
+      withTiming(1, { duration: 1800, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }),
       -1,
       false
     );
