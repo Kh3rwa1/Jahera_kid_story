@@ -125,6 +125,8 @@ function AnimatedStreakChip({ count, styles }: { count: number; styles: { streak
   );
 }
 
+type HomeStyles = ReturnType<typeof useStyles>;
+
 interface StatsTickerProps {
   stories: number;
   languages: number;
@@ -133,7 +135,7 @@ interface StatsTickerProps {
   cardBackground: string;
   textPrimary: string;
   textSecondary: string;
-  styles: any;
+  styles: HomeStyles;
 }
 
 function StatsTicker({ stories, languages, characters, primaryColor, cardBackground, textPrimary, textSecondary, styles }: Readonly<StatsTickerProps>) {
@@ -195,7 +197,7 @@ function StatsTicker({ stories, languages, characters, primaryColor, cardBackgro
   );
 }
 
-const QuickActionItem = React.memo(function QuickActionItem({ item, index, styles }: { item: { icon: React.ReactNode; label: string; sublabel: string; grad: [string, string]; onPress: () => void; textPrimary: string; textSecondary: string }; index: number; styles: any }) {
+const QuickActionItem = React.memo(function QuickActionItem({ item, index, styles }: { item: { icon: React.ReactNode; label: string; sublabel: string; grad: [string, string]; onPress: () => void; textPrimary: string; textSecondary: string }; index: number; styles: HomeStyles }) {
   const entranceStyle = useEntranceSequence(index, 160, 60);
   const { style: pressStyle, onPressIn, onPressOut } = useSpringPress();
 
@@ -243,7 +245,7 @@ const QuickActions = React.memo(function QuickActions({
   activeStoryId?: string | null;
   isPlaying: boolean;
   playPause: () => Promise<void>;
-  styles: any;
+  styles: HomeStyles;
 }) {
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
@@ -727,7 +729,7 @@ export default function HomeScreen() {
   );
 }
 
-const useStyles = (C: any, isTablet: boolean, isDesktop: boolean) => {
+const useStyles = (C: Record<string, string>, isTablet: boolean, isDesktop: boolean) => {
   return useMemo(() => StyleSheet.create({
     root: { flex: 1 },
     scroll: { flex: 1 },
