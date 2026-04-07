@@ -39,7 +39,15 @@ useSharedValue
 } from 'react-native-reanimated';
 import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
 
-function AnimatedAchievementCard({ card, index, styles }: { card: any; index: number; styles: any }) {
+interface AchievementCardData {
+  label: string;
+  value: string;
+  sub: string;
+  gradient: [string, string];
+  emoji: string;
+}
+
+function AnimatedAchievementCard({ card, index, styles }: { card: AchievementCardData; index: number; styles: any }) {
   const entrance = useEntranceSequence(index, 120, 70);
   const glowStyle = useGlowPulse(0.85, 1, 2000 + index * 300);
 
