@@ -1,7 +1,7 @@
 import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check,RotateCcw } from 'lucide-react-native';
-import React,{ useCallback,useRef,useState } from 'react';
+import { useCallback,useRef,useState } from 'react';
 import { PanResponder,StyleSheet,Text,TouchableOpacity,useWindowDimensions,View } from 'react-native';
 import Animated,{
 FadeIn,

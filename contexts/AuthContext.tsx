@@ -23,9 +23,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const u = await account.get();
+        const [u, s] = await Promise.all([
+          account.get(),
+          account.getSession('current'),
+        ]);
         setUser(u);
-        const s = await account.getSession('current');
         setSession(s);
       } catch (error) {
         setUser(null);
@@ -48,15 +50,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = useCallback(async (email: string, password: string, name?: string) => {
     await account.create(ID.unique(), email, password, name);
-    const sessionRes = await account.createEmailPasswordSession(email, password);
-    const userRes = await account.get();
+    const [sessionRes, userRes] = await Promise.all([
+      account.createEmailPasswordSession(email, password),
+      account.get(),
+    ]);
     setSession(sessionRes);
     setUser(userRes);
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const sessionRes = await account.createEmailPasswordSession(email, password);
-    const userRes = await account.get();
+    const [sessionRes, userRes] = await Promise.all([
+      account.createEmailPasswordSession(email, password),
+      account.get(),
+    ]);
     setSession(sessionRes);
     setUser(userRes);
   }, []);

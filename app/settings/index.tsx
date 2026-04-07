@@ -53,6 +53,17 @@ export default function SettingsScreen() {
   const isPro = subscription?.plan !== 'free';
   const rcUIAvailable = revenueCatService.isUIAvailable();
 
+  const syncSubscriptionAndNotify = async (plan: 'pro' | 'family') => {
+    if (!profile) return;
+    if (plan === 'family') {
+      await subscriptionService.upgradeToFamily(profile.id);
+    } else {
+      await subscriptionService.upgradeToPro(profile.id);
+    }
+    await refreshSubscription();
+    Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.');
+  };
+
   const handleManageSubscription = async () => {
     if (!profile) return;
 
@@ -77,39 +88,25 @@ export default function SettingsScreen() {
   const handleRestorePurchases = async () => {
     if (!profile) return;
 
-    if (rcUIAvailable) {
-      setIsRestoring(true);
-      try {
-        const result = await revenueCatService.presentPaywallIfNeeded(ENTITLEMENT_PRO);
-        if (result.purchased || result.restored) {
-          await subscriptionService.syncFromRevenueCat(profile.id);
-          await refreshSubscription();
-          if (result.restored) {
-            Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.');
-          }
-        }
-      } catch {
-        Alert.alert('Restore Failed', 'Please try again or contact support.');
-      } finally {
-        setIsRestoring(false);
-      }
-      return;
-    }
-
     setIsRestoring(true);
     try {
-      const rcInfo = await revenueCatService.restorePurchases();
-      if (rcInfo.isActive) {
-        if (rcInfo.plan === 'family') {
-          await subscriptionService.upgradeToFamily(profile.id);
-        } else {
-          await subscriptionService.upgradeToPro(profile.id);
-        }
+      if (rcUIAvailable) {
+        const result = await revenueCatService.presentPaywallIfNeeded(ENTITLEMENT_PRO);
+        if (!result.purchased && !result.restored) return;
+        await subscriptionService.syncFromRevenueCat(profile.id);
         await refreshSubscription();
-        Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.');
-      } else {
-        Alert.alert('No Purchases Found', 'We could not find any active subscriptions linked to your account.');
+        if (result.restored) {
+          Alert.alert('Purchases Restored', 'Your subscription has been restored successfully.');
+        }
+        return;
       }
+
+      const rcInfo = await revenueCatService.restorePurchases();
+      if (!rcInfo.isActive) {
+        Alert.alert('No Purchases Found', 'We could not find any active subscriptions linked to your account.');
+        return;
+      }
+      await syncSubscriptionAndNotify(rcInfo.plan === 'family' ? 'family' : 'pro');
     } catch {
       Alert.alert('Restore Failed', 'Please try again or contact support.');
     } finally {
