@@ -104,12 +104,28 @@ class CacheService {
   }
 
   private async enforceMaxEntries(): Promise<void> {
-    while (this.memoryCache.size > this.maxEntries) {
+    if (this.memoryCache.size <= this.maxEntries) {
+      return;
+    }
+
+    const keysToEvict: string[] = [];
+    while (this.memoryCache.size - keysToEvict.length > this.maxEntries) {
       const evictionKey = this.selectEvictionKey();
       if (!evictionKey) {
-        return;
+        break;
       }
-      await this.delete(evictionKey);
+      this.memoryCache.delete(evictionKey);
+      keysToEvict.push(evictionKey);
+    }
+
+    if (keysToEvict.length === 0) {
+      return;
+    }
+
+    try {
+      await AsyncStorage.multiRemove(keysToEvict.map((key) => `cache_${key}`));
+    } catch (error) {
+      console.error('Failed to evict cache entries:', error);
     }
   }
 

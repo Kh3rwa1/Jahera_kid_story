@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -75,9 +75,17 @@ export function GenerationLoading({
 
     return () => {
       clearInterval(factInterval);
-      if (sound) sound.unloadAsync();
     };
-  }, []);
+  }, [orbRotate, pulseScale]);
+
+
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync().catch(() => undefined);
+      }
+    };
+  }, [sound]);
 
   // Speak fun fact whenever it changes
   useEffect(() => {
@@ -99,7 +107,7 @@ export function GenerationLoading({
       }
     })();
     return () => { mounted = false; };
-  }, [funFactIndex]);
+  }, [funFactIndex, languageCode, sound]);
 
   const orbStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${orbRotate.value}deg` }],

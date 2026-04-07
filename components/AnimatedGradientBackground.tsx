@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   Easing,
   interpolate,
-  runOnJS,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -29,7 +29,6 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
 }) => {
   const [currentColorSet, setCurrentColorSet] = useState<GradientSet>(colorSets[0]);
   const [nextColorSet, setNextColorSet] = useState<GradientSet>(colorSets[1]);
-  const progress = useSharedValue(0);
   const opacity = useSharedValue(0);
 
   useEffect(() => {
@@ -53,7 +52,10 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
       true
     );
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      cancelAnimation(opacity);
+    };
   }, [colorSets, duration]);
 
   const animatedStyle = useAnimatedStyle(() => {
