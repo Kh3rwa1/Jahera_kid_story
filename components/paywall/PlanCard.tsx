@@ -24,6 +24,24 @@ interface PlanCardProps {
   colors: ThemeColors;
 }
 
+function PlanInfo({ plan, selected, colors, featured }: { plan: Plan; selected: boolean; colors: ThemeColors; featured?: boolean }) {
+  return (
+    <View style={styles.planInfo}>
+      <View>
+        <Text style={[styles.planLabel, { color: featured && selected ? "#FFF" : colors.text.primary }]}>
+          {plan.label}
+        </Text>
+        <Text style={[styles.planPeriod, { color: featured && selected ? "rgba(255,255,255,0.8)" : colors.text.light }]}>
+          {plan.price} / {plan.period}
+        </Text>
+      </View>
+      <View style={[styles.checkCircle, { backgroundColor: featured ? (selected ? "#FFF" : "rgba(0,0,0,0.05)") : (selected ? colors.primary : "rgba(0,0,0,0.05)") }]}>
+        {selected && <Check size={featured ? 14 : 12} color={featured ? "#FF5C00" : "#FFFFFF"} strokeWidth={3} />}
+      </View>
+    </View>
+  );
+}
+
 export function PlanCard({ plan, selected, onSelect, colors }: PlanCardProps) {
   const scale = useSharedValue(1);
 
@@ -62,19 +80,7 @@ export function PlanCard({ plan, selected, onSelect, colors }: PlanCardProps) {
               )}
             </View>
 
-            <View style={styles.planInfo}>
-              <View>
-                <Text style={[styles.planLabel, { color: selected ? '#FFF' : colors.text.primary }]}>
-                  {plan.label}
-                </Text>
-                <Text style={[styles.planPeriod, { color: selected ? 'rgba(255,255,255,0.8)' : colors.text.light }]}>
-                   {plan.price} / {plan.period}
-                </Text>
-              </View>
-              <View style={[styles.checkCircle, { backgroundColor: selected ? '#FFF' : 'rgba(0,0,0,0.05)' }]}>
-                {selected && <Check size={14} color="#FF5C00" strokeWidth={3} />}
-              </View>
-            </View>
+            <PlanInfo plan={plan} selected={selected} colors={colors} featured />
           </LinearGradient>
         </Animated.View>
       </TouchableOpacity>
@@ -91,17 +97,7 @@ export function PlanCard({ plan, selected, onSelect, colors }: PlanCardProps) {
           animStyle,
         ]}
       >
-        <View style={styles.planInfo}>
-          <View>
-            <Text style={[styles.planLabel, { color: colors.text.primary }]}>{plan.label}</Text>
-            <Text style={[styles.planPeriod, { color: colors.text.light }]}>
-              {plan.price} / {plan.period}
-            </Text>
-          </View>
-          <View style={[styles.checkCircle, { backgroundColor: selected ? colors.primary : 'rgba(0,0,0,0.05)' }]}>
-            {selected && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
-          </View>
-        </View>
+        <PlanInfo plan={plan} selected={selected} colors={colors} />
       </Animated.View>
     </TouchableOpacity>
   );

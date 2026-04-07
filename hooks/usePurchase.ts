@@ -37,6 +37,54 @@ export function usePurchase() {
   const rcAvailable = revenueCatService.isAvailable();
   const rcUIAvailable = revenueCatService.isUIAvailable();
 
+  const navigateHome = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
+  }, [router]);
+
+  const syncAndCelebrate = useCallback(async (title: string, message: string) => {
+    if (!profile) return;
+    await subscriptionService.syncFromRevenueCat(profile.id);
+    await refreshSubscription();
+    hapticFeedback.success();
+    Alert.alert(title, message, [{ text: "Let's Go!", onPress: navigateHome }]);
+  }, [navigateHome, profile, refreshSubscription]);
+
+  const fallbackActivatePlan = useCallback(async (plan: Plan) => {
+    if (!profile) return;
+    if (plan.id === 'family') await subscriptionService.upgradeToFamily(profile.id);
+    else await subscriptionService.startTrial(profile.id);
+    await refreshSubscription();
+    Alert.alert('Success', 'Your subscription is active.');
+    navigateHome();
+  }, [navigateHome, profile, refreshSubscription]);
+
+  const handlePaywallResult = useCallback(async () => {
+    const result = await revenueCatService.presentPaywall(offerings.raw);
+    if (!result.purchased && !result.restored) return;
+
+    await syncAndCelebrate(
+      result.restored ? 'Purchases Restored' : 'Welcome to Pro!',
+      result.restored
+        ? 'Your subscription has been restored.'
+        : 'Your subscription is now active. Enjoy unlimited stories!'
+    );
+  }, [offerings.raw, syncAndCelebrate]);
+
+  const handlePackagePurchase = useCallback(async (plan: Plan) => {
+    if (!plan.rcPackage) return;
+
+    const result = await revenueCatService.purchasePackage(plan.rcPackage);
+    if (result.cancelled) return;
+
+    if (!result.success) {
+      Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
+      return;
+    }
+
+    await syncAndCelebrate('Welcome to Pro!', 'Your subscription is now active. Enjoy unlimited stories!');
+  }, [syncAndCelebrate]);
+
   const fetchOfferings = useCallback(async () => {
     if (!rcAvailable) {
       setOfferingsLoading(false);
@@ -66,55 +114,16 @@ export function usePurchase() {
 
     try {
       if (rcUIAvailable) {
-        const result = await revenueCatService.presentPaywall(offerings.raw);
-        if (result.purchased || result.restored) {
-          await subscriptionService.syncFromRevenueCat(profile.id);
-          await refreshSubscription();
-          hapticFeedback.success();
-          Alert.alert(
-            result.restored ? 'Purchases Restored' : 'Welcome to Pro!',
-            result.restored
-              ? 'Your subscription has been restored.'
-              : 'Your subscription is now active. Enjoy unlimited stories!',
-            [{ text: "Let's Go!", onPress: () => {
-              if (router.canGoBack()) router.back();
-              else router.replace('/(tabs)');
-            }}]
-          );
-        }
+        await handlePaywallResult();
         return;
       }
 
       if (rcAvailable && plan.rcPackage) {
-        const result = await revenueCatService.purchasePackage(plan.rcPackage);
-        if (result.cancelled) return;
-        if (result.success) {
-          await subscriptionService.syncFromRevenueCat(profile.id);
-          await refreshSubscription();
-          hapticFeedback.success();
-          Alert.alert(
-              'Welcome to Pro!',
-              'Your subscription is now active. Enjoy unlimited stories!',
-              [{ text: "Let's Go!", onPress: () => {
-                  if (router.canGoBack()) router.back();
-                  else router.replace('/(tabs)');
-              }}]
-          );
-        } else {
-          Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
-        }
-      } else {
-        // Fallback for non-RevenueCat environments
-        if (plan.id === 'family') {
-          await subscriptionService.upgradeToFamily(profile.id);
-        } else {
-          await subscriptionService.startTrial(profile.id);
-        }
-        await refreshSubscription();
-        Alert.alert('Success', 'Your subscription is active.');
-        if (router.canGoBack()) router.back();
-        else router.replace('/(tabs)');
+        await handlePackagePurchase(plan);
+        return;
       }
+
+      await fallbackActivatePlan(plan);
     } catch (err) {
       logger.error('[usePurchase] Purchase error:', err);
       Alert.alert('Error', 'An unexpected error occurred.');
