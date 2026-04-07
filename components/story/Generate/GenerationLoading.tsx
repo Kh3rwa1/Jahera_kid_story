@@ -50,6 +50,9 @@ export function GenerationLoading({
   const orbRotate = useSharedValue(0);
 
   useEffect(() => {
+    let mounted = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     pulseScale.value = withRepeat(
       withSequence(
         withTiming(1.08, { duration: 1400, easing: ReEasing.inOut(ReEasing.quad) }),
@@ -65,12 +68,17 @@ export function GenerationLoading({
       false
     );
 
-    const factInterval = setInterval(() => {
+    const cycleFacts = () => {
+      if (!mounted) return;
       setFunFactIndex(prev => (prev + 1) % FUN_FACTS.length);
-    }, 10000);
+      timeoutId = setTimeout(cycleFacts, 10000);
+    };
+
+    timeoutId = setTimeout(cycleFacts, 10000);
 
     return () => {
-      clearInterval(factInterval);
+      mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
       cancelAnimation(orbRotate);
       cancelAnimation(pulseScale);
     };
