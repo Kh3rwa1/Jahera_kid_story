@@ -1,6 +1,5 @@
 import { useAudio } from '@/contexts/AudioContext';
 import { quizService,storyService } from '@/services/database';
-import { videoCacheService } from '@/services/videoCacheService';
 import { Story } from '@/types/database';
 import { logger } from '@/utils/logger';
 import { useLocalSearchParams,useRouter } from 'expo-router';
@@ -12,30 +11,16 @@ export type TabMode = 'audio' | 'text';
 export function usePlayback() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { loadAndPlayAudio, stopAudio, retryAudio } = useAudio();
+  const { loadAndPlayAudio, pauseAudio, stopAudio, retryAudio } = useAudio();
 
   const [story, setStory] = useState<Story | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasQuiz, setHasQuiz] = useState(false);
   const [tab, setTab] = useState<TabMode>('audio');
   const [showCinematicIntro, setShowCinematicIntro] = useState(true);
-  const [videoUri, setVideoUri] = useState<string | null>(() => videoCacheService.getCachedUri());
   
   const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const introOpacity = useSharedValue(1);
-
-  useEffect(() => {
-    if (videoUri) return;
-    let mounted = true;
-    (async () => {
-      await videoCacheService.prefetch();
-      const cached = videoCacheService.getCachedUri();
-      if (mounted && cached) {
-        setVideoUri(cached);
-      }
-    })();
-    return () => { mounted = false; };
-  }, [videoUri]);
 
   const loadStory = useCallback(async () => {
     try {
@@ -95,9 +80,9 @@ export function usePlayback() {
 
   const handleGoToQuiz = useCallback(() => {
     if (!story) return;
-    stopAudio();
+    pauseAudio();
     router.push({ pathname: '/story/quiz', params: { storyId: story.id } });
-  }, [stopAudio, story, router]);
+  }, [pauseAudio, story, router]);
 
   const handleNewStory = useCallback(() => {
     if (!story) return;

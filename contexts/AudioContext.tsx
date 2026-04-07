@@ -16,6 +16,7 @@ interface AudioContextType {
   audioPolling: boolean;
   loadAndPlayAudio: (story: Story) => Promise<void>;
   playPause: () => Promise<void>;
+  pauseAudio: () => Promise<void>;
   seek: (positionMillis: number) => Promise<void>;
   stopAudio: () => Promise<void>;
   retryAudio: () => Promise<void>;
@@ -286,6 +287,18 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const pauseAudio = async () => {
+    if (!sound) return;
+    try {
+      const status = await sound.getStatusAsync();
+      if (status.isLoaded && status.isPlaying) {
+        await sound.pauseAsync();
+      }
+    } catch (e) {
+      logger.error('[AudioContext] pauseAudio error:', e);
+    }
+  };
+
   const seek = async (positionMillis: number) => {
     if (!sound) return;
     try {
@@ -358,6 +371,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     audioPolling,
     loadAndPlayAudio,
     playPause,
+    pauseAudio,
     seek,
     stopAudio,
     retryAudio
@@ -370,6 +384,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     audioPolling,
     loadAndPlayAudio,
     playPause,
+    pauseAudio,
     seek,
     stopAudio,
     retryAudio
