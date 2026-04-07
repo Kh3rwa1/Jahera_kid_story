@@ -33,32 +33,37 @@ function useResolvedVideoSource(fallbackSource: any) {
 
     let isMounted = true;
 
+    const resolveFallback = async () => {
+      if (!fallbackSource) return false;
+      try {
+        const { Asset } = require('expo-asset');
+        const [asset] = await Asset.loadAsync(fallbackSource);
+        if (asset?.localUri) {
+          if (isMounted) {
+            setResolvedSource(asset.localUri);
+            setIsResolving(false);
+          }
+          return true;
+        }
+      } catch {}
+      return false;
+    };
+
     const resolve = async () => {
-      // 1. Wait for the cache service to finish its prefetch
       try {
         await videoCacheService.prefetch();
         const cached = videoCacheService.getCachedUri();
-        if (isMounted && cached) {
+        if (cached && isMounted) {
           setResolvedSource(cached);
           setIsResolving(false);
           return;
         }
       } catch {}
 
-      // 2. Fallback: resolve the bundled asset
-      if (fallbackSource) {
-        try {
-          const { Asset } = require('expo-asset');
-          const [asset] = await Asset.loadAsync(fallbackSource);
-          if (isMounted && asset?.localUri) {
-            setResolvedSource(asset.localUri);
-            setIsResolving(false);
-            return;
-          }
-        } catch {}
+      const handled = await resolveFallback();
+      if (!handled && isMounted) {
+        setIsResolving(false);
       }
-
-      if (isMounted) setIsResolving(false);
     };
 
     resolve();
@@ -86,16 +91,18 @@ function VideoPlayerInner({ source, width, height, overlayOpacity }: {
 
   // Safety retry
   useEffect(() => {
-    if (player) {
-      const timer = setTimeout(() => {
-        try {
-          player.muted = true;
-          player.loop = true;
-          player.play();
-        } catch {}
-      }, 600);
-      return () => clearTimeout(timer);
-    }
+    if (!player) return;
+
+    const retryPlay = () => {
+      try {
+        player.muted = true;
+        player.loop = true;
+        player.play();
+      } catch {}
+    };
+
+    const timer = setTimeout(retryPlay, 600);
+    return () => clearTimeout(timer);
   }, [player]);
 
   return (

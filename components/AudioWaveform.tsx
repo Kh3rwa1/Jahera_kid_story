@@ -1,10 +1,11 @@
 import { COLORS } from '@/constants/theme';
-import React,{ useEffect } from 'react';
+import { useEffect } from 'react';
 import { StyleSheet,View } from 'react-native';
 import Animated,{
 Easing,
 useAnimatedStyle,
 useSharedValue,
+withDelay,
 withRepeat,
 withSequence,
 withTiming,
@@ -20,30 +21,32 @@ const WaveBar = ({ color, index, isPlaying }: Readonly<WaveBarProps>) => {
   const scaleY = useSharedValue(0.3);
 
   useEffect(() => {
-    if (isPlaying) {
-      const targetHeight = 0.3 + Math.random() * 0.7;
-      const duration = 300 + Math.random() * 400;
-      const delay = Math.random() * 200;
-
-      setTimeout(() => {
-        scaleY.value = withRepeat(
-          withSequence(
-            withTiming(targetHeight, {
-              duration,
-              easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-            }),
-            withTiming(0.3, {
-              duration,
-              easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-            })
-          ),
-          -1,
-          false
-        );
-      }, delay);
-    } else {
+    if (!isPlaying) {
       scaleY.value = withTiming(0.3, { duration: 200 });
+      return;
     }
+
+    const targetHeight = 0.3 + Math.random() * 0.7;
+    const duration = 300 + Math.random() * 400;
+    const delay = Math.random() * 200;
+
+    scaleY.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(targetHeight, {
+            duration,
+            easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+          }),
+          withTiming(0.3, {
+            duration,
+            easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+          })
+        ),
+        -1,
+        false
+      )
+    );
   }, [isPlaying]);
 
   const animatedStyle = useAnimatedStyle(() => {

@@ -221,11 +221,10 @@ export default function LanguageSelection() {
     if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     btnScale.value = withSequence(withSpring(0.92, { damping: 10 }), withSpring(1, { damping: 12 }));
     Keyboard.dismiss();
+
+    const languageParams = JSON.stringify(selectedLanguages.map(l => ({ code: l.code, name: l.name })));
     setTimeout(() => {
-      router.push({
-        pathname: '/onboarding/kid-name',
-        params: { languages: JSON.stringify(selectedLanguages.map(l => ({ code: l.code, name: l.name }))) },
-      });
+      router.push({ pathname: '/onboarding/kid-name', params: { languages: languageParams } });
     }, 150);
   };
 

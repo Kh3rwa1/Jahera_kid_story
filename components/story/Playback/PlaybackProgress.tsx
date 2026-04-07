@@ -21,15 +21,8 @@ export function formatTime(ms: number) {
 }
 
 export function PlaybackProgress({ accentColor, colors }: Readonly<PlaybackProgressProps>) {
-  const { seek } = useAudio();
   const { position, duration } = useAudioProgress();
-
   const progress = duration > 0 ? position / duration : 0;
-
-  const handleSeek = (e: any) => {
-    // Basic seeking logic for a bar (ideally use a Slider)
-    // For now we just show the progress
-  };
 
   return (
     <View style={styles.container}>

@@ -1,18 +1,20 @@
-import React, { useEffect } from 'react';
+import { useEffect, ReactNode } from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
+  withSequence,
   withTiming,
+  Easing,
+  withDelay,
   cancelAnimation,
   interpolate,
-  Easing,
   withSpring,
 } from 'react-native-reanimated';
 import { useFloat, usePulse } from '@/utils/animations';
 
-export function FloatAnim({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+export function FloatAnim({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   const floatStyle = useFloat(7, 2800, delay);
   return <Animated.View style={floatStyle}>{children}</Animated.View>;
 }

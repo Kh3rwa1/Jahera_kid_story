@@ -60,7 +60,7 @@ type StoryItem = ReturnType<typeof useApp>['stories'][number];
 type SeasonPalette = ReturnType<typeof getSeasonPalette>;
 type HistoryStyles = ReturnType<typeof useStyles>;
 
-function AnimatedFilterChip({ label, flag, active, COLORS, styles, onPress, index }: {
+function AnimatedFilterChip({ label, flag, active, COLORS, styles, onPress, index }: Readonly<{
   label: string;
   flag?: string;
   active: boolean;
@@ -68,7 +68,7 @@ function AnimatedFilterChip({ label, flag, active, COLORS, styles, onPress, inde
   styles: HistoryStyles;
   onPress: () => void;
   index: number;
-}) {
+}>) {
   const scale = useSharedValue(active ? 1.05 : 1);
   const entrance = useEntranceSequence(index, 140, 50);
 
@@ -115,7 +115,7 @@ const AnimatedStoryGridCard = React.memo(function AnimatedStoryGridCard({
   onLongPress,
   COLORS,
   styles,
-}: {
+}: Readonly<{
   story: StoryItem;
   idx: number;
   palette: SeasonPalette;
@@ -123,7 +123,7 @@ const AnimatedStoryGridCard = React.memo(function AnimatedStoryGridCard({
   onLongPress: () => void;
   COLORS: ThemeColors;
   styles: HistoryStyles;
-}) {
+}>) {
   const entrance = useEntranceSequence(idx, 60, 40);
   const { style: springStyle, onPressIn, onPressOut } = useSpringPress();
 
@@ -173,6 +173,31 @@ const AnimatedStoryGridCard = React.memo(function AnimatedStoryGridCard({
     </Animated.View>
   );
 });
+
+const filterAndSortStories = (
+  stories: StoryItem[],
+  selectedLanguage: string | null,
+  searchQuery: string,
+  sortBy: SortOption
+): StoryItem[] => {
+  let result = [...stories];
+  if (selectedLanguage) result = result.filter(s => s.language_code === selectedLanguage);
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    result = result.filter(s => s.title.toLowerCase().includes(q));
+  }
+  switch (sortBy) {
+    case 'oldest':
+      result.sort((a, b) => new Date(a.generated_at || a.created_at).getTime() - new Date(b.generated_at || b.created_at).getTime());
+      break;
+    case 'language':
+      result.sort((a, b) => a.language_code.localeCompare(b.language_code));
+      break;
+    default:
+      result.sort((a, b) => new Date(b.generated_at || b.created_at).getTime() - new Date(a.generated_at || a.created_at).getTime());
+  }
+  return result;
+};
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -226,25 +251,10 @@ export default function HistoryScreen() {
     [storyList]
   );
 
-  const filteredStories = useMemo(() => {
-    let result = [...storyList];
-    if (selectedLanguage) result = result.filter(s => s.language_code === selectedLanguage);
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(s => s.title.toLowerCase().includes(q));
-    }
-    switch (sortBy) {
-      case 'oldest':
-        result.sort((a, b) => new Date(a.generated_at || a.created_at).getTime() - new Date(b.generated_at || b.created_at).getTime());
-        break;
-      case 'language':
-        result.sort((a, b) => a.language_code.localeCompare(b.language_code));
-        break;
-      default:
-        result.sort((a, b) => new Date(b.generated_at || b.created_at).getTime() - new Date(a.generated_at || a.created_at).getTime());
-    }
-    return result;
-  }, [storyList, selectedLanguage, searchQuery, sortBy]);
+  const filteredStories = useMemo(
+    () => filterAndSortStories(storyList, selectedLanguage, searchQuery, sortBy),
+    [storyList, selectedLanguage, searchQuery, sortBy]
+  );
 
   const featuredStory = useMemo(
     () => (storyList.length > 0 && !searchQuery && !selectedLanguage ? storyList[0] : null),
@@ -323,7 +333,7 @@ export default function HistoryScreen() {
     >
       <MeshBackground primaryColor={COLORS.primary} />
       <FloatingParticles count={15} />
-        {/* ── View Toggle / Meta (No redundant title) ── */}
+        {/* View Toggle / Meta (No redundant title) */}
         <Animated.View entering={FadeInDown.delay(40).springify()} style={[styles.header, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }]}>
           <Text style={[styles.pageSubtitle, { color: COLORS.text.secondary, marginTop: 0 }]}>
             {stories.length} {stories.length === 1 ? 'Magical Story' : 'Magical Stories'}
@@ -343,7 +353,7 @@ export default function HistoryScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* ── Featured / latest story ── */}
+        {/* Featured / latest story */}
         {featuredStory && (
           <Animated.View entering={FadeInDown.delay(100).springify()}>
             <Animated.View style={featuredPulseStyle}>
@@ -406,7 +416,7 @@ export default function HistoryScreen() {
           </Animated.View>
         )}
 
-        {/* ── Search + Filter Strip (Sticky) ── */}
+        {/* Search + Filter Strip (Sticky) */}
         <View style={styles.controlsStickyWrapper}>
           <Animated.View entering={FadeInDown.delay(140).springify()} style={[styles.controlsRow, { backgroundColor: COLORS.cardBackground + 'B3', padding: 12, borderRadius: 24, marginHorizontal: -4 }]}>
             <View style={[styles.searchBar, { backgroundColor: COLORS.cardBackground }]}>
@@ -493,7 +503,7 @@ export default function HistoryScreen() {
           </Animated.View>
         )}
 
-        {/* ── Stories ── */}
+        {/* Stories */}
         {filteredStories.length === 0 ? (
           <Animated.View entering={ZoomIn.delay(100).springify()} style={styles.emptyWrap}>
             <Animated.View style={[styles.emptyIconCircle, { backgroundColor: COLORS.primary + '10' }, emptyFloatStyle]}>

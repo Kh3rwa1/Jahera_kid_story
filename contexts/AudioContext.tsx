@@ -60,7 +60,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       isMountedRef.current = false;
       const currentSound = soundRef.current;
       if (currentSound) {
-        currentSound.unloadAsync().catch(() => {});
+        currentSound.unloadAsync().catch((e) => { logger.debug('[AudioContext] unload err:', e); });
       }
       if (audioPollingRef.current) clearInterval(audioPollingRef.current);
       if (progressSaveTimerRef.current) clearInterval(progressSaveTimerRef.current);
@@ -127,9 +127,9 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (sound) {
         // Crossfade: fade out old audio before unloading
-        try { await sound.setVolumeAsync(0.3); } catch {}
+        try { await sound.setVolumeAsync(0.3); } catch (e) { logger.debug('[AudioContext] vol err:', e); }
         await new Promise(resolve => setTimeout(resolve, 150));
-        try { await sound.setVolumeAsync(0); } catch {}
+        try { await sound.setVolumeAsync(0); } catch (e) { logger.debug('[AudioContext] vol err:', e); }
         await sound.unloadAsync();
         setSound(null);
       }
@@ -159,7 +159,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       );
       
       if (!isMountedRef.current) {
-        audioSound.unloadAsync().catch(() => {});
+        audioSound.unloadAsync().catch((e) => { logger.debug('[AudioContext] unload err:', e); });
         return;
       }
 
@@ -280,7 +280,8 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       hapticFeedback.medium();
       isPlaying ? await sound.pauseAsync() : await sound.playAsync();
-    } catch { 
+    } catch (e) { 
+      logger.error('[AudioContext] playPause error:', e);
       setAudioError(true); 
     }
   };

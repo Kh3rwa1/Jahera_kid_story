@@ -26,7 +26,7 @@ interface ReadingSettingsProps {
 }
 
 export function ReadingSettings({ colors, accentColor }: Readonly<ReadingSettingsProps>) {
-  const { prefs, setFontSize, setFontFamily, setLineSpacing, setTextAlign } = useReadingPreferences();
+  const { prefs, setFontSize, setFontFamily, setLineSpacing } = useReadingPreferences();
 
   return (
     <Animated.View entering={FadeInDown.duration(200)} style={[styles.container, { backgroundColor: colors.cardBackground, borderBottomColor: colors.text.light + '20' }]}>

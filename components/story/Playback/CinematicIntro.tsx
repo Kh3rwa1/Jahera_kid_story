@@ -31,7 +31,6 @@ export function CinematicIntro({
   introOpacity,
 }: Readonly<CinematicIntroProps>) {
   const insets = useSafeAreaInsets();
-  const screen = Dimensions.get('screen');
 
   const player = useVideoPlayer(videoUri ?? '', p => {
     if (videoUri) {

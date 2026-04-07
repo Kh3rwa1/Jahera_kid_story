@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { logger } from './logger';
 
 /**
  * Premium haptic feedback utilities for delightful user interactions
@@ -12,7 +13,7 @@ export const hapticFeedback = {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
-      // Haptics not supported on device
+      logger.debug('Haptics typically unsupported on this device simulator', { error });
     }
   },
 
@@ -95,7 +96,7 @@ export const hapticFeedback = {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }, 200);
     } catch (error) {
-      // Haptics not supported on device
+      logger.debug('Haptics typically unsupported on this device simulator', { error });
     }
   },
 };

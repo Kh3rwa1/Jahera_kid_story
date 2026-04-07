@@ -7,7 +7,6 @@ import {
   RefreshControl,
   Text,
   useWindowDimensions,
-  Platform,
 } from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
@@ -77,8 +76,6 @@ export default function HomeScreen() {
   const isDesktop = winWidth >= BREAKPOINTS.desktop;
   
   const heroActionPulse = usePulse(0.97, 1.05);
-  const wizardFloat = useFloat(6, 2000);
-  const sparkleRotate = useRotate(8000);
   
   const CARD_W = useMemo(() => {
     if (winWidth >= 1280) return 340;

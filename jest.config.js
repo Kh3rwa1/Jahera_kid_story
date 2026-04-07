@@ -1,7 +1,6 @@
 module.exports = {
   preset: 'jest-expo',
   moduleNameMapper: {
-    '^node-appwrite$': '<rootDir>/jest.setup.js',
     '^react-native-reanimated$': require.resolve('react-native-reanimated/mock'),
   },
   setupFilesAfterEnv: [
@@ -21,15 +20,7 @@ module.exports = {
     '!**/infrastructure-scripts/**',
     '!**/appwrite/**',
   ],
-  roots: [
-    '<rootDir>/app',
-    '<rootDir>/components',
-    '<rootDir>/hooks',
-    '<rootDir>/services',
-    '<rootDir>/utils',
-    '<rootDir>/contexts',
-    '<rootDir>/constants',
-  ],
+
   testPathIgnorePatterns: [
     '/node_modules/',
     '<rootDir>/infrastructure-scripts/',
