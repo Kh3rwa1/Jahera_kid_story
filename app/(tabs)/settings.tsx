@@ -9,7 +9,7 @@ import { useUI } from '@/contexts/UIContext';
 import { usePulse } from '@/utils/animations';
 import { hapticFeedback } from '@/utils/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { Href,useRouter } from 'expo-router';
 import {
 BookOpen,
 ChevronRight,
@@ -54,7 +54,7 @@ interface SettingRow {
   sublabel?: string;
   icon: React.ReactNode;
   iconGradient: readonly [string, string];
-  route?: string;
+  route?: Href;
   onPress?: () => void;
   badge?: string;
   badgeColor?: string;
@@ -67,7 +67,10 @@ interface SettingGroup {
   rows: SettingRow[];
 }
 
-function RowItem({ row, COLORS, onPress, rowIndex, styles }: { row: SettingRow; COLORS: any; onPress: () => void; rowIndex: number; styles: any }) {
+type ThemeColors = ReturnType<typeof useTheme>['currentTheme']['colors'];
+type SettingsStyles = ReturnType<typeof useStyles>;
+
+function RowItem({ row, COLORS, onPress, rowIndex, styles }: { row: SettingRow; COLORS: ThemeColors; onPress: () => void; rowIndex: number; styles: SettingsStyles }) {
   const scale = useSharedValue(1);
   const iconScale = useSharedValue(1);
   const rowStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -373,7 +376,7 @@ export default function SettingsTab() {
                     row={row}
                     COLORS={COLORS}
                     styles={styles}
-                    onPress={row.onPress ?? (() => row.route && router.push(row.route as any))}
+                    onPress={row.onPress ?? (() => row.route && router.push(row.route))}
                     rowIndex={rIdx}
                   />
                   {rIdx < group.rows.length - 1 && (

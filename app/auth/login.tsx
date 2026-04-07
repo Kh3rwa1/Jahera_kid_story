@@ -20,7 +20,9 @@ TouchableOpacity,
 View,
 } from 'react-native';
 import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { type EdgeInsets,useSafeAreaInsets } from 'react-native-safe-area-context';
+
+type ThemeColors = ReturnType<typeof useTheme>['currentTheme']['colors'];
 
 export default function Login() {
   const router = useRouter();
@@ -48,8 +50,9 @@ export default function Login() {
     try {
       await signIn(email.trim(), password);
       router.replace('/(tabs)');
-    } catch (err: any) {
-      const msg = err?.message || '';
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : '';
+      const msg = errorMessage || '';
       if (msg.includes('Invalid credentials') || msg.includes('user_invalid_credentials') || msg.includes('401')) {
         setError('Incorrect email or password. Please try again.');
       } else if (msg) {
@@ -166,7 +169,7 @@ export default function Login() {
   );
 }
 
-const useStyles = (COLORS: any, insets: any) => {
+const useStyles = (COLORS: ThemeColors, insets: EdgeInsets) => {
   return useMemo(() => StyleSheet.create({
     root: { flex: 1, backgroundColor: '#000' },
     kav: { flex: 1 },
