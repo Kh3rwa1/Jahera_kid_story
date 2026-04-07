@@ -75,9 +75,11 @@ export function useWordHighlighting(content: string, position: number, duration:
     const ranges: Array<{ start: number; end: number }> = [];
     let count = 0;
     for (const para of paragraphs) {
-      const words = buildWordIndex([para]);
-      ranges.push({ start: count, end: count + words.length - 1 });
-      count += words.length;
+      const wordCount = splitIntoTokens(para).reduce((acc, tok) => (
+        !tok.isSpace && tok.word.trim().length > 0 ? acc + 1 : acc
+      ), 0);
+      ranges.push({ start: count, end: count + wordCount - 1 });
+      count += wordCount;
     }
     return ranges;
   }, [paragraphs]);

@@ -10,6 +10,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Star, Sparkles } from 'lucide-react-native';
+import { randomBool, randomFloat } from '@/utils/secureRandom';
 
 interface Sparkle {
   id: number;
@@ -108,11 +109,11 @@ export const GoldSparkles: React.FC<GoldSparklesProps> = ({
 }) => {
   const sparkles: Sparkle[] = Array.from({ length: count }, (_, i) => ({
     id: i,
-    x: Math.random() * (width - 30),
-    y: Math.random() * (height - 30),
-    size: Math.random() * 12 + 12, // 12-24px
-    delay: Math.random() * 2000,
-    type: Math.random() > 0.5 ? 'star' : 'sparkle',
+    x: randomFloat(0, Math.max(width - 30, 1)),
+    y: randomFloat(0, Math.max(height - 30, 1)),
+    size: randomFloat(12, 24), // 12-24px
+    delay: randomFloat(0, 2000),
+    type: randomBool() ? 'star' : 'sparkle',
   }));
 
   return (
