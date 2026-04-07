@@ -119,7 +119,7 @@ function prepareText(text, maxChars = 4500) {
 
 // Strip markdown formatting for cleaner speech
 function cleanTextForSpeech(text) {
-  return text.replace(/[*_#`~\[\]]/g, '').replace(/\n{2,}/g, '. ').trim();
+  return text.replace(/[*_#`~[\]]/g, '').replace(/\n{2,}/g, '. ').trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

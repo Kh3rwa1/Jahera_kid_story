@@ -38,6 +38,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 
+function ProgressDot({ active, styles }: { active: boolean; styles: any }) {
+  const animatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: active ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
+    transform: [{ scale: withSpring(active ? 1.2 : 1) }],
+  }), [active]);
+
+  return <Animated.View style={[styles.dot, animatedStyle]} />;
+}
+
 // ── Country → Language mapping ───────────────────────────────────────────────
 // Maps ISO 3166 country names to language codes that are commonly spoken there.
 // This is used to surface relevant languages at the top of the list.
@@ -258,11 +267,6 @@ export default function LanguageSelection() {
     return list;
   }, [searchQuery, nearbyLanguageCodes]);
 
-  const dotStyle = (i: number) => useAnimatedStyle(() => ({
-    backgroundColor: i < selectedLanguages.length ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
-    transform: [{ scale: withSpring(i < selectedLanguages.length ? 1.2 : 1) }]
-  }));
-
   const clearSearch = useCallback(() => {
     setSearchQuery('');
     Keyboard.dismiss();
@@ -320,10 +324,7 @@ export default function LanguageSelection() {
             </Text>
             <View style={styles.dotRow}>
               {[0, 1, 2].map(i => (
-                <Animated.View 
-                  key={i} 
-                  style={[styles.dot, dotStyle(i)]} 
-                />
+                <ProgressDot key={String(i)} active={i < selectedLanguages.length} styles={styles} />
               ))}
             </View>
           </Animated.View>

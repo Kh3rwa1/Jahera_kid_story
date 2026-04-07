@@ -90,8 +90,8 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       progressSaveTimerRef.current = setInterval(() => {
         saveProgress(lastPositionRef.current, duration, activeStory);
       }, 5000);
-    } else {
-      if (progressSaveTimerRef.current) clearInterval(progressSaveTimerRef.current);
+    } else if (progressSaveTimerRef.current) {
+      clearInterval(progressSaveTimerRef.current);
     }
     return () => {
       if (progressSaveTimerRef.current) clearInterval(progressSaveTimerRef.current);
@@ -196,7 +196,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadAndPlayAudio = async (story: Story) => {
     // If asking to load the same story that's already playing, just do nothing
-    if (activeStory && activeStory.id === story.id) {
+    if (activeStory?.id === story.id) {
         return;
     }
 

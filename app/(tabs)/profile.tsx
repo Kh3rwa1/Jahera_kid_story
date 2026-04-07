@@ -17,7 +17,6 @@ import Animated, {
   FadeInUp,
   FadeInRight,
   ZoomIn,
-  useSharedValue,
   useAnimatedStyle,
   withDelay,
   withTiming,
@@ -47,7 +46,6 @@ import { MarqueeText } from '@/components/MarqueeText';
 
 function AnimatedAchievementCard({ card, index, styles }: { card: any; index: number; styles: any }) {
   const entrance = useEntranceSequence(index, 120, 70);
-  const scale = useSharedValue(1);
   const glowStyle = useGlowPulse(0.85, 1, 2000 + index * 300);
 
   return (
