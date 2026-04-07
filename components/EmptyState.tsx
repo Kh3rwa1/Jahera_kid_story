@@ -1,6 +1,5 @@
 import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SPACING } from '@/constants/theme';
 import { BookOpen,Sparkles } from 'lucide-react-native';
-import React from 'react';
 import { StyleSheet,Text,TouchableOpacity,View } from 'react-native';
 
 interface EmptyStateProps {

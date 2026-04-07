@@ -1,4 +1,4 @@
-import { FONTS,SHADOWS } from '@/constants/theme';
+import { SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Camera } from 'lucide-react-native';

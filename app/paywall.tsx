@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { RotateCcw,X } from 'lucide-react-native';
-import React,{ useMemo } from 'react';
+import { useMemo } from 'react';
 import {
 Image,
 Platform,

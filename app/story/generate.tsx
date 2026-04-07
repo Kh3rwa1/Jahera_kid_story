@@ -1,5 +1,4 @@
 import { useLocalSearchParams,useRouter } from 'expo-router';
-import React from 'react';
 import {
 StatusBar,
 StyleSheet,

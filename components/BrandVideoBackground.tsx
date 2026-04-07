@@ -1,6 +1,6 @@
 import { videoCacheService } from '@/services/videoCacheService';
 import { useVideoPlayer,VideoView } from 'expo-video';
-import React,{ useEffect,useState } from 'react';
+import { useEffect,useState } from 'react';
 import { Dimensions,Platform,StyleSheet,View,ViewStyle } from 'react-native';
 
 interface BrandVideoBackgroundProps {

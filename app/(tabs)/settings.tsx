@@ -149,13 +149,22 @@ export default function SettingsTab() {
   const styles = useStyles(isTablet, isDesktop);
   const [signingOut, setSigningOut] = useState(false);
 
+  const performSignOut = async () => {
+    setSigningOut(true);
+    clearProfile();
+    try {
+      await signOut();
+      router.replace('/');
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
   const handleSignOut = () => {
     hapticFeedback.warning();
     if (Platform.OS === 'web') {
       if (globalThis.confirm('Are you sure you want to sign out?')) {
-        setSigningOut(true);
-        clearProfile();
-        signOut().then(() => router.replace('/'));
+        void performSignOut();
       }
       return;
     }
@@ -166,10 +175,7 @@ export default function SettingsTab() {
         style: 'destructive',
         onPress: async () => {
           hapticFeedback.success();
-          setSigningOut(true);
-          clearProfile();
-          await signOut();
-          router.replace('/');
+          await performSignOut();
         },
       },
     ]);

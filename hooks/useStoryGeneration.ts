@@ -60,23 +60,37 @@ export function useStoryGeneration() {
   useEffect(() => {
     if (!resolvedProfileId) return;
 
-    Promise.all([
-      familyMemberService.getByProfileId(resolvedProfileId),
-      friendService.getByProfileId(resolvedProfileId),
-    ]).then(([fm, fr]) => {
-      if (isMountedRef.current) {
-        if (fm) setFamilyMembers(fm);
-        if (fr) setFriends(fr);
+    const loadInitialData = async () => {
+      try {
+        const [fm, fr] = await Promise.all([
+          familyMemberService.getByProfileId(resolvedProfileId),
+          friendService.getByProfileId(resolvedProfileId),
+        ]);
+        if (isMountedRef.current) {
+          if (fm) setFamilyMembers(fm);
+          if (fr) setFriends(fr);
+        }
+      } catch (err) {
+        logger.warn('[useStoryGeneration] Failed to load relations:', err);
       }
-    });
+    };
 
-    setLocationLoading(true);
-    getLocationContext().then(ctx => {
-      if (isMountedRef.current) {
-        setLocationCtx(ctx);
-        setLocationLoading(false);
+    const loadLocation = async () => {
+      setLocationLoading(true);
+      try {
+        const ctx = await getLocationContext();
+        if (isMountedRef.current) {
+          setLocationCtx(ctx);
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setLocationLoading(false);
+        }
       }
-    });
+    };
+
+    loadInitialData();
+    loadLocation();
   }, [resolvedProfileId]);
 
   const completeStep = useCallback((stepId: string) => {
@@ -178,9 +192,14 @@ export function useStoryGeneration() {
       setStatus('Finalising your story...');
       setProgress(90);
 
-      generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, buildAudioSettings(profileData))
-        .then(() => { if (isMountedRef.current) completeStep('audio'); })
-        .catch(err => logger.error('[useStoryGeneration] Audio error:', err));
+      void (async () => {
+        try {
+          await generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, buildAudioSettings(profileData));
+          if (isMountedRef.current) completeStep('audio');
+        } catch (err) {
+          logger.error('[useStoryGeneration] Audio error:', err);
+        }
+      })();
 
       setStatus('Story ready!');
       setProgress(100);
