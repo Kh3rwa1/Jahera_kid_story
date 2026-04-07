@@ -9,6 +9,9 @@ import {
   useWindowDimensions,
   Dimensions,
   Platform,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
 } from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
@@ -91,7 +94,7 @@ function FloatAnim({ children, delay = 0 }: { children: React.ReactNode; delay?:
   return <Animated.View style={floatStyle}>{children}</Animated.View>;
 }
 
-function HeroShimmer({ styles }: { styles: any }) {
+function HeroShimmer({ styles }: { styles: { shimmerOverlay: StyleProp<ViewStyle> } }) {
   const x = useSharedValue(-1);
   useEffect(() => {
     x.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.linear }), -1, false);
@@ -107,7 +110,7 @@ function HeroShimmer({ styles }: { styles: any }) {
   );
 }
 
-function AnimatedStreakChip({ count, styles }: { count: number; styles: any }) {
+function AnimatedStreakChip({ count, styles }: { count: number; styles: { streakChip: StyleProp<ViewStyle>; streakChipText: StyleProp<TextStyle> } }) {
   const scale = useSharedValue(0.7);
   const opacity = useSharedValue(0);
   const pulseStyle = usePulse(0.95, 1.05);
