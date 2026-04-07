@@ -669,7 +669,7 @@ const buildHeaderStyles = (isTablet: boolean) => ({
   },
 });
 
-const buildFeaturedStyles = (isTablet: boolean) => ({
+const buildFeaturedContainerStyles = (isTablet: boolean) => ({
   featuredWrap: { 
     borderRadius: isTablet ? 40 : 32, 
     overflow: 'hidden' as const, 
@@ -691,6 +691,9 @@ const buildFeaturedStyles = (isTablet: boolean) => ({
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
   },
+});
+
+const buildFeaturedContentStyles = (isTablet: boolean) => ({
   featuredBadge: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
@@ -755,11 +758,20 @@ const buildFeaturedStyles = (isTablet: boolean) => ({
     fontSize: 15,
     fontFamily: FONTS.displayBold,
   },
+});
+
+const buildFeaturedMetaStyles = (isTablet: boolean) => ({
   wordCountText: {
     fontSize: 14,
     fontFamily: FONTS.displayMedium,
     color: 'rgba(255,255,255,0.9)',
   },
+});
+
+const buildFeaturedStyles = (isTablet: boolean) => ({
+  ...buildFeaturedContainerStyles(isTablet),
+  ...buildFeaturedContentStyles(isTablet),
+  ...buildFeaturedMetaStyles(isTablet),
 });
 
 const buildControlStyles = (C: ThemeColors) => ({
