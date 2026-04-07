@@ -189,4 +189,6 @@ async function init() {
   console.log('NOTE: Attribute creation is asynchronous on Appwrite\'s servers, so give the Dashboard about 10-30 seconds to show all columns.');
 }
 
-init();
+(async () => {
+  await init();
+})();

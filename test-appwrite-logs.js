@@ -27,4 +27,6 @@ async function getLogs() {
     }
 }
 
-getLogs();
+(async () => {
+  await getLogs();
+})();

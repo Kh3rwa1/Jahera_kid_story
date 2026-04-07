@@ -51,8 +51,8 @@ const PREMIUM_FEATURES: Feature[] = [
 export function FeatureList({ colors }: { colors: ThemeColors }) {
   return (
     <View style={styles.container}>
-      {PREMIUM_FEATURES.map((feature, index) => (
-        <View key={index} style={styles.featureItem}>
+      {PREMIUM_FEATURES.map((feature) => (
+        <View key={feature.title} style={styles.featureItem}>
           <View style={[styles.iconContainer, { backgroundColor: feature.color + '15' }]}>
             <feature.icon size={22} color={feature.color} strokeWidth={2.5} />
           </View>
