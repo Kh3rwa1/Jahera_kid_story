@@ -10,10 +10,9 @@ import LottieView from 'lottie-react-native';
 import { Check,MapPin,Sparkles } from 'lucide-react-native';
 import { useEffect,useState } from 'react';
 import {
-Dimensions,
-StyleSheet,
-Text,
-View
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 import Animated,{
 cancelAnimation,
@@ -109,7 +108,7 @@ export function GenerationLoading({
           }
         });
       } catch (e) {
-        if (mounted) {}
+        console.debug('Fun fact audio playback failed', e);
       }
     };
 

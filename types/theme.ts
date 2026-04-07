@@ -1,7 +1,4 @@
-import type { EdgeInsets } from 'react-native-safe-area-context';
-
-/** Re-export EdgeInsets so consumers don't need the extra import */
-export type { EdgeInsets };
+export type { EdgeInsets } from 'react-native-safe-area-context';
 
 export interface ThemeTextColors {
   primary: string;

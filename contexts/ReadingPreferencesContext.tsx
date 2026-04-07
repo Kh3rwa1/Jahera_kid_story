@@ -67,7 +67,7 @@ interface ReadingPreferencesContextValue {
 
 const ReadingPreferencesContext = createContext<ReadingPreferencesContextValue | null>(null);
 
-export function ReadingPreferencesProvider({ children }: { children: ReactNode }) {
+export function ReadingPreferencesProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [prefs, setPrefs] = useState<ReadingPreferences>(DEFAULTS);
 
   useEffect(() => {

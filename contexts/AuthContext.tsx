@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(u);
         setSession(s);
       } catch (error) {
+        console.debug('Auth init: no active session', error);
         setUser(null);
         setSession(null);
       } finally {

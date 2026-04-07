@@ -26,7 +26,7 @@ export async function hashPin(pin: string): Promise<string> {
   const salted = salt + pin + salt;
   for (let i = 0; i < salted.length; i++) {
     const char = salted.codePointAt(i) ?? 0;
-    hash = ((hash << 5) - hash + char) | 0;
+    hash = Math.trunc((hash << 5) - hash + char);
   }
   return `fallback_${Math.abs(hash).toString(16).padStart(8, '0')}`;
 }

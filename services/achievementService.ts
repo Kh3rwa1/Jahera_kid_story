@@ -121,9 +121,7 @@ class AchievementService {
       let achievement = this.achievements.find((a) => a.id === achievementId);
       if (achievement?.unlockedAt) return; // Already completed
 
-      if (!achievement) {
-        achievement = { ...definition, progress: 0 };
-      }
+      achievement ??= { ...definition, progress: 0 };
 
       achievement.progress = Math.min(progress, definition.maxProgress);
 

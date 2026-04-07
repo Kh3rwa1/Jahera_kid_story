@@ -1,5 +1,5 @@
 import { FONTS,SPACING } from '@/constants/theme';
-import { useAudio,useAudioProgress } from '@/contexts/AudioContext';
+import { useAudioProgress } from '@/contexts/AudioContext';
 import { ThemeColors } from '@/types/theme';
 import {
 StyleSheet,

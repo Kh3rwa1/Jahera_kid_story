@@ -79,7 +79,7 @@ export const StatsTicker = memo(({
         }}
       >
         {items.map((s, i) => (
-          <View key={i} style={[styles.statsTickerPill, { backgroundColor: cardBackground }]}>
+          <View key={`${s.label}-${i % baseItems.length}`} style={[styles.statsTickerPill, { backgroundColor: cardBackground }]}>
             <View style={[styles.statsTickerIcon, { backgroundColor: s.color + '20' }]}>
               {s.icon}
             </View>

@@ -38,14 +38,13 @@ function TabItem({
   onPress,
   activeColor,
   inactiveColor,
-}: {
+}: Readonly<{
   tab: (typeof TABS)[0];
-  index: number;
   focused: boolean;
   onPress: () => void;
   activeColor: string;
   inactiveColor: string;
-}) {
+}>) {
   const Icon = tab.icon;
   const progress = useSharedValue(focused ? 1 : 0);
 
@@ -94,10 +93,10 @@ function TabItem({
 export function FloatingTabBar({
   activeTab,
   onTabPress,
-}: {
+}: Readonly<{
   activeTab: string;
   onTabPress: (route: string) => void;
-}) {
+}>) {
   const { width: winWidth } = useWindowDimensions();
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
@@ -225,7 +224,6 @@ export function FloatingTabBar({
               <TabItem
                 key={tab.name}
                 tab={tab}
-                index={index}
                 focused={activeTab === tab.name}
                 onPress={() => handleTabPress(tab.route)}
                 activeColor={COLORS.primary}

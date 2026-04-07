@@ -57,7 +57,7 @@ export const storage = {
   async getItem<T>(key: string): Promise<T | null> {
     try {
       const jsonValue = await AsyncStorage.getItem(key);
-      return jsonValue != null ? JSON.parse(jsonValue) : null;
+      return jsonValue === null ? null : JSON.parse(jsonValue);
     } catch (error) {
       handleError(error, `storage.getItem(${key})`);
       return null;

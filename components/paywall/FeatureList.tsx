@@ -48,7 +48,7 @@ const PREMIUM_FEATURES: Feature[] = [
   },
 ];
 
-export function FeatureList({ colors }: { colors: ThemeColors }) {
+export function FeatureList({ colors }: Readonly<{ colors: ThemeColors }>) {
   return (
     <View style={styles.container}>
       {PREMIUM_FEATURES.map((feature) => (

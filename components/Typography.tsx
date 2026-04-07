@@ -23,7 +23,7 @@ type ColorVariant = 'primary' | 'secondary' | 'light' | 'inverse' | 'error' | 's
 
 interface TypographyProps {
   variant?: TypographyVariant;
-  color?: ColorVariant | string;
+  color?: ColorVariant | (string & {});
   align?: 'left' | 'center' | 'right' | 'justify';
   children: React.ReactNode;
   style?: TextStyle;

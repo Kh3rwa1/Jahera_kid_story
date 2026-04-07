@@ -64,12 +64,12 @@ export function AnimatedBounce({
   onPress,
   style,
   activeOpacity = 0.85,
-}: {
+}: Readonly<{
   children: ReactNode;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   activeOpacity?: number;
-}) {
+}>) {
   const scale = useSharedValue(1);
 
   const animStyle = useAnimatedStyle(() => ({

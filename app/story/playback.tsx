@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Award,RefreshCw,RefreshCw as VolumeRetry } from 'lucide-react-native';
+import { Award,RefreshCw } from 'lucide-react-native';
 import { useMemo,useState } from 'react';
 import {
 ActivityIndicator,
@@ -150,7 +150,7 @@ export default function StoryPlaybackScreen() {
           <View style={styles.errorBannerContent}>
             <Text style={styles.errorText}>Audio error. Try again later.</Text>
             <TouchableOpacity onPress={retryAudio} style={styles.retryBtn}>
-              <VolumeRetry size={14} color={accentColor} />
+              <RefreshCw size={14} color={accentColor} />
               <Text style={{ color: accentColor, fontWeight: '700' }}>Retry</Text>
             </TouchableOpacity>
           </View>
@@ -177,7 +177,7 @@ export default function StoryPlaybackScreen() {
   );
 }
 
-function StatItem({ value, label, colors }: { value: string | number, label: string, colors: ThemeColors }) {
+function StatItem({ value, label, colors }: Readonly<{ value: string | number, label: string, colors: ThemeColors }>) {
   return (
     <View style={styles.statItem}>
       <Text style={[styles.statValue, { color: colors.text.primary, fontFamily: FONTS.bold }]}>{value}</Text>
@@ -186,7 +186,7 @@ function StatItem({ value, label, colors }: { value: string | number, label: str
   );
 }
 
-function QuizButton({ onPress }: { onPress: () => void }) {
+function QuizButton({ onPress }: Readonly<{ onPress: () => void }>) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.quizBtn}>
