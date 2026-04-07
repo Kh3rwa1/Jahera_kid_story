@@ -38,7 +38,7 @@ ZoomIn,
 useSharedValue
 } from 'react-native-reanimated';
 import { ColorScheme } from '@/constants/themeSchemes';
-import { EdgeInsets,SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface AchievementCardData {
   label: string;
@@ -404,7 +404,7 @@ export default function ProfileScreen() {
   );
 }
 
-const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets, isTablet: boolean, isDesktop: boolean) => {
+const useStyles = (C: ColorScheme['colors'], insets: ReturnType<typeof useSafeAreaInsets>, isTablet: boolean, isDesktop: boolean) => {
   return useMemo(() => StyleSheet.create({
     container: { flex: 1 },
     loadingWrap: { padding: SPACING.xl },

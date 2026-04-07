@@ -4,7 +4,6 @@ import { TabMode } from '@/hooks/usePlayback';
 import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { ArrowLeft,BookMarked,Headphones,Share2,Type } from 'lucide-react-native';
-import React from 'react';
 import {
 StyleSheet,
 Text,

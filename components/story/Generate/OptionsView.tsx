@@ -7,7 +7,6 @@ import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check,ChevronLeft,MapPin,Wand as Wand2 } from 'lucide-react-native';
-import React from 'react';
 import {
 ScrollView,
 StyleSheet,
