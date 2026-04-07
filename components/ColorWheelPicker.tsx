@@ -25,9 +25,10 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
+const HEX_COLOR_REGEX = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
+
 function hexToHsl(hex: string): [number, number, number] {
-  const colorRegex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
-  const result = hex.match(colorRegex);
+  const result = HEX_COLOR_REGEX.exec(hex);
   if (!result) return [0, 70, 50];
   let r = Number.parseInt(result[1], 16) / 255;
   let g = Number.parseInt(result[2], 16) / 255;
