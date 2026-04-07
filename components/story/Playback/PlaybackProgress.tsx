@@ -1,7 +1,6 @@
 import { FONTS,SPACING } from '@/constants/theme';
 import { useAudio,useAudioProgress } from '@/contexts/AudioContext';
 import { ThemeColors } from '@/types/theme';
-import React from 'react';
 import {
 StyleSheet,
 Text,
