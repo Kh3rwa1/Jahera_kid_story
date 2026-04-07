@@ -624,357 +624,377 @@ export default function HistoryScreen() {
   );
 }
 
+/* ── Style Builders ─────────────────────────────────────────────────── */
+
+const buildLayoutStyles = (PADDING: number) => ({
+  container: { flex: 1 } as const,
+  scroll: {
+    paddingHorizontal: PADDING,
+    paddingTop: SPACING.md,
+    paddingBottom: 140,
+    gap: SPACING.xl,
+  },
+});
+
+const buildHeaderStyles = (isTablet: boolean) => ({
+  header: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    marginBottom: 4,
+  },
+  titleRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
+  titleIcon: {
+    width: isTablet ? 48 : 40, height: isTablet ? 48 : 40, borderRadius: 14,
+    alignItems: 'center' as const, justifyContent: 'center' as const,
+  },
+  pageTitle: {
+    fontSize: isTablet ? 36 : 28,
+    fontFamily: FONTS.display,
+    letterSpacing: -0.5,
+  },
+  pageSubtitle: {
+    fontSize: isTablet ? 16 : 14,
+    fontFamily: FONTS.medium,
+    marginTop: -2,
+    opacity: 0.8,
+  },
+  viewToggle: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    ...SHADOWS.sm,
+  },
+});
+
+const buildFeaturedStyles = (isTablet: boolean) => ({
+  featuredWrap: { 
+    borderRadius: isTablet ? 40 : 32, 
+    overflow: 'hidden' as const, 
+    ...SHADOWS.md,
+  },
+  featuredCard: {
+    minHeight: isTablet ? 260 : 180,
+    position: 'relative' as const,
+  },
+  featuredOverlay: {
+    flex: 1,
+    padding: isTablet ? SPACING.xxxl : SPACING.xl,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    justifyContent: 'center' as const,
+    gap: isTablet ? SPACING.md : 0,
+  },
+  featuredTop: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+  },
+  featuredBadge: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  featuredBadgeText: {
+    fontSize: 13,
+    fontFamily: FONTS.displayBold,
+    color: '#FFF',
+    letterSpacing: 0.8,
+  },
+  audioPill: {
+    width: 32, height: 32, 
+    borderRadius: 16,
+    alignItems: 'center' as const, justifyContent: 'center' as const,
+  },
+  featuredContent: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: isTablet ? SPACING.xl : SPACING.lg,
+    marginTop: 12,
+  },
+  featuredIconContainer: {
+    width: isTablet ? 80 : 64, height: isTablet ? 80 : 64,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center' as const, justifyContent: 'center' as const,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+  },
+  featuredSeasonIcon: { fontSize: isTablet ? 40 : 32 },
+  featuredTitle: {
+    fontSize: isTablet ? 32 : 24,
+    fontFamily: FONTS.displayBold,
+    color: '#FFF',
+    letterSpacing: -0.3,
+    lineHeight: isTablet ? 36 : 28,
+  },
+  featuredMetaLeft: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6, marginTop: 4 },
+  featuredLangFlag: { fontSize: isTablet ? 22 : 18 },
+  featuredMetaText: { fontSize: isTablet ? 15 : 13, fontFamily: FONTS.displayMedium, color: 'rgba(255,255,255,0.9)' },
+  featuredFooter: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    marginTop: 16,
+  },
+  featuredPlayBtn: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 16,
+    ...SHADOWS.sm,
+  },
+  featuredPlayText: {
+    fontSize: 15,
+    fontFamily: FONTS.displayBold,
+  },
+  wordCountText: {
+    fontSize: 14,
+    fontFamily: FONTS.displayMedium,
+    color: 'rgba(255,255,255,0.9)',
+  },
+});
+
+const buildControlStyles = (C: ThemeColors) => ({
+  controlsStickyWrapper: {
+    gap: SPACING.md,
+    zIndex: 10,
+    width: '100%' as const,
+    maxWidth: LAYOUT.maxWidth,
+    alignSelf: 'center' as const,
+  },
+  controlsRow: { 
+    flexDirection: 'row' as const, 
+    gap: SPACING.sm,
+    ...SHADOWS.sm,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    height: 56,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+    gap: 12,
+    borderWidth: 2,
+    borderColor: C.primary + '30',
+  },
+  searchInput: { flex: 1, fontSize: 16, fontFamily: FONTS.displayMedium },
+  sortBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  sortMenu: {
+    position: 'absolute' as const,
+    right: 0,
+    width: 240,
+    borderRadius: 24,
+    overflow: 'hidden' as const,
+    ...SHADOWS.xl,
+    zIndex: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  sortMenuHeader: { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.03)' },
+  sortMenuTitle: { fontSize: 12, fontFamily: FONTS.displayBold, color: '#999', textTransform: 'uppercase' as const, letterSpacing: 1 },
+  sortMenuItem: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    padding: 16,
+  },
+  sortMenuLabel: { fontSize: 15 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  filterScroll: { gap: 12, paddingBottom: 4 },
+  filterChip: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 18,
+    ...SHADOWS.sm,
+  },
+  filterChipFlag: { fontSize: 18 },
+  filterChipText: { fontSize: 14, fontFamily: FONTS.displayBold },
+});
+
+const buildGridStyles = (isTablet: boolean, GAP: number, cardW: number, cardH: number) => ({
+  grid: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    marginTop: 8,
+  },
+  gridItem: { 
+    marginBottom: GAP,
+    width: cardW,
+  },
+  gridCard: {
+    borderRadius: isTablet ? 32 : 28,
+    overflow: 'hidden' as const,
+    height: cardH,
+    ...SHADOWS.md,
+  },
+  gridThumb: {
+    width: '100%' as const,
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    position: 'relative' as const,
+  },
+  gridSeasonEmoji: {
+    fontSize: isTablet ? 76 : 64,
+    marginBottom: 4,
+  },
+  gridPlayCircle: {
+    position: 'absolute' as const,
+    bottom: 12,
+    right: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    ...SHADOWS.md,
+  },
+  gridBadgeRow: {
+    position: 'absolute' as const,
+    top: 12,
+    left: 12,
+    flexDirection: 'row' as const,
+    gap: 6,
+  },
+  gridLangBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  gridAudioBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  gridInfo: {
+    padding: isTablet ? 18 : 14,
+    gap: 4,
+  },
+  gridTitle: {
+    fontSize: isTablet ? 16 : 14,
+    fontFamily: FONTS.displayBold,
+    lineHeight: isTablet ? 20 : 18,
+    letterSpacing: -0.2,
+    minHeight: isTablet ? 40 : 36,
+  },
+  gridMeta: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
+  gridMetaText: { fontSize: 14, fontFamily: FONTS.displayMedium, opacity: 0.7 },
+});
+
+const buildListStyles = (isTablet: boolean) => ({
+  list: {
+    borderRadius: 32,
+    overflow: 'hidden' as const,
+    ...SHADOWS.sm,
+    marginTop: 8,
+  },
+  listCard: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    padding: isTablet ? 20 : 16,
+    gap: 16,
+  },
+  listThumb: {
+    width: isTablet ? 80 : 64,
+    height: isTablet ? 80 : 64,
+    borderRadius: 20,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  listThumbEmoji: { fontSize: isTablet ? 36 : 28 },
+  listAudioIndicator: {
+    position: 'absolute' as const,
+    bottom: 2, right: 2,
+    width: 16, height: 16, borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    alignItems: 'center' as const, justifyContent: 'center' as const,
+  },
+  listInfo: { flex: 1, gap: 4 },
+  listTitle: { fontSize: isTablet ? 18 : 16, fontFamily: FONTS.displayBold },
+  listMeta: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
+  listLangFlag: { fontSize: isTablet ? 18 : 16 },
+  listMetaText: { fontSize: 12, fontFamily: FONTS.displayMedium },
+  listDivider: { height: 1, marginHorizontal: 20 },
+});
+
+const buildEmptyStyles = () => ({
+  emptyWrap: {
+    paddingVertical: 60,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 16,
+  },
+  emptyIconCircle: {
+    width: 100, height: 100, borderRadius: 50,
+    alignItems: 'center' as const, justifyContent: 'center' as const,
+    marginBottom: 8,
+  },
+  emptyEmoji: { fontSize: 44 },
+  emptyTitle: { fontSize: 24, fontFamily: FONTS.displayBold },
+  emptyBody: {
+    fontSize: 16,
+    fontFamily: FONTS.medium,
+    textAlign: 'center' as const,
+    lineHeight: 22,
+    maxWidth: 300,
+  },
+  emptyAction: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 18,
+    marginTop: 8,
+    ...SHADOWS.md,
+  },
+  emptyActionText: { color: '#FFF', fontSize: 16, fontFamily: FONTS.displayBold },
+});
+
+/* ── Composed useStyles Hook ───────────────────────────────────────── */
+
 const useStyles = (C: ThemeColors, insets: EdgeInsets, isTablet: boolean, isDesktop: boolean, winWidth: number) => {
   return useMemo(() => {
     const PADDING = isTablet ? 32 : 20;
     const GAP = isTablet ? 16 : 12;
-    
-    // Grid Calculations
     const contentWidth = Math.min(winWidth, 1000) - (PADDING * 2);
     let nCols = 2;
     if (isDesktop) nCols = 4;
     else if (isTablet) nCols = 3;
-    
     const cardW = (contentWidth - (GAP * (nCols - 1))) / nCols;
     const cardH = cardW * 1.35;
 
     return StyleSheet.create({
-      container: { flex: 1 },
-      scroll: {
-        paddingHorizontal: PADDING,
-        paddingTop: SPACING.md,
-        paddingBottom: 140,
-        gap: SPACING.xl,
-      },
-
-      header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-      },
-      titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-      titleIcon: {
-        width: isTablet ? 48 : 40, height: isTablet ? 48 : 40, borderRadius: 14,
-        alignItems: 'center', justifyContent: 'center',
-      },
-      pageTitle: {
-        fontSize: isTablet ? 36 : 28,
-        fontFamily: FONTS.display,
-        letterSpacing: -0.5,
-      },
-      pageSubtitle: {
-        fontSize: isTablet ? 16 : 14,
-        fontFamily: FONTS.medium,
-        marginTop: -2,
-        opacity: 0.8,
-      },
-      viewToggle: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...SHADOWS.sm,
-      },
-
-      featuredWrap: { 
-        borderRadius: isTablet ? 40 : 32, 
-        overflow: 'hidden', 
-        ...SHADOWS.md,
-      },
-      featuredCard: {
-        minHeight: isTablet ? 260 : 180,
-        position: 'relative',
-      },
-      featuredOverlay: {
-        flex: 1,
-        padding: isTablet ? SPACING.xxxl : SPACING.xl,
-        backgroundColor: 'rgba(0,0,0,0.05)',
-        justifyContent: 'center',
-        gap: isTablet ? SPACING.md : 0,
-      },
-      featuredTop: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      },
-      featuredBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 14,
-        paddingVertical: 6,
-        borderRadius: BORDER_RADIUS.pill,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.3)',
-      },
-      featuredBadgeText: {
-        fontSize: 13,
-        fontFamily: FONTS.displayBold,
-        color: '#FFF',
-        letterSpacing: 0.8,
-      },
-      audioPill: {
-        width: 32, height: 32, 
-        borderRadius: 16,
-        alignItems: 'center', justifyContent: 'center',
-      },
-      featuredContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: isTablet ? SPACING.xl : SPACING.lg,
-        marginTop: 12,
-      },
-      featuredIconContainer: {
-        width: isTablet ? 80 : 64, height: isTablet ? 80 : 64,
-        borderRadius: 24,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        alignItems: 'center', justifyContent: 'center',
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
-      },
-      featuredSeasonIcon: { fontSize: isTablet ? 40 : 32 },
-      featuredTitle: {
-        fontSize: isTablet ? 32 : 24,
-        fontFamily: FONTS.displayBold,
-        color: '#FFF',
-        letterSpacing: -0.3,
-        lineHeight: isTablet ? 36 : 28,
-      },
-      featuredMetaLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-      featuredLangFlag: { fontSize: isTablet ? 22 : 18 },
-      featuredMetaText: { fontSize: isTablet ? 15 : 13, fontFamily: FONTS.displayMedium, color: 'rgba(255,255,255,0.9)' },
-      
-      featuredFooter: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: 16,
-      },
-      featuredPlayBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 16,
-        ...SHADOWS.sm,
-      },
-      featuredPlayText: {
-        fontSize: 15,
-        fontFamily: FONTS.displayBold,
-      },
-      wordCountText: {
-        fontSize: 14,
-        fontFamily: FONTS.displayMedium,
-        color: 'rgba(255,255,255,0.9)',
-      },
-
-      controlsStickyWrapper: {
-        gap: SPACING.md,
-        zIndex: 10,
-        width: '100%',
-        maxWidth: LAYOUT.maxWidth,
-        alignSelf: 'center',
-      },
-      controlsRow: { 
-        flexDirection: 'row', 
-        gap: SPACING.sm,
-        ...SHADOWS.sm,
-      },
-      searchBar: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        height: 56,
-        paddingHorizontal: 18,
-        borderRadius: 18,
-        gap: 12,
-        borderWidth: 2,
-        borderColor: C.primary + '30',
-      },
-      searchInput: { flex: 1, fontSize: 16, fontFamily: FONTS.displayMedium },
-      sortBtn: {
-        width: 56,
-        height: 56,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-
-      sortMenu: {
-        position: 'absolute',
-        right: 0,
-        width: 240,
-        borderRadius: 24,
-        overflow: 'hidden',
-        ...SHADOWS.xl,
-        zIndex: 100,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-      },
-      sortMenuHeader: { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.03)' },
-      sortMenuTitle: { fontSize: 12, fontFamily: FONTS.displayBold, color: '#999', textTransform: 'uppercase', letterSpacing: 1 },
-      sortMenuItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-      },
-      sortMenuLabel: { fontSize: 15 },
-      dot: { width: 6, height: 6, borderRadius: 3 },
-
-      filterScroll: { gap: 12, paddingBottom: 4 },
-      filterChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 18,
-        paddingVertical: 12,
-        borderRadius: 18,
-        ...SHADOWS.sm,
-      },
-      filterChipFlag: { fontSize: 18 },
-      filterChipText: { fontSize: 14, fontFamily: FONTS.displayBold },
-
-      grid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginTop: 8,
-      },
-      gridItem: { 
-        marginBottom: GAP,
-        width: cardW,
-      },
-      gridCard: {
-        borderRadius: isTablet ? 32 : 28,
-        overflow: 'hidden',
-        height: cardH,
-        ...SHADOWS.md,
-      },
-      gridThumb: {
-        width: '100%',
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-      },
-      gridSeasonEmoji: {
-        fontSize: isTablet ? 76 : 64,
-        marginBottom: 4,
-      },
-      gridPlayCircle: {
-        position: 'absolute',
-        bottom: 12,
-        right: 12,
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...SHADOWS.md,
-      },
-      gridBadgeRow: {
-        position: 'absolute',
-        top: 12,
-        left: 12,
-        flexDirection: 'row',
-        gap: 6,
-      },
-      gridLangBadge: {
-        width: 32,
-        height: 32,
-        borderRadius: 12,
-        backgroundColor: 'rgba(255,255,255,0.9)',
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      gridAudioBadge: {
-        width: 32,
-        height: 32,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      gridInfo: {
-        padding: isTablet ? 18 : 14,
-        gap: 4,
-      },
-      gridTitle: {
-        fontSize: isTablet ? 16 : 14,
-        fontFamily: FONTS.displayBold,
-        lineHeight: isTablet ? 20 : 18,
-        letterSpacing: -0.2,
-        minHeight: isTablet ? 40 : 36,
-      },
-      gridMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-      gridMetaText: { fontSize: 14, fontFamily: FONTS.displayMedium, opacity: 0.7 },
-
-      list: {
-        borderRadius: 32,
-        overflow: 'hidden',
-        ...SHADOWS.sm,
-        marginTop: 8,
-      },
-      listCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: isTablet ? 20 : 16,
-        gap: 16,
-      },
-      listThumb: {
-        width: isTablet ? 80 : 64,
-        height: isTablet ? 80 : 64,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      listThumbEmoji: { fontSize: isTablet ? 36 : 28 },
-      listAudioIndicator: {
-        position: 'absolute',
-        bottom: 2, right: 2,
-        width: 16, height: 16, borderRadius: 8,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        alignItems: 'center', justifyContent: 'center',
-      },
-      listInfo: { flex: 1, gap: 4 },
-      listTitle: { fontSize: isTablet ? 18 : 16, fontFamily: FONTS.displayBold },
-      listMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-      listLangFlag: { fontSize: isTablet ? 18 : 16 },
-      listMetaText: { fontSize: 12, fontFamily: FONTS.displayMedium },
-      listDivider: { height: 1, marginHorizontal: 20 },
-      
-      emptyWrap: {
-        paddingVertical: 60,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 16,
-      },
-      emptyIconCircle: {
-        width: 100, height: 100, borderRadius: 50,
-        alignItems: 'center', justifyContent: 'center',
-        marginBottom: 8,
-      },
-      emptyEmoji: { fontSize: 44 },
-      emptyTitle: { fontSize: 24, fontFamily: FONTS.displayBold },
-      emptyBody: {
-        fontSize: 16,
-        fontFamily: FONTS.medium,
-        textAlign: 'center',
-        lineHeight: 22,
-        maxWidth: 300,
-      },
-      emptyAction: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 24,
-        paddingVertical: 14,
-        borderRadius: 18,
-        marginTop: 8,
-        ...SHADOWS.md,
-      },
-      emptyActionText: { color: '#FFF', fontSize: 16, fontFamily: FONTS.displayBold },
+      ...buildLayoutStyles(PADDING),
+      ...buildHeaderStyles(isTablet),
+      ...buildFeaturedStyles(isTablet),
+      ...buildControlStyles(C),
+      ...buildGridStyles(isTablet, GAP, cardW, cardH),
+      ...buildListStyles(isTablet),
+      ...buildEmptyStyles(),
     });
   }, [C, isTablet, isDesktop, winWidth]);
 };
