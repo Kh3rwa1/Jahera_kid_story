@@ -60,6 +60,14 @@ const DISCOVERY_TAGS = [
   { label: 'Super Powers', emoji: '⚡', theme: 'Superheroes' },
 ];
 
+function getSecureRandomIndex(length: number): number {
+  if (length <= 0) return 0;
+  if (!globalThis.crypto?.getRandomValues) return 0;
+  const randomValues = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(randomValues);
+  return randomValues[0] % length;
+}
+
 
 function getGreeting(name: string): { line1: string; line2: string } {
   const tod = getTimeOfDay(new Date());
@@ -389,7 +397,8 @@ export default function HomeScreen() {
 
   const handleRandomStory = useCallback(() => {
     if (stories && stories.length > 0) {
-      handleStoryPress(stories[Math.floor(Math.random() * stories.length)].id);
+      const randomIndex = getSecureRandomIndex(stories.length);
+      handleStoryPress(stories[randomIndex].id);
     } else {
       // For new users, "Surprise Me" means "Make a random story"
       router.push({ 
