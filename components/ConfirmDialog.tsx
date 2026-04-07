@@ -1,6 +1,5 @@
 import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SPACING } from '@/constants/theme';
 import { AlertTriangle } from 'lucide-react-native';
-import React from 'react';
 import { Modal,StyleSheet,Text,TouchableOpacity,TouchableWithoutFeedback,View } from 'react-native';
 
 interface ConfirmDialogProps {
