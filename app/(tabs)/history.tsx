@@ -217,6 +217,37 @@ export default function HistoryScreen() {
     [router]
   );
 
+  const storyList = stories || [];
+  const languages = useMemo(
+    () => Array.from(new Set(storyList.map(s => s.language_code))),
+    [storyList]
+  );
+
+  const filteredStories = useMemo(() => {
+    let result = [...storyList];
+    if (selectedLanguage) result = result.filter(s => s.language_code === selectedLanguage);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(s => s.title.toLowerCase().includes(q));
+    }
+    switch (sortBy) {
+      case 'oldest':
+        result.sort((a, b) => new Date(a.generated_at || a.created_at).getTime() - new Date(b.generated_at || b.created_at).getTime());
+        break;
+      case 'language':
+        result.sort((a, b) => a.language_code.localeCompare(b.language_code));
+        break;
+      default:
+        result.sort((a, b) => new Date(b.generated_at || b.created_at).getTime() - new Date(a.generated_at || a.created_at).getTime());
+    }
+    return result;
+  }, [storyList, selectedLanguage, searchQuery, sortBy]);
+
+  const featuredStory = useMemo(
+    () => (storyList.length > 0 && !searchQuery && !selectedLanguage ? storyList[0] : null),
+    [storyList, searchQuery, selectedLanguage]
+  );
+
   if (isLoading) {
     return (
       <Container 
@@ -271,33 +302,6 @@ export default function HistoryScreen() {
       </Container>
     );
   }
-
-  const languages = useMemo(
-    () => Array.from(new Set((stories || []).map(s => s.language_code))),
-    [stories]
-  );
-
-  const filteredStories = useMemo(() => {
-    let result = [...(stories || [])];
-    if (selectedLanguage) result = result.filter(s => s.language_code === selectedLanguage);
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(s => s.title.toLowerCase().includes(q));
-    }
-    switch (sortBy) {
-      case 'oldest':
-        result.sort((a, b) => new Date(a.generated_at || a.created_at).getTime() - new Date(b.generated_at || b.created_at).getTime());
-        break;
-      case 'language':
-        result.sort((a, b) => a.language_code.localeCompare(b.language_code));
-        break;
-      default:
-        result.sort((a, b) => new Date(b.generated_at || b.created_at).getTime() - new Date(a.generated_at || a.created_at).getTime());
-    }
-    return result;
-  }, [stories, selectedLanguage, searchQuery, sortBy]);
-
-  const featuredStory = useMemo(() => (stories.length > 0 && !searchQuery && !selectedLanguage ? stories[0] : null), [stories, searchQuery, selectedLanguage]);
 
   return (
     <Container 
@@ -461,7 +465,9 @@ export default function HistoryScreen() {
               <Text style={[styles.sortMenuTitle, { color: COLORS.text.primary }]}>Sort Collection</Text>
             </View>
             {(['newest', 'oldest', 'language'] as SortOption[]).map(opt => {
-              const label = opt === 'newest' ? 'Newest Added' : opt === 'oldest' ? 'Oldest Added' : 'By Language';
+              let label = 'By Language';
+              if (opt === 'newest') label = 'Newest Added';
+              else if (opt === 'oldest') label = 'Oldest Added';
               const active = sortBy === opt;
               return (
                 <TouchableOpacity
@@ -508,33 +514,35 @@ export default function HistoryScreen() {
               </TouchableOpacity>
             )}
           </Animated.View>
-        ) : viewMode === 'grid' ? (
-          <View style={[styles.grid, { gap: COLUMN_GAP }]}>
-            {filteredStories.map((story, idx) => {
-              const palette = getSeasonPalette(story.season, COLORS.primary, story.theme);
-              return (
-                <AnimatedStoryGridCard
-                  key={story.id}
-                  story={story}
-                  idx={idx}
-                  palette={palette}
-                  onPress={() => handlePlayStory(story.title, story.id, story.language_code)}
-                  onLongPress={() => {
-                    hapticFeedback.warning();
-                    setDeleteId(story.id);
-                  }}
-                  COLORS={COLORS}
-                  styles={styles}
-                />
-              );
-            })}
-          </View>
         ) : (
-          <View style={[styles.list, { backgroundColor: COLORS.cardBackground + '66', borderColor: COLORS.text.light + '20', borderWidth: 1 }]}>
-            {filteredStories.map((story, idx) => {
-              const palette = getSeasonPalette(story.season, COLORS.primary, story.theme);
-              return (
-                <Animated.View key={story.id} entering={FadeInUp.delay(60 + idx * 30).springify()}>
+          <>
+            {viewMode === 'grid' ? (
+              <View style={[styles.grid, { gap: COLUMN_GAP }]}>
+                {filteredStories.map((story, idx) => {
+                  const palette = getSeasonPalette(story.season, COLORS.primary, story.theme);
+                  return (
+                    <AnimatedStoryGridCard
+                      key={story.id}
+                      story={story}
+                      idx={idx}
+                      palette={palette}
+                      onPress={() => handlePlayStory(story.title, story.id, story.language_code)}
+                      onLongPress={() => {
+                        hapticFeedback.warning();
+                        setDeleteId(story.id);
+                      }}
+                      COLORS={COLORS}
+                      styles={styles}
+                    />
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={[styles.list, { backgroundColor: COLORS.cardBackground + '66', borderColor: COLORS.text.light + '20', borderWidth: 1 }]}>
+                {filteredStories.map((story, idx) => {
+                  const palette = getSeasonPalette(story.season, COLORS.primary, story.theme);
+                  return (
+                    <Animated.View key={story.id} entering={FadeInUp.delay(60 + idx * 30).springify()}>
                   <AnimatedPressable
                     style={styles.listCard}
                     onPress={() => handlePlayStory(story.title, story.id, story.language_code)}
@@ -582,10 +590,12 @@ export default function HistoryScreen() {
                   {idx < filteredStories.length - 1 && (
                     <View style={[styles.listDivider, { backgroundColor: 'rgba(0,0,0,0.05)' }]} />
                   )}
-                </Animated.View>
-              );
-            })}
-          </View>
+                    </Animated.View>
+                  );
+                })}
+              </View>
+            )}
+          </>
         )}
       <ConfirmDialog
         visible={!!deleteId}

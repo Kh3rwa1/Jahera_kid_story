@@ -93,7 +93,7 @@ export function ShimmerCta({
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              renderIcon && renderIcon()
+              renderIcon?.()
             )}
             <Text style={[styles.ctaButtonText, textStyle]}>
               {isLoading ? 'Processing...' : label}

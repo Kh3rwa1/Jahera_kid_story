@@ -53,7 +53,6 @@ export default function Welcome() {
 
   const glowPulse = useSharedValue(0.3);
   const orbFloat = useSharedValue(0);
-  const blob1Float = useSharedValue(0);
   const logoScale = useSharedValue(0.8);
   const logoOpacity = useSharedValue(0);
   const tapScale = useSharedValue(1);
@@ -83,10 +82,6 @@ export default function Welcome() {
         withTiming(-14, { duration: 3800, easing: Easing.inOut(Easing.ease) }),
         withTiming(0, { duration: 3800, easing: Easing.inOut(Easing.ease) })
       ),
-      -1, true
-    );
-    blob1Float.value = withRepeat(
-      withSequence(withTiming(-18, { duration: 4600, easing: Easing.inOut(Easing.ease) }), withTiming(0, { duration: 4600, easing: Easing.inOut(Easing.ease) })),
       -1, true
     );
     badge1Float.value = withDelay(200, withRepeat(
@@ -131,7 +126,6 @@ export default function Welcome() {
 
   const glowStyle = useAnimatedStyle(() => ({ opacity: glowPulse.value }));
   const orbStyle = useAnimatedStyle(() => ({ transform: [{ translateY: orbFloat.value }] }));
-  const blob1Style = useAnimatedStyle(() => ({ transform: [{ translateY: blob1Float.value }] }));
   const logoStyle = useAnimatedStyle(() => ({ opacity: logoOpacity.value, transform: [{ scale: logoScale.value }] }));
   const tapScaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: tapScale.value }] }));
   const ctaGlowStyle = useAnimatedStyle(() => ({ opacity: ctaGlow.value }));
@@ -286,8 +280,8 @@ export default function Welcome() {
             { emoji: '✨', label: 'Magic' },
             { emoji: '🌙', label: 'Dreams' },
             { emoji: '🧩', label: 'Learning' },
-          ].map((item, i) => (
-            <View key={i} style={styles.pill}>
+          ].map((item) => (
+            <View key={item.label} style={styles.pill}>
               <Text style={styles.pillEmoji}>{item.emoji}</Text>
               <Text style={styles.pillText}>{item.label}</Text>
             </View>

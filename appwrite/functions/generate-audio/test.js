@@ -1,9 +1,6 @@
 const func = require('./index.js');
 
 async function test() {
-    let responseData = null;
-    let responseStatus = null;
-
     const req = {
         body: JSON.stringify({
             text: "This is a short test story about a dog.",
@@ -14,14 +11,10 @@ async function test() {
 
     const res = {
         json: (data, statusCode = 200) => {
-            responseData = data;
-            responseStatus = statusCode;
             console.log(`[RES.JSON] ${statusCode}:`, data);
             return data;
         },
         send: (data, statusCode = 200) => {
-            responseData = data;
-            responseStatus = statusCode;
             console.log(`[RES.SEND] ${statusCode}:`, data);
             return data;
         }
@@ -39,4 +32,6 @@ async function test() {
     }
 }
 
-test();
+(async () => {
+  await test();
+})();
