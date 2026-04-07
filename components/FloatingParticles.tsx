@@ -10,6 +10,7 @@ import Animated, {
   withSequence,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { randomChoice, randomFloat } from '@/utils/secureRandom';
 
 interface Particle {
   id: number;
@@ -121,12 +122,12 @@ export const FloatingParticles: React.FC<FloatingParticlesProps> = ({
   const particles: Particle[] = React.useMemo(() => 
     Array.from({ length: count }, (_, i) => ({
       id: i,
-      size: Math.random() * 40 + 20, // 20-60px
-      startX: Math.random() * winWidth,
-      startY: winHeight + Math.random() * 200,
-      delay: Math.random() * 3000,
-      duration: Math.random() * 8000 + 12000, // 12-20 seconds
-      colors: colors[Math.floor(Math.random() * colors.length)],
+      size: randomFloat(20, 60), // 20-60px
+      startX: randomFloat(0, winWidth),
+      startY: winHeight + randomFloat(0, 200),
+      delay: randomFloat(0, 3000),
+      duration: randomFloat(12000, 20000), // 12-20 seconds
+      colors: randomChoice(colors),
     })),
     [count, winWidth, winHeight, colors]
   );

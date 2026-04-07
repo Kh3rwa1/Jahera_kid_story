@@ -10,6 +10,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { randomFloat } from '@/utils/secureRandom';
 
 const BUBBLE_COLORS: ReadonlyArray<readonly [string, string]> = [
   ['rgba(255, 182, 193, 0.45)', 'rgba(255, 182, 193, 0)'],
@@ -181,13 +182,13 @@ export const KidsBubbleBackground: React.FC<KidsBubbleBackgroundProps> = React.m
     () =>
       Array.from({ length: bubbleCount }, (_, i) => ({
         id: i,
-        size: Math.random() * 50 + 15,
-        startX: Math.random() * winWidth,
-        startY: winHeight + Math.random() * 300,
-        delay: Math.random() * 4000,
-        duration: Math.random() * 10000 + 14000,
+        size: randomFloat(15, 65),
+        startX: randomFloat(0, winWidth),
+        startY: winHeight + randomFloat(0, 300),
+        delay: randomFloat(0, 4000),
+        duration: randomFloat(14000, 24000),
         colors: BUBBLE_COLORS[i % BUBBLE_COLORS.length],
-        swayAmount: Math.random() * 30 + 10,
+        swayAmount: randomFloat(10, 40),
       })),
     [bubbleCount, winWidth, winHeight]
   );
@@ -196,12 +197,12 @@ export const KidsBubbleBackground: React.FC<KidsBubbleBackgroundProps> = React.m
     () =>
       Array.from({ length: cloudCount }, (_, i) => ({
         id: i,
-        width: Math.random() * 120 + 80,
-        height: Math.random() * 50 + 35,
-        startX: -150 - Math.random() * 200,
-        startY: Math.random() * (winHeight * 0.6),
-        delay: Math.random() * 8000,
-        duration: Math.random() * 20000 + 30000,
+        width: randomFloat(80, 200),
+        height: randomFloat(35, 85),
+        startX: -150 - randomFloat(0, 200),
+        startY: randomFloat(0, winHeight * 0.6),
+        delay: randomFloat(0, 8000),
+        duration: randomFloat(30000, 50000),
         colors: CLOUD_COLORS[i % CLOUD_COLORS.length],
       })),
     [cloudCount, winHeight]

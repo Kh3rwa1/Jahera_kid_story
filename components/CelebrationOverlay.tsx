@@ -9,6 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { COLORS } from '@/constants/theme';
+import { randomBool, randomChoice, randomFloat } from '@/utils/secureRandom';
 
 const CONFETTI_COLORS = [
   COLORS.primary,
@@ -25,7 +26,7 @@ interface CelebrationOverlayProps {
   onComplete?: () => void;
 }
 
-const ConfettiPiece = ({ x, color, size, delay, winHeight }: { x: number; color: string; size: number; delay: number; winHeight: number }) => {
+const ConfettiPiece = ({ x, color, size, delay, winHeight, driftX, isCircle }: { x: number; color: string; size: number; delay: number; winHeight: number; driftX: number; isCircle: boolean }) => {
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ const ConfettiPiece = ({ x, color, size, delay, winHeight }: { x: number; color:
     return {
       transform: [
         { translateY: interpolate(progress.value, [0, 1], [-50, winHeight + 100]) },
-        { translateX: interpolate(progress.value, [0, 1], [0, (Math.random() - 0.5) * 150]) },
+        { translateX: interpolate(progress.value, [0, 1], [0, driftX]) },
         { rotate: `${interpolate(progress.value, [0, 1], [0, 1080])}deg` },
       ],
       opacity: interpolate(progress.value, [0, 0.1, 0.9, 1], [0, 1, 1, 0]),
@@ -56,7 +57,7 @@ const ConfettiPiece = ({ x, color, size, delay, winHeight }: { x: number; color:
           width: size,
           height: size,
           backgroundColor: color,
-          borderRadius: Math.random() > 0.5 ? size / 2 : 4,
+          borderRadius: isCircle ? size / 2 : 4,
         },
         animatedStyle,
       ]}
@@ -73,10 +74,12 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
   const pieces = useMemo(() =>
     Array.from({ length: 90 }, (_, i) => ({
       id: i,
-      x: Math.random() * width,
-      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-      size: Math.random() * 16 + 12, // 12-28px size for chunky kid feel
-      delay: Math.random() * 400,
+      x: randomFloat(0, width),
+      color: randomChoice(CONFETTI_COLORS),
+      size: randomFloat(12, 28), // 12-28px size for chunky kid feel
+      delay: randomFloat(0, 400),
+      driftX: randomFloat(-75, 75),
+      isCircle: randomBool(),
     })),
     [width]
   );
