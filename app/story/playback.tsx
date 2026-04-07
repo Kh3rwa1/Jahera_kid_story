@@ -228,6 +228,9 @@ export default function StoryPlayback() {
   const [showSettings, setShowSettings] = useState(false);
   const [isPlayingRequested, setIsPlayingRequested] = useState(true); // Auto-play by default
   const [dynamicVideoUrl, setDynamicVideoUrl] = useState<string | null>(null);
+  const [showCinematicIntro, setShowCinematicIntro] = useState(true);
+  const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const introOpacity = useSharedValue(1);
 
   const videoSource = useMemo(() => {
     return dynamicVideoUrl ? { uri: dynamicVideoUrl } : require('@/assets/jahera.mp4');
@@ -391,9 +394,9 @@ export default function StoryPlayback() {
   const loadStory = async () => {
     try {
       const storyId = params.storyId as string;
-      if (!storyId) { setIsLoading(false); return; }
+      if (!storyId) { setIsLoading(false); setShowCinematicIntro(false); return; }
       const storyData = await storyService.getById(storyId);
-      if (!storyData) { setIsLoading(false); return; }
+      if (!storyData) { setIsLoading(false); setShowCinematicIntro(false); return; }
       setStory(storyData);
       
       const quizData = await quizService.getQuestionsByStoryId(storyId);
@@ -403,14 +406,37 @@ export default function StoryPlayback() {
         setTab('audio'); // Audio-first
       }
       
-      // Tell global context to load (and optionally generate/poll)
+      // Start audio generation in the background immediately
       loadAndPlayAudio(storyData);
       
+      // Data is loaded — but keep the cinematic intro visible for a few more seconds
       setIsLoading(false);
+      
+      // Show the cinematic intro for at least 5 seconds after story loads
+      introTimerRef.current = setTimeout(() => {
+        dismissCinematicIntro();
+      }, 5000);
     } catch (err) {
       setIsLoading(false);
+      setShowCinematicIntro(false);
     }
   };
+
+  const dismissCinematicIntro = useCallback(() => {
+    if (introTimerRef.current) {
+      clearTimeout(introTimerRef.current);
+      introTimerRef.current = null;
+    }
+    introOpacity.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) });
+    setTimeout(() => setShowCinematicIntro(false), 600);
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (introTimerRef.current) clearTimeout(introTimerRef.current);
+    };
+  }, []);
 
   const handlePlayPause = useCallback(async () => {
     playScale.value = withSequence(withSpring(0.88, { damping: 8 }), withSpring(1, { damping: 10 }));
@@ -490,7 +516,12 @@ export default function StoryPlayback() {
     color: C.text.secondary,
   }), [prefs.fontSize, lineHeight, activeFontDef.regular, C.text.secondary, scriptFontOverride]);
 
-  if (isLoading) {
+  // Cinematic intro overlay — shows video + story info while audio generates in background
+  const introAnimStyle = useAnimatedStyle(() => ({
+    opacity: introOpacity.value,
+  }));
+
+  if (isLoading || showCinematicIntro) {
     const screen = Dimensions.get('screen');
     
     return (
@@ -504,7 +535,96 @@ export default function StoryPlayback() {
           }}
           contentFit="cover"
           nativeControls={false}
+          {...(Platform.OS === 'android' ? { surfaceType: 'textureView' } : {})}
         />
+        {/* Dark overlay for text readability */}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }]} />
+        
+        {/* Story info overlay — appears once story data is loaded */}
+        {story && (
+          <Animated.View 
+            entering={FadeIn.delay(300).duration(600)}
+            style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', paddingBottom: insets.bottom + 80, paddingHorizontal: SPACING.xxl }]}
+          >
+            {/* Theme & Mood badges */}
+            <Animated.View entering={FadeInUp.delay(400).duration(500)} style={{ flexDirection: 'row', gap: 8, marginBottom: SPACING.md }}>
+              {story.theme && (
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Sparkles size={12} color="#FFF" />
+                  <Text style={{ color: '#FFF', fontFamily: FONTS.semibold, fontSize: 13, textTransform: 'capitalize' }}>{story.theme}</Text>
+                </View>
+              )}
+              {story.mood && (
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontFamily: FONTS.medium, fontSize: 13, textTransform: 'capitalize' }}>{story.mood}</Text>
+                </View>
+              )}
+            </Animated.View>
+
+            {/* Story title */}
+            <Animated.Text 
+              entering={FadeInUp.delay(500).duration(600)}
+              style={{ color: '#FFFFFF', fontFamily: FONTS.extrabold, fontSize: 34, letterSpacing: -0.5, lineHeight: 42, marginBottom: SPACING.lg, textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 10 }}
+              numberOfLines={3}
+            >
+              {story.title}
+            </Animated.Text>
+
+            {/* Audio generation indicator */}
+            <Animated.View 
+              entering={FadeInUp.delay(700).duration(500)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: SPACING.xl }}
+            >
+              {(audioPolling || isBuffering) ? (
+                <>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4ADE80' }} />
+                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontFamily: FONTS.medium, fontSize: 13 }}>
+                    🎙️ Generating narration...
+                  </Text>
+                </>
+              ) : sound ? (
+                <>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4ADE80' }} />
+                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontFamily: FONTS.medium, fontSize: 13 }}>
+                    ✨ Audio ready
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.4)' }} />
+                  <Text style={{ color: 'rgba(255,255,255,0.5)', fontFamily: FONTS.medium, fontSize: 13 }}>
+                    Preparing your story...
+                  </Text>
+                </>
+              )}
+            </Animated.View>
+
+            {/* Tap to skip hint */}
+            <Animated.View entering={FadeIn.delay(2000).duration(800)}>
+              <TouchableOpacity 
+                onPress={dismissCinematicIntro}
+                activeOpacity={0.7}
+                style={{ alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 24, paddingHorizontal: 24, paddingVertical: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }}
+              >
+                <Text style={{ color: '#FFF', fontFamily: FONTS.semibold, fontSize: 14 }}>
+                  Tap to continue →
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+        )}
+
+        {/* Loading spinner before story data arrives */}
+        {!story && (
+          <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+            <Animated.View entering={FadeIn.duration(400)} style={{ alignItems: 'center', gap: 16 }}>
+              <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)' }}>
+                <BookOpen size={24} color="rgba(255,255,255,0.9)" />
+              </View>
+              <Text style={{ color: 'rgba(255,255,255,0.8)', fontFamily: FONTS.semibold, fontSize: 16 }}>Opening your story...</Text>
+            </Animated.View>
+          </View>
+        )}
       </View>
     );
   }
