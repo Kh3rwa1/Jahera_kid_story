@@ -84,27 +84,50 @@ export function useStoryGeneration() {
     hapticFeedback.light();
   }, []);
 
+  const markError = useCallback((message: string) => {
+    setError(message);
+  }, []);
+
+  const buildAudioSettings = (profileData: any) => ({
+    voiceId: profileData.elevenlabs_voice_id,
+    modelId: profileData.elevenlabs_model_id,
+    stability: profileData.elevenlabs_stability,
+    similarity: profileData.elevenlabs_similarity,
+    style: profileData.elevenlabs_style,
+    speakerBoost: profileData.elevenlabs_speaker_boost,
+  });
+
+  const createQuizQuestions = useCallback(async (storyId: string, aiStory: any) => {
+    for (let i = 0; i < aiStory.quiz.length; i++) {
+      const q = aiStory.quiz[i];
+      const question = await quizService.createQuestion(storyId, q.question, i + 1);
+      if (!question) continue;
+      await quizService.createAnswer(question.id, q.options.A, q.correct_answer === 'A', 'A');
+      await quizService.createAnswer(question.id, q.options.B, q.correct_answer === 'B', 'B');
+      await quizService.createAnswer(question.id, q.options.C, q.correct_answer === 'C', 'C');
+    }
+  }, []);
+
   const runGeneration = async () => {
     try {
       if (!resolvedProfileId) {
-        setError('Profile not found.');
+        markError('Profile not found.');
         return;
       }
 
       setStatus('Loading your profile...');
       setProgress(10);
-
       const profileData = await profileService.getWithRelations(resolvedProfileId);
       if (!profileData) {
-        setError('Profile not found.');
+        markError('Profile not found.');
         return;
       }
 
       if (!isMountedRef.current) return;
       completeStep('profile');
+
       setStatus('Creating your adventure story...');
       setProgress(30);
-
       const context = getCurrentContext();
       const options: StoryOptions = {
         theme: selectedTheme,
@@ -115,7 +138,7 @@ export function useStoryGeneration() {
 
       const aiStory = await generateAdventureStory(profileData, selectedLanguage, context, options);
       if (!aiStory) {
-        setError('Could not generate a story.');
+        markError('Could not generate a story.');
         return;
       }
 
@@ -143,46 +166,25 @@ export function useStoryGeneration() {
       });
 
       if (!storyRecord) {
-        setError('Failed to save story.');
+        markError('Failed to save story.');
         return;
       }
 
       setProgress(70);
-
-      let quizCreatedCount = 0;
-      for (let i = 0; i < aiStory.quiz.length; i++) {
-        const q = aiStory.quiz[i];
-        const question = await quizService.createQuestion(storyRecord.id, q.question, i + 1);
-        if (question) {
-          await quizService.createAnswer(question.id, q.options.A, q.correct_answer === 'A', 'A');
-          await quizService.createAnswer(question.id, q.options.B, q.correct_answer === 'B', 'B');
-          await quizService.createAnswer(question.id, q.options.C, q.correct_answer === 'C', 'C');
-          quizCreatedCount++;
-        }
-      }
+      await createQuizQuestions(storyRecord.id, aiStory);
 
       if (!isMountedRef.current) return;
       completeStep('quiz');
       setStatus('Finalising your story...');
       setProgress(90);
 
-      const audioSettings = profileData ? {
-        voiceId: profileData.elevenlabs_voice_id,
-        modelId: profileData.elevenlabs_model_id,
-        stability: profileData.elevenlabs_stability,
-        similarity: profileData.elevenlabs_similarity,
-        style: profileData.elevenlabs_style,
-        speakerBoost: profileData.elevenlabs_speaker_boost,
-      } : undefined;
-
-      generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, audioSettings)
+      generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, buildAudioSettings(profileData))
         .then(() => { if (isMountedRef.current) completeStep('audio'); })
         .catch(err => logger.error('[useStoryGeneration] Audio error:', err));
 
       setStatus('Story ready!');
       setProgress(100);
       hapticFeedback.success();
-      
       await Promise.all([refreshSubscription(), refreshStories()]);
 
       if (isMountedRef.current) {
@@ -195,9 +197,9 @@ export function useStoryGeneration() {
       if (err instanceof QuotaExceededError) {
         setIsQuotaError(true);
         setError(err.message);
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to generate story');
+        return;
       }
+      setError(err instanceof Error ? err.message : 'Failed to generate story');
     }
   };
 

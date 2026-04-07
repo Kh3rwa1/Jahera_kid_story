@@ -40,7 +40,9 @@ export function useNarrationAudio(screenTag: string) {
 
   useEffect(() => {
     return () => {
-      void stopCurrent();
+      stopCurrent().catch(() => {
+        // best-effort cleanup on unmount
+      });
     };
   }, [stopCurrent]);
 
