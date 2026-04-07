@@ -20,7 +20,7 @@ interface ErrorLog {
 class MonitoringService {
   private performanceMetrics: PerformanceMetric[] = [];
   private errorLogs: ErrorLog[] = [];
-  private timers = new Map<string, number>();
+  private readonly timers = new Map<string, number>();
 
   /**
    * Start performance timer

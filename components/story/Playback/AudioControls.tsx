@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,7 +17,6 @@ import Animated, {
   cancelAnimation,
   Easing,
   interpolate,
-  SharedValue,
 } from 'react-native-reanimated';
 import { Play, Pause, SkipBack, SkipForward, BookOpen } from 'lucide-react-native';
 import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
@@ -33,7 +31,6 @@ interface AudioControlsProps {
 }
 
 export function AudioControls({ accentColor, themeGradient, colors }: AudioControlsProps) {
-  const { width: winWidth, height: winHeight } = useWindowDimensions();
   const { 
     isPlaying, isBuffering, sound, 
     playPause, seek 
@@ -83,9 +80,6 @@ export function AudioControls({ accentColor, themeGradient, colors }: AudioContr
       { scale: interpolate(vinylElevation.value, [0, 1], [1, 1.04]) },
     ],
   }));
-
-  const makeWaveStyle = (anim: SharedValue<number>) =>
-    useAnimatedStyle(() => ({ transform: [{ scaleY: anim.value }] }));
 
   const handlePlayPause = () => {
     playScale.value = withSequence(withSpring(0.88, { damping: 8 }), withSpring(1, { damping: 10 }));

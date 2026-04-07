@@ -83,4 +83,6 @@ async function setup() {
   console.log('\n✨ Setup Complete! You can now edit the "story_system_prompt" in your Appwrite Console.');
 }
 
-setup();
+(async () => {
+  await setup();
+})();
