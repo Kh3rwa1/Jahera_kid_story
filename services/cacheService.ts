@@ -60,16 +60,20 @@ class CacheService {
     this.lastCleanupAt = now;
 
     const expiredKeys: string[] = [];
+    const retained = new Map<string, CacheEntry<unknown>>();
     for (const [key, entry] of this.memoryCache.entries()) {
       if (this.isExpired(entry)) {
         expiredKeys.push(key);
+      } else {
+        retained.set(key, entry);
       }
     }
 
     if (expiredKeys.length === 0) return;
 
-    // ⚡ Batch-safe: forEach operates on in-memory Map only; storage uses multiRemove below
-    expiredKeys.forEach((key) => this.memoryCache.delete(key));
+    // Bulk replace: swap entire map instead of per-key deletion
+    this.memoryCache.clear();
+    for (const [k, v] of retained) this.memoryCache.set(k, v);
 
     try {
       await AsyncStorage.multiRemove(expiredKeys.map((key) => `cache_${key}`));
@@ -120,8 +124,14 @@ class CacheService {
 
     if (keysToEvict.length === 0) return;
 
-    // ⚡ Batch-safe: forEach operates on in-memory Map only; storage uses multiRemove below
-    keysToEvict.forEach(key => this.memoryCache.delete(key));
+    // Bulk remove: use Set for O(1) lookup, rebuild map without evicted keys
+    const evictSet = new Set(keysToEvict);
+    const retained = new Map<string, CacheEntry<unknown>>();
+    for (const [k, v] of this.memoryCache) {
+      if (!evictSet.has(k)) retained.set(k, v);
+    }
+    this.memoryCache.clear();
+    for (const [k, v] of retained) this.memoryCache.set(k, v);
 
     try {
       await AsyncStorage.multiRemove(keysToEvict.map(key => `cache_${key}`));
@@ -257,14 +267,15 @@ class CacheService {
   async invalidateByPrefix(prefix: string): Promise<void> {
     await this.maybeCleanupExpiredEntries();
 
-    // Clear memory cache
-    const memoryKeys = Array.from(this.memoryCache.keys());
-    // ⚡ Batch-safe: forEach operates on in-memory Map only; storage uses multiRemove below
-    memoryKeys.forEach((key) => {
-      if (key.startsWith(prefix)) {
-        this.memoryCache.delete(key);
+    // Bulk remove: rebuild map excluding keys that match the prefix
+    const retained = new Map<string, CacheEntry<unknown>>();
+    for (const [key, value] of this.memoryCache) {
+      if (!key.startsWith(prefix)) {
+        retained.set(key, value);
       }
-    });
+    }
+    this.memoryCache.clear();
+    for (const [k, v] of retained) this.memoryCache.set(k, v);
 
     // Clear AsyncStorage
     try {
