@@ -91,16 +91,28 @@ const computeQuizStats = (quizAttempts: QuizAttempt[] | null) => {
 
 const computeStreak = (stories: Story[] | null) => {
   if (!stories || stories.length === 0) return 0;
+  
   const uniqueDays = new Set(
     stories.map(s => new Date(s.generated_at || s.created_at).toDateString())
   );
+  
   const sortedDays = Array.from(uniqueDays)
     .map(d => new Date(d as string).getTime())
     .sort((a, b) => b - a);
+    
   const todayMs = new Date(new Date().toDateString()).getTime();
   const dayMs = 86400000;
-  const startMs = sortedDays[0] === todayMs ? todayMs : (sortedDays[0] === todayMs - dayMs ? todayMs - dayMs : null);
+  
+  // Refactored nested ternary to independent statement (S3358)
+  let startMs: number | null = null;
+  if (sortedDays[0] === todayMs) {
+    startMs = todayMs;
+  } else if (sortedDays[0] === todayMs - dayMs) {
+    startMs = todayMs - dayMs;
+  }
+  
   if (startMs === null) return 0;
+  
   let count = 0;
   for (let i = 0; i < sortedDays.length; i++) {
     const expected = startMs - i * dayMs;
@@ -112,6 +124,234 @@ const computeStreak = (stories: Story[] | null) => {
   }
   return count;
 };
+
+function ProfileHero({ 
+  profile, 
+  storiesCount, 
+  quizStats, 
+  streak, 
+  COLORS, 
+  styles 
+}: Readonly<{ 
+  profile: any; 
+  storiesCount: number; 
+  quizStats: { totalQuizzes: number }; 
+  streak: number; 
+  COLORS: any; 
+  styles: ProfileStyles 
+}>) {
+  const router = useRouter();
+  const avatarPulseStyle = usePulse(0.97, 1.03);
+  const streakPinPulseStyle = usePulse(0.92, 1.1);
+  const topLanguage = profile.languages?.[0];
+
+  return (
+    <Animated.View entering={FadeInDown.delay(200).springify()}>
+      <View style={[styles.heroGlass, { backgroundColor: COLORS.cardBackground + '73', borderColor: COLORS.text.light + '20' }]}>
+        <LinearGradient
+          colors={[COLORS.primary + '20', COLORS.primary + '05']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        
+        <View style={styles.heroTop}>
+          <Animated.View style={[styles.heroAvatarWrap, avatarPulseStyle]}>
+            <ProfileAvatar
+              avatarUrl={profile.avatar_url}
+              name={profile.kid_name}
+              size="large"
+              editable
+              onPress={() => router.push('/settings/edit-profile')}
+            />
+            {streak > 0 && (
+              <Animated.View entering={ZoomIn.delay(600)} style={[styles.streakPin, streakPinPulseStyle]}>
+                <Flame size={10} color="#FFFFFF" fill="#FFFFFF" />
+                <Text style={styles.streakPinText}>{streak}</Text>
+              </Animated.View>
+            )}
+          </Animated.View>
+
+          <View style={styles.heroMeta}>
+            <Text style={[styles.heroName, { color: COLORS.text.primary }]}>{profile.kid_name}</Text>
+            {topLanguage && (
+              <View style={[styles.langPill, { backgroundColor: COLORS.primary + '15' }]}>
+                <Text style={styles.langPillFlag}>{getLanguageFlag(topLanguage.language_code)}</Text>
+                <Text style={[styles.langPillName, { color: COLORS.primary }]}>{topLanguage.language_name}</Text>
+                {(profile.languages?.length || 0) > 1 && (
+                  <View style={[styles.langPillMore, { backgroundColor: COLORS.primary + '25' }]}>
+                    <Text style={[styles.langPillMoreText, { color: COLORS.primary }]}>+{profile.languages.length - 1}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View style={[styles.heroStats, { borderTopColor: COLORS.text.light + '12' }]}>
+          {[
+            { label: 'Stories', value: String(storiesCount), icon: <BookOpen size={13} color={COLORS.primary} /> },
+            { label: 'Quizzes', value: String(quizStats.totalQuizzes), icon: <Award size={13} color={COLORS.primary} /> },
+            { label: 'Streak', value: `${streak}d`, icon: <Flame size={13} color="#F59E0B" fill="#F59E0B" /> },
+          ].map((s, i, arr) => (
+            <React.Fragment key={s.label}>
+              <View style={styles.heroStat}>
+                <View style={[styles.heroStatIcon, { backgroundColor: COLORS.primary + '12' }]}>{s.icon}</View>
+                <Text style={[styles.heroStatVal, { color: COLORS.text.primary }]}>{s.value}</Text>
+                <Text style={[styles.heroStatLbl, { color: COLORS.text.light }]}>{s.label}</Text>
+              </View>
+              {i < arr.length - 1 && <View style={[styles.heroStatDiv, { backgroundColor: COLORS.text.light + '15' }]} />}
+            </React.Fragment>
+          ))}
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+function AchievementSection({ stats, totalWords, COLORS, styles }: Readonly<{ stats: any; totalWords: number; COLORS: any; styles: ProfileStyles }>) {
+  return (
+    <Animated.View entering={FadeInDown.delay(300).springify()}>
+      <View style={styles.sectionHead}>
+        <Text style={styles.sectionEmoji}>🎖️</Text>
+        <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Achievements</Text>
+      </View>
+      <View style={styles.achieveRow}>
+        {[
+          { label: 'Accuracy', value: `${stats.avgScore}%`, sub: 'avg score', gradient: ['#6366F1', '#4F46E5'] as [string, string], emoji: '🎯' },
+          { label: 'Perfect', value: String(stats.perfectScores), sub: 'quizzes', gradient: ['#F59E0B', '#D97706'] as [string, string], emoji: '⭐' },
+          { label: 'Words', value: totalWords > 999 ? `${(totalWords / 1000).toFixed(1)}k` : String(totalWords), sub: 'read', gradient: ['#10B981', '#059669'] as [string, string], emoji: '📝' },
+        ].map((card, i) => (
+          <AnimatedAchievementCard key={card.label} card={card} index={i} styles={styles} />
+        ))}
+      </View>
+    </Animated.View>
+  );
+}
+
+function LearningCurve({ recentQuizzes, stories, COLORS, styles }: Readonly<{ recentQuizzes: any[]; stories: any[]; COLORS: any; styles: ProfileStyles }>) {
+  return (
+    <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.section}>
+      <View style={styles.sectionHead}>
+        <Text style={styles.sectionEmoji}>📈</Text>
+        <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Learning Curve</Text>
+        <View style={[styles.sectionBadge, { backgroundColor: COLORS.primary + '18' }]}>
+          <Text style={[styles.sectionBadgeText, { color: COLORS.primary }]}>
+            {recentQuizzes.length} recent
+          </Text>
+        </View>
+      </View>
+
+      <View style={[styles.listCard, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '15', borderWidth: 1 }]}>
+        {recentQuizzes.map((attempt, idx) => {
+          const pct = Math.round((attempt.score / attempt.total_questions) * 100);
+          const isPerfect = pct === 100;
+          const isGood = pct >= 70;
+          const scoreColor = isPerfect ? COLORS.success : isGood ? COLORS.primary : COLORS.error;
+          const matchingStory = (stories || []).find(s => s.id === attempt.story_id);
+          const title = matchingStory?.title || 'Story Quiz';
+          const isLast = idx === recentQuizzes.length - 1;
+
+          return (
+            <View key={attempt.id}>
+              <Animated.View
+                entering={FadeInDown.delay(450 + idx * 50).springify()}
+                style={styles.quizRow}
+              >
+                <LinearGradient
+                  colors={[scoreColor + '20', scoreColor + '08']}
+                  style={styles.scorePill}
+                >
+                  <Text style={[styles.scorePillText, { color: scoreColor }]}>{pct}%</Text>
+                </LinearGradient>
+                <View style={styles.quizInfo}>
+                  <MarqueeText
+                    text={title}
+                    style={[styles.quizTitle, { color: COLORS.text.primary }]}
+                  />
+                  <Text style={[styles.quizSub, { color: COLORS.text.secondary }]}>
+                    {attempt.score} / {attempt.total_questions} correct
+                  </Text>
+                </View>
+                {isPerfect && <Text style={styles.quizPerfectEmoji}>👑</Text>}
+              </Animated.View>
+              {!isLast && (
+                <View style={[styles.rowDivider, { backgroundColor: COLORS.text.light + '10' }]} />
+              )}
+            </View>
+          );
+        })}
+      </View>
+    </Animated.View>
+  );
+}
+
+function MasterySection({ languages, stories, COLORS, styles }: Readonly<{ languages: any[]; stories: any[]; COLORS: any; styles: ProfileStyles }>) {
+  return (
+    <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.section}>
+      <View style={styles.sectionHead}>
+        <Text style={styles.sectionEmoji}>🌎</Text>
+        <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Mastery</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.langScroll}
+      >
+        {languages?.map((lang, langIdx) => {
+          const langCount = (stories || []).filter(s => s.language_code === lang.language_code).length;
+          const pct = (stories?.length || 0) > 0 ? Math.round((langCount / stories.length) * 100) : 0;
+          return (
+            <Animated.View key={lang.id} entering={FadeInRight.delay(550 + langIdx * 100).springify()}>
+              <View style={[styles.langCard, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '15', borderWidth: 1 }]}>
+                <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
+                <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
+                <Text style={[styles.langCount, { color: COLORS.text.secondary }]}>
+                  {langCount} {langCount === 1 ? 'story' : 'stories'}
+                </Text>
+                <AnimatedLangProgressBar pct={pct} primaryColor={COLORS.primary} delay={700 + langIdx * 100} styles={styles} />
+              </View>
+            </Animated.View>
+          );
+        })}
+      </ScrollView>
+    </Animated.View>
+  );
+}
+
+function XPBanner({ streak, COLORS, styles }: Readonly<{ streak: number; COLORS: any; styles: ProfileStyles }>) {
+  const router = useRouter();
+  return (
+    <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.section}>
+      <TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/(tabs)')}>
+        <LinearGradient
+          colors={['#8B5CF6', '#EC4899', '#F97316']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.xpCard}
+        >
+          <View style={styles.xpEmojiRow}>
+            <Text style={styles.xpEmoji}>{streak > 0 ? '🔥' : '✨'}</Text>
+          </View>
+          <View style={styles.xpText}>
+            <View style={styles.xpBadge}><Text style={styles.xpBadgeText}>LEGENDARY STREAK</Text></View>
+            <Text style={styles.xpTitle}>
+              {streak > 0 ? `${streak}-Day Adventure!` : 'Start Your Adventure!'}
+            </Text>
+            <Text style={styles.xpSub}>
+              {streak > 0
+                ? "You're crushing it! Every day is a new world waiting to be explored."
+                : 'Read a story today and start your journey to become a Master Storyteller!'}
+            </Text>
+          </View>
+          <View style={styles.xpCtaIcon}>
+             <ChevronRight size={24} color="#FFFFFF" strokeWidth={3} />
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -205,203 +445,45 @@ export default function ProfileScreen() {
           <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={COLORS.primary} />
         }
       >
+        <ProfileHero 
+          profile={profile}
+          storiesCount={stories?.length || 0}
+          quizStats={stats}
+          streak={streak}
+          COLORS={COLORS}
+          styles={styles}
+        />
 
-        {/* Hero Glasmorphic Banner */}
-        <Animated.View entering={FadeInDown.delay(200).springify()}>
-          <View style={[styles.heroGlass, { backgroundColor: COLORS.cardBackground + '73', borderColor: COLORS.text.light + '20' }]}>
-            <LinearGradient
-              colors={[COLORS.primary + '20', COLORS.primary + '05']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            
-            <View style={styles.heroTop}>
-              <Animated.View style={[styles.heroAvatarWrap, avatarPulseStyle]}>
-                <ProfileAvatar
-                  avatarUrl={profile.avatar_url}
-                  name={profile.kid_name}
-                  size="large"
-                  editable
-                  onPress={() => router.push('/settings/edit-profile')}
-                />
-                {streak > 0 && (
-                  <Animated.View entering={ZoomIn.delay(600)} style={[styles.streakPin, streakPinPulseStyle]}>
-                    <Flame size={10} color="#FFFFFF" fill="#FFFFFF" />
-                    <Text style={styles.streakPinText}>{streak}</Text>
-                  </Animated.View>
-                )}
-              </Animated.View>
+        <AchievementSection 
+          stats={stats}
+          totalWords={totalWords}
+          COLORS={COLORS}
+          styles={styles}
+        />
 
-              <View style={styles.heroMeta}>
-                <Text style={[styles.heroName, { color: COLORS.text.primary }]}>{profile.kid_name}</Text>
-                {topLanguage && (
-                  <View style={[styles.langPill, { backgroundColor: COLORS.primary + '15' }]}>
-                    <Text style={styles.langPillFlag}>{getLanguageFlag(topLanguage.language_code)}</Text>
-                    <Text style={[styles.langPillName, { color: COLORS.primary }]}>{topLanguage.language_name}</Text>
-                    {(profile.languages?.length || 0) > 1 && (
-                      <View style={[styles.langPillMore, { backgroundColor: COLORS.primary + '25' }]}>
-                        <Text style={[styles.langPillMoreText, { color: COLORS.primary }]}>+{profile.languages.length - 1}</Text>
-                      </View>
-                    )}
-                  </View>
-                )}
-              </View>
-            </View>
-
-            <View style={[styles.heroStats, { borderTopColor: COLORS.text.light + '12' }]}>
-              {[
-                { label: 'Stories', value: String(stories?.length || 0), icon: <BookOpen size={13} color={COLORS.primary} /> },
-                { label: 'Quizzes', value: String(stats.totalQuizzes), icon: <Award size={13} color={COLORS.primary} /> },
-                { label: 'Streak', value: `${streak}d`, icon: <Flame size={13} color="#F59E0B" fill="#F59E0B" /> },
-              ].map((s, i, arr) => (
-                <React.Fragment key={s.label}>
-                  <View style={styles.heroStat}>
-                    <View style={[styles.heroStatIcon, { backgroundColor: COLORS.primary + '12' }]}>{s.icon}</View>
-                    <Text style={[styles.heroStatVal, { color: COLORS.text.primary }]}>{s.value}</Text>
-                    <Text style={[styles.heroStatLbl, { color: COLORS.text.light }]}>{s.label}</Text>
-                  </View>
-                  {i < arr.length - 1 && <View style={[styles.heroStatDiv, { backgroundColor: COLORS.text.light + '15' }]} />}
-                </React.Fragment>
-              ))}
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* Section: Achievements */}
-        <Animated.View entering={FadeInDown.delay(300).springify()}>
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionEmoji}>🎖️</Text>
-            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Achievements</Text>
-          </View>
-          <View style={styles.achieveRow}>
-            {[
-              { label: 'Accuracy', value: `${stats.avgScore}%`, sub: 'avg score', gradient: ['#6366F1', '#4F46E5'] as [string, string], emoji: '🎯' },
-              { label: 'Perfect', value: String(stats.perfectScores), sub: 'quizzes', gradient: ['#F59E0B', '#D97706'] as [string, string], emoji: '⭐' },
-              { label: 'Words', value: totalWords > 999 ? `${(totalWords / 1000).toFixed(1)}k` : String(totalWords), sub: 'read', gradient: ['#10B981', '#059669'] as [string, string], emoji: '📝' },
-            ].map((card, i) => (
-              <AnimatedAchievementCard key={card.label} card={card} index={i} styles={styles} />
-            ))}
-          </View>
-        </Animated.View>
-
-        {/* Quiz history */}
-        {(recentQuizzes?.length || 0) > 0 && (
-          <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.section}>
-            <View style={styles.sectionHead}>
-              <Text style={styles.sectionEmoji}>📈</Text>
-              <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Learning Curve</Text>
-              <View style={[styles.sectionBadge, { backgroundColor: COLORS.primary + '18' }]}>
-                <Text style={[styles.sectionBadgeText, { color: COLORS.primary }]}>
-                  {recentQuizzes.length} recent
-                </Text>
-              </View>
-            </View>
-
-            <View style={[styles.listCard, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '15', borderWidth: 1 }]}>
-              {recentQuizzes.map((attempt, idx) => {
-                const pct = Math.round((attempt.score / attempt.total_questions) * 100);
-                const isPerfect = pct === 100;
-                const isGood = pct >= 70;
-                const scoreColor = isPerfect ? COLORS.success : isGood ? COLORS.primary : COLORS.error;
-                const matchingStory = (stories || []).find(s => s.id === attempt.story_id);
-                const title = matchingStory?.title || 'Story Quiz';
-                const isLast = idx === recentQuizzes.length - 1;
-
-                return (
-                  <View key={attempt.id}>
-                    <Animated.View
-                      entering={FadeInDown.delay(450 + idx * 50).springify()}
-                      style={styles.quizRow}
-                    >
-                      <LinearGradient
-                        colors={[scoreColor + '20', scoreColor + '08']}
-                        style={styles.scorePill}
-                      >
-                        <Text style={[styles.scorePillText, { color: scoreColor }]}>{pct}%</Text>
-                      </LinearGradient>
-                      <View style={styles.quizInfo}>
-                        <MarqueeText
-                          text={title}
-                          style={[styles.quizTitle, { color: COLORS.text.primary }]}
-                        />
-                        <Text style={[styles.quizSub, { color: COLORS.text.secondary }]}>
-                          {attempt.score} / {attempt.total_questions} correct
-                        </Text>
-                      </View>
-                      {isPerfect && <Text style={styles.quizPerfectEmoji}>👑</Text>}
-                    </Animated.View>
-                    {!isLast && (
-                      <View style={[styles.rowDivider, { backgroundColor: COLORS.text.light + '10' }]} />
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-          </Animated.View>
+        {recentQuizzes.length > 0 && (
+          <LearningCurve 
+            recentQuizzes={recentQuizzes}
+            stories={stories || []}
+            COLORS={COLORS}
+            styles={styles}
+          />
         )}
 
-        {/* Languages */}
         {(profile.languages?.length || 0) > 0 && (
-          <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.section}>
-            <View style={styles.sectionHead}>
-              <Text style={styles.sectionEmoji}>🌎</Text>
-              <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Mastery</Text>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.langScroll}
-            >
-              {profile.languages?.map((lang, langIdx) => {
-                const langCount = (stories || []).filter(s => s.language_code === lang.language_code).length;
-                const pct = (stories?.length || 0) > 0 ? Math.round((langCount / stories.length) * 100) : 0;
-                return (
-                  <Animated.View key={lang.id} entering={FadeInRight.delay(550 + langIdx * 100).springify()}>
-                    <View style={[styles.langCard, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '15', borderWidth: 1 }]}>
-                      <Text style={styles.langFlag}>{getLanguageFlag(lang.language_code)}</Text>
-                      <Text style={[styles.langName, { color: COLORS.text.primary }]}>{lang.language_name}</Text>
-                      <Text style={[styles.langCount, { color: COLORS.text.secondary }]}>
-                        {langCount} {langCount === 1 ? 'story' : 'stories'}
-                      </Text>
-                      <AnimatedLangProgressBar pct={pct} primaryColor={COLORS.primary} delay={700 + langIdx * 100} styles={styles} />
-                    </View>
-                  </Animated.View>
-                );
-              })}
-            </ScrollView>
-          </Animated.View>
+          <MasterySection 
+            languages={profile.languages || []}
+            stories={stories || []}
+            COLORS={COLORS}
+            styles={styles}
+          />
         )}
 
-        {/* XP / Streak Card */}
-        <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.section}>
-          <TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/(tabs)')}>
-            <LinearGradient
-              colors={['#8B5CF6', '#EC4899', '#F97316']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.xpCard}
-            >
-              <View style={styles.xpEmojiRow}>
-                <Text style={styles.xpEmoji}>{streak > 0 ? '🔥' : '✨'}</Text>
-              </View>
-              <View style={styles.xpText}>
-                <View style={styles.xpBadge}><Text style={styles.xpBadgeText}>LEGENDARY STREAK</Text></View>
-                <Text style={styles.xpTitle}>
-                  {streak > 0 ? `${streak}-Day Adventure!` : 'Start Your Adventure!'}
-                </Text>
-                <Text style={styles.xpSub}>
-                  {streak > 0
-                    ? `You're crushing it! Every day is a new world waiting to be explored.`
-                    : 'Read a story today and start your journey to become a Master Storyteller!'}
-                </Text>
-              </View>
-              <View style={styles.xpCtaIcon}>
-                 <ChevronRight size={24} color="#FFFFFF" strokeWidth={3} />
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
+        <XPBanner 
+          streak={streak}
+          COLORS={COLORS}
+          styles={styles}
+        />
       </ScrollView>
     </SafeAreaView>
   );
