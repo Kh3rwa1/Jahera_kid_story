@@ -99,6 +99,21 @@ async function init() {
     addAttr('string', 'user_languages', 'language_name', { required: true }),
     addAttr('string', 'user_languages', 'created_at'),
 
+    // Family Members
+    addAttr('string', 'family_members', 'profile_id', { required: true }),
+    addAttr('string', 'family_members', 'name', { required: true }),
+    addAttr('string', 'family_members', 'created_at'),
+
+    // Friends
+    addAttr('string', 'friends', 'profile_id', { required: true }),
+    addAttr('string', 'friends', 'name', { required: true }),
+    addAttr('string', 'friends', 'created_at'),
+
+    // Profile Interests
+    addAttr('string', 'profile_interests', 'profile_id', { required: true }),
+    addAttr('string', 'profile_interests', 'interest', { required: true }),
+    addAttr('string', 'profile_interests', 'created_at'),
+
     // Stories
     addAttr('string', 'stories', 'profile_id', { required: true }),
     addAttr('string', 'stories', 'language_code', { required: true }),
@@ -117,6 +132,27 @@ async function init() {
     addAttr('string', 'stories', 'location_city'),
     addAttr('string', 'stories', 'location_country'),
 
+    // Quiz Questions
+    addAttr('string', 'quiz_questions', 'story_id', { required: true }),
+    addAttr('string', 'quiz_questions', 'question_text', { size: 1000, required: true }),
+    addAttr('integer', 'quiz_questions', 'question_order', { required: true }),
+    addAttr('string', 'quiz_questions', 'created_at'),
+
+    // Quiz Answers
+    addAttr('string', 'quiz_answers', 'question_id', { required: true }),
+    addAttr('string', 'quiz_answers', 'answer_text', { size: 1000, required: true }),
+    addAttr('boolean', 'quiz_answers', 'is_correct', { required: true }),
+    addAttr('string', 'quiz_answers', 'answer_order', { required: true }),
+    addAttr('string', 'quiz_answers', 'created_at'),
+
+    // Quiz Attempts
+    addAttr('string', 'quiz_attempts', 'profile_id', { required: true }),
+    addAttr('string', 'quiz_attempts', 'story_id', { required: true }),
+    addAttr('integer', 'quiz_attempts', 'score', { required: true }),
+    addAttr('integer', 'quiz_attempts', 'total_questions', { required: true }),
+    addAttr('string', 'quiz_attempts', 'completed_at'),
+    addAttr('string', 'quiz_attempts', 'created_at'),
+
     // Subscriptions
     addAttr('string', 'subscriptions', 'profile_id', { required: true }),
     addAttr('string', 'subscriptions', 'plan', { required: true }),
@@ -127,7 +163,16 @@ async function init() {
     addAttr('boolean', 'subscriptions', 'is_active', { required: true }),
     addAttr('string', 'subscriptions', 'trial_ends_at'),
     addAttr('string', 'subscriptions', 'created_at'),
-    addAttr('string', 'subscriptions', 'updated_at')
+    addAttr('string', 'subscriptions', 'updated_at'),
+
+    // Streaks
+    addAttr('string', 'streaks', 'profile_id', { required: true }),
+    addAttr('integer', 'streaks', 'current_streak', { required: true }),
+    addAttr('integer', 'streaks', 'longest_streak', { required: true }),
+    addAttr('string', 'streaks', 'last_activity_date'),
+    addAttr('integer', 'streaks', 'total_days_active', { required: true }),
+    addAttr('string', 'streaks', 'created_at'),
+    addAttr('string', 'streaks', 'updated_at')
   ];
 
   console.log('⚡ Adding attributes in parallel...');
@@ -157,6 +202,4 @@ async function init() {
   console.log('\n✅ INFRASTRUCTURE READY');
 }
 
-(async () => {
-  await init();
-})();
+init();

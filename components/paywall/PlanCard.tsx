@@ -1,20 +1,20 @@
-import { BORDER_RADIUS,FONTS,SHADOWS } from '@/constants/theme';
+import { BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
 import { Plan } from '@/hooks/usePurchase';
 import { ThemeColors } from '@/types/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check } from 'lucide-react-native';
 import React from 'react';
 import {
-StyleSheet,
-Text,
-TouchableOpacity,
-View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import Animated,{
-useAnimatedStyle,
-useSharedValue,
-withSequence,
-withSpring,
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
 } from 'react-native-reanimated';
 
 interface PlanCardProps {
@@ -24,7 +24,6 @@ interface PlanCardProps {
   colors: ThemeColors;
 }
 
-export function PlanCard({ plan, selected, onSelect, colors }: Readonly<PlanCardProps>) {
 function PlanInfo({ plan, selected, colors, featured }: { plan: Plan; selected: boolean; colors: ThemeColors; featured?: boolean }) {
   return (
     <View style={styles.planInfo}>
@@ -43,8 +42,9 @@ function PlanInfo({ plan, selected, colors, featured }: { plan: Plan; selected: 
   );
 }
 
-export function PlanCard({ plan, selected, onSelect, colors }: PlanCardProps) {
+export function PlanCard({ plan, selected, onSelect, colors }: Readonly<PlanCardProps>) {
   const scale = useSharedValue(1);
+  const isBestValue = plan.id === 'yearly';
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -58,75 +58,66 @@ export function PlanCard({ plan, selected, onSelect, colors }: PlanCardProps) {
     onSelect();
   };
 
-  if (plan.isPopular) {
+  if (isBestValue) {
     return (
-      <TouchableOpacity onPress={handlePress} activeOpacity={0.9}>
-        <Animated.View style={animStyle}>
+      <Animated.View style={animStyle}>
+        <TouchableOpacity activeOpacity={0.9} onPress={handlePress}>
           <LinearGradient
-            colors={selected ? ['#FF8C42', '#FF5C00'] : [colors.cardBackground, colors.cardBackground]}
-            style={[styles.featuredPlanCard, selected && styles.featuredPlanCardSelected]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            colors={['#FF5C00', '#FF9F0A']}
+            style={[styles.card, styles.bestValueCard, selected && styles.selectedBestValue]}
           >
             <View style={styles.featuredPlanBadgeRow}>
               <View style={styles.featuredBadge}>
                 <Text style={styles.featuredBadgeText}>BEST VALUE</Text>
               </View>
               {plan.save && (
-                <View style={[styles.saveBadge, { backgroundColor: selected ? 'rgba(255, 255, 255, 0.2)' : '#FFEEDB' }]}>
-                  <Text style={[styles.saveBadgeText, { color: selected ? '#FFF' : '#FF5C00' }]}>
-                    SAVE {plan.save}
-                  </Text>
+                <View style={[styles.saveBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                  <Text style={[styles.saveBadgeText, { color: '#FFF' }]}>{plan.save}</Text>
                 </View>
               )}
             </View>
-
             <PlanInfo plan={plan} selected={selected} colors={colors} featured />
           </LinearGradient>
-        </Animated.View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Animated.View>
     );
   }
 
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={0.8} style={styles.standardWrapper}>
-      <Animated.View
+    <Animated.View style={animStyle}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={handlePress}
         style={[
-          styles.planCard,
-          { backgroundColor: colors.cardBackground, borderColor: selected ? colors.primary : 'rgba(0,0,0,0.06)' },
-          selected && styles.planCardSelected,
-          animStyle,
+          styles.card,
+          { backgroundColor: colors.cardBackground, borderColor: selected ? colors.primary : colors.text.light + '15' },
+          selected && styles.selectedCard,
         ]}
       >
         <PlanInfo plan={plan} selected={selected} colors={colors} />
-      </Animated.View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  standardWrapper: {
+  card: {
+    borderRadius: BORDER_RADIUS.xl,
+    padding: 16,
+    borderWidth: 2,
     marginBottom: 12,
+    ...SHADOWS.sm,
   },
-  planCard: {
-    borderRadius: BORDER_RADIUS.xl,
-    padding: 20,
-    borderWidth: 2,
-    ...SHADOWS.xs,
-  },
-  planCardSelected: {
+  selectedCard: {
     ...SHADOWS.md,
   },
-  featuredPlanCard: {
-    borderRadius: BORDER_RADIUS.xl,
-    padding: 20,
-    marginBottom: 14,
-    ...SHADOWS.md,
-    borderWidth: 2,
+  bestValueCard: {
     borderColor: 'transparent',
-  },
-  featuredPlanCardSelected: {
     ...SHADOWS.lg,
+  },
+  selectedBestValue: {
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
   planInfo: {
     flexDirection: 'row',
@@ -136,7 +127,7 @@ const styles = StyleSheet.create({
   planLabel: {
     fontSize: 18,
     fontFamily: FONTS.bold,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   planPeriod: {
     fontSize: 14,
