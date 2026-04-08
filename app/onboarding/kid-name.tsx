@@ -71,7 +71,7 @@ export default function KidName() {
     if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     router.push({
       pathname: '/onboarding/family-members',
-      params: { languages: params.languages as string, kidName: trimmedName },
+      params: { languages: params.languages as string, kidName: trimmedName, city: params.city as string, consentGivenAt: params.consentGivenAt as string },
     });
   };
 

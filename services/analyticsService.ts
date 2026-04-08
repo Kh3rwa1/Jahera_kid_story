@@ -100,6 +100,14 @@ class AnalyticsService {
     });
   }
 
+
+  trackBehaviorGoalSelected(goalId: string) { this.track('behavior_goal_selected', { goalId }); }
+  trackVoicePresetSelected(presetId: string, isPremium: boolean) { this.track('voice_preset_selected', { presetId, isPremium }); }
+  trackBedtimeReminderSet(hour: number, minute: number, enabled: boolean) { this.track('bedtime_reminder_set', { hour, minute, enabled }); }
+  trackBehaviorProgressViewed(goalsCount: number) { this.track('behavior_progress_viewed', { goalsCount }); }
+  trackParentConsentGiven(timestamp: string) { this.track('parent_consent_given', { timestamp }); }
+  trackStoryGeneratedWithGoal(goalId: string, languageCode: string, voicePreset: string | null) { this.track('story_generated_with_goal', { goalId, languageCode, voicePreset }); }
+
   /**
    * Track app lifecycle events
    */

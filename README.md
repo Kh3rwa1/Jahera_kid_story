@@ -61,9 +61,10 @@
 - **Expo Router 6** - File-based routing
 
 ### Backend & Services
-- **Supabase** - PostgreSQL database with real-time capabilities
-- **OpenRouter** - AI API gateway (Gemini 2.0 Flash Free)
+- **Appwrite** - Authentication, database, and cloud functions
+- **OpenRouter** - AI API gateway for story generation
 - **ElevenLabs** - Professional text-to-speech API
+- **RevenueCat** - Subscription management and entitlements
 
 ### Premium Libraries
 - `expo-linear-gradient` - Beautiful gradient backgrounds
@@ -108,15 +109,18 @@ npm run dev
 Create a `.env` file:
 
 ```bash
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+EXPO_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_appwrite_project_id
+EXPO_PUBLIC_APPWRITE_DATABASE_ID=your_appwrite_database_id
 EXPO_PUBLIC_OPENROUTER_API_KEY=your_openrouter_key
 EXPO_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_key
+EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=your_ios_key
+EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=your_android_key
 ```
 
 #### Getting API Keys
 
-**Supabase:**
+**Appwrite:**
 - Already configured in your project
 - Database schema is automatically set up via migrations
 
@@ -160,7 +164,7 @@ jahera/
 │   ├── monitoringService.ts  # Performance monitoring
 │   ├── aiService.ts          # Gemini AI integration
 │   ├── audioService.ts       # ElevenLabs TTS
-│   ├── database.ts           # Supabase operations
+│   ├── database.ts           # Appwrite operations
 │   └── databaseImproved.ts   # Enhanced DB with retry
 ├── utils/                    # Utility functions
 │   ├── haptics.ts            # Haptic feedback helpers
@@ -331,7 +335,7 @@ MIT License - Feel free to use this project for personal or commercial purposes.
 
 - **Google Gemini** - AI story generation
 - **ElevenLabs** - Professional voice narration
-- **Supabase** - Database infrastructure
+- **Appwrite** - Database infrastructure
 - **Expo** - Development platform
 - **OpenRouter** - AI API gateway
 

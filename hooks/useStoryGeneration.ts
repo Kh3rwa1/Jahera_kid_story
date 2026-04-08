@@ -1,41 +1,36 @@
+import { VOICE_PRESETS } from '@/constants/voicePresets';
 import { useApp } from '@/contexts/AppContext';
-import { generateAdventureStory,QuotaExceededError,StoryOptions } from '@/services/aiService';
+import { generateAdventureStory, QuotaExceededError, StoryOptions } from '@/services/aiService';
+import { analytics } from '@/services/analyticsService';
 import { generateAudio } from '@/services/audioService';
-import { familyMemberService,friendService,profileService,quizService,storyService } from '@/services/database';
-import { getLocationContext,LocationContext } from '@/services/locationService';
-import { FamilyMember,Friend } from '@/types/database';
+import { familyMemberService, friendService, profileService, quizService, storyService } from '@/services/database';
+import { getLocationFromProfile, LocationContext } from '@/services/locationService';
+import { FamilyMember, Friend } from '@/types/database';
 import { getCurrentContext } from '@/utils/contextUtils';
 import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
-import { useLocalSearchParams,useRouter } from 'expo-router';
-import { useCallback,useEffect,useRef,useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type GenerationPhase = 'options' | 'generating';
-
-export interface GenerationStep {
-  id: string;
-  label: string;
-  completed: boolean;
-}
+export interface GenerationStep { id: string; label: string; completed: boolean; }
 
 export function useStoryGeneration() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { profile, subscription, refreshSubscription, refreshStories } = useApp();
 
-  // Form State
+  const [selectedBehaviorGoal, setSelectedBehaviorGoal] = useState<string | null>(null);
   const [selectedTheme, setSelectedTheme] = useState('adventure');
   const [selectedMood, setSelectedMood] = useState('exciting');
   const [selectedLength, setSelectedLength] = useState<'short' | 'medium' | 'long'>('short');
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState((params.languageCode as string) || 'en');
-  
-  // Relations
+
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [locationCtx, setLocationCtx] = useState<LocationContext | null>(null);
-  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationCtx, setLocationCtx] = useState<LocationContext | null>(profile ? getLocationFromProfile(profile) : null);
 
-  // Generation State
   const [phase, setPhase] = useState<GenerationPhase>('options');
   const [status, setStatus] = useState('Preparing your adventure...');
   const [progress, setProgress] = useState(0);
@@ -51,65 +46,38 @@ export function useStoryGeneration() {
   const isMountedRef = useRef(true);
   const resolvedProfileId = (params.profileId as string) || profile?.id;
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => { isMountedRef.current = false; };
-  }, []);
+  useEffect(() => { isMountedRef.current = true; return () => { isMountedRef.current = false; }; }, []);
+  useEffect(() => { if (profile) setLocationCtx(getLocationFromProfile(profile)); }, [profile]);
 
-  // Initialization
+  useEffect(() => { if (selectedBehaviorGoal) analytics.trackBehaviorGoalSelected(selectedBehaviorGoal); }, [selectedBehaviorGoal]);
+  useEffect(() => { if (selectedVoice) analytics.trackVoicePresetSelected(selectedVoice, subscription?.plan !== 'free'); }, [selectedVoice, subscription?.plan]);
+
   useEffect(() => {
     if (!resolvedProfileId) return;
-
-    const loadInitialData = async () => {
+    (async () => {
       try {
-        const [fm, fr] = await Promise.all([
-          familyMemberService.getByProfileId(resolvedProfileId),
-          friendService.getByProfileId(resolvedProfileId),
-        ]);
-        if (isMountedRef.current) {
-          if (fm) setFamilyMembers(fm);
-          if (fr) setFriends(fr);
-        }
-      } catch (err) {
-        logger.warn('[useStoryGeneration] Failed to load relations:', err);
-      }
-    };
-
-    const loadLocation = async () => {
-      setLocationLoading(true);
-      try {
-        const ctx = await getLocationContext();
-        if (isMountedRef.current) {
-          setLocationCtx(ctx);
-        }
-      } finally {
-        if (isMountedRef.current) {
-          setLocationLoading(false);
-        }
-      }
-    };
-
-    loadInitialData();
-    loadLocation();
+        const [fm, fr] = await Promise.all([familyMemberService.getByProfileId(resolvedProfileId), friendService.getByProfileId(resolvedProfileId)]);
+        if (!isMountedRef.current) return;
+        if (fm) setFamilyMembers(fm);
+        if (fr) setFriends(fr);
+      } catch (err) { logger.warn('[useStoryGeneration] Failed to load relations:', err); }
+    })();
   }, [resolvedProfileId]);
 
-  const completeStep = useCallback((stepId: string) => {
-    setSteps(prev => prev.map(s => s.id === stepId ? { ...s, completed: true } : s));
-    hapticFeedback.light();
-  }, []);
+  const completeStep = useCallback((stepId: string) => { setSteps(prev => prev.map(s => s.id === stepId ? { ...s, completed: true } : s)); hapticFeedback.light(); }, []);
+  const markError = useCallback((message: string) => { setError(message); }, []);
 
-  const markError = useCallback((message: string) => {
-    setError(message);
-  }, []);
-
-  const buildAudioSettings = (profileData: any) => ({
-    voiceId: profileData.elevenlabs_voice_id,
-    modelId: profileData.elevenlabs_model_id,
-    stability: profileData.elevenlabs_stability,
-    similarity: profileData.elevenlabs_similarity,
-    style: profileData.elevenlabs_style,
-    speakerBoost: profileData.elevenlabs_speaker_boost,
-  });
+  const buildAudioSettings = (profileData: any) => {
+    const preset = VOICE_PRESETS.find(v => v.id === selectedVoice);
+    return {
+      voiceId: preset?.elevenLabsVoiceId ?? profileData.elevenlabs_voice_id,
+      modelId: profileData.elevenlabs_model_id,
+      stability: preset?.settings.stability ?? profileData.elevenlabs_stability,
+      similarity: preset?.settings.similarity ?? profileData.elevenlabs_similarity,
+      style: preset?.settings.style ?? profileData.elevenlabs_style,
+      speakerBoost: preset?.settings.speakerBoost ?? profileData.elevenlabs_speaker_boost,
+    };
+  };
 
   const createQuizQuestions = useCallback(async (storyId: string, aiStory: any) => {
     for (let i = 0; i < aiStory.quiz.length; i++) {
@@ -124,42 +92,28 @@ export function useStoryGeneration() {
 
   const runGeneration = async () => {
     try {
-      if (!resolvedProfileId) {
-        markError('Profile not found.');
-        return;
-      }
-
-      setStatus('Loading your profile...');
-      setProgress(10);
+      if (!resolvedProfileId) return markError('Profile not found.');
+      setStatus('Loading your profile...'); setProgress(10);
       const profileData = await profileService.getWithRelations(resolvedProfileId);
-      if (!profileData) {
-        markError('Profile not found.');
-        return;
-      }
-
+      if (!profileData) return markError('Profile not found.');
       if (!isMountedRef.current) return;
       completeStep('profile');
 
-      setStatus('Creating your adventure story...');
-      setProgress(30);
+      setStatus('Creating your adventure story...'); setProgress(30);
       const context = getCurrentContext();
+      const preset = VOICE_PRESETS.find(v => v.id === selectedVoice) || null;
       const options: StoryOptions = {
-        theme: selectedTheme,
-        mood: selectedMood,
-        length: selectedLength,
-        locationContext: locationCtx,
+        theme: selectedTheme, mood: selectedMood, length: selectedLength, locationContext: locationCtx,
+        behaviorGoal: selectedBehaviorGoal || undefined,
+        voicePreset: selectedVoice,
+        voiceSettings: preset?.settings ?? null,
       };
 
       const aiStory = await generateAdventureStory(profileData, selectedLanguage, context, options);
-      if (!aiStory) {
-        markError('Could not generate a story.');
-        return;
-      }
+      if (!aiStory) return markError('Could not generate a story.');
 
       if (!isMountedRef.current) return;
-      completeStep('story');
-      setStatus('Creating quiz questions...');
-      setProgress(50);
+      completeStep('story'); setStatus('Creating quiz questions...'); setProgress(50);
 
       const storyRecord = await storyService.create({
         profile_id: resolvedProfileId,
@@ -177,80 +131,51 @@ export function useStoryGeneration() {
         generated_at: new Date().toISOString(),
         location_city: locationCtx?.city ?? null,
         location_country: locationCtx?.country ?? null,
+        behavior_goal: selectedBehaviorGoal,
       });
+      if (!storyRecord) return markError('Failed to save story.');
 
-      if (!storyRecord) {
-        markError('Failed to save story.');
-        return;
-      }
+      if (selectedBehaviorGoal) analytics.trackStoryGeneratedWithGoal(selectedBehaviorGoal, selectedLanguage, selectedVoice);
 
       setProgress(70);
       await createQuizQuestions(storyRecord.id, aiStory);
-
       if (!isMountedRef.current) return;
-      completeStep('quiz');
-      setStatus('Finalising your story...');
-      setProgress(90);
+      completeStep('quiz'); setStatus('Finalising your story...'); setProgress(90);
 
-      void (async () => {
-        try {
-          await generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, buildAudioSettings(profileData));
-          if (isMountedRef.current) completeStep('audio');
-        } catch (err) {
-          logger.error('[useStoryGeneration] Audio error:', err);
-        }
-      })();
+      void generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, buildAudioSettings(profileData))
+        .then(() => { if (isMountedRef.current) completeStep('audio'); })
+        .catch(err => logger.error('[useStoryGeneration] Audio error:', err));
 
-      setStatus('Story ready!');
-      setProgress(100);
-      hapticFeedback.success();
+      setStatus('Story ready!'); setProgress(100); hapticFeedback.success();
       await Promise.all([refreshSubscription(), refreshStories()]);
-
-      if (isMountedRef.current) {
-        setTimeout(() => {
-          router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.id } });
-        }, 800);
-      }
+      if (isMountedRef.current) setTimeout(() => router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.id } }), 800);
     } catch (err) {
       logger.error('[useStoryGeneration] Generation Failed:', err);
-      if (err instanceof QuotaExceededError) {
-        setIsQuotaError(true);
-        setError(err.message);
-        return;
-      }
+      if (err instanceof QuotaExceededError) { setIsQuotaError(true); setError(err.message); return; }
       setError(err instanceof Error ? err.message : 'Failed to generate story');
     }
   };
 
   const handleStartGeneration = () => {
     const isPro = subscription?.plan !== 'free';
-    if (selectedLength === 'long' && !isPro) {
-      router.push('/paywall');
-      return;
-    }
-    setPhase('generating');
-    runGeneration();
+    if (selectedLength === 'long' && !isPro) return router.push('/paywall');
+    setPhase('generating'); runGeneration();
   };
 
-  const handleRetry = () => {
-    setError(null);
-    setIsQuotaError(false);
-    setProgress(0);
-    setStatus('Preparing your adventure...');
-    setSteps(prev => prev.map(s => ({ ...s, completed: false })));
-    setPhase('options');
-  };
+  const handleRetry = () => { setError(null); setIsQuotaError(false); setProgress(0); setStatus('Preparing your adventure...'); setSteps(prev => prev.map(s => ({ ...s, completed: false }))); setPhase('options'); };
 
   return {
+    selectedBehaviorGoal, setSelectedBehaviorGoal,
     selectedTheme, setSelectedTheme,
     selectedMood, setSelectedMood,
     selectedLength, setSelectedLength,
+    selectedVoice, setSelectedVoice,
     selectedLanguage, setSelectedLanguage,
     familyMembers, setFamilyMembers,
     friends, setFriends,
-    locationCtx, locationLoading,
+    locationCtx,
     phase, status, progress, error, isQuotaError, steps,
     handleStartGeneration, handleRetry,
-    subscription
+    subscription,
   };
 }
