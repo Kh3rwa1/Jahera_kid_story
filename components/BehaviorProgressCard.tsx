@@ -1,8 +1,9 @@
 import { BORDER_RADIUS, FONTS, SHADOWS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { analytics } from '@/services/analyticsService';
 import { BehaviorProgressItem, computeBehaviorProgress } from '@/utils/behaviorProgress';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
@@ -101,6 +102,12 @@ export function BehaviorProgressCard({ stories = [], progress: progressProp }: R
   const cardBackground = colors.cardBackground ?? '#FFFFFF';
   const mutedTextColor = colors.text.secondary;
   const barTrackColor = `${colors.text.light}22` || '#F0F0F0';
+
+  useEffect(() => {
+    if (progress.length > 0) {
+      analytics.trackBehaviorProgressViewed(progress.length, progress[0]?.label || null);
+    }
+  }, [progress]);
 
   return (
     <View style={styles.section}>

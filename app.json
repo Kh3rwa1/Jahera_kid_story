@@ -55,7 +55,8 @@
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
       ],
       "playStoreUrl": "https://play.google.com/store/apps/details?id=com.hindi.harp"
     },
@@ -76,11 +77,7 @@
       ],
       "expo-video",
       [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#FF4B4B"
-        }
+        "expo-notifications"
       ],
       "@react-native-community/datetimepicker"
     ],

@@ -2,6 +2,7 @@ import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 import { Language,MAX_LANGUAGES,SUPPORTED_LANGUAGES } from '@/constants/languages';
 import { FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { analytics } from '@/services/analyticsService';
 import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -244,6 +245,7 @@ export default function LanguageSelection() {
                   setUseOtherCity(false);
                   setLocationName(city);
                   setCityInput(city);
+                  analytics.trackCitySelectedOnboarding(city, 'chip');
                 }
               }} style={[styles.locationChip, { borderColor: cityInput === city ? '#34D399' : 'rgba(255,255,255,0.3)' }]}>
                 <Text style={styles.locationChipText}>{city}</Text>
@@ -257,6 +259,12 @@ export default function LanguageSelection() {
               placeholderTextColor="rgba(255,255,255,0.5)"
               value={cityInput}
               onChangeText={setCityInput}
+              onEndEditing={() => {
+                const value = cityInput.trim();
+                if (value.length > 0) {
+                  analytics.trackCitySelectedOnboarding(value, 'custom');
+                }
+              }}
             />
           ) : null}
         </Animated.View>

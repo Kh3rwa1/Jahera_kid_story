@@ -49,9 +49,6 @@ export function useStoryGeneration() {
   useEffect(() => { isMountedRef.current = true; return () => { isMountedRef.current = false; }; }, []);
   useEffect(() => { if (profile) setLocationCtx(getLocationFromProfile(profile)); }, [profile]);
 
-  useEffect(() => { if (selectedBehaviorGoal) analytics.trackBehaviorGoalSelected(selectedBehaviorGoal); }, [selectedBehaviorGoal]);
-  useEffect(() => { if (selectedVoice) analytics.trackVoicePresetSelected(selectedVoice, subscription?.plan !== 'free'); }, [selectedVoice, subscription?.plan]);
-
   useEffect(() => {
     if (!resolvedProfileId) return;
     (async () => {
@@ -135,7 +132,7 @@ export function useStoryGeneration() {
       });
       if (!storyRecord) return markError('Failed to save story.');
 
-      if (selectedBehaviorGoal) analytics.trackStoryGeneratedWithGoal(selectedBehaviorGoal, selectedLanguage, selectedVoice);
+      if (selectedBehaviorGoal) analytics.trackStoryGeneratedWithGoal(selectedBehaviorGoal, selectedLanguage, selectedVoice ?? null, selectedLength);
 
       setProgress(70);
       await createQuizQuestions(storyRecord.id, aiStory);
