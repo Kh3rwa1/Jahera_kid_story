@@ -104,7 +104,7 @@ export function useStoryGeneration() {
       const preset = VOICE_PRESETS.find(v => v.id === selectedVoice) || null;
       const options: StoryOptions = {
         theme: selectedTheme, mood: selectedMood, length: selectedLength, locationContext: locationCtx,
-        behaviorGoal: selectedBehaviorGoal || undefined,
+        behaviorGoal: selectedBehaviorGoal ?? undefined,
         voicePreset: selectedVoice,
         voiceSettings: preset?.settings ?? null,
       };
