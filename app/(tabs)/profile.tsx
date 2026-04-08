@@ -380,8 +380,8 @@ export default function ProfileScreen() {
   const behaviorProgress = useMemo(() => computeBehaviorProgress(stories || [], 30), [stories]);
 
   useEffect(() => {
-    analytics.trackBehaviorProgressViewed(behaviorProgress.length);
-  }, [behaviorProgress.length]);
+    analytics.trackBehaviorProgressViewed(behaviorProgress.length, behaviorProgress[0]?.label ?? null);
+  }, [behaviorProgress]);
 
   const handleRefresh = useCallback(async () => {
     await refreshAll();

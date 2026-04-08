@@ -20,7 +20,7 @@ export default function ConsentScreen() {
       }),
     );
 
-    analytics.track('parent_consent_given', { timestamp: consentTimestamp });
+    analytics.trackParentConsentGiven(consentTimestamp, '1.0');
 
     router.replace('/onboarding/language-selection');
   };
