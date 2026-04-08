@@ -8,6 +8,7 @@ import { Lock } from 'lucide-react-native';
 import { BEHAVIOR_CATEGORIES, BEHAVIOR_GOALS } from '@/constants/behaviorGoals';
 import { BORDER_RADIUS, FONTS, SHADOWS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { analytics } from '@/services/analyticsService';
 
 interface BehaviorGoalPickerProps {
   selectedGoal: string | null;
@@ -85,7 +86,15 @@ export const BehaviorGoalPicker = ({ selectedGoal, onSelect, isPremium }: Readon
     }
 
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onSelect(selectedGoal === goalId ? null : goalId);
+    const nextGoalId = selectedGoal === goalId ? null : goalId;
+    onSelect(nextGoalId);
+
+    if (nextGoalId) {
+      const goal = BEHAVIOR_GOALS.find((item) => item.id === nextGoalId);
+      if (goal) {
+        analytics.trackBehaviorGoalSelected(goal.id, goal.label, goal.category);
+      }
+    }
   };
 
   const dynamicStyles = useMemo(

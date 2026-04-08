@@ -2,7 +2,8 @@ import { functions } from '@/lib/appwrite';
 import { LocationContext } from '@/services/locationService';
 import { ProfileWithRelations } from '@/types/database';
 import { StoryContext } from '@/utils/contextUtils';
-import { sanitizeForPrompt } from '@/utils/promptSanitizer';
+import { sanitizeCity, sanitizeName } from '@/utils/promptSanitizer';
+import { analytics } from '@/services/analyticsService';
 
 export class QuotaExceededError extends Error {
   constructor(message: string) {
@@ -47,11 +48,23 @@ export async function generateAdventureStory(
   try {
     const sanitizedProfile = {
       ...profile,
-      kid_name: sanitizeForPrompt(profile.kid_name || ''),
-      city: sanitizeForPrompt(profile.city || ''),
-      family_members: (profile.family_members || []).map(m => ({ ...m, name: sanitizeForPrompt(m.name || '') })),
-      friends: (profile.friends || []).map(f => ({ ...f, name: sanitizeForPrompt(f.name || '') })),
+      kid_name: sanitizeName(profile.kid_name || ''),
+      city: sanitizeCity(profile.city || ''),
+      family_members: (profile.family_members || []).map(m => ({ ...m, name: sanitizeName(m.name || '') })),
+      friends: (profile.friends || []).map(f => ({ ...f, name: sanitizeName(f.name || '') })),
     };
+
+
+    const originalKidName = profile.kid_name || '';
+    if (sanitizedProfile.kid_name.length !== originalKidName.length) {
+      analytics.track('prompt_sanitized', {
+        field: 'kid_name',
+        originalLength: originalKidName.length,
+        sanitizedLength: sanitizedProfile.kid_name.length,
+        hadUnsafeContent: sanitizedProfile.kid_name !== originalKidName.trim(),
+      });
+    }
+
     const payload = JSON.stringify({ profile: sanitizedProfile, languageCode, context, options });
     const response = await functions.createExecution({
       functionId: 'generate-story',

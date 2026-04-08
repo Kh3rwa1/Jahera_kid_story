@@ -2,6 +2,7 @@ import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 import { Language,MAX_LANGUAGES,SUPPORTED_LANGUAGES } from '@/constants/languages';
 import { FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { analytics } from '@/services/analyticsService';
 import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -233,12 +234,20 @@ export default function LanguageSelection() {
           </Animated.View>
           <Text style={styles.locationChipText}>This makes stories feel local and personal ✨</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 10 }}>
-            {POPULAR_CITIES.map((cityOption) => (
-              <TouchableOpacity key={cityOption.city} onPress={() => {
-                setUseOtherCity(false);
-                setCityInput(cityOption.city);
-              }} style={[styles.locationChip, { borderColor: cityInput === cityOption.city ? '#34D399' : 'rgba(255,255,255,0.3)' }]}>
-                <Text style={styles.locationChipText}>{cityOption.city}</Text>
+            {POPULAR_CITIES.map((city) => (
+              <TouchableOpacity key={city} onPress={() => {
+                if (city === 'Other') {
+                  setUseOtherCity(true);
+                  setLocationName(null);
+                  setCityInput('');
+                } else {
+                  setUseOtherCity(false);
+                  setLocationName(city);
+                  setCityInput(city);
+                  analytics.trackCitySelectedOnboarding(city, 'chip');
+                }
+              }} style={[styles.locationChip, { borderColor: cityInput === city ? '#34D399' : 'rgba(255,255,255,0.3)' }]}>
+                <Text style={styles.locationChipText}>{city}</Text>
               </TouchableOpacity>
             ))}
             <TouchableOpacity
@@ -258,6 +267,12 @@ export default function LanguageSelection() {
               placeholderTextColor="rgba(255,255,255,0.5)"
               value={cityInput}
               onChangeText={setCityInput}
+              onEndEditing={() => {
+                const value = cityInput.trim();
+                if (value.length > 0) {
+                  analytics.trackCitySelectedOnboarding(value, 'custom');
+                }
+              }}
             />
           ) : null}
         </Animated.View>
