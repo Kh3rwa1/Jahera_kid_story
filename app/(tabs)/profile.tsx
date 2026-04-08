@@ -16,12 +16,13 @@ import { useEntranceSequence,useGlowPulse,useProgressBar,usePulse } from '@/util
 import { computeBehaviorProgress } from '@/utils/behaviorProgress';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { router as expoRouter,useRouter } from 'expo-router';
 import {
 Award,
 BookOpen,
 ChevronRight,
-Flame
+Flame,
+Moon
 } from 'lucide-react-native';
 import React,{ useCallback,useEffect,useMemo } from 'react';
 import {
@@ -438,6 +439,8 @@ export default function ProfileScreen() {
 
   const topLanguage = profile.languages?.[0];
   const totalWords = (stories || []).reduce((sum, s) => sum + (s.word_count || 0), 0);
+  const primaryColor = COLORS.primary;
+  const textColor = COLORS.text.primary;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
@@ -497,6 +500,24 @@ export default function ProfileScreen() {
           COLORS={COLORS}
           styles={styles}
         />
+
+        <Animated.View entering={FadeInUp.delay(650).springify()} style={styles.section}>
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionEmoji}>🌙</Text>
+            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Settings</Text>
+          </View>
+          <View style={[styles.listCard, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '15' }]}>
+            <TouchableOpacity
+              onPress={() => expoRouter.push('/settings/notifications')}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg }}
+            >
+              <Moon size={20} color={primaryColor} />
+              <Text style={{ marginLeft: SPACING.md, fontFamily: FONTS.medium, fontSize: 15, color: textColor }}>
+                Bedtime Reminders
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -52,7 +52,7 @@ export default function Register() {
 
     try {
       await signUp(email.trim(), password, name.trim() || undefined);
-      router.replace('/onboarding/language-selection');
+      router.replace('/onboarding/consent');
     } catch (err: any) {
       const msg = err?.message || '';
       if (msg.includes('already registered') || msg.includes('User already registered') || msg.includes('already exists')) {
