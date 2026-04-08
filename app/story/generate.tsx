@@ -40,6 +40,7 @@ export default function GenerateStoryScreen() {
     handleStartGeneration, handleRetry,
     subscription
   } = useStoryGeneration();
+  const isPremium = subscription?.plan !== 'free';
 
   if (isQuotaError) {
     return (
@@ -108,7 +109,7 @@ export default function GenerateStoryScreen() {
       <OptionsView
         colors={colors}
         selectedBehaviorGoal={selectedBehaviorGoal}
-        setSelectedBehaviorGoal={setSelectedBehaviorGoal}
+        onBehaviorGoalChange={setSelectedBehaviorGoal}
         selectedTheme={selectedTheme}
         setSelectedTheme={setSelectedTheme}
         selectedMood={selectedMood}
@@ -116,7 +117,7 @@ export default function GenerateStoryScreen() {
         selectedLength={selectedLength}
         setSelectedLength={setSelectedLength}
         selectedVoice={selectedVoice}
-        setSelectedVoice={setSelectedVoice}
+        onVoiceChange={setSelectedVoice}
         selectedLanguage={selectedLanguage}
         setSelectedLanguage={setSelectedLanguage}
         familyMembers={familyMembers}
@@ -126,6 +127,8 @@ export default function GenerateStoryScreen() {
         locationLabel={formatLocationLabel(locationCtx) || 'City not set'}
         onStart={handleStartGeneration}
         onBack={() => router.back()}
+        isPremium={isPremium}
+        languageCode={selectedLanguage || 'en'}
         subscription={subscription}
         profileId={(params.profileId as string) || profile?.id || ''}
       />
