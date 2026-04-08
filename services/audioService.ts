@@ -63,7 +63,7 @@ export async function generateAudio(
     // For stories: poll the story document for audio_url
     if (storyId && !noStore) {
       console.log(`[audioService] Story: polling DB for audio_url...`);
-      const audioUrl = await pollStoryForAudioUrl(storyId, 75_000);
+      const audioUrl = await pollStoryForAudioUrl(storyId, 90_000);
       if (audioUrl) return audioUrl;
     }
 
@@ -83,21 +83,26 @@ async function pollStoryForAudioUrl(storyId: string, maxWaitMs: number): Promise
   const pollInterval = 3000;
   const maxPolls = Math.floor(maxWaitMs / pollInterval);
 
+  console.log(`[audioService] Polling for story ${storyId}. Max wait: ${maxWaitMs/1000}s (${maxPolls} attempts)`);
+
   for (let i = 0; i < maxPolls; i++) {
     await new Promise(resolve => setTimeout(resolve, pollInterval));
     try {
       const doc = await databases.getDocument(DATABASE_ID, COLLECTIONS.STORIES, storyId);
       const audioUrl = doc?.audio_url;
+      
+      console.log(`[audioService] Poll ${i + 1}/${maxPolls}: audio_url=${audioUrl ? 'FOUND' : 'pending...'}`);
+      
       if (audioUrl) {
-        console.log(`[audioService] audio_url found after ${(i + 1) * pollInterval / 1000}s`);
+        console.log(`[audioService] SUCCESS: audio_url found in ${((i + 1) * pollInterval) / 1000}s`);
         return audioUrl;
       }
     } catch (err) {
-      console.warn(`[audioService] poll ${i + 1} error:`, err);
+      console.warn(`[audioService] Poll ${i + 1} error:`, err);
     }
   }
 
-  console.warn(`[audioService] Timed out waiting for audio_url on story ${storyId}`);
+  console.error(`[audioService] TIMEOUT: Could not find audio_url after ${maxWaitMs/1000}s. Check Appwrite Function logs.`);
   return null;
 }
 

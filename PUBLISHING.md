@@ -8,9 +8,10 @@ This guide walks you through publishing Jahera to the Apple App Store and Google
 - [ ] Expo account (https://expo.dev/signup)
 - [ ] Apple Developer Account ($99/year) (https://developer.apple.com)
 - [ ] Google Play Developer Account ($25 one-time) (https://play.google.com/console)
-- [ ] Supabase account with project configured
+- [ ] Appwrite account (https://sfo.cloud.appwrite.io)
 - [ ] OpenAI/OpenRouter API key
 - [ ] ElevenLabs API key
+- [ ] RevenueCat account for subscriptions
 
 ### Install EAS CLI
 ```bash
@@ -27,8 +28,10 @@ cp .env.example .env
 ```
 
 Required variables:
-- `EXPO_PUBLIC_SUPABASE_URL`: Your Supabase project URL
-- `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key
+- `EXPO_PUBLIC_APPWRITE_ENDPOINT`: Your Appwrite project endpoint
+- `EXPO_PUBLIC_APPWRITE_PROJECT_ID`: Your Appwrite project ID
+- `EXPO_PUBLIC_APPWRITE_DATABASE_ID`: Your Appwrite database ID (e.g., jahera_db)
+- `EXPO_PUBLIC_APPWRITE_PLATFORM`: Your app bundle ID (e.g., com.hindi.harp)
 
 ### 2. Update App Version
 Update version in `app.json`:
@@ -265,7 +268,7 @@ Make storytime magical with Jahera!
 You MUST create a privacy policy before publishing. Include:
 
 - Data collection practices
-- How user data is stored (Supabase)
+- How user data is stored (Appwrite)
 - Third-party services used (OpenAI, ElevenLabs)
 - User rights and data deletion
 - Contact information
@@ -321,7 +324,7 @@ Recommended tools:
 ### Story Generation Fails
 - Verify OpenAI/OpenRouter API key
 - Check API quota and billing
-- Review Supabase function logs
+- Review Appwrite function logs
 
 ---
 
@@ -341,4 +344,4 @@ For issues or questions:
 - [EAS Submit](https://docs.expo.dev/submit/introduction/)
 - [App Store Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
 - [Google Play Policy](https://play.google.com/about/developer-content-policy/)
-- [Supabase Documentation](https://supabase.com/docs)
+- [Appwrite Documentation](https://appwrite.io/docs)

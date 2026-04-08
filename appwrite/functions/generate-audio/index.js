@@ -220,15 +220,18 @@ async function generateAudioHandler({ req, res, log, error }) {
     }
 
     // ── Appwrite setup ──
-    const endpoint = process.env.APPWRITE_FUNCTION_ENDPOINT || 'https://cloud.appwrite.io/v1';
+    const endpoint = process.env.APPWRITE_FUNCTION_ENDPOINT || 'https://sfo.cloud.appwrite.io/v1';
     const projectId = process.env.APPWRITE_FUNCTION_PROJECT_ID;
     const apiKey = process.env.APPWRITE_API_KEY;
     const bucketId = process.env.APPWRITE_AUDIO_BUCKET_ID || 'story-audio';
 
     if (!apiKey) {
-      error('No Appwrite API key available for storage/database operations.');
+      error('❌ CRITICAL: APPWRITE_API_KEY environment variable is missing.');
       return res.json({ success: false, error: 'Server authentication missing' }, 500);
     }
+
+    log(`[Config] Using Endpoint: ${endpoint}, Project: ${projectId}`);
+    log(`[Config] Using Bucket: ${bucketId}`);
 
     const client = new sdk.Client()
       .setEndpoint(endpoint)

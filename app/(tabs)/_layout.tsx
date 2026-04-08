@@ -1,5 +1,5 @@
 import { FloatingTabBar } from '@/components/FloatingTabBar';
-import { UIProvider } from '@/contexts/UIContext';
+import { useUI } from '@/contexts/UIContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { Tabs,usePathname,useRouter } from 'expo-router';
 import { useCallback } from 'react';
@@ -43,11 +43,13 @@ export default function TabLayout() {
   const activeTab = getActiveTab(pathname);
   const hasSwiped = useSharedValue(0); // 0 = not swiped, 1 = swiped (worklet-safe)
 
+  const { wakeUI } = useUI();
   const handleTabPress = useCallback(
     (route: string) => {
+      wakeUI();
       router.push(route as any);
     },
-    [router]
+    [router, wakeUI]
   );
 
   const navigateToTab = useCallback((tabName: string) => {
@@ -88,7 +90,6 @@ export default function TabLayout() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <UIProvider>
         <View style={styles.container}>
           <GestureDetector gesture={swipeGesture}>
             <View style={styles.container}>
@@ -106,7 +107,6 @@ export default function TabLayout() {
           </GestureDetector>
           <FloatingTabBar activeTab={activeTab} onTabPress={handleTabPress} />
         </View>
-      </UIProvider>
     </GestureHandlerRootView>
   );
 }

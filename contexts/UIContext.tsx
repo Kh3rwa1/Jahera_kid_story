@@ -28,7 +28,7 @@ export const UIProvider = ({ children }: { children: React.ReactNode }) => {
 
     sleepTimerRef.current = setTimeout(() => {
       setIsUIDormant(true);
-    }, 2500); 
+    }, 8000); 
   }, [setIsUIDormant]);
 
   useEffect(() => {
