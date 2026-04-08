@@ -6,7 +6,7 @@ import { analytics } from '@/services/analyticsService';
 import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { POPULAR_CITIES } from '@/constants/indianCities';
+import { CityOption, POPULAR_CITIES } from '@/constants/indianCities';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import { Check,ChevronRight,MapPin,Search,Sparkles,X } from 'lucide-react-native';
@@ -60,6 +60,7 @@ export default function LanguageSelection() {
 
   const btnScale = useSharedValue(1);
   const [cityInput, setCityInput] = useState('');
+  const [selectedCityOption, setSelectedCityOption] = useState<CityOption | null>(null);
 
   // Welcome narration
   useEffect(() => {
@@ -102,7 +103,16 @@ export default function LanguageSelection() {
 
     const languageParams = JSON.stringify(selectedLanguages.map(l => ({ code: l.code, name: l.name })));
     setTimeout(() => {
-      router.push({ pathname: '/onboarding/kid-name', params: { languages: languageParams, city: cityInput.trim(), consentGivenAt: params.consentGivenAt as string } });
+      router.push({
+        pathname: '/onboarding/kid-name',
+        params: {
+          languages: languageParams,
+          city: cityInput.trim(),
+          region: selectedCityOption?.region ?? '',
+          country: selectedCityOption?.country ?? 'India',
+          consentGivenAt: params.consentGivenAt as string,
+        },
+      });
     }, 150);
   };
 
@@ -234,25 +244,24 @@ export default function LanguageSelection() {
           </Animated.View>
           <Text style={styles.locationChipText}>This makes stories feel local and personal ✨</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 10 }}>
-            {POPULAR_CITIES.map((city) => (
-              <TouchableOpacity key={city} onPress={() => {
-                if (city === 'Other') {
-                  setUseOtherCity(true);
-                  setLocationName(null);
-                  setCityInput('');
-                } else {
+            {POPULAR_CITIES.map((cityOption) => (
+              <TouchableOpacity
+                key={cityOption.city}
+                onPress={() => {
                   setUseOtherCity(false);
-                  setLocationName(city);
-                  setCityInput(city);
-                  analytics.trackCitySelectedOnboarding(city, 'chip');
-                }
-              }} style={[styles.locationChip, { borderColor: cityInput === city ? '#34D399' : 'rgba(255,255,255,0.3)' }]}>
-                <Text style={styles.locationChipText}>{city}</Text>
+                  setSelectedCityOption(cityOption);
+                  setCityInput(cityOption.city);
+                  analytics.trackCitySelectedOnboarding(cityOption.city, 'chip');
+                }}
+                style={[styles.locationChip, { borderColor: cityInput === cityOption.city ? '#34D399' : 'rgba(255,255,255,0.3)' }]}
+              >
+                <Text style={styles.locationChipText}>{cityOption.city}</Text>
               </TouchableOpacity>
             ))}
             <TouchableOpacity
               onPress={() => {
                 setUseOtherCity(true);
+                setSelectedCityOption(null);
                 setCityInput('');
               }}
               style={[styles.locationChip, { borderColor: useOtherCity ? '#34D399' : 'rgba(255,255,255,0.3)' }]}
