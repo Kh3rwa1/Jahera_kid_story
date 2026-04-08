@@ -4,6 +4,7 @@ import { AudioProvider } from '@/contexts/AudioContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ReadingPreferencesProvider } from '@/contexts/ReadingPreferencesContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { UIProvider } from '@/contexts/UIContext';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { revenueCatService } from '@/services/revenueCatService';
 import { scheduleBedtimeReminder } from '@/services/notificationService';
@@ -91,6 +92,7 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
+        <UIProvider>
         <ReadingPreferencesProvider>
         <AuthProvider>
           <AppProvider>
@@ -119,6 +121,7 @@ export default function RootLayout() {
           </AppProvider>
         </AuthProvider>
         </ReadingPreferencesProvider>
+        </UIProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

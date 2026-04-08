@@ -130,7 +130,6 @@ export function useStoryGeneration() {
         location_country: locationCtx?.country ?? null,
         behavior_goal: selectedBehaviorGoal,
       });
-      if (!storyRecord) return markError('Failed to save story.');
 
       if (selectedBehaviorGoal) analytics.trackStoryGeneratedWithGoal(selectedBehaviorGoal, selectedLanguage, selectedVoice ?? null, selectedLength);
 
@@ -140,8 +139,26 @@ export function useStoryGeneration() {
       completeStep('quiz'); setStatus('Finalising your story...'); setProgress(90);
 
       void generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, buildAudioSettings(profileData))
-        .then(() => { if (isMountedRef.current) completeStep('audio'); })
-        .catch(err => logger.error('[useStoryGeneration] Audio error:', err));
+        .then((url) => { 
+          if (isMountedRef.current) {
+            if (url) {
+              completeStep('audio'); 
+            } else {
+              // This is the "text story but not audio" case
+              logger.warn('[useStoryGeneration] Audio generation returned null (likely timeout)');
+              setError('Story is ready, but audio is still generating in the background. You can find it in your Library shortly.');
+              // We still mark it as complete so they can view the text
+              completeStep('audio');
+            }
+          } 
+        })
+        .catch(err => {
+          logger.error('[useStoryGeneration] Audio error:', err);
+          if (isMountedRef.current) {
+            setError('Audio generation failed. You can still read the story!');
+            completeStep('audio');
+          }
+        });
 
       setStatus('Story ready!'); setProgress(100); hapticFeedback.success();
       await Promise.all([refreshSubscription(), refreshStories()]);

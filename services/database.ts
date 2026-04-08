@@ -260,7 +260,7 @@ export const friendService = {
 };
 
 export const storyService = {
-  async create(story: Omit<Story, 'id' | 'created_at'>): Promise<Story | null> {
+  async create(story: Omit<Story, 'id' | 'created_at'>): Promise<Story> {
     try {
       const data = await databases.createDocument(
         DATABASE_ID,
@@ -280,15 +280,16 @@ export const storyService = {
           like_count: story.like_count || 0,
           time_of_day: story.time_of_day,
           generated_at: story.generated_at,
-          location_city: story.location_city ?? null,
-          location_country: story.location_country ?? null,
-          behavior_goal: story.behavior_goal ?? null,
         }
       );
       return mapDoc(data);
-    } catch (error) {
-      logger.error('Error creating story:', error);
-      return null;
+    } catch (error: any) {
+      logger.error('Error creating story:', {
+        message: error.message,
+        code: error.code,
+        response: error.response,
+      });
+      throw error;
     }
   },
 

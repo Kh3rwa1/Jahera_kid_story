@@ -97,8 +97,10 @@ The app tracks the following events:
 ### Environment Variables
 Required variables in `.env`:
 ```bash
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+EXPO_PUBLIC_APPWRITE_ENDPOINT=https://sfo.cloud.appwrite.io/v1
+EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_appwrite_project_id
+EXPO_PUBLIC_APPWRITE_DATABASE_ID=jahera_db
+EXPO_PUBLIC_APPWRITE_PLATFORM=com.hindi.harp
 EXPO_PUBLIC_OPENROUTER_API_KEY=your_openrouter_key
 EXPO_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_key
 ```
