@@ -29,7 +29,20 @@
       },
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Jahera needs microphone access for voice input features.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUserNotificationUsageDescription": "Jahera uses notifications for bedtime story reminders."
+      },
+      "privacyManifests": {
+        "NSPrivacyCollectedDataTypes": [
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeName",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          }
+        ]
       }
     },
     "android": {
@@ -42,8 +55,6 @@
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "playStoreUrl": "https://play.google.com/store/apps/details?id=com.hindi.harp"
@@ -58,19 +69,19 @@
       "expo-font",
       "expo-web-browser",
       [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow Jahera to use your location to set stories in your neighbourhood.",
-          "locationWhenInUsePermission": "Allow Jahera to use your location to set stories in your neighbourhood."
-        }
-      ],
-      [
         "expo-av",
         {
           "microphonePermission": "Allow Jahera to access your microphone for voice features."
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#FF4B4B"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

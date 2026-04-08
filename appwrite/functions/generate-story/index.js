@@ -77,6 +77,30 @@ const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001';
 const CLAUDE_MODEL = 'claude-3-5-sonnet-20241022';
 const GEMINI_MODEL = 'gemini-2.0-flash';
 
+function sanitizeForPrompt(input) {
+  if (!input || typeof input !== 'string') return '';
+  return input
+    .replace(/[<>{}[\]\/`]/g, '')
+    .replace(/\b(ignore|instruction|system|prompt|override|forget|disregard)\b/gi, '')
+    .trim()
+    .slice(0, 100);
+}
+
+const BEHAVIOR_GOALS = {
+  confidence: 'The story must show the child taking small brave steps that build confidence over time. Let the hero struggle briefly, then succeed through persistence and support. Do NOT lecture — teach through adventure events.',
+  sharing: 'The story must naturally demonstrate why sharing with others brings happiness. Show the main character learning that giving feels better than keeping. Do NOT lecture — teach through story events.',
+  kindness: 'Include moments where kindness changes outcomes and helps others feel safe and valued. Show kindness as strength in action. Do NOT lecture — teach through the journey.',
+  discipline: 'Show the hero using focus, routine, and follow-through to complete a meaningful mission. Include distractions and how discipline helps overcome them. Do NOT lecture — teach through events.',
+  less_screen: 'Make offline play, discovery, and real-world connection feel exciting and magical. Show the child finding joy away from screens. Do NOT lecture — teach through fun adventures.',
+  courage: 'Present a fear or challenge and show courage as acting despite feeling scared. Let bravery grow through action and support. Do NOT lecture — teach through story turning points.',
+  honesty: 'Create a situation where truth is difficult but honesty leads to trust and repair. Show gentle consequences and growth. Do NOT lecture — teach through outcomes.',
+  empathy: 'Show the hero noticing how others feel and responding with care. Let empathy transform conflict into connection. Do NOT lecture — teach through character moments.',
+  gratitude: 'Highlight moments where the hero notices everyday blessings and support. Let gratitude deepen joy and relationships. Do NOT lecture — teach through emotional beats.',
+  teamwork: 'Design challenges that require cooperation and shared strengths from multiple characters. Show success through collaboration. Do NOT lecture — teach through mission progress.',
+  curiosity: 'Encourage questions, exploration, and discovery that unlock progress in the story. Let curiosity drive wonder and solutions. Do NOT lecture — teach through mysteries.',
+  responsibility: 'Give the hero an important responsibility and show growth through owning actions and finishing tasks. Include consequences and recovery. Do NOT lecture — teach through the adventure.'
+};
+
 async function fetchDynamicPrompt(databases, log) {
   try {
     const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || 'jahera_db';
@@ -99,7 +123,9 @@ async function fetchDynamicPrompt(databases, log) {
 function buildPrompt(profile, languageCode, context, options, dynamicSystemPrompt) {
   const familyMembers = (profile.family_members || []);
   const friends = (profile.friends || []);
-  const characterNames = [...familyMembers.map(m => m.name), ...friends.map(f => f.name)];
+  const characterNames = [...familyMembers.map(m => sanitizeForPrompt(m.name)), ...friends.map(f => sanitizeForPrompt(f.name))].filter(Boolean);
+  const sanitizedKidName = sanitizeForPrompt(profile.kid_name || 'Child');
+  const sanitizedCity = sanitizeForPrompt(profile.city || options?.locationContext?.city || '');
   
   const characterContext = characterNames.length > 0
     ? `You MUST include these specific characters as major, active participants in the adventure: ${characterNames.join(', ')}. They should have dialogue and play key roles in resolving the story hooks. CRITICAL: These named characters are human children/family/friends and must never be rewritten as animals, creatures, or objects.`
@@ -111,8 +137,8 @@ function buildPrompt(profile, languageCode, context, options, dynamicSystemPromp
 
   const loc = options?.locationContext;
   const locationParts = [loc?.city, loc?.country].filter(Boolean);
-  const locationLine = locationParts.length > 0
-    ? `- Location: Set the story in or around ${locationParts.join(', ')} — weave in local landmarks and cultural details to make it feel authentic and grounded.`
+  const locationLine = sanitizedCity
+    ? `- Location: Set the story in or around ${sanitizedCity} — weave in local landmarks and cultural details to make it feel authentic and grounded.`
     : '';
 
   // Use dynamic prompt from DB or robust default
@@ -125,7 +151,12 @@ CRITICAL TONE REQUIREMENTS:
 
 Response format: Strictly JSON. No markdown, no fences.`;
 
-  const userMessage = `Create a magical children's story for ${profile.kid_name}.
+  const behaviorInstruction = options?.behaviorGoal && BEHAVIOR_GOALS[options.behaviorGoal]
+    ? `
+- BEHAVIORAL LESSON (CRITICAL): ${BEHAVIOR_GOALS[options.behaviorGoal]} The story MUST naturally weave this lesson into the narrative. Do NOT lecture — teach through the adventure.`
+    : '';
+
+  const userMessage = `Create a magical children's story for ${sanitizedKidName}.
 
 Story Configuration:
 - Language: ${languageCode}
@@ -133,11 +164,12 @@ Story Configuration:
 - Theme: ${themeDesc}
 - Tone/Mood: ${moodDesc} (Master this tone. If funny, be hilarious. If exciting, be thrilling.)
 - Target Content Length: ${lengthConfig.words}
-- Primary Character: ${profile.kid_name} (Age 4-10)
+- Primary Character: ${sanitizedKidName} (Age 4-10)
 - Supporting Cast: ${characterNames.length > 0 ? characterNames.join(', ') : 'None'} (Include them as active partners in the journey!)
 ${locationLine}
 ${characterContext}
-- Character Safety Rule: ${profile.kid_name}${characterNames.length > 0 ? `, ${characterNames.join(', ')}` : ''} are humans. Never transform, recast, or describe them as animals/creatures/objects. If the theme is animals, animals can be side characters only.
+${behaviorInstruction}
+- Character Safety Rule: ${sanitizedKidName}${characterNames.length > 0 ? `, ${characterNames.join(', ')}` : ''} are humans. Never transform, recast, or describe them as animals/creatures/objects. If the theme is animals, animals can be side characters only.
 
 Focus on vivid sensory details, emotional warmth, and a satisfying conclusion where the characters learn something positive or find a wonderful surprise.
 

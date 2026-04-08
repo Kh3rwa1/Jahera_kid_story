@@ -13,6 +13,10 @@ export interface Profile {
   elevenlabs_similarity?: number | null;
   elevenlabs_style?: number | null;
   elevenlabs_speaker_boost?: boolean | null;
+  city?: string | null;
+  region?: string | null;
+  country?: string | null;
+  consent_given_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -64,6 +68,7 @@ export interface Story {
   created_at: string;
   location_city: string | null;
   location_country: string | null;
+  behavior_goal?: string | null;
 }
 
 export interface ProfileWithRelations extends Profile {
