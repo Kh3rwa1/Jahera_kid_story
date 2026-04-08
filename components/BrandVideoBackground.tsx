@@ -1,4 +1,5 @@
-import { videoCacheService } from '@/services/videoCacheService';
+import { APPWRITE_ENDPOINT,APPWRITE_PROJECT_ID,STORAGE_BUCKETS } from '@/lib/appwrite';
+import { logger } from '@/utils/logger';
 import { useVideoPlayer,VideoView } from 'expo-video';
 import { useEffect,useState } from 'react';
 import { Dimensions,Platform,StyleSheet,View,ViewStyle } from 'react-native';
@@ -15,60 +16,75 @@ interface BrandVideoBackgroundProps {
 }
 
 /**
- * Hook that returns the best video URI.
- * Priority: videoCacheService (already downloaded) → bundled asset fallback
+ * Build a public Appwrite file view URL.
+ * The app_assets bucket has "Any" read permission, so no auth needed.
  */
-function useResolvedVideoSource(fallbackSource: any) {
-  const [resolvedSource, setResolvedSource] = useState<string | null>(() => {
-    // Sync check: if the cache already has a URI, use it immediately
-    return videoCacheService.getCachedUri();
-  });
-  const [isResolving, setIsResolving] = useState(!videoCacheService.isReady);
+function getAppwriteVideoUrl(fileId: string): string {
+  return `${APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKETS.APP_ASSETS}/files/${fileId}/view?project=${APPWRITE_PROJECT_ID}`;
+}
+
+/**
+ * Hook that returns the best video URI.
+ * Priority: Appwrite server URL → bundled asset fallback
+ */
+function useResolvedVideoSource(videoId: string, fallbackSource: any) {
+  const [resolvedSource, setResolvedSource] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(true);
 
   useEffect(() => {
-    if (resolvedSource) {
-      setIsResolving(false);
-      return;
-    }
-
     let isMounted = true;
 
-    const resolveFallback = async () => {
-      if (!fallbackSource) return false;
+    const resolve = async () => {
+      // 1. Try Appwrite server URL directly
       try {
-        const { Asset } = require('expo-asset');
-        const [asset] = await Asset.loadAsync(fallbackSource);
-        if (asset?.localUri) {
-          if (isMounted) {
+        const url = getAppwriteVideoUrl(videoId);
+        logger.info('[VideoBackground] Using Appwrite URL:', url);
+
+        // Quick HEAD check to see if the file exists and is accessible
+        const response = await fetch(url, { method: 'HEAD' });
+        if (response.ok && isMounted) {
+          const contentLength = response.headers.get('content-length');
+          const size = contentLength ? parseInt(contentLength, 10) : 0;
+
+          // Only use if the file is a real video (> 500KB)
+          if (size > 500_000) {
+            setResolvedSource(url);
+            setIsResolving(false);
+            logger.info(`[VideoBackground] ✅ Appwrite video ready (${(size / 1024 / 1024).toFixed(1)}MB)`);
+            return;
+          }
+          logger.warn(`[VideoBackground] Appwrite video too small (${size} bytes), using fallback`);
+        }
+      } catch (err) {
+        logger.warn('[VideoBackground] Appwrite URL check failed:', err);
+      }
+
+      // 2. Resolve bundled fallback asset
+      if (fallbackSource) {
+        try {
+          const { Asset } = require('expo-asset');
+          const [asset] = await Asset.loadAsync(fallbackSource);
+          if (asset?.localUri && isMounted) {
             setResolvedSource(asset.localUri);
             setIsResolving(false);
+            logger.info('[VideoBackground] Using bundled fallback asset');
+            return;
           }
-          return true;
+        } catch (e) {
+          logger.warn('[VideoBackground] Bundled asset fallback failed:', e);
         }
-      } catch {}
-      return false;
-    };
+      }
 
-    const resolve = async () => {
-      try {
-        await videoCacheService.prefetch();
-        const cached = videoCacheService.getCachedUri();
-        if (cached && isMounted) {
-          setResolvedSource(cached);
-          setIsResolving(false);
-          return;
-        }
-      } catch {}
-
-      const handled = await resolveFallback();
-      if (!handled && isMounted) {
+      // 3. Nothing available
+      if (isMounted) {
         setIsResolving(false);
+        logger.warn('[VideoBackground] No video source available');
       }
     };
 
     resolve();
     return () => { isMounted = false; };
-  }, [fallbackSource, resolvedSource]);
+  }, [videoId, fallbackSource]);
 
   return { resolvedSource, isResolving };
 }
@@ -123,7 +139,7 @@ function VideoPlayerInner({ source, width, height, overlayOpacity }: Readonly<{
 
 export function BrandVideoBackground({ videoId, fallbackSource, style, overlayOpacity = 0.3 }: Readonly<BrandVideoBackgroundProps>) {
   const { width, height } = Dimensions.get('screen');
-  const { resolvedSource, isResolving } = useResolvedVideoSource(fallbackSource);
+  const { resolvedSource, isResolving } = useResolvedVideoSource(videoId, fallbackSource);
 
   if (isResolving || !resolvedSource) {
     return <View style={[styles.container, style, { backgroundColor: '#0F172A' }]} />;

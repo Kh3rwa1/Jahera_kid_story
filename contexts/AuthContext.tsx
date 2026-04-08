@@ -51,19 +51,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = useCallback(async (email: string, password: string, name?: string) => {
     await account.create(ID.unique(), email, password, name);
-    const [sessionRes, userRes] = await Promise.all([
-      account.createEmailPasswordSession(email, password),
-      account.get(),
-    ]);
+    const sessionRes = await account.createEmailPasswordSession(email, password);
+    const userRes = await account.get();
     setSession(sessionRes);
     setUser(userRes);
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const [sessionRes, userRes] = await Promise.all([
-      account.createEmailPasswordSession(email, password),
-      account.get(),
-    ]);
+    const sessionRes = await account.createEmailPasswordSession(email, password);
+    const userRes = await account.get();
     setSession(sessionRes);
     setUser(userRes);
   }, []);
