@@ -20,12 +20,14 @@ const getIconForType = (type: string = 'general') => {
 };
 
 export const EmptyState = ({ type = 'general', title, description, action }: Readonly<EmptyStateProps>) => {
-  const Icon = getIconForType(type);
-
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
-        <Icon size={64} color={COLORS.primary} strokeWidth={1.5} />
+        {type === 'stories' ? (
+          <BookOpen size={64} color={COLORS.primary} strokeWidth={1.5} />
+        ) : (
+          <Sparkles size={64} color={COLORS.primary} strokeWidth={1.5} />
+        )}
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{description}</Text>

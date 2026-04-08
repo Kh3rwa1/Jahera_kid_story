@@ -1,5 +1,6 @@
 import { BORDER_RADIUS, FONTS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { ThemeColors } from '@/types/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { Check } from 'lucide-react-native';
@@ -30,7 +31,15 @@ export function ParentConsentGate({ onContinue }: Readonly<Props>) {
   );
 }
 
-function CheckRow({ checked, label, onPress, colors, link = false }: any) {
+interface CheckRowProps {
+  checked: boolean;
+  label: string;
+  onPress: () => void;
+  colors: ThemeColors;
+  link?: boolean;
+}
+
+function CheckRow({ checked, label, onPress, colors, link = false }: Readonly<CheckRowProps>) {
   return (
     <TouchableOpacity onPress={link ? () => { onPress(); Linking.openURL('https://jahera.app/privacy'); } : onPress} style={styles.row}>
       <View style={[styles.box, { borderColor: checked ? colors.primary : colors.text.light }]}>{checked ? <Check size={14} color={colors.primary} /> : null}</View>

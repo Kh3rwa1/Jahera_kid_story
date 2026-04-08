@@ -42,7 +42,7 @@ export async function scheduleBedtimeReminder(hour: number, minute: number): Pro
   const body = BEDTIME_MESSAGES[Math.floor(Math.random() * BEDTIME_MESSAGES.length)];
   return Notifications.scheduleNotificationAsync({
     content: { title: 'Jahera', body, sound: 'default' },
-    trigger: { hour, minute, repeats: true, channelId: 'bedtime', type: Notifications.SchedulableTriggerInputTypes.DAILY },
+    trigger: { hour, minute, channelId: 'bedtime', type: Notifications.SchedulableTriggerInputTypes.DAILY },
   });
 }
 

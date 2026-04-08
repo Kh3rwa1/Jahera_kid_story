@@ -2,13 +2,14 @@ import { BehaviorGoalPicker } from '@/components/BehaviorGoalPicker';
 import { CharacterManager } from '@/components/CharacterManager';
 import { VoicePresetPicker } from '@/components/VoicePresetPicker';
 import { ShimmerCta } from '@/components/ui/ShimmerCta';
-import { SUPPORTED_LANGUAGES } from '@/constants/languages';
+import { Language, SUPPORTED_LANGUAGES } from '@/constants/languages';
 import { LENGTHS, MOODS, THEMES } from '@/constants/storyOptions';
 import { FONTS, SHADOWS, SPACING } from '@/constants/theme';
 import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check, ChevronLeft, MapPin, Wand as Wand2 } from 'lucide-react-native';
+import { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 interface OptionsViewProps {
@@ -88,10 +89,48 @@ export function OptionsView(props: Readonly<OptionsViewProps>) {
   );
 }
 
-function Section({ title, colors, children, badge, badgeColor }: any) { return <View style={styles.section}><View style={styles.sectionHead}><Text style={[styles.sectionLabel,{color:colors.text.secondary}]}>{title}</Text>{badge ? <View style={[styles.sectionBadge,{backgroundColor:badgeColor+'15'}]}><Text style={{ color: badgeColor, fontSize: 13, fontFamily: FONTS.bold }}>{badge}</Text></View> : null}</View>{children}</View>; }
-function ThemeCard({ theme, selected, size, colors, onPress }: any) { return <TouchableOpacity onPress={() => { hapticFeedback.light(); onPress(); }}><View style={[styles.themeCard,{ width:size,height:size, backgroundColor: colors.cardBackground, borderColor: selected ? theme.gradient[0] : colors.text.light+'15' }]}><LinearGradient colors={selected ? theme.gradient : ['transparent','transparent']} style={StyleSheet.absoluteFill}><View style={styles.themeCardInner}><Text style={styles.themeEmoji}>{theme.emoji}</Text><Text style={[styles.themeLabel,{ color: selected ? '#FFF' : colors.text.secondary }]}>{theme.label}</Text></View></LinearGradient></View></TouchableOpacity>; }
-function MoodCard({ mood, selected, colors, onPress }: any) { return <TouchableOpacity onPress={() => { hapticFeedback.light(); onPress(); }} style={{ flex:1 }}><View style={[styles.moodCard,{ backgroundColor: selected ? mood.bg : colors.cardBackground, borderColor: selected ? mood.color : colors.text.light+'15' }]}><Text style={styles.moodEmoji}>{mood.emoji}</Text><Text style={[styles.moodLabel,{ color: selected ? mood.color : colors.text.secondary }]}>{mood.label}</Text></View></TouchableOpacity>; }
-function LengthCard({ len, labels, selected, isPro, colors, onPress }: any) { return <TouchableOpacity onPress={() => { hapticFeedback.light(); onPress(); }} style={{ flex:1 }}><View style={[styles.lengthCard,{ backgroundColor: colors.cardBackground, borderColor: selected ? colors.primary : colors.text.light+'15' }]}>{len.pro && !isPro ? <View style={styles.proBadge}><Text style={styles.proText}>PRO</Text></View> : null}<Text style={styles.lengthEmoji}>{len.emoji}</Text><Text style={[styles.lengthTitle,{ color:selected?colors.primary:colors.text.primary }]}>{labels.label}</Text><Text style={[styles.lengthDesc,{ color: colors.text.light }]}>{labels.desc}</Text></View></TouchableOpacity>; }
-function LanguagePill({ lang, selected, colors, onPress }: any) { return <TouchableOpacity onPress={() => { hapticFeedback.light(); onPress(); }}><View style={[styles.langPill,{ backgroundColor:selected?colors.primary:colors.cardBackground, borderColor:selected?colors.primary:colors.text.light+'20' }]}><Text style={styles.langFlag}>{lang.flag}</Text><Text style={[styles.langName,{ color:selected?'#FFF':colors.text.primary }]}>{lang.nativeName}</Text>{selected ? <Check size={14} color="#FFF"/> : null}</View></TouchableOpacity>; }
+interface SectionProps {
+  title: string;
+  colors: ThemeColors;
+  children: ReactNode;
+  badge?: string;
+  badgeColor?: string;
+}
+function Section({ title, colors, children, badge, badgeColor }: Readonly<SectionProps>) { return <View style={styles.section}><View style={styles.sectionHead}><Text style={[styles.sectionLabel,{color:colors.text.secondary}]}>{title}</Text>{badge ? <View style={[styles.sectionBadge,{backgroundColor:badgeColor+'15'}]}><Text style={{ color: badgeColor, fontSize: 13, fontFamily: FONTS.bold }}>{badge}</Text></View> : null}</View>{children}</View>; }
+
+interface ThemeCardProps {
+  theme: { id: string; label: string; emoji: string; gradient: [string, string] };
+  selected: boolean;
+  size: number;
+  colors: ThemeColors;
+  onPress: () => void;
+}
+function ThemeCard({ theme, selected, size, colors, onPress }: Readonly<ThemeCardProps>) { return <TouchableOpacity onPress={() => { hapticFeedback.light(); onPress(); }}><View style={[styles.themeCard,{ width:size,height:size, backgroundColor: colors.cardBackground, borderColor: selected ? theme.gradient[0] : colors.text.light+'15' }]}><LinearGradient colors={selected ? theme.gradient : ['transparent','transparent']} style={StyleSheet.absoluteFill}><View style={styles.themeCardInner}><Text style={styles.themeEmoji}>{theme.emoji}</Text><Text style={[styles.themeLabel,{ color: selected ? '#FFF' : colors.text.secondary }]}>{theme.label}</Text></View></LinearGradient></View></TouchableOpacity>; }
+
+interface MoodCardProps {
+  mood: { id: string; label: string; emoji: string; color: string; bg: string };
+  selected: boolean;
+  colors: ThemeColors;
+  onPress: () => void;
+}
+function MoodCard({ mood, selected, colors, onPress }: Readonly<MoodCardProps>) { return <TouchableOpacity onPress={() => { hapticFeedback.light(); onPress(); }} style={{ flex:1 }}><View style={[styles.moodCard,{ backgroundColor: selected ? mood.bg : colors.cardBackground, borderColor: selected ? mood.color : colors.text.light+'15' }]}><Text style={styles.moodEmoji}>{mood.emoji}</Text><Text style={[styles.moodLabel,{ color: selected ? mood.color : colors.text.secondary }]}>{mood.label}</Text></View></TouchableOpacity>; }
+
+interface LengthCardProps {
+  len: { id: string; label: string; desc: string; emoji: string; pro?: boolean };
+  labels: { label: string; desc: string };
+  selected: boolean;
+  isPro: boolean;
+  colors: ThemeColors;
+  onPress: () => void;
+}
+function LengthCard({ len, labels, selected, isPro, colors, onPress }: Readonly<LengthCardProps>) { return <TouchableOpacity onPress={() => { hapticFeedback.light(); onPress(); }} style={{ flex:1 }}><View style={[styles.lengthCard,{ backgroundColor: colors.cardBackground, borderColor: selected ? colors.primary : colors.text.light+'15' }]}>{len.pro && !isPro ? <View style={styles.proBadge}><Text style={styles.proText}>PRO</Text></View> : null}<Text style={styles.lengthEmoji}>{len.emoji}</Text><Text style={[styles.lengthTitle,{ color:selected?colors.primary:colors.text.primary }]}>{labels.label}</Text><Text style={[styles.lengthDesc,{ color: colors.text.light }]}>{labels.desc}</Text></View></TouchableOpacity>; }
+
+interface LanguagePillProps {
+  lang: Language;
+  selected: boolean;
+  colors: ThemeColors;
+  onPress: () => void;
+}
+function LanguagePill({ lang, selected, colors, onPress }: Readonly<LanguagePillProps>) { return <TouchableOpacity onPress={() => { hapticFeedback.light(); onPress(); }}><View style={[styles.langPill,{ backgroundColor:selected?colors.primary:colors.cardBackground, borderColor:selected?colors.primary:colors.text.light+'20' }]}><Text style={styles.langFlag}>{lang.flag}</Text><Text style={[styles.langName,{ color:selected?'#FFF':colors.text.primary }]}>{lang.nativeName}</Text>{selected ? <Check size={14} color="#FFF"/> : null}</View></TouchableOpacity>; }
 
 const styles = StyleSheet.create({ container:{flex:1}, scroll:{paddingBottom:60}, topBar:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:20,marginVertical:20}, backBtn:{width:44,height:44,borderRadius:22,alignItems:'center',justifyContent:'center',...SHADOWS.sm}, locationPill:{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:12,paddingVertical:8,borderRadius:20,borderWidth:1}, locationText:{fontSize:13,fontFamily:FONTS.semibold}, section:{marginBottom:28}, sectionHead:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:20,marginBottom:16}, sectionLabel:{fontSize:13,fontFamily:FONTS.bold}, sectionBadge:{paddingHorizontal:12,paddingVertical:6,borderRadius:15}, themeGrid:{flexDirection:'row',flexWrap:'wrap',gap:10,paddingHorizontal:20}, themeCard:{borderRadius:20,borderWidth:2,overflow:'hidden'}, themeCardInner:{flex:1,alignItems:'center',justifyContent:'center',padding:10}, themeEmoji:{fontSize:28,marginBottom:4}, themeLabel:{fontSize:12,fontFamily:FONTS.bold}, moodRow:{flexDirection:'row',gap:10,paddingHorizontal:20}, moodCard:{alignItems:'center',paddingVertical:16,borderRadius:20,borderWidth:2,gap:4,...SHADOWS.xs}, moodEmoji:{fontSize:32}, moodLabel:{fontSize:15,fontFamily:FONTS.bold}, lengthRow:{flexDirection:'row',gap:10,paddingHorizontal:20}, lengthCard:{alignItems:'center',paddingVertical:20,borderRadius:20,borderWidth:2,gap:4,position:'relative'}, proBadge:{position:'absolute',top:-10,right:10,backgroundColor:'#F59E0B',paddingHorizontal:6,paddingVertical:2,borderRadius:10}, proText:{fontSize:9,fontFamily:FONTS.bold,color:'#FFF'}, lengthEmoji:{fontSize:28}, lengthTitle:{fontSize:14,fontFamily:FONTS.bold,textAlign:'center'}, lengthDesc:{fontSize:11,fontFamily:FONTS.medium,textAlign:'center'}, langScroll:{paddingHorizontal:20,gap:10}, langPill:{flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:16,paddingVertical:10,borderRadius:25,borderWidth:1.5}, langFlag:{fontSize:18}, langName:{fontSize:14,fontFamily:FONTS.bold}, characterSection:{paddingVertical:10}, footer:{padding:25,alignItems:'center',gap:16} });

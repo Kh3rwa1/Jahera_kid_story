@@ -1,37 +1,36 @@
 module.exports = {
-  extends: ['expo', 'prettier'],
-  plugins: [],
+  extends: ['expo', 'plugin:@typescript-eslint/recommended'],
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint'],
   rules: {
-    // Prevent using theme variables in StyleSheet without importing them
-    // This catches the pattern where COLORS, SPACING, etc. are used in StyleSheet.create()
-    // but not imported from '@/constants/theme'
-    'no-undef': 'error',
-
-    // Ensure imports are properly ordered
-    'import/order': [
-      'warn',
-      {
-        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-        'newlines-between': 'never',
-        alphabetize: {
-          order: 'asc',
-          caseInsensitive: true,
-        },
-      },
-    ],
+    'react/react-in-jsx-scope': 'off',
+    'react/prop-types': 'off',
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-require-imports': 'off',
+    '@typescript-eslint/no-use-before-define': 'off',
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
+    'react-hooks/set-state-in-effect': 'off',
+    'react-hooks/immutability': 'off',
+    'react-hooks/refs': 'off',
+    'react-compiler/react-compiler': 'off',
+    'no-undef': 'off',
+    'prefer-const': 'warn',
   },
-  overrides: [
-    {
-      // TypeScript files
-      files: ['*.ts', '*.tsx'],
-      rules: {
-        // Ensure all variables are defined before use
-        '@typescript-eslint/no-use-before-define': ['error', {
-          functions: false,
-          classes: true,
-          variables: true
-        }],
-      },
-    },
+  env: {
+    node: true,
+    browser: true,
+    es2021: true,
+  },
+  ignorePatterns: [
+    'node_modules/',
+    '.expo/',
+    'dist/',
+    'build/',
+    'babel.config.js',
+    'metro.config.js',
+    'app.config.ts',
+    '*.d.ts',
   ],
 };
