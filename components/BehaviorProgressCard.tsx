@@ -1,5 +1,6 @@
 import { BORDER_RADIUS, FONTS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { ThemeColors } from '@/types/theme';
 import { useProgressBar } from '@/utils/animations';
 import { BehaviorProgressItem } from '@/utils/behaviorProgress';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,7 +21,13 @@ export function BehaviorProgressCard({ progress }: Readonly<{ progress: Behavior
   );
 }
 
-function ProgressRow({ item, index, colors }: any) {
+interface ProgressRowProps {
+  item: BehaviorProgressItem;
+  index: number;
+  colors: ThemeColors;
+}
+
+function ProgressRow({ item, index, colors }: Readonly<ProgressRowProps>) {
   const barStyle = useProgressBar(item.percentage, 800, index * 100);
   return (
     <View style={styles.row}>

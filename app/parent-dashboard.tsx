@@ -105,9 +105,10 @@ export default function ParentDashboard() {
       ? Math.round(quizAttempts.reduce((sum, a) => sum + (a.score / a.total_questions) * 100, 0) / totalQuizzes)
       : 0;
     const thisWeek = stories.filter(s => {
-      const d = new Date(s.generated_at || s.created_at);
-      const weekAgo = new Date(Date.now() - 7 * 86400000);
-      return d > weekAgo;
+      const storyDate = new Date(s.generated_at || s.created_at);
+      const now = new Date().getTime();
+      const weekAgo = now - 7 * 86400000;
+      return storyDate.getTime() > weekAgo;
     }).length;
 
     const storiesByLanguage = stories.reduce((acc, s) => {
