@@ -196,7 +196,7 @@ export default function HomeScreen() {
   }
 
   if (error || !profile) {
-    if (!profile && !error) return <Redirect href="/onboarding/language-selection" />;
+    if (!profile && !error) return <Redirect href="/onboarding/consent" />;
     return (
       <SafeAreaView style={[styles.root, { backgroundColor: C.background }]} edges={['top']}>
         <LinearGradient colors={C.backgroundGradient} style={StyleSheet.absoluteFill} />
@@ -233,10 +233,10 @@ export default function HomeScreen() {
             <View style={[styles.orb, styles.orbTL, { backgroundColor: 'rgba(255,255,255,0.12)' }]} /><View style={[styles.orb, styles.orbBR, { backgroundColor: 'rgba(0,0,0,0.06)' }]} />
             <View style={styles.heroBodyInner}>
               <View style={styles.heroMain}>
-                <View style={styles.heroBadge}><Sparkles size={isTablet ? 14 : 12} color="#FFF" /><Text style={styles.heroBadgeText}>Create a Story</Text></View>
+                <View style={styles.heroBadge}><Sparkles size={isTablet ? 14 : 12} color="#FFF" /><Text style={styles.heroBadgeText}>Create a Story</Text></View><Text style={[styles.heroSub, { opacity: 0.9 }]}>Choose a learning goal</Text>
                 <Text style={styles.heroH1}>Magic Story Maker</Text>
-                <Text style={styles.heroSub}>Let's weave a wonderful tale together!</Text>
-                <Animated.View style={[styles.heroActionBtn, heroActionPulse]}><Wand2 size={isTablet ? 18 : 16} color="#0F172A" /><Text style={styles.heroActionBtnText}>Surprise Me</Text></Animated.View>
+                <Text style={styles.heroSub}>Personalized stories that shape behavior, build confidence, and spark imagination</Text>
+                <Animated.View style={[styles.heroActionBtn, heroActionPulse]}><Wand2 size={isTablet ? 18 : 16} color="#0F172A" /><Text style={styles.heroActionBtnText}>Quick Story</Text></Animated.View>
               </View>
               <View style={styles.heroVisual}><FloatAnim><Text style={styles.heroLargeEmoji}>🧙‍♂️</Text></FloatAnim></View>
             </View>

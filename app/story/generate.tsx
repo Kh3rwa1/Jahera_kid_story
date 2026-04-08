@@ -27,13 +27,15 @@ export default function GenerateStoryScreen() {
   const { profile } = useApp();
 
   const {
+    selectedBehaviorGoal, setSelectedBehaviorGoal,
     selectedTheme, setSelectedTheme,
     selectedMood, setSelectedMood,
     selectedLength, setSelectedLength,
+    selectedVoice, setSelectedVoice,
     selectedLanguage, setSelectedLanguage,
     familyMembers, setFamilyMembers,
     friends, setFriends,
-    locationCtx, locationLoading,
+    locationCtx,
     phase, status, progress, error, isQuotaError, steps,
     handleStartGeneration, handleRetry,
     subscription
@@ -105,19 +107,23 @@ export default function GenerateStoryScreen() {
       <StatusBar barStyle="dark-content" />
       <OptionsView
         colors={colors}
+        selectedBehaviorGoal={selectedBehaviorGoal}
+        setSelectedBehaviorGoal={setSelectedBehaviorGoal}
         selectedTheme={selectedTheme}
         setSelectedTheme={setSelectedTheme}
         selectedMood={selectedMood}
         setSelectedMood={setSelectedMood}
         selectedLength={selectedLength}
         setSelectedLength={setSelectedLength}
+        selectedVoice={selectedVoice}
+        setSelectedVoice={setSelectedVoice}
         selectedLanguage={selectedLanguage}
         setSelectedLanguage={setSelectedLanguage}
         familyMembers={familyMembers}
         friends={friends}
         onFamilyMembersChange={setFamilyMembers}
         onFriendsChange={setFriends}
-        locationLabel={locationLoading ? 'Locating...' : (formatLocationLabel(locationCtx) || 'Location unavailable')}
+        locationLabel={formatLocationLabel(locationCtx) || 'City not set'}
         onStart={handleStartGeneration}
         onBack={() => router.back()}
         subscription={subscription}
