@@ -15,7 +15,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, Vi
 interface OptionsViewProps {
   colors: ThemeColors;
   selectedBehaviorGoal: string | null;
-  setSelectedBehaviorGoal: (id: string | null) => void;
+  onBehaviorGoalChange: (goalId: string | null) => void;
   selectedTheme: string;
   setSelectedTheme: (id: string) => void;
   selectedMood: string;
@@ -23,7 +23,7 @@ interface OptionsViewProps {
   selectedLength: 'short' | 'medium' | 'long';
   setSelectedLength: (id: 'short' | 'medium' | 'long') => void;
   selectedVoice: string | null;
-  setSelectedVoice: (id: string | null) => void;
+  onVoiceChange: (voiceId: string | null) => void;
   selectedLanguage: string;
   setSelectedLanguage: (id: string) => void;
   familyMembers: any[];
@@ -33,6 +33,8 @@ interface OptionsViewProps {
   locationLabel: string;
   onStart: () => void;
   onBack: () => void;
+  isPremium: boolean;
+  languageCode: string;
   subscription: any;
   profileId: string;
 }
@@ -46,7 +48,7 @@ const LENGTH_LABELS: Record<'short'|'medium'|'long', {label: string; desc: strin
 export function OptionsView(props: Readonly<OptionsViewProps>) {
   const { width: winWidth } = useWindowDimensions();
   const CARD_SIZE = (winWidth - SPACING.xl * 2 - SPACING.sm * 3) / 4;
-  const isPro = props.subscription?.plan !== 'free';
+  const isPro = props.isPremium || props.subscription?.plan !== 'free';
   const selectedThemeObj = THEMES.find(t => t.id === props.selectedTheme)!;
 
   return (
@@ -58,7 +60,7 @@ export function OptionsView(props: Readonly<OptionsViewProps>) {
         </View>
 
         <Section title="🎯 What should today's story teach?" colors={props.colors}>
-          <BehaviorGoalPicker selectedGoal={props.selectedBehaviorGoal} onSelect={props.setSelectedBehaviorGoal} isPremium={isPro} />
+          <BehaviorGoalPicker selectedGoal={props.selectedBehaviorGoal} onSelect={props.onBehaviorGoalChange} isPremium={isPro} />
         </Section>
 
         <Section title="🌍 Pick a story world" colors={props.colors} badge={`${selectedThemeObj.emoji} ${selectedThemeObj.label}`} badgeColor={selectedThemeObj.gradient[0]}>
@@ -74,7 +76,7 @@ export function OptionsView(props: Readonly<OptionsViewProps>) {
         </Section>
 
         <Section title="🔊 Choose a storyteller" colors={props.colors}>
-          <VoicePresetPicker selectedVoice={props.selectedVoice} onSelect={props.setSelectedVoice} isPremium={isPro} languageCode={props.selectedLanguage} />
+          <VoicePresetPicker selectedVoice={props.selectedVoice} onSelect={props.onVoiceChange} isPremium={isPro} languageCode={props.languageCode} />
         </Section>
 
         <Section title="Language" colors={props.colors}>
