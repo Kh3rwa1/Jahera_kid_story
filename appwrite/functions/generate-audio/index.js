@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 const { EdgeTTS } = require('@andresaya/edge-tts');
 const nodeCrypto = require('node:crypto');
 
-const DATABASE_ID = 'jahera_db';
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || 'jahera_db';
 const STORIES_COLLECTION = 'stories';
 const CACHE_VERSION = 'v1_final'; // Tracking for story-audio cache hits
 
@@ -220,7 +220,7 @@ async function generateAudioHandler({ req, res, log, error }) {
     }
 
     // ── Appwrite setup ──
-    const endpoint = process.env.APPWRITE_FUNCTION_API_ENDPOINT;
+    const endpoint = process.env.APPWRITE_FUNCTION_ENDPOINT || 'https://cloud.appwrite.io/v1';
     const projectId = process.env.APPWRITE_FUNCTION_PROJECT_ID;
     const apiKey = process.env.APPWRITE_API_KEY;
     const bucketId = process.env.APPWRITE_AUDIO_BUCKET_ID || 'story-audio';
