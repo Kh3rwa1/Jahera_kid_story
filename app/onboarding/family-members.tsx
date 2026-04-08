@@ -90,6 +90,8 @@ export default function FamilyMembers() {
         kidName: params.kidName as string,
         familyMembers: JSON.stringify(familyMembers),
         city: params.city as string,
+        region: params.region as string,
+        country: params.country as string,
         consentGivenAt: params.consentGivenAt as string,
       },
     });
@@ -104,6 +106,8 @@ export default function FamilyMembers() {
         kidName: params.kidName as string,
         familyMembers: JSON.stringify([]),
         city: params.city as string,
+        region: params.region as string,
+        country: params.country as string,
         consentGivenAt: params.consentGivenAt as string,
       },
     });
