@@ -62,11 +62,14 @@ export default function NotificationSettingsScreen() {
   }, []);
 
   const trackReminder = useCallback((enabled: boolean, nextHour?: number, nextMinute?: number) => {
-    analytics.track('bedtime_reminder_set', {
-      enabled,
-      ...(typeof nextHour === 'number' ? { hour: nextHour } : {}),
-      ...(typeof nextMinute === 'number' ? { minute: nextMinute } : {}),
-    });
+    if (enabled && typeof nextHour === 'number' && typeof nextMinute === 'number') {
+      analytics.trackBedtimeReminderSet(nextHour, nextMinute, true);
+      return;
+    }
+
+    if (!enabled) {
+      analytics.trackBedtimeReminderDisabled();
+    }
   }, []);
 
   const persistSettings = useCallback(async (next: BedtimeReminderSettings) => {

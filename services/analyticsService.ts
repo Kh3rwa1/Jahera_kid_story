@@ -3,6 +3,20 @@
  * Production-ready with privacy-first approach
  */
 
+/**
+ * SMART STORY ENGINE ANALYTICS EVENTS
+ *
+ * behavior_goal_selected    - { goalId: string, goalLabel: string, category: string }
+ * voice_preset_selected     - { voiceId: string, voiceLabel: string, isPremium: boolean }
+ * bedtime_reminder_set      - { hour: number, minute: number, enabled: boolean }
+ * bedtime_reminder_disabled - { }
+ * behavior_progress_viewed  - { totalGoals: number, topGoal: string | null }
+ * parent_consent_given      - { timestamp: string, version: string }
+ * story_generated_with_goal - { goalId: string, language: string, voiceId: string | null, duration: string }
+ * city_selected_onboarding  - { city: string, method: 'chip' | 'custom' }
+ * prompt_sanitized          - { field: string, originalLength: number, sanitizedLength: number, hadUnsafeContent: boolean }
+ */
+
 interface AnalyticsEvent {
   name: string;
   properties?: Record<string, any>;
@@ -30,9 +44,6 @@ class AnalyticsService {
 
     this.queue.push(event);
     this.logEvent(event);
-
-    // In production, you would send this to your analytics backend
-    // For now, we'll just log it
   }
 
   /**
@@ -45,9 +56,6 @@ class AnalyticsService {
     });
   }
 
-  /**
-   * Track story generation
-   */
   trackStoryGeneration(language: string, success: boolean, duration?: number) {
     this.track('story_generated', {
       language,
@@ -56,9 +64,6 @@ class AnalyticsService {
     });
   }
 
-  /**
-   * Track quiz completion
-   */
   trackQuizCompletion(score: number, totalQuestions: number, storyId: string) {
     this.track('quiz_completed', {
       score,
@@ -68,9 +73,6 @@ class AnalyticsService {
     });
   }
 
-  /**
-   * Track user engagement
-   */
   trackEngagement(action: 'audio_played' | 'story_shared' | 'achievement_unlocked' | 'achievement_shared' | 'app_shared', properties?: Record<string, any>) {
     this.track('user_engagement', {
       action,
@@ -78,9 +80,6 @@ class AnalyticsService {
     });
   }
 
-  /**
-   * Track errors for monitoring
-   */
   trackError(error: Error, context?: Record<string, any>) {
     this.track('error', {
       error_message: error.message,
@@ -89,9 +88,6 @@ class AnalyticsService {
     });
   }
 
-  /**
-   * Track performance metrics
-   */
   trackPerformance(metric: string, value: number, unit: 'ms' | 'bytes' | 'count') {
     this.track('performance_metric', {
       metric,
@@ -100,26 +96,44 @@ class AnalyticsService {
     });
   }
 
+  trackBehaviorGoalSelected(goalId: string, goalLabel: string, category: string) {
+    this.track('behavior_goal_selected', { goalId, goalLabel, category });
+  }
 
-  trackBehaviorGoalSelected(goalId: string) { this.track('behavior_goal_selected', { goalId }); }
-  trackVoicePresetSelected(presetId: string, isPremium: boolean) { this.track('voice_preset_selected', { presetId, isPremium }); }
-  trackBedtimeReminderSet(hour: number, minute: number, enabled: boolean) { this.track('bedtime_reminder_set', { hour, minute, enabled }); }
-  trackBehaviorProgressViewed(goalsCount: number) { this.track('behavior_progress_viewed', { goalsCount }); }
-  trackParentConsentGiven(timestamp: string) { this.track('parent_consent_given', { timestamp }); }
-  trackStoryGeneratedWithGoal(goalId: string, languageCode: string, voicePreset: string | null) { this.track('story_generated_with_goal', { goalId, languageCode, voicePreset }); }
+  trackVoicePresetSelected(voiceId: string, voiceLabel: string, isPremium: boolean) {
+    this.track('voice_preset_selected', { voiceId, voiceLabel, isPremium });
+  }
 
-  /**
-   * Track app lifecycle events
-   */
+  trackBedtimeReminderSet(hour: number, minute: number, enabled: boolean) {
+    this.track('bedtime_reminder_set', { hour, minute, enabled });
+  }
+
+  trackBedtimeReminderDisabled() {
+    this.track('bedtime_reminder_disabled', {});
+  }
+
+  trackBehaviorProgressViewed(totalGoals: number, topGoal: string | null) {
+    this.track('behavior_progress_viewed', { totalGoals, topGoal });
+  }
+
+  trackParentConsentGiven(timestamp: string, version: string) {
+    this.track('parent_consent_given', { timestamp, version });
+  }
+
+  trackStoryGeneratedWithGoal(goalId: string, language: string, voiceId: string | null, duration: string) {
+    this.track('story_generated_with_goal', { goalId, language, voiceId, duration });
+  }
+
+  trackCitySelectedOnboarding(city: string, method: 'chip' | 'custom') {
+    this.track('city_selected_onboarding', { city, method });
+  }
+
   trackAppLifecycle(event: 'app_opened' | 'app_backgrounded' | 'app_closed') {
     this.track('app_lifecycle', {
       event,
     });
   }
 
-  /**
-   * Enable/disable analytics (for privacy settings)
-   */
   setEnabled(enabled: boolean) {
     this.isEnabled = enabled;
     console.log(`Analytics ${enabled ? 'enabled' : 'disabled'}`);
@@ -131,13 +145,8 @@ class AnalyticsService {
     }
   }
 
-  /**
-   * Flush queued events (call before app closes)
-   */
   async flush() {
     if (this.queue.length === 0) return;
-
-    // In production, send queued events to backend
     console.log(`Flushing ${this.queue.length} analytics events`);
     this.queue = [];
   }

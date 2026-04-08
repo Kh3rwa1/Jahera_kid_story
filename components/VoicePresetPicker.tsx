@@ -1,6 +1,7 @@
 import { VOICE_PRESETS } from '@/constants/voicePresets';
 import { BORDER_RADIUS, FONTS, SHADOWS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { analytics } from '@/services/analyticsService';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Crown, Lock } from 'lucide-react-native';
@@ -49,7 +50,12 @@ export function VoicePresetPicker({ selectedVoice, onSelect, isPremium, language
     }
 
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onSelect(selectedVoice === preset.id ? null : preset.id);
+    const nextVoiceId = selectedVoice === preset.id ? null : preset.id;
+    onSelect(nextVoiceId);
+
+    if (nextVoiceId) {
+      analytics.trackVoicePresetSelected(preset.id, preset.label, Boolean(preset.premium ?? preset.isPremium ?? false));
+    }
   };
 
   return (
