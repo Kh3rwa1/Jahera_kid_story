@@ -112,11 +112,28 @@ Create a `.env` file:
 EXPO_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_appwrite_project_id
 EXPO_PUBLIC_APPWRITE_DATABASE_ID=your_appwrite_database_id
+EXPO_PUBLIC_APPWRITE_PLATFORM=com.hindi.harp
 EXPO_PUBLIC_OPENROUTER_API_KEY=your_openrouter_key
 EXPO_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_key
 EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=your_ios_key
 EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=your_android_key
 ```
+
+
+### Android startup crash troubleshooting
+
+If Logcat shows:
+- `Missing required environment variables: EXPO_PUBLIC_APPWRITE_ENDPOINT and EXPO_PUBLIC_APPWRITE_PROJECT_ID`
+
+Do this:
+1. Copy `.env.example` to `.env` and fill all Appwrite values.
+2. Confirm every variable name starts with `EXPO_PUBLIC_` (Expo only injects public vars with this prefix).
+3. Stop Metro and restart with cache clear: `npx expo start -c`.
+4. Rebuild/reinstall the Android dev client after changing native-related values like `EXPO_PUBLIC_APPWRITE_PLATFORM`.
+
+Notes about the other warnings in your screenshot:
+- `Could not find generated setter...` warnings are common React Native warnings and usually non-fatal.
+- `Cannot install JSI bindings for AV module because JS context is not available` is usually a secondary error after a startup crash.
 
 #### Getting API Keys
 
