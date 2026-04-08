@@ -1,15 +1,26 @@
 import { Platform } from 'react-native';
 import { Account,Client,Databases,Functions,Storage } from 'react-native-appwrite';
 
-const ENDPOINT = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || 'https://sfo.cloud.appwrite.io/v1';
-const PROJECT_ID = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || '69b5657c000d2c28a436';
+// Fail-fast if required env vars are missing — never ship hardcoded credentials
+const ENDPOINT = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT;
+const PROJECT_ID = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID;
+
+if (!ENDPOINT || !PROJECT_ID) {
+  throw new Error(
+    '[Jahera] Missing required environment variables: EXPO_PUBLIC_APPWRITE_ENDPOINT and EXPO_PUBLIC_APPWRITE_PROJECT_ID must be set. See .env.example.'
+  );
+}
 
 const clientBuilder = new Client()
   .setEndpoint(ENDPOINT)
   .setProject(PROJECT_ID);
 
 if (Platform.OS !== 'web') {
-  clientBuilder.setPlatform(process.env.EXPO_PUBLIC_APPWRITE_PLATFORM || 'com.hindi.harp');
+  const platform = process.env.EXPO_PUBLIC_APPWRITE_PLATFORM;
+  if (!platform) {
+    throw new Error('[Jahera] EXPO_PUBLIC_APPWRITE_PLATFORM must be set for native builds. See .env.example.');
+  }
+  clientBuilder.setPlatform(platform);
 }
 
 export const client = clientBuilder;
@@ -19,7 +30,11 @@ export const databases = new Databases(client);
 export const storage = new Storage(client);
 export const functions = new Functions(client);
 
-export const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID || 'jahera_db';
+const dbId = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID;
+if (!dbId) {
+  throw new Error('[Jahera] EXPO_PUBLIC_APPWRITE_DATABASE_ID must be set. See .env.example.');
+}
+export const DATABASE_ID = dbId;
 export const APPWRITE_ENDPOINT = ENDPOINT;
 export const APPWRITE_PROJECT_ID = PROJECT_ID;
 
