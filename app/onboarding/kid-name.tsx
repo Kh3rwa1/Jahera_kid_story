@@ -1,12 +1,12 @@
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
-import { FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams,useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import { ArrowLeft,Check,ChevronRight,Sparkles } from 'lucide-react-native';
+import { ArrowLeft,Check,ChevronRight,MapPin,Sparkles,X } from 'lucide-react-native';
 import { useEffect,useMemo,useRef,useState } from 'react';
 import {
 KeyboardAvoidingView,
@@ -30,6 +30,7 @@ withSpring,
 ZoomIn
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CityOption,POPULAR_CITIES } from '@/constants/indianCities';
 
 export default function KidName() {
   const router = useRouter();
@@ -41,6 +42,9 @@ export default function KidName() {
   const styles = useStyles(C, insets, winWidth);
   const { speak } = useNarrationAudio('kid-name');
   const [name, setName] = useState('');
+  const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
+  const [customCity, setCustomCity] = useState<string>('');
+  const [showCityInput, setShowCityInput] = useState<boolean>(false);
   const inputRef = useRef<TextInput>(null);
 
   const cardScale = useSharedValue(1);
@@ -71,7 +75,14 @@ export default function KidName() {
     if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     router.push({
       pathname: '/onboarding/family-members',
-      params: { languages: params.languages as string, kidName: trimmedName, city: params.city as string, consentGivenAt: params.consentGivenAt as string },
+      params: {
+        languages: params.languages as string,
+        kidName: trimmedName,
+        city: selectedCity?.city || null,
+        region: selectedCity?.region || null,
+        country: selectedCity?.country || 'India',
+        consentGivenAt: params.consentGivenAt as string,
+      },
     });
   };
 
@@ -165,6 +176,130 @@ export default function KidName() {
                Almost there... {charsNeeded} more letter{charsNeeded > 1 ? 's' : ''} ✨
             </Animated.Text>
           )}
+
+
+          {/* City Selection - Optional */}
+          <Animated.View entering={FadeInDown.delay(200).springify()} style={{ marginTop: SPACING.lg }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md }}>
+              <MapPin size={18} color={C.primary} />
+              <Text style={{ fontFamily: FONTS.semibold, fontSize: 16, color: '#FFFFFF', marginLeft: SPACING.sm }}>
+                Where do you live?
+              </Text>
+              <Text style={{ fontFamily: FONTS.regular, fontSize: 13, color: 'rgba(255,255,255,0.75)', marginLeft: SPACING.sm }}>
+                (Optional)
+              </Text>
+            </View>
+
+            <Text style={{ fontFamily: FONTS.regular, fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: SPACING.md }}>
+              Stories will mention your city to make them feel real ✨
+            </Text>
+
+            {selectedCity && (
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: C.primary + '30',
+                paddingHorizontal: SPACING.md,
+                paddingVertical: SPACING.sm,
+                borderRadius: BORDER_RADIUS.lg,
+                marginBottom: SPACING.md,
+              }}>
+                <MapPin size={16} color={'#FFFFFF'} />
+                <Text style={{
+                  fontFamily: FONTS.medium,
+                  fontSize: 14,
+                  color: '#FFFFFF',
+                  marginLeft: SPACING.sm,
+                  flex: 1,
+                }}>
+                  {selectedCity.city}{selectedCity.region ? `, ${selectedCity.region}` : ''}
+                </Text>
+                <TouchableOpacity onPress={() => { setSelectedCity(null); void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+                  <X size={16} color={'#FFFFFF'} />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {!selectedCity && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: SPACING.sm, gap: 8 }}
+              >
+                {POPULAR_CITIES.map((cityOption) => (
+                  <TouchableOpacity
+                    key={cityOption.city}
+                    onPress={() => {
+                      setSelectedCity(cityOption);
+                      setCustomCity('');
+                      setShowCityInput(false);
+                      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 8,
+                      borderRadius: 20,
+                      backgroundColor: 'rgba(255,255,255,0.12)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.3)',
+                    }}
+                  >
+                    <Text style={{ fontFamily: FONTS.medium, fontSize: 13, color: '#FFFFFF' }}>
+                      {cityOption.city}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowCityInput(true);
+                    setSelectedCity(null);
+                    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  style={{
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    backgroundColor: C.primary + '40',
+                    borderWidth: 1,
+                    borderColor: C.primary + 'AA',
+                  }}
+                >
+                  <Text style={{ fontFamily: FONTS.medium, fontSize: 13, color: '#FFFFFF' }}>
+                    Other ✏️
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+
+            {showCityInput && !selectedCity && (
+              <TextInput
+                value={customCity}
+                onChangeText={(text) => {
+                  setCustomCity(text);
+                  if (text.length >= 2) {
+                    setSelectedCity({ city: text.trim(), region: '', country: 'India' });
+                  }
+                }}
+                placeholder="Type your city or town name..."
+                placeholderTextColor={'rgba(255,255,255,0.5)'}
+                style={{
+                  fontFamily: FONTS.regular,
+                  fontSize: 15,
+                  color: '#FFFFFF',
+                  backgroundColor: 'rgba(255,255,255,0.12)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.3)',
+                  borderRadius: BORDER_RADIUS.lg,
+                  paddingHorizontal: SPACING.md,
+                  paddingVertical: SPACING.md,
+                  marginTop: SPACING.sm,
+                }}
+                autoFocus
+                maxLength={50}
+              />
+            )}
+          </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(700).springify()} style={styles.tipCard}>
              <Sparkles size={16} color={C.primary} />
