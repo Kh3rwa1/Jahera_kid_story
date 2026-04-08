@@ -75,7 +75,9 @@ async function init() {
     { id: 'quiz_answers', name: 'Quiz Answers' },
     { id: 'quiz_attempts', name: 'Quiz Attempts' },
     { id: 'subscriptions', name: 'Subscriptions' },
-    { id: 'streaks', name: 'Streaks' }
+    { id: 'streaks', name: 'Streaks' },
+    { id: 'config', name: 'App Configuration' },
+    { id: 'api_keys', name: 'API Keys' }
   ];
 
   await Promise.all(collections.map(c => createCollection(c.id, c.name)));
@@ -90,6 +92,16 @@ async function init() {
     addAttr('string', 'profiles', 'parent_pin'),
     addAttr('string', 'profiles', 'share_token'),
     addAttr('string', 'profiles', 'avatar_url', { size: 1500 }),
+    addAttr('string', 'profiles', 'city'),
+    addAttr('string', 'profiles', 'region'),
+    addAttr('string', 'profiles', 'country'),
+    addAttr('string', 'profiles', 'consent_given_at'),
+    addAttr('string', 'profiles', 'elevenlabs_voice_id'),
+    addAttr('string', 'profiles', 'elevenlabs_model_id'),
+    addAttr('integer', 'profiles', 'elevenlabs_stability'),
+    addAttr('integer', 'profiles', 'elevenlabs_similarity'),
+    addAttr('integer', 'profiles', 'elevenlabs_style'),
+    addAttr('boolean', 'profiles', 'elevenlabs_speaker_boost'),
     addAttr('string', 'profiles', 'created_at'),
     addAttr('string', 'profiles', 'updated_at'),
 
@@ -131,6 +143,7 @@ async function init() {
     addAttr('string', 'stories', 'created_at'),
     addAttr('string', 'stories', 'location_city'),
     addAttr('string', 'stories', 'location_country'),
+    addAttr('string', 'stories', 'behavior_goal'),
 
     // Quiz Questions
     addAttr('string', 'quiz_questions', 'story_id', { required: true }),
@@ -172,7 +185,19 @@ async function init() {
     addAttr('string', 'streaks', 'last_activity_date'),
     addAttr('integer', 'streaks', 'total_days_active', { required: true }),
     addAttr('string', 'streaks', 'created_at'),
-    addAttr('string', 'streaks', 'updated_at')
+    addAttr('string', 'streaks', 'updated_at'),
+
+    // Config
+    addAttr('string', 'config', 'key', { required: true }),
+    addAttr('string', 'config', 'value', { size: 10000, required: true }),
+    addAttr('string', 'config', 'created_at'),
+
+    // API Keys
+    addAttr('string', 'api_keys', 'user_id', { required: true }),
+    addAttr('string', 'api_keys', 'service', { required: true }),
+    addAttr('string', 'api_keys', 'encrypted_key', { size: 2000, required: true }),
+    addAttr('string', 'api_keys', 'created_at'),
+    addAttr('string', 'api_keys', 'updated_at')
   ];
 
   console.log('⚡ Adding attributes in parallel...');
@@ -186,7 +211,7 @@ async function init() {
         sdk.Permission.create(sdk.Role.users()),
         sdk.Permission.update(sdk.Role.users()),
         sdk.Permission.delete(sdk.Role.users()),
-      ], false, false, undefined, ['jpg', 'png', 'jpeg', 'mp3', 'wav', 'gif']);
+      ], false, false, undefined, ['jpg', 'png', 'jpeg', 'mp3', 'wav', 'gif', 'mp4', 'webm']);
       console.log(`🪣 Bucket [${id}] created`);
     } catch (err) {
       if (err.code !== 409) console.error(`❌ Error creating bucket ${id}:`, err.message);
@@ -196,7 +221,7 @@ async function init() {
   await Promise.all([
     createBucket('avatars', 'User Avatars (Public)'),
     createBucket('story-audio', 'Story Audio Content'),
-    createBucket('brand-assets', 'Brand Video & Images')
+    createBucket('app_assets', 'App Assets (Video & Images)')
   ]);
 
   console.log('\n✅ INFRASTRUCTURE READY');
