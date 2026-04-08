@@ -158,7 +158,7 @@ export function GenerationLoading({
             <View style={[styles.locationBadge, { backgroundColor: colors.primary + '10' }]}>
               <MapPin size={12} color={colors.primary} />
               <Text style={{ color: colors.primary, fontSize: 13, fontFamily: FONTS.bold }}>
-                Set in {formatLocationLabel(locationCtx)}
+                Set in {locationCtx ? formatLocationLabel(locationCtx) : 'your city'}
               </Text>
             </View>
           )}

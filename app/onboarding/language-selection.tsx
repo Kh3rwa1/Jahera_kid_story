@@ -56,7 +56,6 @@ export default function LanguageSelection() {
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [nearbyLanguageCodes] = useState<string[]>(['en','hi']);
-  const [locationName, setLocationName] = useState<string | null>(null);
   const [useOtherCity, setUseOtherCity] = useState(false);
 
   const btnScale = useSharedValue(1);
@@ -251,6 +250,15 @@ export default function LanguageSelection() {
                 <Text style={styles.locationChipText}>{city}</Text>
               </TouchableOpacity>
             ))}
+            <TouchableOpacity
+              onPress={() => {
+                setUseOtherCity(true);
+                setCityInput('');
+              }}
+              style={[styles.locationChip, { borderColor: useOtherCity ? '#34D399' : 'rgba(255,255,255,0.3)' }]}
+            >
+              <Text style={styles.locationChipText}>Other ✏️</Text>
+            </TouchableOpacity>
           </ScrollView>
           {useOtherCity ? (
             <TextInput
