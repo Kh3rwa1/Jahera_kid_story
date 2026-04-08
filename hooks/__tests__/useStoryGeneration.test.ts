@@ -44,7 +44,7 @@ jest.mock('@/services/audioService', () => ({
 }));
 
 jest.mock('@/services/locationService', () => ({
-  getLocationFromProfile: jest.fn().mockReturnValue({ city: 'Test City', country: 'Test Country', region: null, latitude: null, longitude: null }),
+  getLocationFromProfile: jest.fn().mockReturnValue({ city: 'Test City', country: 'Test Country', region: '' }),
 }));
 
 jest.mock('@/utils/contextUtils', () => ({

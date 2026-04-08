@@ -55,7 +55,6 @@ export default function LanguageSelection() {
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [nearbyLanguageCodes] = useState<string[]>(['en','hi']);
-  const [locationName, setLocationName] = useState<string | null>(null);
   const [useOtherCity, setUseOtherCity] = useState(false);
 
   const btnScale = useSharedValue(1);
@@ -234,21 +233,23 @@ export default function LanguageSelection() {
           </Animated.View>
           <Text style={styles.locationChipText}>This makes stories feel local and personal ✨</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 10 }}>
-            {POPULAR_CITIES.map((city) => (
-              <TouchableOpacity key={city} onPress={() => {
-                if (city === 'Other') {
-                  setUseOtherCity(true);
-                  setLocationName(null);
-                  setCityInput('');
-                } else {
-                  setUseOtherCity(false);
-                  setLocationName(city);
-                  setCityInput(city);
-                }
-              }} style={[styles.locationChip, { borderColor: cityInput === city ? '#34D399' : 'rgba(255,255,255,0.3)' }]}>
-                <Text style={styles.locationChipText}>{city}</Text>
+            {POPULAR_CITIES.map((cityOption) => (
+              <TouchableOpacity key={cityOption.city} onPress={() => {
+                setUseOtherCity(false);
+                setCityInput(cityOption.city);
+              }} style={[styles.locationChip, { borderColor: cityInput === cityOption.city ? '#34D399' : 'rgba(255,255,255,0.3)' }]}>
+                <Text style={styles.locationChipText}>{cityOption.city}</Text>
               </TouchableOpacity>
             ))}
+            <TouchableOpacity
+              onPress={() => {
+                setUseOtherCity(true);
+                setCityInput('');
+              }}
+              style={[styles.locationChip, { borderColor: useOtherCity ? '#34D399' : 'rgba(255,255,255,0.3)' }]}
+            >
+              <Text style={styles.locationChipText}>Other ✏️</Text>
+            </TouchableOpacity>
           </ScrollView>
           {useOtherCity ? (
             <TextInput

@@ -124,7 +124,7 @@ export default function GenerateStoryScreen() {
         friends={friends}
         onFamilyMembersChange={setFamilyMembers}
         onFriendsChange={setFriends}
-        locationLabel={formatLocationLabel(locationCtx) || 'City not set'}
+        locationLabel={locationCtx ? formatLocationLabel(locationCtx) : 'City not set'}
         onStart={handleStartGeneration}
         onBack={() => router.back()}
         isPremium={isPremium}
