@@ -5,13 +5,12 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Location from 'expo-location';
-import { useRouter } from 'expo-router';
+import { POPULAR_CITIES } from '@/constants/indianCities';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import { Check,ChevronRight,MapPin,Search,Sparkles,X } from 'lucide-react-native';
 import { useCallback,useEffect,useMemo,useState } from 'react';
 import {
-ActivityIndicator,
 Keyboard,
 Platform,
 ScrollView,
@@ -44,93 +43,9 @@ function ProgressDot({ active, styles }: Readonly<{ active: boolean; styles: any
   return <Animated.View style={[styles.dot, animatedStyle]} />;
 }
 
-// ── Country → Language mapping ───────────────────────────────────────────────
-// Maps ISO 3166 country names to language codes that are commonly spoken there.
-// This is used to surface relevant languages at the top of the list.
-const COUNTRY_LANGUAGES: Record<string, string[]> = {
-  // English-speaking
-  'United States': ['en', 'es'],
-  'United Kingdom': ['en'],
-  'Canada': ['en', 'fr'],
-  'Australia': ['en'],
-  'New Zealand': ['en'],
-  'Ireland': ['en'],
-  'South Africa': ['en'],
-  'Singapore': ['en', 'zh'],
-  // South Asia
-  'India': ['hi', 'en', 'bn', 'sat'],
-  'Bangladesh': ['bn', 'en'],
-  'Pakistan': ['en', 'ar', 'hi'],
-  'Nepal': ['hi', 'en'],
-  'Sri Lanka': ['en'],
-  // East Asia
-  'China': ['zh', 'en'],
-  'Japan': ['ja', 'en'],
-  'South Korea': ['ko', 'en'],
-  'Taiwan': ['zh', 'en'],
-  'Hong Kong': ['zh', 'en'],
-  // Southeast Asia
-  'Philippines': ['en'],
-  'Malaysia': ['en', 'zh'],
-  // Spanish-speaking
-  'Spain': ['es', 'en'],
-  'Mexico': ['es', 'en'],
-  'Argentina': ['es', 'pt'],
-  'Colombia': ['es'],
-  'Chile': ['es'],
-  'Peru': ['es'],
-  'Venezuela': ['es'],
-  'Ecuador': ['es'],
-  'Cuba': ['es'],
-  // Portuguese
-  'Brazil': ['pt', 'es'],
-  'Portugal': ['pt', 'es'],
-  // French-speaking
-  'France': ['fr', 'en'],
-  'Belgium': ['fr', 'nl', 'de'],
-  'Switzerland': ['de', 'fr', 'it'],
-  'Luxembourg': ['fr', 'de'],
-  // German-speaking
-  'Germany': ['de', 'en'],
-  'Austria': ['de'],
-  // Italian
-  'Italy': ['it', 'en'],
-  // Russian
-  'Russia': ['ru', 'en'],
-  'Ukraine': ['ru', 'en'],
-  'Belarus': ['ru'],
-  'Kazakhstan': ['ru'],
-  // Arabic
-  'Saudi Arabia': ['ar', 'en'],
-  'United Arab Emirates': ['ar', 'en'],
-  'Egypt': ['ar', 'en'],
-  'Qatar': ['ar', 'en'],
-  'Kuwait': ['ar', 'en'],
-  'Oman': ['ar', 'en'],
-  'Bahrain': ['ar', 'en'],
-  'Jordan': ['ar', 'en'],
-  'Lebanon': ['ar', 'fr', 'en'],
-  'Iraq': ['ar', 'en'],
-  'Morocco': ['ar', 'fr'],
-  'Algeria': ['ar', 'fr'],
-  'Tunisia': ['ar', 'fr'],
-  // Turkish
-  'Turkey': ['tr', 'en'],
-  'Türkiye': ['tr', 'en'],
-  // Nordic
-  'Sweden': ['sv', 'en'],
-  'Norway': ['no', 'en'],
-  'Denmark': ['da', 'en'],
-  'Finland': ['fi', 'sv', 'en'],
-  'Iceland': ['en', 'da'],
-  // Other European
-  'Netherlands': ['nl', 'en'],
-  'Poland': ['pl', 'en'],
-  'Greece': ['el', 'en'],
-};
-
 export default function LanguageSelection() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const { width: winWidth } = useWindowDimensions();
   const { currentTheme } = useTheme();
@@ -139,49 +54,12 @@ export default function LanguageSelection() {
   const { speak } = useNarrationAudio('language-selection');
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [nearbyLanguageCodes, setNearbyLanguageCodes] = useState<string[]>([]);
+  const [nearbyLanguageCodes] = useState<string[]>(['en','hi']);
   const [locationName, setLocationName] = useState<string | null>(null);
-  const [locationLoading, setLocationLoading] = useState(true);
+  const [useOtherCity, setUseOtherCity] = useState(false);
 
   const btnScale = useSharedValue(1);
-
-  // ── Request location & detect nearby languages ──────────────────────────
-  useEffect(() => {
-    let isMounted = true;
-
-    const detectLocation = async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          if (isMounted) setLocationLoading(false);
-          return;
-        }
-
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Low, // Low accuracy is fine — we only need the country
-        });
-
-        const [place] = await Location.reverseGeocodeAsync({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
-
-        if (isMounted && place?.country) {
-          const country = place.country;
-          const codes = COUNTRY_LANGUAGES[country] || [];
-          setNearbyLanguageCodes(codes);
-          setLocationName(place.city || place.region || country);
-        }
-      } catch (e) {
-        console.log('[Language Selection] Location detection failed:', e);
-      } finally {
-        if (isMounted) setLocationLoading(false);
-      }
-    };
-
-    detectLocation();
-    return () => { isMounted = false; };
-  }, []);
+  const [cityInput, setCityInput] = useState('');
 
   // Welcome narration
   useEffect(() => {
@@ -224,7 +102,7 @@ export default function LanguageSelection() {
 
     const languageParams = JSON.stringify(selectedLanguages.map(l => ({ code: l.code, name: l.name })));
     setTimeout(() => {
-      router.push({ pathname: '/onboarding/kid-name', params: { languages: languageParams } });
+      router.push({ pathname: '/onboarding/kid-name', params: { languages: languageParams, city: cityInput.trim(), consentGivenAt: params.consentGivenAt as string } });
     }, 150);
   };
 
@@ -349,19 +227,37 @@ export default function LanguageSelection() {
             )}
           </View>
 
-          {/* Location indicator */}
-          {locationLoading ? (
-            <View style={styles.locationChip}>
-              <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
-              <Text style={styles.locationChipText}>Detecting location...</Text>
-            </View>
-          ) : locationName && nearbyLanguageCodes.length > 0 ? (
-            <Animated.View entering={FadeIn.duration(400)} style={styles.locationChip}>
-              <MapPin size={12} color="#34D399" strokeWidth={2.5} />
-              <Text style={styles.locationChipText}>
-                Near <Text style={styles.locationChipBold}>{locationName}</Text>
-              </Text>
-            </Animated.View>
+          {/* City input */}
+          <Animated.View entering={FadeIn.duration(300)} style={styles.locationChip}>
+            <MapPin size={12} color="#34D399" strokeWidth={2.5} />
+            <Text style={styles.locationChipText}>Where do you live?</Text>
+          </Animated.View>
+          <Text style={styles.locationChipText}>This makes stories feel local and personal ✨</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 10 }}>
+            {POPULAR_CITIES.map((city) => (
+              <TouchableOpacity key={city} onPress={() => {
+                if (city === 'Other') {
+                  setUseOtherCity(true);
+                  setLocationName(null);
+                  setCityInput('');
+                } else {
+                  setUseOtherCity(false);
+                  setLocationName(city);
+                  setCityInput(city);
+                }
+              }} style={[styles.locationChip, { borderColor: cityInput === city ? '#34D399' : 'rgba(255,255,255,0.3)' }]}>
+                <Text style={styles.locationChipText}>{city}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          {useOtherCity ? (
+            <TextInput
+              style={[styles.searchInput, { marginTop: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }]}
+              placeholder="Enter city/town"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              value={cityInput}
+              onChangeText={setCityInput}
+            />
           ) : null}
         </Animated.View>
 

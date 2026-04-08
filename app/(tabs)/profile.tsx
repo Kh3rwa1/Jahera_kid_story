@@ -1,3 +1,4 @@
+import { BehaviorProgressCard } from '@/components/BehaviorProgressCard';
 import { Container } from '@/components/Container';
 import { QuizAttempt, Story } from '@/types/database';
 import { ErrorState } from '@/components/ErrorState';
@@ -10,7 +11,9 @@ import { BORDER_RADIUS,BREAKPOINTS,FONTS,LAYOUT,SHADOWS,SPACING } from '@/consta
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUI } from '@/contexts/UIContext';
+import { analytics } from '@/services/analyticsService';
 import { useEntranceSequence,useGlowPulse,useProgressBar,usePulse } from '@/utils/animations';
+import { computeBehaviorProgress } from '@/utils/behaviorProgress';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -20,7 +23,7 @@ BookOpen,
 ChevronRight,
 Flame
 } from 'lucide-react-native';
-import React,{ useCallback,useMemo } from 'react';
+import React,{ useCallback,useEffect,useMemo } from 'react';
 import {
 Platform,
 RefreshControl,
@@ -373,6 +376,12 @@ export default function ProfileScreen() {
 
   const recentQuizzes = useMemo(() => (quizAttempts || []).slice(0, 5), [quizAttempts]);
 
+  const behaviorProgress = useMemo(() => computeBehaviorProgress(stories || [], 30), [stories]);
+
+  useEffect(() => {
+    analytics.trackBehaviorProgressViewed(behaviorProgress.length);
+  }, [behaviorProgress.length]);
+
   const handleRefresh = useCallback(async () => {
     await refreshAll();
   }, [refreshAll]);
@@ -460,6 +469,10 @@ export default function ProfileScreen() {
           COLORS={COLORS}
           styles={styles}
         />
+
+        <Animated.View entering={FadeInDown.delay(350).springify()}>
+          <BehaviorProgressCard progress={behaviorProgress} />
+        </Animated.View>
 
         {recentQuizzes.length > 0 && (
           <LearningCurve 

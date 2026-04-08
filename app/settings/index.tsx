@@ -16,6 +16,7 @@ Palette,
 RotateCcw,
 Shield,
 Volume2,
+Bell,
 Zap
 } from 'lucide-react-native';
 import React,{ useState } from 'react';
@@ -130,6 +131,14 @@ export default function SettingsScreen() {
       icon: <BookOpen size={24} color="#FFFFFF" />,
       route: '/settings/reading',
       gradient: C.gradients.forest || ['#2E7D32', '#66BB6A'],
+    },
+    {
+      id: 'notifications',
+      title: 'Bedtime Reminders',
+      description: 'Daily story reminder notifications',
+      icon: <Bell size={24} color="#FFFFFF" />,
+      route: '/settings/notifications',
+      gradient: C.gradients.ocean || ['#0EA5E9', '#0369A1'],
     },
     {
       id: 'audio',

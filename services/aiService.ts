@@ -2,6 +2,7 @@ import { functions } from '@/lib/appwrite';
 import { LocationContext } from '@/services/locationService';
 import { ProfileWithRelations } from '@/types/database';
 import { StoryContext } from '@/utils/contextUtils';
+import { sanitizeForPrompt } from '@/utils/promptSanitizer';
 
 export class QuotaExceededError extends Error {
   constructor(message: string) {
@@ -15,6 +16,9 @@ export interface StoryOptions {
   mood?: string;
   length?: 'short' | 'medium' | 'long';
   locationContext?: LocationContext | null;
+  behaviorGoal?: string;
+  voicePreset?: string | null;
+  voiceSettings?: { stability: number; similarity: number; style: number; speakerBoost: boolean } | null;
 }
 
 export interface QuizQuestion {
@@ -41,7 +45,14 @@ export async function generateAdventureStory(
   options?: StoryOptions
 ): Promise<GeneratedStory | null> {
   try {
-    const payload = JSON.stringify({ profile, languageCode, context, options });
+    const sanitizedProfile = {
+      ...profile,
+      kid_name: sanitizeForPrompt(profile.kid_name || ''),
+      city: sanitizeForPrompt(profile.city || ''),
+      family_members: (profile.family_members || []).map(m => ({ ...m, name: sanitizeForPrompt(m.name || '') })),
+      friends: (profile.friends || []).map(f => ({ ...f, name: sanitizeForPrompt(f.name || '') })),
+    };
+    const payload = JSON.stringify({ profile: sanitizedProfile, languageCode, context, options });
     const response = await functions.createExecution({
       functionId: 'generate-story',
       body: payload,

@@ -169,7 +169,7 @@ export default function Welcome() {
     return <Redirect href="/(tabs)" />;
   }
   if (isAuthenticated && !profile && !profileLoading) {
-    return <Redirect href="/onboarding/language-selection" />;
+    return <Redirect href="/onboarding/consent" />;
   }
 
   return (

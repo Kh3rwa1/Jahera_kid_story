@@ -6,6 +6,7 @@ import { ReadingPreferencesProvider } from '@/contexts/ReadingPreferencesContext
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { revenueCatService } from '@/services/revenueCatService';
+import { scheduleBedtimeReminder } from '@/services/notificationService';
 import { videoCacheService } from '@/services/videoCacheService';
 import {
 AtkinsonHyperlegible_400Regular,
@@ -37,6 +38,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect } from 'react';
 
 SplashScreen.preventAutoHideAsync();
@@ -46,8 +48,15 @@ export default function RootLayout() {
 
   useEffect(() => {
     revenueCatService.configure();
-    // Prefetch brand video from Appwrite on first launch
     videoCacheService.prefetch();
+    (async () => {
+      const raw = await AsyncStorage.getItem('jahera_bedtime_reminder');
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data?.enabled) {
+        await scheduleBedtimeReminder(data.hour ?? 20, data.minute ?? 30);
+      }
+    })();
   }, []);
 
   const [fontsLoaded, fontError] = useFonts({

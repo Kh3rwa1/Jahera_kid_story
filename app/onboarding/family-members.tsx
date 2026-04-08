@@ -89,6 +89,8 @@ export default function FamilyMembers() {
         languages: params.languages as string,
         kidName: params.kidName as string,
         familyMembers: JSON.stringify(familyMembers),
+        city: params.city as string,
+        consentGivenAt: params.consentGivenAt as string,
       },
     });
   };
@@ -101,6 +103,8 @@ export default function FamilyMembers() {
         languages: params.languages as string,
         kidName: params.kidName as string,
         familyMembers: JSON.stringify([]),
+        city: params.city as string,
+        consentGivenAt: params.consentGivenAt as string,
       },
     });
   };

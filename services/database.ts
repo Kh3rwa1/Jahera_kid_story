@@ -25,13 +25,13 @@ function mapDoc<T>(doc: Record<string, unknown>): T {
 }
 
 export const profileService = {
-  async create(userId: string, kidName: string, primaryLanguage: string): Promise<Profile | null> {
+  async create(userId: string, kidName: string, primaryLanguage: string, extra?: Partial<Pick<Profile, 'city' | 'region' | 'country' | 'consent_given_at'>>): Promise<Profile | null> {
     try {
       const data = await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.PROFILES,
         ID.unique(),
-        { user_id: userId, kid_name: kidName, primary_language: primaryLanguage }
+        { user_id: userId, kid_name: kidName, primary_language: primaryLanguage, ...extra }
       );
       return mapDoc(data);
     } catch (error) {
@@ -88,7 +88,7 @@ export const profileService = {
     return this.getWithRelations(profile.id);
   },
 
-  async update(id: string, updates: Partial<Pick<Profile, 'kid_name' | 'primary_language' | 'avatar_url' | 'parent_pin' | 'age' | 'elevenlabs_voice_id' | 'elevenlabs_model_id' | 'elevenlabs_stability' | 'elevenlabs_similarity' | 'elevenlabs_style' | 'elevenlabs_speaker_boost'>>): Promise<Profile | null> {
+  async update(id: string, updates: Partial<Pick<Profile, 'kid_name' | 'primary_language' | 'avatar_url' | 'parent_pin' | 'age' | 'elevenlabs_voice_id' | 'elevenlabs_model_id' | 'elevenlabs_stability' | 'elevenlabs_similarity' | 'elevenlabs_style' | 'elevenlabs_speaker_boost' | 'city' | 'region' | 'country' | 'consent_given_at'>>): Promise<Profile | null> {
     try {
       const data = await databases.updateDocument(
         DATABASE_ID,
@@ -282,6 +282,7 @@ export const storyService = {
           generated_at: story.generated_at,
           location_city: story.location_city ?? null,
           location_country: story.location_country ?? null,
+          behavior_goal: story.behavior_goal ?? null,
         }
       );
       return mapDoc(data);
