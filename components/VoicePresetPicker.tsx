@@ -5,8 +5,8 @@ import { analytics } from '@/services/analyticsService';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Crown, Lock } from 'lucide-react-native';
-import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import React, { useMemo, useRef, useEffect, useCallback } from 'react';
+import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 interface VoicePresetPickerProps {
@@ -32,6 +32,7 @@ export function VoicePresetPicker({ selectedVoice, onSelect, isPremium, language
   const isTablet = width >= 768;
   const { currentTheme } = useTheme();
   const colors = currentTheme.colors;
+  const flatListRef = useRef<FlatList>(null);
 
   const styles = useMemo(() => createStyles(isTablet, colors), [isTablet, colors]);
 
@@ -41,84 +42,100 @@ export function VoicePresetPicker({ selectedVoice, onSelect, isPremium, language
     return languageFiltered.length > 0 ? languageFiltered : presets;
   }, [languageCode]);
 
+  // Infinite Buffer logic
+  const LOOP_FACTOR = 3;
+  const loopedData = useMemo(() => Array(LOOP_FACTOR).fill(voices).flat(), [voices]);
+  const cardWidth = isTablet ? 200 : 160;
+  const cardGap = isTablet ? 16 : 12;
+  const itemWidth = cardWidth + cardGap;
+
+  useEffect(() => {
+    if (loopedData.length > voices.length) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToOffset({
+          offset: voices.length * itemWidth,
+          animated: false,
+        });
+      }, 100);
+    }
+  }, [voices.length, itemWidth, loopedData.length]);
+
+  const handleInfiniteScroll = (offset: number) => {
+    const totalContentWidth = voices.length * itemWidth;
+    if (offset <= 0 || offset >= totalContentWidth * 2) {
+      flatListRef.current?.scrollToOffset({ offset: totalContentWidth, animated: false });
+    }
+  };
+
   const handleCardPress = async (preset: VoicePresetLike) => {
     const locked = (preset.premium ?? preset.isPremium ?? false) && !isPremium;
-
     if (locked) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
-
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const nextVoiceId = selectedVoice === preset.id ? null : preset.id;
     onSelect(nextVoiceId);
-
     if (nextVoiceId) {
       analytics.trackVoicePresetSelected(preset.id, preset.label, Boolean(preset.premium ?? preset.isPremium ?? false));
     }
   };
 
-  return (
-    <View style={styles.section}>
-      <Animated.View entering={FadeInDown.delay(50).springify()}>
-        <Text style={styles.title}>🔊 Choose a storyteller</Text>
-        <Text style={styles.subtitle}>Pick who tells the story</Text>
-      </Animated.View>
+  const renderItem = useCallback(({ item: preset, index }: { item: VoicePresetLike; index: number }) => {
+    const locked = (preset.premium ?? preset.isPremium ?? false) && !isPremium;
+    const selected = selectedVoice === preset.id;
 
+    return (
+      <View style={{ marginRight: cardGap }}>
+        <Animated.View entering={FadeInRight.delay(80 + (index % voices.length) * 60).springify().damping(18).stiffness(90)}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => void handleCardPress(preset)}
+            style={[styles.card, selected && styles.cardSelected, locked && styles.cardLocked]}
+          >
+            {selected && (
+              <LinearGradient
+                colors={[colors.primary + '22', colors.primary + '08']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={styles.selectedOverlay}
+              />
+            )}
+            {locked && (
+              <View style={styles.lockedBadge}>
+                <Crown size={isTablet ? 18 : 14} color="#FFD700" />
+                <Lock size={isTablet ? 14 : 12} color={colors.text.secondary} />
+              </View>
+            )}
+            <Text style={styles.emoji}>{preset.emoji}</Text>
+            <Text style={styles.label}>{preset.label}</Text>
+            <Text style={styles.description}>{preset.description}</Text>
+            <View style={styles.vibePill}>
+              <Text style={styles.vibeText}>{preset.vibe}</Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    );
+  }, [colors, voices.length, selectedVoice, isPremium, isTablet, cardGap, styles]);
+
+  return (
+    <View style={[styles.section, { paddingTop: SPACING.xs }]}>
       {voices.length > 0 ? (
-        <ScrollView
+        <FlatList
+          ref={flatListRef}
+          data={loopedData}
           horizontal
           showsHorizontalScrollIndicator={false}
+          keyExtractor={(_, index) => index.toString()}
+          snapToInterval={itemWidth}
+          decelerationRate="fast"
           contentContainerStyle={styles.scrollContent}
-        >
-          {voices.map((preset, index) => {
-            const locked = (preset.premium ?? preset.isPremium ?? false) && !isPremium;
-            const selected = selectedVoice === preset.id;
-
-            return (
-              <Animated.View
-                key={preset.id}
-                entering={FadeInRight.delay(100 + index * 80).springify().damping(14)}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => {
-                    void handleCardPress(preset);
-                  }}
-                  style={[
-                    styles.card,
-                    selected && styles.cardSelected,
-                    locked && styles.cardLocked,
-                  ]}
-                >
-                  {selected && (
-                    <LinearGradient
-                      colors={[colors.primary + '22', colors.primary + '08']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.selectedOverlay}
-                    />
-                  )}
-
-                  {locked ? (
-                    <View style={styles.lockedBadge}>
-                      <Crown size={isTablet ? 18 : 14} color="#FFD700" />
-                      <Lock size={isTablet ? 14 : 12} color={colors.text.secondary} />
-                    </View>
-                  ) : null}
-
-                  <Text style={styles.emoji}>{preset.emoji}</Text>
-                  <Text style={styles.label}>{preset.label}</Text>
-                  <Text style={styles.description}>{preset.description}</Text>
-
-                  <View style={styles.vibePill}>
-                    <Text style={styles.vibeText}>{preset.vibe}</Text>
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
-            );
-          })}
-        </ScrollView>
+          onScroll={(e) => handleInfiniteScroll(e.nativeEvent.contentOffset.x)}
+          scrollEventThrottle={16}
+          renderItem={renderItem}
+          initialNumToRender={5}
+          maxToRenderPerBatch={5}
+        />
       ) : (
         <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No voices available for this language yet</Text>
@@ -150,9 +167,9 @@ const createStyles = (
       color: colors.text.secondary,
     },
     scrollContent: {
+      paddingHorizontal: 24,
       paddingTop: SPACING.md,
       paddingBottom: 2,
-      gap: cardGap,
     },
     card: {
       width: isTablet ? 200 : 160,

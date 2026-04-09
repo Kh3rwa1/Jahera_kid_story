@@ -1,3 +1,4 @@
+// CACHE BUSTER: 2026-04-09T01:50:00Z - FORCING METRO RE-BUNDLE
 import { logger } from '@/utils/logger';
 import { Platform } from 'react-native';
 
@@ -20,7 +21,7 @@ if (Platform.OS !== 'web') {
     const rcui = require('react-native-purchases-ui');
     RevenueCatUI = rcui.default ?? rcui;
   } catch {
-    // RC UI SDK not available
+    // SDK not available
   }
 }
 
@@ -66,6 +67,8 @@ const ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '';
 const ENTITLEMENT_PRO = 'pro';
 const ENTITLEMENT_FAMILY = 'family';
 
+let _isConfigured = false;
+
 function getApiKey(): string {
   if (Platform.OS === 'ios') return IOS_KEY;
   if (Platform.OS === 'android') return ANDROID_KEY;
@@ -89,53 +92,71 @@ function extractExpiry(customerInfo: any): string | null {
 
 export const revenueCatService = {
   async configure(userId?: string): Promise<void> {
-    if (Platform.OS === 'web' || !Purchases) return;
+    const p = Purchases; // Capture to local variable for closure safety
+    if (Platform.OS === 'web' || !p) return;
+    
     const apiKey = getApiKey();
     if (!apiKey) return;
 
     try {
-      if (__DEV__ && LOG_LEVEL) {
-        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+      // Secondary guard for internal Purchases state
+      if (!p) return;
+      
+      const isConfiguredFunc = p.isConfigured;
+      const alreadySet = typeof isConfiguredFunc === 'function' 
+        ? await isConfiguredFunc.call(p)
+        : _isConfigured;
+      
+      if (!alreadySet && p.configure) {
+        await p.configure({ apiKey });
+        _isConfigured = true;
       }
-      await Purchases.configure({ apiKey });
-      if (userId) {
-        await Purchases.logIn(userId);
+
+      if (userId && p.logIn) {
+        await p.logIn(userId);
       }
     } catch (err) {
-      logger.warn('[RevenueCat] configure error:', err);
+      logger.debug('[RevenueCat] configure skip (bridge inactive)');
     }
   },
 
   async identify(userId: string): Promise<void> {
-    if (Platform.OS === 'web' || !Purchases) return;
+    const p = Purchases;
+    if (Platform.OS === 'web' || !p) return;
     try {
-      await Purchases.logIn(userId);
+      if (_isConfigured && p.logIn) {
+        await p.logIn(userId);
+      }
     } catch (err) {
-      logger.warn('[RevenueCat] identify error:', err);
+      logger.debug('[RevenueCat] identify skip');
     }
   },
 
   async reset(): Promise<void> {
-    if (Platform.OS === 'web' || !Purchases) return;
+    const p = Purchases;
+    if (Platform.OS === 'web' || !p) return;
     try {
-      await Purchases.logOut();
+      if (_isConfigured && p.logOut) {
+        await p.logOut();
+      }
     } catch (err) {
-      console.warn('[RevenueCat] reset error:', err);
+      logger.debug('[RevenueCat] reset skip');
     }
   },
 
   async getOfferings(): Promise<RCOffering> {
     const empty: RCOffering = { weekly: null, monthly: null, yearly: null, family: null, raw: null };
-    if (Platform.OS === 'web' || !Purchases) return empty;
+    const p = Purchases;
+    if (Platform.OS === 'web' || !p || !_isConfigured) return empty;
 
     try {
-      const offerings = await Purchases.getOfferings();
+      const offerings = await p.getOfferings();
       const current = offerings.current;
       if (!current) return empty;
 
       const findPackage = (id: string) =>
-        current.availablePackages?.find((p: any) =>
-          p.packageType === id || p.identifier?.toLowerCase().includes(id.toLowerCase())
+        current.availablePackages?.find((pkg: any) =>
+          pkg.packageType === id || pkg.identifier?.toLowerCase().includes(id.toLowerCase())
         ) ?? null;
 
       return {
@@ -146,86 +167,88 @@ export const revenueCatService = {
         raw: current,
       };
     } catch (err) {
-      console.warn('[RevenueCat] getOfferings error:', err);
+      logger.debug('[RevenueCat] getOfferings failed');
       return empty;
     }
   },
 
   async purchasePackage(rcPackage: any): Promise<{ success: boolean; plan: PlanType; cancelled: boolean }> {
-    if (Platform.OS === 'web' || !Purchases || !rcPackage) {
+    const p = Purchases;
+    if (Platform.OS === 'web' || !p || !rcPackage || !_isConfigured) {
       return { success: false, plan: 'free', cancelled: false };
     }
 
     try {
-      const result = await Purchases.purchasePackage(rcPackage);
+      const result = await p.purchasePackage(rcPackage);
       const plan = extractPlan(result.customerInfo);
       return { success: plan !== 'free', plan, cancelled: false };
     } catch (err: any) {
       if (err?.userCancelled) {
         return { success: false, plan: 'free', cancelled: true };
       }
-      console.warn('[RevenueCat] purchasePackage error:', err);
+      logger.warn('[RevenueCat] purchasePackage error:', err);
       throw err;
     }
   },
 
   async presentPaywall(offering?: any): Promise<RCPaywallResult> {
     const empty: RCPaywallResult = { purchased: false, restored: false, cancelled: true, plan: 'free' };
-    if (Platform.OS === 'web' || !RevenueCatUI) return empty;
+    const rui = RevenueCatUI;
+    const p = Purchases;
+    if (Platform.OS === 'web' || !rui) return empty;
 
     try {
       const params = offering ? { offering } : undefined;
-      const result = await RevenueCatUI.presentPaywall(params);
+      const result = await rui.presentPaywall(params);
       const purchased = result === 'PURCHASED';
       const restored = result === 'RESTORED';
-      const customerInfo = purchased || restored
-        ? await Purchases?.getCustomerInfo?.()
-        : null;
+      
+      let customerInfo = null;
+      if ((purchased || restored) && p && _isConfigured && p.getCustomerInfo) {
+        customerInfo = await p.getCustomerInfo();
+      }
+
       const plan = customerInfo ? extractPlan(customerInfo) : 'free';
-      return {
-        purchased,
-        restored,
-        cancelled: !purchased && !restored,
-        plan,
-      };
+      return { purchased, restored, cancelled: !purchased && !restored, plan };
     } catch (err) {
-      console.warn('[RevenueCat] presentPaywall error:', err);
+      logger.debug('[RevenueCat] presentPaywall exception');
       return empty;
     }
   },
 
   async presentPaywallIfNeeded(entitlementId: string): Promise<RCPaywallResult> {
     const empty: RCPaywallResult = { purchased: false, restored: false, cancelled: true, plan: 'free' };
-    if (Platform.OS === 'web' || !RevenueCatUI) return empty;
+    const rui = RevenueCatUI;
+    const p = Purchases;
+    if (Platform.OS === 'web' || !rui) return empty;
 
     try {
-      const result = await RevenueCatUI.presentPaywallIfNeeded({
+      const result = await rui.presentPaywallIfNeeded({
         requiredEntitlementIdentifier: entitlementId,
       });
       const purchased = result === 'PURCHASED';
       const restored = result === 'RESTORED';
       const notRequired = result === 'NOT_PRESENTED';
-      const customerInfo = (purchased || restored || notRequired)
-        ? await Purchases?.getCustomerInfo?.()
-        : null;
+      
+      let customerInfo = null;
+      if (p && _isConfigured && (purchased || restored || notRequired) && p.getCustomerInfo) {
+        customerInfo = await p.getCustomerInfo();
+      }
+
       const plan = customerInfo ? extractPlan(customerInfo) : 'free';
-      return {
-        purchased,
-        restored,
-        cancelled: !purchased && !restored && !notRequired,
-        plan,
-      };
+      return { purchased, restored, cancelled: !purchased && !restored && !notRequired, plan };
     } catch (err) {
-      console.warn('[RevenueCat] presentPaywallIfNeeded error:', err);
+      logger.debug('[RevenueCat] presentPaywallIfNeeded exception');
       return empty;
     }
   },
 
   async presentCustomerCenter(onRestored?: (plan: PlanType) => void): Promise<void> {
-    if (Platform.OS === 'web' || !RevenueCatUI) return;
+    const rui = RevenueCatUI;
+    if (Platform.OS === 'web' || !rui) return;
 
     try {
-      await RevenueCatUI.presentCustomerCenter({
+      await rui.presentCustomerCenter({
         customerCenterActionListener: {
           onRestoreCompleted: async (customerInfo: any) => {
             if (onRestored) {
@@ -236,12 +259,13 @@ export const revenueCatService = {
         },
       });
     } catch (err) {
-      console.warn('[RevenueCat] presentCustomerCenter error:', err);
+      logger.debug('[RevenueCat] presentCustomerCenter exception');
     }
   },
 
   addCustomerInfoListener(callback: (info: RCCustomerInfo) => void): () => void {
-    if (Platform.OS === 'web' || !Purchases) return () => {};
+    const p = Purchases;
+    if (Platform.OS === 'web' || !p || !_isConfigured || !p.addCustomerInfoUpdateListener) return () => {};
 
     try {
       const listener = (customerInfo: any) => {
@@ -252,55 +276,48 @@ export const revenueCatService = {
           expiresAt: extractExpiry(customerInfo),
         });
       };
-      Purchases.addCustomerInfoUpdateListener(listener);
+      
+      p.addCustomerInfoUpdateListener(listener);
       return () => {
         try {
-          Purchases.removeCustomerInfoUpdateListener?.(listener);
+          p.removeCustomerInfoUpdateListener?.(listener);
         } catch {
           // ignore
         }
       };
     } catch (err) {
-      console.warn('[RevenueCat] addCustomerInfoListener error:', err);
+      logger.debug('[RevenueCat] addCustomerInfoListener exception');
       return () => {};
     }
   },
 
   async restorePurchases(): Promise<RCCustomerInfo> {
-    if (Platform.OS === 'web' || !Purchases) {
-      return { plan: 'free', isActive: false, expiresAt: null };
-    }
+    const empty: RCCustomerInfo = { plan: 'free', isActive: false, expiresAt: null };
+    const p = Purchases;
+    if (Platform.OS === 'web' || !p || !_isConfigured) return empty;
 
     try {
-      const customerInfo = await Purchases.restorePurchases();
+      const customerInfo = await p.restorePurchases();
       const plan = extractPlan(customerInfo);
-      return {
-        plan,
-        isActive: plan !== 'free',
-        expiresAt: extractExpiry(customerInfo),
-      };
+      return { plan, isActive: plan !== 'free', expiresAt: extractExpiry(customerInfo) };
     } catch (err) {
-      console.warn('[RevenueCat] restorePurchases error:', err);
-      return { plan: 'free', isActive: false, expiresAt: null };
+      logger.debug('[RevenueCat] restorePurchases failed');
+      return empty;
     }
   },
 
   async getCustomerInfo(): Promise<RCCustomerInfo> {
-    if (Platform.OS === 'web' || !Purchases) {
-      return { plan: 'free', isActive: false, expiresAt: null };
-    }
+    const empty: RCCustomerInfo = { plan: 'free', isActive: false, expiresAt: null };
+    const p = Purchases;
+    if (Platform.OS === 'web' || !p || !_isConfigured || !p.getCustomerInfo) return empty;
 
     try {
-      const customerInfo = await Purchases.getCustomerInfo();
+      const customerInfo = await p.getCustomerInfo();
       const plan = extractPlan(customerInfo);
-      return {
-        plan,
-        isActive: plan !== 'free',
-        expiresAt: extractExpiry(customerInfo),
-      };
+      return { plan, isActive: plan !== 'free', expiresAt: extractExpiry(customerInfo) };
     } catch (err) {
-      console.warn('[RevenueCat] getCustomerInfo error:', err);
-      return { plan: 'free', isActive: false, expiresAt: null };
+      logger.debug('[RevenueCat] getCustomerInfo exception');
+      return empty;
     }
   },
 

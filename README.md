@@ -41,10 +41,15 @@ npm run dev
 ## 🔐 .env Template
 
 ```bash
+<<<<<<< Updated upstream
+EXPO_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
+=======
 EXPO_PUBLIC_APPWRITE_ENDPOINT=https://sfo.cloud.appwrite.io/v1
 EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_appwrite_project_id
 EXPO_PUBLIC_APPWRITE_DATABASE_ID=your_appwrite_database_id
 EXPO_PUBLIC_APPWRITE_PLATFORM=com.hindi.harp
+>>>>>>> Stashed changes
 EXPO_PUBLIC_OPENROUTER_API_KEY=your_openrouter_key
 EXPO_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_key
 ```

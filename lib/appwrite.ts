@@ -9,9 +9,9 @@ const REQUIRED_APPWRITE_VARS = [
 const missingRequiredVars = REQUIRED_APPWRITE_VARS.filter((name) => !process.env[name]);
 
 if (missingRequiredVars.length > 0) {
-  throw new Error(
+  console.error(
     `[Jahera] Missing required environment variables: ${missingRequiredVars.join(', ')}. ` +
-      'Create a .env file from .env.example, ensure keys use the EXPO_PUBLIC_ prefix, and restart Metro/dev client after saving .env.'
+      'Check your .env and EAS configuration.'
   );
 }
 
@@ -41,9 +41,7 @@ export const functions = new Functions(client);
 
 const dbId = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID;
 if (!dbId) {
-  throw new Error(
-    '[Jahera] EXPO_PUBLIC_APPWRITE_DATABASE_ID must be set. Add it to .env and restart Metro/dev client.'
-  );
+  console.error('[Jahera] EXPO_PUBLIC_APPWRITE_DATABASE_ID is missing.');
 }
 export const DATABASE_ID = dbId;
 export const APPWRITE_ENDPOINT = ENDPOINT;

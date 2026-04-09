@@ -265,4 +265,11 @@ for col in $COLLECTIONS; do
 done
 
 echo ""
+echo "=== Creating Buckets ==="
+appwrite storage create-bucket --bucket-id avatars --name "User Avatars (Public)" --file-security false --permissions 'read("any")' 'create("users")' 'update("users")' 'delete("users")' || true
+appwrite storage create-bucket --bucket-id story-audio --name "Story Audio Content" --file-security false --permissions 'read("any")' 'create("users")' 'update("users")' 'delete("users")' || true
+appwrite storage create-bucket --bucket-id app_assets --name "App Assets" --file-security false --permissions 'read("any")' 'create("users")' 'update("users")' 'delete("users")' || true
+appwrite storage create-bucket --bucket-id behavior_assets --name "Nature & Habits Assets" --file-security false --permissions 'read("any")' 'create("users")' 'update("users")' 'delete("users")' || true
+
+echo ""
 echo "=== Database setup complete! ==="
