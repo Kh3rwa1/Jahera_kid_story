@@ -5,7 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ArrowLeft,ArrowRight,Eye,EyeOff,Lock,Mail,User } from 'lucide-react-native';
-import { useMemo,useState } from 'react';
+import { useState } from 'react';
 import {
 ActivityIndicator,
 Image,
@@ -19,18 +19,14 @@ TextInput,
 TouchableOpacity,
 View,
 } from 'react-native';
-import { FadeInDown,FadeInUp } from 'react-native-reanimated';
-import { EdgeInsets,useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ColorScheme } from '@/constants/themeSchemes';
+import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
 
 export default function Register() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
   const { signUp } = useAuth();
-  const { width: winWidth } = useWindowDimensions();
   const C = currentTheme.colors;
-  const styles = useStyles(C, winWidth);
+  const styles = useStyles();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -56,7 +52,7 @@ export default function Register() {
       await signUp(email.trim(), password, name.trim() || undefined);
       router.replace('/onboarding/consent');
     } catch (err: unknown) {
-      const msg = (err as any)?.message || '';
+      const msg = err instanceof Error ? err.message : '';
       if (msg.includes('already registered') || msg.includes('User already registered') || msg.includes('already exists')) {
         setError('An account with this email already exists. Try signing in.');
       } else if (msg.includes('Password should be') || msg.includes('password')) {
@@ -204,8 +200,8 @@ export default function Register() {
   );
 }
 
-const useStyles = (C: ColorScheme['colors'], winWidth: number) => {
-  return useMemo(() => StyleSheet.create({
+const useStyles = () => {
+  return StyleSheet.create({
     root: { flex: 1, backgroundColor: '#000' },
     kav: { flex: 1 },
     scroll: {
@@ -350,5 +346,5 @@ const useStyles = (C: ColorScheme['colors'], winWidth: number) => {
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 6,
     },
-  }), [C, winWidth]);
+  });
 };
