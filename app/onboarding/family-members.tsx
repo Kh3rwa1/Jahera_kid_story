@@ -31,6 +31,7 @@ withSequence,
 withSpring
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ColorScheme } from '@/constants/themeSchemes';
 
 const MEMBER_EMOJIS = ['👨', '👩', '👧', '👦', '👴', '👵', '🐶', '🐱'];
 
