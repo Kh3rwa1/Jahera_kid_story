@@ -2,7 +2,6 @@ import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { profileService } from '@/services/database';
-import { EdgeInsets,ThemeColors } from '@/types/theme';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import { constantTimeEqual,hashPin,PinRateLimiter } from '@/utils/pinSecurity';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -44,7 +43,7 @@ export default function ParentDashboard() {
   const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
-  const styles = useStyles(COLORS, winWidth);
+  const styles = useStyles();
   const { profile, stories, quizAttempts, subscription, streak } = useApp();
 
   const [unlocked, setUnlocked] = useState(false);
@@ -461,8 +460,8 @@ export default function ParentDashboard() {
   );
 }
 
-const useStyles = (C: ThemeColors, winWidth: number) => {
-  return useMemo(() => StyleSheet.create({
+const useStyles = () => {
+  return StyleSheet.create({
     container: { flex: 1 },
     header: {
       flexDirection: 'row', alignItems: 'center',
@@ -572,5 +571,5 @@ const useStyles = (C: ThemeColors, winWidth: number) => {
     },
     unlockButtonText: { fontSize: 16, fontFamily: FONTS.bold, color: '#FFFFFF' },
     defaultPinHint: { fontSize: 12, fontFamily: FONTS.medium },
-  }), [C, winWidth]);
+  });
 };

@@ -35,6 +35,7 @@ withSequence,
 withSpring
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ColorScheme } from '@/constants/themeSchemes';
 
 const FRIEND_EMOJIS = ['🧒', '👦', '👧', '🧑', '👶', '🧓', '🌟', '🌈'];
 
@@ -47,7 +48,7 @@ export default function Friends() {
   const { loadProfile } = useApp();
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
-  const styles = useStyles(C, insets, winWidth);
+  const styles = useStyles(C, winWidth);
   const { speak } = useNarrationAudio('friends');
   const [friends, setFriends] = useState<string[]>([]);
   const [currentName, setCurrentName] = useState('');
@@ -308,7 +309,7 @@ export default function Friends() {
   );
 }
 
-const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets, winWidth: number) => {
+const useStyles = (C: ColorScheme['colors'], winWidth: number) => {
   return useMemo(() => StyleSheet.create({
     root: { flex: 1, backgroundColor: '#000' },
     kav: { flex: 1 },
