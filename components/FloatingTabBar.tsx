@@ -142,7 +142,7 @@ export function FloatingTabBar({
       stiffness: 350,
       mass: 0.6,
     });
-  }), [safeActiveIndex, TAB_WIDTH]);
+  }, [safeActiveIndex, TAB_WIDTH]);
 
   const pillStyle = useAnimatedStyle(() => {
     // When in player mode, the pill expands to fill the entire bar
