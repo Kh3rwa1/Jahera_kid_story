@@ -41,7 +41,7 @@ export default function FamilyMembers() {
   const { width: winWidth } = useWindowDimensions();
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
-  const styles = useStyles(C, insets, winWidth);
+  const styles = useStyles(C, winWidth);
   const { speak } = useNarrationAudio('family-members');
   const [familyMembers, setFamilyMembers] = useState<string[]>([]);
   const [currentName, setCurrentName] = useState('');
@@ -267,7 +267,7 @@ export default function FamilyMembers() {
   );
 }
 
-const useStyles = (C: any, insets: any, winWidth: number) => {
+const useStyles = (C: ColorScheme['colors'], winWidth: number) => {
   return useMemo(() => StyleSheet.create({
     root: { flex: 1, backgroundColor: '#000' },
     kav: { flex: 1 },
@@ -548,5 +548,5 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 6,
     },
-  }), [C, insets, winWidth]);
+  }), [C, winWidth]);
 };

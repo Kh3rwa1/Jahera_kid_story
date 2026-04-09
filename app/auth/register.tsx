@@ -19,16 +19,18 @@ TextInput,
 TouchableOpacity,
 View,
 } from 'react-native';
-import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FadeInDown,FadeInUp } from 'react-native-reanimated';
+import { EdgeInsets,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ColorScheme } from '@/constants/themeSchemes';
 
 export default function Register() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
   const { signUp } = useAuth();
-  const COLORS = currentTheme.colors;
-  const styles = useStyles(COLORS, insets);
+  const { width: winWidth } = useWindowDimensions();
+  const C = currentTheme.colors;
+  const styles = useStyles(C, winWidth);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -53,8 +55,8 @@ export default function Register() {
     try {
       await signUp(email.trim(), password, name.trim() || undefined);
       router.replace('/onboarding/consent');
-    } catch (err: any) {
-      const msg = err?.message || '';
+    } catch (err: unknown) {
+      const msg = (err as any)?.message || '';
       if (msg.includes('already registered') || msg.includes('User already registered') || msg.includes('already exists')) {
         setError('An account with this email already exists. Try signing in.');
       } else if (msg.includes('Password should be') || msg.includes('password')) {
@@ -88,13 +90,13 @@ export default function Register() {
               style={styles.backBtn}
               activeOpacity={0.7}
             >
-              <ArrowLeft size={20} color={COLORS.primaryDark} strokeWidth={2.5} />
+              <ArrowLeft size={20} color={C.primaryDark} strokeWidth={2.5} />
             </TouchableOpacity>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.hero}>
-            <View style={[styles.iconCircle, { shadowColor: COLORS.primary }]}>
-              <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} style={styles.iconGradient}>
+            <View style={[styles.iconCircle, { shadowColor: C.primary }]}>
+              <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.iconGradient}>
                 <Image 
                   source={require('@/assets/images/icon.png')}
                   style={{ width: '100%', height: '100%', borderRadius: 60, borderWidth: 3, borderColor: '#FFFFFF' }}
@@ -110,11 +112,11 @@ export default function Register() {
 
           <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.form}>
             <View style={styles.inputGroup}>
-              <User size={20} color={COLORS.text.light} strokeWidth={2} />
+              <User size={20} color={C.text.light} strokeWidth={2} />
               <TextInput
-                style={[styles.input, { color: COLORS.text.primary }]}
+                style={[styles.input, { color: C.text.primary }]}
                 placeholder="Your name (optional)"
-                placeholderTextColor={COLORS.text.light}
+                placeholderTextColor={C.text.light}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
@@ -123,11 +125,11 @@ export default function Register() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Mail size={20} color={COLORS.text.light} strokeWidth={2} />
+              <Mail size={20} color={C.text.light} strokeWidth={2} />
               <TextInput
-                style={[styles.input, { color: COLORS.text.primary }]}
+                style={[styles.input, { color: C.text.primary }]}
                 placeholder="Email address"
-                placeholderTextColor={COLORS.text.light}
+                placeholderTextColor={C.text.light}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -138,11 +140,11 @@ export default function Register() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Lock size={20} color={COLORS.text.light} strokeWidth={2} />
+              <Lock size={20} color={C.text.light} strokeWidth={2} />
               <TextInput
-                style={[styles.input, { color: COLORS.text.primary }]}
+                style={[styles.input, { color: C.text.primary }]}
                 placeholder="Password (6+ characters)"
-                placeholderTextColor={COLORS.text.light}
+                placeholderTextColor={C.text.light}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -152,14 +154,14 @@ export default function Register() {
               />
               <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 {showPassword
-                  ? <EyeOff size={20} color={COLORS.text.light} strokeWidth={2} />
-                  : <Eye size={20} color={COLORS.text.light} strokeWidth={2} />
+                  ? <EyeOff size={20} color={C.text.light} strokeWidth={2} />
+                  : <Eye size={20} color={C.text.light} strokeWidth={2} />
                 }
               </TouchableOpacity>
             </View>
 
             {error && (
-              <Animated.Text entering={FadeInDown.springify()} style={[styles.errorText, { color: COLORS.error }]}>
+              <Animated.Text entering={FadeInDown.springify()} style={[styles.errorText, { color: C.error }]}>
                 {error}
               </Animated.Text>
             )}
@@ -172,11 +174,11 @@ export default function Register() {
                 end={{ x: 1, y: 1 }}
               >
                 {isLoading
-                  ? <ActivityIndicator color={COLORS.primaryDark} size="small" />
+                  ? <ActivityIndicator color={C.primaryDark} size="small" />
                   : (
                     <>
-                      <Text style={[styles.ctaText, { color: COLORS.primaryDark }]}>Create Account</Text>
-                      <ArrowRight size={20} color={COLORS.primaryDark} strokeWidth={2.5} />
+                      <Text style={[styles.ctaText, { color: C.primaryDark }]}>Create Account</Text>
+                      <ArrowRight size={20} color={C.primaryDark} strokeWidth={2.5} />
                     </>
                   )
                 }
@@ -193,7 +195,7 @@ export default function Register() {
               Already have an account?{' '}
             </Text>
             <TouchableOpacity onPress={() => router.push('/auth/login')}>
-              <Text style={[styles.linkText, { color: COLORS.primary }]}>Sign in</Text>
+              <Text style={[styles.linkText, { color: C.primary }]}>Sign in</Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
@@ -202,15 +204,15 @@ export default function Register() {
   );
 }
 
-const useStyles = (COLORS: any, insets: any) => {
+const useStyles = (C: ColorScheme['colors'], winWidth: number) => {
   return useMemo(() => StyleSheet.create({
     root: { flex: 1, backgroundColor: '#000' },
     kav: { flex: 1 },
     scroll: {
       flexGrow: 1,
       paddingHorizontal: SPACING.xl,
-      paddingTop: insets.top + SPACING.xl,
-      paddingBottom: insets.bottom + SPACING.xl,
+      paddingTop: SPACING.xl,
+      paddingBottom: SPACING.xl,
     },
     backBtn: {
       width: 40,
@@ -348,5 +350,5 @@ const useStyles = (COLORS: any, insets: any) => {
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 6,
     },
-  }), [COLORS, insets]);
+  }), [C, winWidth]);
 };

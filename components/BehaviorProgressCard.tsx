@@ -12,12 +12,11 @@ import Animated, {
   useSharedValue, 
   withTiming, 
   withDelay,
-  withSequence,
   Easing
 } from 'react-native-reanimated';
 
 interface BehaviorProgressCardProps {
-  stories?: Array<{ behavior_goal?: string | null; created_at?: string | null }> ;
+  stories?: { behavior_goal?: string | null; created_at?: string | null }[] ;
   progress?: BehaviorProgressItem[];
   compact?: boolean;
 }
@@ -60,7 +59,7 @@ function ProgressRow({
       1500 + index * 100,
       withTiming(1, { duration: 800 })
     );
-  }, [percentage]);
+  }, [percentage, barWidth, glowOpacity, index]);
 
   const animatedBarStyle = useAnimatedStyle(() => ({
     width: `${barWidth.value}%`,

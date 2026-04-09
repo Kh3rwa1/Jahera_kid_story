@@ -339,7 +339,7 @@ export default function KidName() {
   );
 }
 
-const useStyles = (C: any, insets: any, winWidth: number) => {
+const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets, winWidth: number) => {
   return useMemo(() => StyleSheet.create({
     root: { flex: 1, backgroundColor: '#000' },
     kav: { flex: 1 },
@@ -549,5 +549,5 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
       justifyContent: 'center',
       marginLeft: 4,
     },
-  }), [C, insets, winWidth]);
+  }), [C]);
 };

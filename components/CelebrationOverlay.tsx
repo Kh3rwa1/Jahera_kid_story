@@ -34,7 +34,7 @@ const ConfettiPiece = ({ x, color, size, delay, winHeight, driftX, isCircle }: {
       delay,
       withTiming(1, { duration: 2000, easing: Easing.out(Easing.quad) })
     );
-  }, []);
+  }, [delay, progress]);
 
   const animatedStyle = useAnimatedStyle(() => {
     'worklet';

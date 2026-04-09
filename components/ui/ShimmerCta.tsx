@@ -52,7 +52,7 @@ export function ShimmerCta({
       -1,
       false
     );
-  }, []);
+  }, [shimmerX]);
 
   const shimmerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: interpolate(shimmerX.value, [-1, 1], [-220, 220]) }],

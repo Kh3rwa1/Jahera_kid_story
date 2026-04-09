@@ -45,8 +45,8 @@ export default function Welcome() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading } = useApp();
 
-  const COLORS = currentTheme.colors;
-  const styles = useStyles(COLORS, insets, width);
+  const C = currentTheme.colors;
+  const styles = useStyles(C);
 
   const glowPulse = useSharedValue(0.3);
   const orbFloat = useSharedValue(0);
@@ -64,7 +64,7 @@ export default function Welcome() {
   useEffect(() => {
     isMounted.current = true;
     return () => { isMounted.current = false; };
-  }, []);
+  }, [C]);
 
   useEffect(() => {
     glowPulse.value = withRepeat(
@@ -106,7 +106,7 @@ export default function Welcome() {
       withTiming(1, { duration: 2200, easing: Easing.linear }),
       -1, false
     );
-  }, []);
+  }, [badge1Float, badge2Float, badge3Float, ctaGlow, glowPulse, logoOpacity, logoScale, orbFloat, shimmer]);
 
   const handleTap = async () => {
     if (Platform.OS !== 'web') {
@@ -137,13 +137,13 @@ export default function Welcome() {
   if (authLoading || profileLoading || themeLoading) {
     return (
       <View style={styles.loadingScreen}>
-        <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={C.backgroundGradient} style={StyleSheet.absoluteFill} />
         <Animated.View entering={FadeIn.duration(800)}>
           <View style={styles.loadingOrbOuter}>
             <View 
               style={[
                 styles.loadingOrb, 
-                { backgroundColor: COLORS.primary }
+                { backgroundColor: C.primary }
               ]}
             >
                <Image 
@@ -182,21 +182,21 @@ export default function Welcome() {
       {/* Floating feature badges */}
       <Animated.View style={[styles.floatingBadge, styles.badge1, badge1Style]}>
         <Animated.View entering={FadeInDown.delay(1200).springify()} style={styles.badgeInner}>
-          <BookOpen size={12} color={COLORS.primaryDark} strokeWidth={2.5} />
+          <BookOpen size={12} color={C.primaryDark} strokeWidth={2.5} />
           <Text style={styles.badgeText}>100+ Stories</Text>
         </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.floatingBadge, styles.badge2, badge2Style]}>
         <Animated.View entering={FadeInDown.delay(1450).springify()} style={styles.badgeInner}>
-          <Mic2 size={12} color={COLORS.primaryDark} strokeWidth={2.5} />
+          <Mic2 size={12} color={C.primaryDark} strokeWidth={2.5} />
           <Text style={styles.badgeText}>AI Voice</Text>
         </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.floatingBadge, styles.badge3, badge3Style]}>
         <Animated.View entering={FadeIn.delay(1700)} style={styles.badgeInner}>
-          <Zap size={12} color={COLORS.primaryDark} strokeWidth={2.5} />
+          <Zap size={12} color={C.primaryDark} strokeWidth={2.5} />
           <Text style={styles.badgeText}>Daily Magic</Text>
         </Animated.View>
       </Animated.View>
@@ -207,7 +207,7 @@ export default function Welcome() {
         <Animated.View style={[styles.logoArea, logoStyle, orbStyle]}>
           <Animated.View style={[styles.halo, glowStyle]}>
             <LinearGradient
-              colors={[COLORS.primary + '45', COLORS.primary + '00']}
+              colors={[C.primary + '45', C.primary + '00']}
               style={{ flex: 1, borderRadius: 160 }}
             />
           </Animated.View>
@@ -215,13 +215,13 @@ export default function Welcome() {
           <View style={styles.glowRing} />
 
           <LinearGradient
-            colors={[COLORS.cardBackground, COLORS.background]}
+            colors={[C.cardBackground, C.background]}
             style={styles.orbContainer}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <LinearGradient
-              colors={[COLORS.primary, COLORS.primaryDark]}
+              colors={[C.primary, C.primaryDark]}
               style={styles.orbGold}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -262,14 +262,14 @@ export default function Welcome() {
 
         {/* Premium Divider */}
         <Animated.View entering={FadeIn.delay(850)} style={styles.dividerRow}>
-          <View style={[styles.dividerLine, { backgroundColor: COLORS.primary + '15' }]} />
+          <View style={[styles.dividerLine, { backgroundColor: C.primary + '15' }]} />
           <LinearGradient
-            colors={['transparent', COLORS.primary + '80', 'transparent']}
+            colors={['transparent', C.primary + '80', 'transparent']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.dividerGold}
           />
-          <View style={[styles.dividerLine, { backgroundColor: COLORS.primary + '15' }]} />
+          <View style={[styles.dividerLine, { backgroundColor: C.primary + '15' }]} />
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(900).springify()} style={styles.pillRow}>
@@ -294,7 +294,7 @@ export default function Welcome() {
         <View style={styles.ctaWrapper}>
           <Animated.View style={[styles.ctaGlowHalo, ctaGlowStyle]}>
             <LinearGradient
-              colors={[COLORS.primary + '35', COLORS.primary + '00']}
+              colors={[C.primary + '35', C.primary + '00']}
               style={{ flex: 1, borderRadius: 100 }}
             />
           </Animated.View>
@@ -308,7 +308,7 @@ export default function Welcome() {
             <View style={styles.ctaInner}>
               <Text style={styles.ctaText}>Start New Adventure</Text>
               <View style={styles.ctaArrow}>
-                <ChevronRight size={20} color={COLORS.primaryDark} strokeWidth={3} />
+                <ChevronRight size={20} color={C.primaryDark} strokeWidth={3} />
               </View>
             </View>
           </LinearGradient>
@@ -329,7 +329,7 @@ export default function Welcome() {
   );
 }
 
-const useStyles = (C: ThemeColors, insets: EdgeInsets, width: number) => {
+const useStyles = (C: ThemeColors) => {
   return useMemo(() => StyleSheet.create({
     root: {
       flex: 1,

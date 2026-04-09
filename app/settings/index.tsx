@@ -29,7 +29,8 @@ Text,
 TouchableOpacity,
 View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { EdgeInsets,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ColorScheme } from '@/constants/themeSchemes';
 
 const ENTITLEMENT_PRO = 'pro';
 
@@ -282,7 +283,7 @@ export default function SettingsScreen() {
   );
 }
 
-const useStyles = (C: any, insets: any) => {
+const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets) => {
   return React.useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: C.background },
     header: {
@@ -360,5 +361,5 @@ const useStyles = (C: any, insets: any) => {
     infoContent: { flex: 1 },
     infoTitle: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semibold, color: C.text.primary, marginBottom: SPACING.xs },
     infoText: { fontSize: FONT_SIZES.sm, color: C.text.secondary },
-  }), [C, insets]);
+  }), [C]);
 };

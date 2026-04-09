@@ -1,15 +1,15 @@
-import { randomBool,randomFloat } from '@/utils/secureRandom';
-import { Sparkles,Star } from 'lucide-react-native';
-import React,{ useEffect } from 'react';
-import { StyleSheet,View } from 'react-native';
-import Animated,{
-Easing,
-useAnimatedStyle,
-useSharedValue,
-withDelay,
-withRepeat,
-withSequence,
-withTiming,
+import { randomBool, randomFloat } from '@/utils/secureRandom';
+import { Sparkles, Star } from 'lucide-react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 
 interface Sparkle {
@@ -68,7 +68,7 @@ const AnimatedSparkle: React.FC<{ sparkle: Sparkle }> = ({ sparkle }) => {
         false
       )
     );
-  }, []);
+  }, [sparkle.delay, scale, opacity, rotation]);
 
   const animatedStyle = useAnimatedStyle(() => {
     'worklet';

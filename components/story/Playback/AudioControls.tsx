@@ -26,11 +26,10 @@ import Animated, {
 
 interface AudioControlsProps {
   accentColor: string;
-  themeGradient: readonly [string, string, string];
   colors: ThemeColors;
 }
 
-export function AudioControls({ accentColor, themeGradient, colors }: Readonly<AudioControlsProps>) {
+export function AudioControls({ accentColor, colors }: Readonly<AudioControlsProps>) {
   const { 
     isPlaying, isBuffering, sound, 
     playPause, seek 
@@ -72,7 +71,7 @@ export function AudioControls({ accentColor, themeGradient, colors }: Readonly<A
         anim.value = withTiming(0.3, { duration: 400 });
       });
     }
-  }, [isPlaying]);
+  }, [isPlaying, vinylRotation, vinylElevation, waveAnim1, waveAnim2, waveAnim3, waveAnim4, waveAnim5, waveAnim6]);
 
   const vinylStyle = useAnimatedStyle(() => ({
     transform: [
