@@ -17,7 +17,6 @@ StyleSheet,
 Text,
 TextInput,
 TouchableOpacity,
-useWindowDimensions,
 View,
 } from 'react-native';
 import Animated,{
@@ -31,15 +30,15 @@ ZoomIn
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CityOption,POPULAR_CITIES } from '@/constants/indianCities';
+import { ColorScheme } from '@/constants/themeSchemes';
 
 export default function KidName() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const { width: winWidth } = useWindowDimensions();
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
-  const styles = useStyles(C, insets, winWidth);
+  const styles = useStyles(C);
   const { speak } = useNarrationAudio('kid-name');
   const [name, setName] = useState('');
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
@@ -339,7 +338,7 @@ export default function KidName() {
   );
 }
 
-const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets, winWidth: number) => {
+const useStyles = (C: ColorScheme['colors']) => {
   return useMemo(() => StyleSheet.create({
     root: { flex: 1, backgroundColor: '#000' },
     kav: { flex: 1 },
