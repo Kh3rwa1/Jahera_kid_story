@@ -3,7 +3,7 @@ import { BORDER_RADIUS,FONTS,SPACING } from '@/constants/theme';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { EdgeInsets,ThemeColors } from '@/types/theme';
+import { ThemeColors } from '@/types/theme';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect,useRouter } from 'expo-router';
@@ -46,7 +46,7 @@ export default function Welcome() {
   const { profile, isLoading: profileLoading } = useApp();
 
   const C = currentTheme.colors;
-  const styles = useStyles(C);
+  const styles = useStyles(C, width);
 
   const glowPulse = useSharedValue(0.3);
   const orbFloat = useSharedValue(0);
@@ -329,7 +329,7 @@ export default function Welcome() {
   );
 }
 
-const useStyles = (C: ThemeColors) => {
+const useStyles = (C: ThemeColors, width: number) => {
   return useMemo(() => StyleSheet.create({
     root: {
       flex: 1,
@@ -432,7 +432,7 @@ const useStyles = (C: ThemeColors) => {
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.1,
       shadowRadius: 10,
-    } as any,
+    },
     badgeText: {
       fontSize: 12,
       fontFamily: FONTS.extrabold,
@@ -684,5 +684,5 @@ const useStyles = (C: ThemeColors) => {
       textShadowOffset: { width: 0, height: 1 },
       textShadowRadius: 4,
     },
-  }), [C, insets, width]);
+  }), [C, width]);
 };

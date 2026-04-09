@@ -20,7 +20,6 @@ StyleSheet,
 Text,
 TextInput,
 TouchableOpacity,
-useWindowDimensions,
 View,
 } from 'react-native';
 import Animated,{
@@ -34,6 +33,7 @@ withSpring,
 ZoomIn
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ColorScheme } from '@/constants/themeSchemes';
 
 function ProgressDot({ active, styles }: Readonly<{ active: boolean; styles: ReturnType<typeof useStyles> }>) {
   const animatedStyle = useAnimatedStyle(() => ({
@@ -48,7 +48,6 @@ export default function LanguageSelection() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const { width: winWidth } = useWindowDimensions();
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
   const styles = useStyles(C);
