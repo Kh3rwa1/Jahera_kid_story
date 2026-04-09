@@ -16,7 +16,7 @@ import { useEntranceSequence,useGlowPulse,useProgressBar,usePulse } from '@/util
 import { computeBehaviorProgress } from '@/utils/behaviorProgress';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router as expoRouter,useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import {
 Award,
 BookOpen,
@@ -42,7 +42,7 @@ FadeInUp,
 ZoomIn
 } from 'react-native-reanimated';
 import { ColorScheme } from '@/constants/themeSchemes';
-import { SafeAreaView, useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface AchievementCardData {
   label: string;
@@ -54,7 +54,7 @@ interface AchievementCardData {
 
 type ProfileStyles = ReturnType<typeof useStyles>;
 
-function AnimatedAchievementCard({ card, index, styles, _COLORS }: Readonly<{ card: AchievementCardData; index: number; styles: ProfileStyles; _COLORS?: ColorScheme['colors'] }>) {
+function AnimatedAchievementCard({ card, index, styles }: Readonly<{ card: AchievementCardData; index: number; styles: ProfileStyles }>) {
   const entrance = useEntranceSequence(index, 120, 70);
   const glowStyle = useGlowPulse(0.85, 1, 2000 + index * 300);
 
@@ -360,11 +360,10 @@ export default function ProfileScreen() {
   const COLORS = currentTheme.colors;
   const { profile, stories, quizAttempts, isLoading, error, refreshAll } = useApp();
   const { wakeUI } = useUI();
-  const insets = useSafeAreaInsets();
   const { width: winWidth } = useWindowDimensions();
   const isTablet = winWidth >= BREAKPOINTS.tablet;
   const isDesktop = winWidth >= BREAKPOINTS.desktop;
-  const styles = useStyles(COLORS, insets, isTablet, isDesktop);
+  const styles = useStyles(COLORS, isTablet, isDesktop);
 
   const stats = useMemo(() => computeQuizStats(quizAttempts), [quizAttempts]);
   const streak = useMemo(() => computeStreak(stories), [stories]);
@@ -514,8 +513,8 @@ export default function ProfileScreen() {
   );
 }
 
-const useStyles = (C: ColorScheme['colors'], _insets: EdgeInsets, isTablet: boolean, isDesktop: boolean) => {
-  return useMemo(() => StyleSheet.create({
+const useStyles = (C: ColorScheme['colors'], isTablet: boolean, isDesktop: boolean) => {
+  return StyleSheet.create({
     container: { flex: 1 },
     loadingWrap: { padding: SPACING.xl },
     scroll: {
@@ -755,5 +754,5 @@ const useStyles = (C: ColorScheme['colors'], _insets: EdgeInsets, isTablet: bool
       width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.25)',
       alignItems: 'center', justifyContent: 'center',
     },
-  }), [isTablet, isDesktop]);
+  });
 };
