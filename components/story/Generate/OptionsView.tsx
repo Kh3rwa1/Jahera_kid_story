@@ -47,7 +47,9 @@ const LENGTH_LABELS: Record<'short'|'medium'|'long', {label: string; desc: strin
 
 export function OptionsView(props: Readonly<OptionsViewProps>) {
   const { width: winWidth } = useWindowDimensions();
-  const CARD_SIZE = (winWidth - SPACING.xl * 2 - SPACING.sm * 3) / 4;
+  const GRID_GAP = 12;
+  const PADDING_TOTAL = 48; // 24 * 2
+  const CARD_SIZE = (winWidth - PADDING_TOTAL - (GRID_GAP * 2)) / 3;
   const isPro = props.isPremium || props.subscription?.plan !== 'free';
   const selectedThemeObj = THEMES.find(t => t.id === props.selectedTheme)!;
 
@@ -55,15 +57,16 @@ export function OptionsView(props: Readonly<OptionsViewProps>) {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.topBar}>
-          <TouchableOpacity onPress={props.onBack} style={[styles.backBtn, { backgroundColor: props.colors.cardBackground }]}><ChevronLeft size={22} color={props.colors.text.primary} /></TouchableOpacity>
-          <View style={[styles.locationPill, { backgroundColor: props.colors.info + '10', borderColor: props.colors.info + '30' }]}><MapPin size={12} color={props.colors.info} /><Text style={[styles.locationText, { color: props.colors.info }]}>{props.locationLabel || 'Location unavailable'}</Text></View>
+          <TouchableOpacity onPress={props.onBack} style={[styles.backBtn, { backgroundColor: props.colors.cardBackground }]}>
+            <ChevronLeft size={24} color={props.colors.text.primary} />
+          </TouchableOpacity>
         </View>
 
         <Section title="🎯 What should today's story teach?" colors={props.colors}>
           <BehaviorGoalPicker selectedGoal={props.selectedBehaviorGoal} onSelect={props.onBehaviorGoalChange} isPremium={isPro} />
         </Section>
 
-        <Section title="🌍 Pick a story world" colors={props.colors} badge={`${selectedThemeObj.emoji} ${selectedThemeObj.label}`} badgeColor={selectedThemeObj.gradient[0]}>
+        <Section title="🌍 Pick a story world" colors={props.colors}>
           <View style={styles.themeGrid}>{THEMES.map(theme => <ThemeCard key={theme.id} theme={theme} selected={props.selectedTheme===theme.id} size={CARD_SIZE} colors={props.colors} onPress={() => props.setSelectedTheme(theme.id)} />)}</View>
         </Section>
 
@@ -135,4 +138,35 @@ interface LanguagePillProps {
 }
 function LanguagePill({ lang, selected, colors, onPress }: Readonly<LanguagePillProps>) { return <TouchableOpacity onPress={() => { hapticFeedback.light(); onPress(); }}><View style={[styles.langPill,{ backgroundColor:selected?colors.primary:colors.cardBackground, borderColor:selected?colors.primary:colors.text.light+'20' }]}><Text style={styles.langFlag}>{lang.flag}</Text><Text style={[styles.langName,{ color:selected?'#FFF':colors.text.primary }]}>{lang.nativeName}</Text>{selected ? <Check size={14} color="#FFF"/> : null}</View></TouchableOpacity>; }
 
-const styles = StyleSheet.create({ container:{flex:1}, scroll:{paddingBottom:60}, topBar:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:20,marginVertical:20}, backBtn:{width:44,height:44,borderRadius:22,alignItems:'center',justifyContent:'center',...SHADOWS.sm}, locationPill:{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:12,paddingVertical:8,borderRadius:20,borderWidth:1}, locationText:{fontSize:13,fontFamily:FONTS.semibold}, section:{marginBottom:28}, sectionHead:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:20,marginBottom:16}, sectionLabel:{fontSize:13,fontFamily:FONTS.bold}, sectionBadge:{paddingHorizontal:12,paddingVertical:6,borderRadius:15}, themeGrid:{flexDirection:'row',flexWrap:'wrap',gap:10,paddingHorizontal:20}, themeCard:{borderRadius:20,borderWidth:2,overflow:'hidden'}, themeCardInner:{flex:1,alignItems:'center',justifyContent:'center',padding:10}, themeEmoji:{fontSize:28,marginBottom:4}, themeLabel:{fontSize:12,fontFamily:FONTS.bold}, moodRow:{flexDirection:'row',gap:10,paddingHorizontal:20}, moodCard:{alignItems:'center',paddingVertical:16,borderRadius:20,borderWidth:2,gap:4,...SHADOWS.xs}, moodEmoji:{fontSize:32}, moodLabel:{fontSize:15,fontFamily:FONTS.bold}, lengthRow:{flexDirection:'row',gap:10,paddingHorizontal:20}, lengthCard:{alignItems:'center',paddingVertical:20,borderRadius:20,borderWidth:2,gap:4,position:'relative'}, proBadge:{position:'absolute',top:-10,right:10,backgroundColor:'#F59E0B',paddingHorizontal:6,paddingVertical:2,borderRadius:10}, proText:{fontSize:9,fontFamily:FONTS.bold,color:'#FFF'}, lengthEmoji:{fontSize:28}, lengthTitle:{fontSize:14,fontFamily:FONTS.bold,textAlign:'center'}, lengthDesc:{fontSize:11,fontFamily:FONTS.medium,textAlign:'center'}, langScroll:{paddingHorizontal:20,gap:10}, langPill:{flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:16,paddingVertical:10,borderRadius:25,borderWidth:1.5}, langFlag:{fontSize:18}, langName:{fontSize:14,fontFamily:FONTS.bold}, characterSection:{paddingVertical:10}, footer:{padding:25,alignItems:'center',gap:16} });
+const styles = StyleSheet.create({ 
+  container:{flex:1}, 
+  scroll:{paddingBottom:60}, 
+  topBar:{flexDirection:'row',alignItems:'center',paddingHorizontal:20,marginTop:20,marginBottom:10}, 
+  backBtn:{width:48,height:48,borderRadius:24,alignItems:'center',justifyContent:'center',...SHADOWS.sm}, 
+  section:{marginBottom:32}, 
+  sectionHead:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:24,marginBottom:16}, 
+  sectionLabel:{fontSize:14,fontFamily:FONTS.bold,textTransform:'uppercase',letterSpacing:1,opacity:0.6}, 
+  sectionBadge:{paddingHorizontal:12,paddingVertical:6,borderRadius:15}, 
+  themeGrid:{flexDirection:'row',flexWrap:'wrap',gap:12,paddingHorizontal:24,justifyContent:'flex-start'}, 
+  themeCard:{borderRadius:24,borderWidth:2,overflow:'hidden',...SHADOWS.sm}, 
+  themeCardInner:{flex:1,alignItems:'center',justifyContent:'center',padding:8}, 
+  themeEmoji:{fontSize:32,marginBottom:6}, 
+  themeLabel:{fontSize:13,fontFamily:FONTS.bold,textAlign:'center'}, 
+  moodRow:{flexDirection:'row',gap:12,paddingHorizontal:24}, 
+  moodCard:{alignItems:'center',paddingVertical:20,borderRadius:24,borderWidth:2,gap:4,...SHADOWS.xs}, 
+  moodEmoji:{fontSize:36}, 
+  moodLabel:{fontSize:16,fontFamily:FONTS.bold}, 
+  lengthRow:{flexDirection:'row',gap:12,paddingHorizontal:24}, 
+  lengthCard:{alignItems:'center',paddingVertical:24,borderRadius:24,borderWidth:2,gap:6,position:'relative'}, 
+  proBadge:{position:'absolute',top:-12,right:12,backgroundColor:'#F59E0B',paddingHorizontal:8,paddingVertical:4,borderRadius:12}, 
+  proText:{fontSize:10,fontFamily:FONTS.bold,color:'#FFF'}, 
+  lengthEmoji:{fontSize:32}, 
+  lengthTitle:{fontSize:15,fontFamily:FONTS.bold,textAlign:'center'}, 
+  lengthDesc:{fontSize:12,fontFamily:FONTS.medium,textAlign:'center',paddingHorizontal:4}, 
+  langScroll:{paddingHorizontal:24,gap:12}, 
+  langPill:{flexDirection:'row',alignItems:'center',gap:10,paddingHorizontal:18,paddingVertical:12,borderRadius:28,borderWidth:2}, 
+  langFlag:{fontSize:20}, 
+  langName:{fontSize:15,fontFamily:FONTS.bold}, 
+  characterSection:{paddingVertical:16}, 
+  footer:{padding:32,alignItems:'center',gap:16} 
+});

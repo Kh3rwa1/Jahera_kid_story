@@ -1,5 +1,5 @@
 import { COLLECTIONS,DATABASE_ID,databases,ID,Query } from '@/lib/appwrite';
-import { PlanType,revenueCatService } from '@/services/revenueCatService';
+import { PlanType, revenueCatService } from '@/services/revenueCatServiceInternal';
 import { Streak,SubscriptionStatus } from '@/types/database';
 import { logger } from '@/utils/logger';
 

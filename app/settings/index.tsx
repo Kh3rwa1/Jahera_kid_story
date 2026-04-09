@@ -1,7 +1,7 @@
 import { BORDER_RADIUS,FONT_SIZES,FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { revenueCatService } from '@/services/revenueCatService';
+import { revenueCatService } from '@/services/revenueCatServiceInternal';
 import { subscriptionService } from '@/services/subscriptionService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -184,7 +184,7 @@ export default function SettingsScreen() {
         {!isPro && (
           <TouchableOpacity onPress={() => router.push('/paywall')} activeOpacity={0.9}>
             <LinearGradient
-              colors={C.gradients.sunset}
+              colors={C?.gradients?.sunset || ['#F43F5E', '#FB923C']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.upgradeBanner}>
@@ -205,7 +205,7 @@ export default function SettingsScreen() {
         {isPro && (
           <TouchableOpacity onPress={handleManageSubscription} activeOpacity={0.9}>
             <LinearGradient
-              colors={C.gradients.sunset}
+              colors={C?.gradients?.sunset || ['#F43F5E', '#FB923C']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.proBanner}>
@@ -229,7 +229,7 @@ export default function SettingsScreen() {
               onPress={() => router.push(item.route as any)}
               activeOpacity={0.7}>
               <LinearGradient
-                colors={item.gradient}
+                colors={item.gradient || ['#CCC', '#999']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.iconContainer}>
@@ -355,7 +355,7 @@ const useStyles = (C: any, insets: any) => {
     infoBox: {
       flexDirection: 'row', padding: SPACING.lg,
       borderRadius: BORDER_RADIUS.lg, gap: SPACING.md, alignItems: 'center',
-      backgroundColor: C.gradients.primary[0] + '15',
+      backgroundColor: (C?.gradients?.primary?.[0] || '#6366f1') + '15',
     },
     infoContent: { flex: 1 },
     infoTitle: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semibold, color: C.text.primary, marginBottom: SPACING.xs },

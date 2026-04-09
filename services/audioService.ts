@@ -7,6 +7,7 @@ export interface AudioSettings {
   similarity?: number | null;
   style?: number | null;
   speakerBoost?: boolean | null;
+  gender?: 'male' | 'female' | null;
 }
 
 /**
@@ -37,26 +38,38 @@ export async function generateAudio(
     const isNarration = !storyId;
     console.log(`[audioService] Triggering audio generation. storyId: ${storyId}, lang: ${languageCode}, isNarration: ${isNarration}`);
     
-    // Always use async — responseBody is always empty for client SDK calls
-    await functions.createExecution({
+    // Use sync for narrations (shorter, expected immediately)
+    // Use async for stories (longer, background generation)
+    const execution = await functions.createExecution({
       functionId: 'generate-audio',
       body: JSON.stringify({ 
         text, 
         languageCode, 
         storyId, 
-        noStore: isNarration ? false : noStore,
+        noStore: isNarration ? true : noStore, // Use noStore for narrations to get Base64 back
         ...settings 
       }),
-      async: true
+      async: !isNarration 
     });
 
-    // For narrations: poll Appwrite Storage using the deterministic file key
+    // For narrations: handle immediate response (Base64)
+    if (isNarration && execution.responseBody) {
+      try {
+        const body = JSON.parse(execution.responseBody);
+        if (body.success && body.base64) {
+          // In Expo, we can play Base64 by converting to a data URI or temporary file
+          // Data URI is simpler for short previews
+          return `data:audio/mpeg;base64,${body.base64}`;
+        }
+      } catch (e) {
+        console.error('[audioService] Failed to parse narration response:', e);
+      }
+    }
+
+    // Fallback polling for narrations if sync failed or returned empty
     if (isNarration) {
-      console.log(`[audioService] Narration: waiting for Storage bucket...`);
-      // Wait for function to likely complete (Edge TTS is fast for short strings)
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      // After waiting, return null — narration is best-effort and non-blocking
-      console.log('[audioService] Narration: skipping wait, returning null (non-blocking)');
+      console.log('[audioService] Narration: sync response empty, falling back to delay');
+      await new Promise(resolve => setTimeout(resolve, 3000));
       return null;
     }
 

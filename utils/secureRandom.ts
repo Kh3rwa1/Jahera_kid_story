@@ -1,17 +1,16 @@
 const UINT32_MAX = 0x100000000;
 
-function getCrypto(): Crypto {
-  const cryptoRef = globalThis.crypto;
-  if (!cryptoRef?.getRandomValues) {
-    throw new Error('Secure random generator is unavailable on this platform.');
-  }
-  return cryptoRef;
-}
-
 function randomUint32(): number {
   const arr = new Uint32Array(1);
-  getCrypto().getRandomValues(arr);
-  return arr[0];
+  const cryptoRef = globalThis.crypto;
+  
+  if (cryptoRef?.getRandomValues) {
+    cryptoRef.getRandomValues(arr);
+    return arr[0];
+  }
+
+  // Non-secure fallback for UI/non-critical random needs
+  return Math.floor(Math.random() * UINT32_MAX);
 }
 
 export function randomFloat(min = 0, max = 1): number {
