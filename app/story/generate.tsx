@@ -98,7 +98,7 @@ export default function GenerateStoryScreen() {
         steps={steps}
         locationCtx={locationCtx}
         languageCode={selectedLanguage}
-        profile={profile}
+        profile={profile as any}
       />
     );
   }

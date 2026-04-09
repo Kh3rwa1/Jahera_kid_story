@@ -27,7 +27,8 @@ withSequence,
 withSpring,
 withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { EdgeInsets,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ColorScheme } from '@/constants/themeSchemes';
 
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -46,8 +47,8 @@ const ThemeCard = React.memo(({
   onPress: () => void;
   index: number;
   winWidth: number;
-  styles: any;
-  C: any;
+  styles: ReturnType<typeof useStyles>;
+  C: ColorScheme['colors'];
 }) => {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -148,10 +149,10 @@ const IconCard = React.memo(({
   icon: (typeof APP_ICONS)[0];
   isSelected: boolean;
   onPress: () => void;
-  C: any;
+  C: ColorScheme['colors'];
   index: number;
   winWidth: number;
-  styles: any;
+  styles: ReturnType<typeof useStyles>;
 }) => {
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
@@ -226,7 +227,7 @@ function SectionLabel({
   label: string;
   color: string;
   delay?: number;
-  styles: any;
+  styles: ReturnType<typeof useStyles>;
 }>) {
   return (
     <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.sectionLabel}>
@@ -542,7 +543,7 @@ export default function CustomizationScreen() {
   );
 }
 
-const useStyles = (C: any, insets: any) => {
+const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets) => {
   return React.useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: C.background },
     header: {
@@ -651,5 +652,5 @@ const useStyles = (C: any, insets: any) => {
       borderWidth: 1, borderColor: C.primary + '20',
     },
     footerNoteText: { fontSize: 12, fontFamily: FONTS.medium, color: C.text.secondary },
-  }), [C, insets]);
+  }), [C]);
 };

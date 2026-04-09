@@ -53,14 +53,14 @@ export default function RootLayout() {
       // 1. RevenueCat Configuration (Critical for Pro features)
       try {
         await revenueCatService.configure();
-      } catch (e) {
-        logger.warn('[RootLayout] RevenueCat init failed (Bridge may be missing):', e);
+      } catch (err) {
+        logger.warn('[RootLayout] RevenueCat init failed (Bridge may be missing):', err);
       }
 
       // 2. Video Caching (Non-critical, run background)
       try {
         videoCacheService.prefetch().catch(() => {});
-      } catch (e) {
+      } catch {
         logger.debug('[RootLayout] Video prefetch skip');
       }
 
@@ -75,7 +75,7 @@ export default function RootLayout() {
             }, 3000);
           }
         }
-      } catch (e) {
+      } catch {
         logger.debug('[RootLayout] Reminder init skip');
       }
     };
@@ -108,6 +108,11 @@ export default function RootLayout() {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
+    // Safety timeout: Never stay on splash screen longer than 5 seconds
+    const safety = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 5000);
+    return () => clearTimeout(safety);
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) {

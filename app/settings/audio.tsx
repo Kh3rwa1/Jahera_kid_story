@@ -88,7 +88,7 @@ export default function AudioSettingsScreen() {
         updateProfile(updates);
         Alert.alert('Success', 'Audio settings saved successfully!');
       }
-    } catch (error) {
+    } catch (_error) {
       Alert.alert('Error', 'Failed to save settings. Please try again.');
     } finally {
       setIsSaving(false);
@@ -339,7 +339,7 @@ export default function AudioSettingsScreen() {
   );
 }
 
-const useStyles = (C: any, insets: any) => {
+const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets) => {
   return React.useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: C.background },
     header: {
@@ -425,5 +425,5 @@ const useStyles = (C: any, insets: any) => {
     mainSaveButton: { marginTop: SPACING.xxl, height: 60, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', ...SHADOWS.lg },
     mainSaveGradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     mainSaveText: { fontSize: 18, fontFamily: FONTS.bold, color: '#FFFFFF' },
-  }), [C, insets]);
+  }), [C]);
 };

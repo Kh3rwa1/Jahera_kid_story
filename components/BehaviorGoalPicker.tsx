@@ -31,7 +31,7 @@ const GoalCard = memo(({
   goal: BehaviorGoal; 
   isSelected: boolean; 
   isLocked: boolean;
-  colors: any;
+  colors: Record<string, any>;
   isTablet: boolean;
   onPress: () => void;
 }) => {
@@ -109,6 +109,8 @@ const GoalCard = memo(({
     </TouchableOpacity>
   );
 });
+
+GoalCard.displayName = 'GoalCard';
 
 export const BehaviorGoalPicker = ({ selectedGoal, onSelect, isPremium }: Readonly<BehaviorGoalPickerProps>) => {
   const { currentTheme } = useTheme();

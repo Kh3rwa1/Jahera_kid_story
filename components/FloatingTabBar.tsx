@@ -54,7 +54,7 @@ function TabItem({
       stiffness: 300,
       mass: 0.8,
     });
-  }, [focused]);
+  }, [focused, progress]);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [
@@ -105,7 +105,7 @@ export function FloatingTabBar({
   const router = useRouter();
 
   const { activeStory, isPlaying, playPause, isBuffering, audioPolling } = useAudio();
-  const { isUIDormant } = useUI();
+  const { isUIDormant, wakeUI } = useUI();
   const { position } = useAudioProgress();
 
   const hasStarted = isPlaying || isBuffering || audioPolling || position > 0;
@@ -124,7 +124,7 @@ export function FloatingTabBar({
       damping: 20,
       stiffness: 300,
     });
-  }, [showPlayer]);
+  }, [showPlayer, modeProgress]);
 
   const handleTabPress = (route: string) => {
     hapticFeedback.selection();
@@ -142,7 +142,7 @@ export function FloatingTabBar({
       stiffness: 350,
       mass: 0.6,
     });
-  }, [safeActiveIndex, TAB_WIDTH]);
+  }), [safeActiveIndex, TAB_WIDTH]);
 
   const pillStyle = useAnimatedStyle(() => {
     // When in player mode, the pill expands to fill the entire bar
@@ -184,7 +184,13 @@ export function FloatingTabBar({
     >
       <View style={[styles.glowHalo, { backgroundColor: glowColor, width: HALO_SIZE }]} />
 
-      <View
+      <Pressable
+        onPress={() => {
+          if (showPlayer) {
+            hapticFeedback.light();
+            wakeUI();
+          }
+        }}
         style={[
           styles.barContainer,
           {
@@ -223,7 +229,7 @@ export function FloatingTabBar({
           style={[StyleSheet.absoluteFill, tabsContainerStyle, { justifyContent: 'center' }]}
         >
           <View style={styles.tabsRow}>
-            {TABS.map((tab, index) => (
+            {TABS.map((tab) => (
               <TabItem
                 key={tab.name}
                 tab={tab}
@@ -283,7 +289,7 @@ export function FloatingTabBar({
           {/* Mini progress bar at the bottom */}
           <MiniProgressBar color={COLORS.primary} />
         </Animated.View>
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -307,6 +313,8 @@ const MiniProgressBar = React.memo(({ color }: { color: string }) => {
     </View>
   );
 });
+
+MiniProgressBar.displayName = 'MiniProgressBar';
 
 const styles = StyleSheet.create({
   wrapper: {

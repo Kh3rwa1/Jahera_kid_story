@@ -108,7 +108,13 @@ export const revenueCatService = {
         : _isConfigured;
       
       if (!alreadySet && p.configure) {
-        await p.configure({ apiKey });
+        // Use a timeout to avoid blocking the app indefinitely if the bridge hangs
+        await Promise.race([
+          p.configure({ apiKey }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('RC_TIMEOUT')), 3000))
+        ]).catch(() => {
+          logger.debug('[RevenueCat] configure timed out');
+        });
         _isConfigured = true;
       }
 

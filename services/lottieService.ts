@@ -1,8 +1,8 @@
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import * as ExpoFileSystem from 'expo-file-system';
 import { logger } from '@/utils/logger';
 
-const LOTTIE_CACHE_DIR = Platform.OS !== 'web' ? `${FileSystem.cacheDirectory}lottie_assets/` : '';
+const LOTTIE_CACHE_DIR = Platform.OS !== 'web' ? `${ExpoFileSystem.cacheDirectory}lottie_assets/` : '';
 
 /**
  * Builds a public Appwrite file view URL for a given behavior ID.
@@ -46,15 +46,15 @@ export async function ensureLottieAsset(sourceUrl: string, behaviorId: string, f
     }
 
     // 2. On Native, we use FileSystem for persistent caching
-    const dirInfo = await FileSystem.getInfoAsync(LOTTIE_CACHE_DIR);
+    const dirInfo = await ExpoFileSystem.getInfoAsync(LOTTIE_CACHE_DIR);
     if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(LOTTIE_CACHE_DIR, { intermediates: true });
+      await ExpoFileSystem.makeDirectoryAsync(LOTTIE_CACHE_DIR, { intermediates: true });
     }
 
     const filename = `${behaviorId}.json`;
     const localUri = `${LOTTIE_CACHE_DIR}${filename}`;
 
-    const fileInfo = await FileSystem.getInfoAsync(localUri);
+    const fileInfo = await ExpoFileSystem.getInfoAsync(localUri);
     if (fileInfo.exists && !forceRefresh) {
       return { uri: localUri };
     }
@@ -62,7 +62,7 @@ export async function ensureLottieAsset(sourceUrl: string, behaviorId: string, f
     logger.debug(`[LottieService] ${forceRefresh ? 'Refreshing' : 'Fetching'} asset for ${behaviorId}: ${sourceUrl}`);
     
     // Download and verify
-    const { uri, status } = await FileSystem.downloadAsync(sourceUrl, localUri);
+    const { uri, status } = await ExpoFileSystem.downloadAsync(sourceUrl, localUri);
     
     if (status !== 200) {
       throw new Error(`Download failed with status ${status}`);
@@ -74,8 +74,8 @@ export async function ensureLottieAsset(sourceUrl: string, behaviorId: string, f
     
     if (Platform.OS !== 'web') {
       const localUri = `${LOTTIE_CACHE_DIR}${behaviorId}.json`;
-      const fileInfo = await FileSystem.getInfoAsync(localUri);
-      return (fileInfo as any)?.exists ? { uri: localUri } : null;
+      const fileInfo = await ExpoFileSystem.getInfoAsync(localUri);
+      return fileInfo.exists ? { uri: localUri } : null;
     }
     
     return null;
@@ -87,7 +87,7 @@ export async function ensureLottieAsset(sourceUrl: string, behaviorId: string, f
  */
 export async function clearLottieCache(): Promise<void> {
   try {
-    await FileSystem.deleteAsync(LOTTIE_CACHE_DIR, { idempotent: true });
+    await ExpoFileSystem.deleteAsync(LOTTIE_CACHE_DIR, { idempotent: true });
     logger.info('[LottieService] Cache cleared');
   } catch (error) {
     logger.error('[LottieService] Clear cache error:', error);

@@ -12,7 +12,7 @@ withSequence,
 withTiming,
 } from 'react-native-reanimated';
 
-const BUBBLE_COLORS: ReadonlyArray<readonly [string, string]> = [
+const BUBBLE_COLORS: readonly (readonly [string, string])[] = [
   ['rgba(255, 182, 193, 0.45)', 'rgba(255, 182, 193, 0)'],
   ['rgba(152, 251, 152, 0.35)', 'rgba(152, 251, 152, 0)'],
   ['rgba(135, 206, 250, 0.4)', 'rgba(135, 206, 250, 0)'],
@@ -22,7 +22,7 @@ const BUBBLE_COLORS: ReadonlyArray<readonly [string, string]> = [
   ['rgba(100, 220, 220, 0.35)', 'rgba(100, 220, 220, 0)'],
 ];
 
-const CLOUD_COLORS: ReadonlyArray<readonly [string, string, string]> = [
+const CLOUD_COLORS: readonly (readonly [string, string, string])[] = [
   ['rgba(255, 240, 245, 0.55)', 'rgba(255, 220, 235, 0.35)', 'rgba(255, 240, 245, 0)'],
   ['rgba(240, 255, 245, 0.5)', 'rgba(200, 240, 220, 0.3)', 'rgba(240, 255, 245, 0)'],
   ['rgba(240, 248, 255, 0.55)', 'rgba(200, 225, 255, 0.32)', 'rgba(240, 248, 255, 0)'],
@@ -84,7 +84,7 @@ const FloatingBubble: React.FC<{ bubble: Bubble; winHeight: number }> = React.me
         false
       )
     );
-  }, [winHeight, bubble.delay, bubble.duration, bubble.swayAmount]);
+  }, [winHeight, bubble.delay, bubble.duration, bubble.swayAmount, opacity, translateY, translateX]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [
@@ -142,7 +142,7 @@ const DriftingCloud: React.FC<{ cloud: Cloud; winWidth: number }> = React.memo((
         false
       )
     );
-  }, [winWidth, cloud.delay, cloud.duration, cloud.width]);
+  }, [winWidth, cloud.delay, cloud.duration, cloud.width, opacity, translateX]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],

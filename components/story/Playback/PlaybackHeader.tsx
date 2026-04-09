@@ -27,7 +27,7 @@ interface PlaybackHeaderProps {
 }
 
 export function PlaybackHeader({
-  tab,
+  tab: _tab,
   onTabChange,
   onBack,
   onShare,

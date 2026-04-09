@@ -53,7 +53,7 @@ export default function StoryPlaybackScreen() {
     activeParaIndex
   } = useWordHighlighting(story?.content ?? '', position, duration);
 
-  const themeObj = THEMES.find((t: any) => t.id === story?.theme);
+  const themeObj = THEMES.find((t) => t.id === story?.theme);
   const accentColor = useMemo(() => themeObj?.gradient[0] || colors.primary, [themeObj, colors.primary]);
   const themeGradient = useMemo(() => [accentColor + '44', accentColor + '22', colors.background] as const, [accentColor, colors.background]);
 
@@ -84,7 +84,6 @@ export default function StoryPlaybackScreen() {
       <View style={styles.audioContent}>
         <AudioControls 
           accentColor={accentColor} 
-          themeGradient={themeGradient}
           colors={colors}
         />
 

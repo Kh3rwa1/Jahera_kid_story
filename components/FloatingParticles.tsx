@@ -1,15 +1,15 @@
-import { randomChoice,randomFloat } from '@/utils/secureRandom';
+import { randomChoice, randomFloat } from '@/utils/secureRandom';
 import { LinearGradient } from 'expo-linear-gradient';
-import React,{ useEffect } from 'react';
-import { StyleSheet,useWindowDimensions,View } from 'react-native';
-import Animated,{
-Easing,
-useAnimatedStyle,
-useSharedValue,
-withDelay,
-withRepeat,
-withSequence,
-withTiming,
+import React, { useEffect } from 'react';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 
 interface Particle {
@@ -65,7 +65,7 @@ const FloatingParticle: React.FC<{ particle: Particle; winHeight: number }> = ({
         false
       )
     );
-  }, [winHeight, particle.delay, particle.duration]);
+  }, [winHeight, particle.delay, particle.duration, opacity, scale, translateY, translateX]);
 
   const animatedStyle = useAnimatedStyle(() => {
     'worklet';
@@ -104,7 +104,7 @@ const FloatingParticle: React.FC<{ particle: Particle; winHeight: number }> = ({
 
 interface FloatingParticlesProps {
   count?: number;
-  colors?: ReadonlyArray<readonly [string, string, ...string[]]>;
+  colors?: readonly (readonly [string, string, ...string[]])[];
 }
 
 export const FloatingParticles: React.FC<FloatingParticlesProps> = ({

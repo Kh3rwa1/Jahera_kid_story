@@ -35,7 +35,7 @@ ZoomIn
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-function ProgressDot({ active, styles }: Readonly<{ active: boolean; styles: any }>) {
+function ProgressDot({ active, styles }: Readonly<{ active: boolean; styles: ReturnType<typeof useStyles> }>) {
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: active ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
     transform: [{ scale: withSpring(active ? 1.2 : 1) }],
@@ -51,7 +51,7 @@ export default function LanguageSelection() {
   const { width: winWidth } = useWindowDimensions();
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
-  const styles = useStyles(C, insets, winWidth);
+  const styles = useStyles(C);
   const { speak } = useNarrationAudio('language-selection');
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -383,7 +383,7 @@ export default function LanguageSelection() {
   );
 }
 
-const useStyles = (C: any, insets: any, winWidth: number) => {
+const useStyles = (C: ColorScheme['colors']) => {
   return useMemo(() => StyleSheet.create({
     root: { flex: 1, backgroundColor: '#000' },
     scroll: { flex: 1 },
@@ -702,5 +702,5 @@ const useStyles = (C: any, insets: any, winWidth: number) => {
        justifyContent: 'center',
        marginLeft: 4,
     },
-  }), [C, insets]);
+  }), [C]);
 };

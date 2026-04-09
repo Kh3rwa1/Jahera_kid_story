@@ -49,9 +49,7 @@ ZoomIn,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets,type EdgeInsets } from 'react-native-safe-area-context';
 
-// Responsive constants - Denser for premium agency look
 const COLUMN_GAP = 12;
-const PAGE_PADDING = 20;
 
 type SortOption = 'newest' | 'oldest' | 'language';
 type ViewMode = 'grid' | 'list';
@@ -74,7 +72,7 @@ function AnimatedFilterChip({ label, flag, active, COLORS, styles, onPress, inde
 
   useEffect(() => {
     scale.value = withSpring(active ? 1.05 : 1, { damping: 12 });
-  }, [active]);
+  }, [active, scale]);
 
   const handlePress = () => {
     hapticFeedback.light();
@@ -219,7 +217,7 @@ export default function HistoryScreen() {
   const isTablet = winWidth >= BREAKPOINTS.tablet;
   const isDesktop = winWidth >= BREAKPOINTS.desktop;
 
-  const styles = useStyles(COLORS, insets, isTablet, isDesktop, winWidth);
+  const styles = useStyles(COLORS, insets, isTablet, isDesktop);
 
   const featuredPulseStyle = usePulse(0.98, 1.02);
   const emptyFloatStyle = useFloat(6, 1500);
@@ -245,20 +243,19 @@ export default function HistoryScreen() {
     [router]
   );
 
-  const storyList = stories || [];
   const languages = useMemo(
-    () => Array.from(new Set(storyList.map(s => s.language_code))),
-    [storyList]
+    () => Array.from(new Set((stories || []).map(s => s.language_code))),
+    [stories]
   );
 
   const filteredStories = useMemo(
-    () => filterAndSortStories(storyList, selectedLanguage, searchQuery, sortBy),
-    [storyList, selectedLanguage, searchQuery, sortBy]
+    () => filterAndSortStories(stories || [], selectedLanguage, searchQuery, sortBy),
+    [stories, selectedLanguage, searchQuery, sortBy]
   );
 
   const featuredStory = useMemo(
-    () => (storyList.length > 0 && !searchQuery && !selectedLanguage ? storyList[0] : null),
-    [storyList, searchQuery, selectedLanguage]
+    () => ((stories || []).length > 0 && !searchQuery && !selectedLanguage ? stories[0] : null),
+    [stories, searchQuery, selectedLanguage]
   );
 
   if (isLoading) {
@@ -760,7 +757,7 @@ const buildFeaturedContentStyles = (isTablet: boolean) => ({
   },
 });
 
-const buildFeaturedMetaStyles = (isTablet: boolean) => ({
+const buildFeaturedMetaStyles = (_isTablet: boolean) => ({
   wordCountText: {
     fontSize: 14,
     fontFamily: FONTS.displayMedium,

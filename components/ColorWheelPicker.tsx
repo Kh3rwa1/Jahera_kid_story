@@ -30,9 +30,9 @@ const HEX_COLOR_REGEX = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
 function hexToHsl(hex: string): [number, number, number] {
   const result = HEX_COLOR_REGEX.exec(hex);
   if (!result) return [0, 70, 50];
-  let r = Number.parseInt(result[1], 16) / 255;
-  let g = Number.parseInt(result[2], 16) / 255;
-  let b = Number.parseInt(result[3], 16) / 255;
+  const r = Number.parseInt(result[1], 16) / 255;
+  const g = Number.parseInt(result[2], 16) / 255;
+  const b = Number.parseInt(result[3], 16) / 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
   let h = 0, s = 0;
   const l = (max + min) / 2;
@@ -105,7 +105,7 @@ export function ColorWheelPicker({
       const dx = x - WHEEL_RADIUS;
       const dy = y - WHEEL_RADIUS;
       const angle = Math.atan2(dy, dx);
-      let newHue = ((angle * 180) / Math.PI + 360) % 360;
+      const newHue = ((angle * 180) / Math.PI + 360) % 360;
       setHue(newHue);
       const hex = hslToHex(newHue, saturation, lightness);
       setSelectedColor(hex);

@@ -59,7 +59,7 @@ const FloatingOrb: React.FC<{ orb: Orb }> = React.memo(({ orb }) => {
         true
       )
     );
-  }, []);
+  }, [orb.delay, orb.moveRange, orb.duration, transX, transY, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [

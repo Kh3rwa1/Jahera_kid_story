@@ -70,7 +70,7 @@ interface SettingGroup {
 type ThemeColors = ReturnType<typeof useTheme>['currentTheme']['colors'];
 type SettingsStyles = ReturnType<typeof useStyles>;
 
-function RowItem({ row, COLORS, onPress, rowIndex, styles }: { row: SettingRow; COLORS: ThemeColors; onPress: () => void; rowIndex: number; styles: SettingsStyles }) {
+function RowItem({ row, COLORS, onPress, styles }: { row: SettingRow; COLORS: ThemeColors; onPress: () => void; styles: SettingsStyles }) {
   const scale = useSharedValue(1);
   const iconScale = useSharedValue(1);
   const rowStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -377,7 +377,6 @@ export default function SettingsTab() {
                     COLORS={COLORS}
                     styles={styles}
                     onPress={row.onPress ?? (() => row.route && router.push(row.route))}
-                    rowIndex={rIdx}
                   />
                   {rIdx < group.rows.length - 1 && (
                     <View style={[styles.divider, { backgroundColor: 'rgba(0,0,0,0.05)' }]} />
