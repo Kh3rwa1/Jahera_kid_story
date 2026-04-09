@@ -35,32 +35,33 @@ function useResolvedVideoSource(videoId: string, fallbackSource: any) {
     let isMounted = true;
 
     const resolve = async () => {
+      // 0. Guard for missing inputs
+      if (!videoId && !fallbackSource) {
+        if (isMounted) setIsResolving(false);
+        return;
+      }
+
       // 1. Try Appwrite server URL directly
-      try {
-        const url = getAppwriteVideoUrl(videoId);
-        logger.info('[VideoBackground] Using Appwrite URL:', url);
-
-        // Quick HEAD check to see if the file exists and is accessible
-        const response = await fetch(url, { method: 'HEAD' });
-        if (response.ok && isMounted) {
-          const contentLength = response.headers.get('content-length');
-          const size = contentLength ? parseInt(contentLength, 10) : 0;
-
-          // Only use if the file is a real video (> 500KB)
-          if (size > 500_000) {
-            setResolvedSource(url);
-            setIsResolving(false);
-            logger.info(`[VideoBackground] ✅ Appwrite video ready (${(size / 1024 / 1024).toFixed(1)}MB)`);
-            return;
+      if (videoId) {
+        try {
+          const url = getAppwriteVideoUrl(videoId);
+          const response = await fetch(url, { method: 'HEAD' });
+          if (response.ok && isMounted) {
+            const contentLength = response.headers.get('content-length');
+            const size = contentLength ? parseInt(contentLength, 10) : 0;
+            if (size > 20_000) {
+              setResolvedSource(url);
+              setIsResolving(false);
+              logger.debug(`[VideoBackground] Appwrite video ready (${(size / 1024).toFixed(1)}KB)`);
+              return;
+            }
           }
-          logger.warn(`[VideoBackground] Appwrite video too small (${size} bytes), using fallback`);
-        }
-      } catch (err) {
-        logger.warn('[VideoBackground] Appwrite URL check failed:', err);
+        } catch { /* Silent fail to fallback */ }
       }
 
       // 2. Resolve bundled fallback asset
-      if (fallbackSource) {
+      // fallbackSource must be a number (Resource ID from require())
+      if (typeof fallbackSource === 'number' && fallbackSource > 0) {
         try {
           const { Asset } = require('expo-asset');
           const [asset] = await Asset.loadAsync(fallbackSource);
@@ -75,10 +76,10 @@ function useResolvedVideoSource(videoId: string, fallbackSource: any) {
         }
       }
 
-      // 3. Nothing available
+      // 3. Final fallback
       if (isMounted) {
         setIsResolving(false);
-        logger.warn('[VideoBackground] No video source available');
+        logger.warn('[VideoBackground] No valid video source available');
       }
     };
 

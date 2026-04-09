@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { profileService,quizService,storyService } from '@/services/database';
-import { revenueCatService } from '@/services/revenueCatService';
+import { PlanType, revenueCatService } from '@/services/revenueCatServiceInternal';
 import { streakService,subscriptionService } from '@/services/subscriptionService';
 import { ProfileWithRelations,QuizAttempt,Story,Streak,SubscriptionStatus } from '@/types/database';
 import { handleError } from '@/utils/errorHandler';

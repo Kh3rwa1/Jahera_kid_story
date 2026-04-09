@@ -37,6 +37,8 @@ import { Container } from '@/components/Container';
 import { StatsTicker } from '@/components/StatsTicker';
 import { QuickActions } from '@/components/QuickActions';
 import { FloatAnim, HeroShimmer, AnimatedStreakChip } from '@/components/HomeVisuals';
+import { BehaviorBooster } from '@/components/BehaviorBooster';
+import { BehaviorProgressCard } from '@/components/BehaviorProgressCard';
 
 // Utils
 import { getLanguageFlag } from '@/utils/languageUtils';
@@ -233,34 +235,38 @@ export default function HomeScreen() {
             <View style={[styles.orb, styles.orbTL, { backgroundColor: 'rgba(255,255,255,0.12)' }]} /><View style={[styles.orb, styles.orbBR, { backgroundColor: 'rgba(0,0,0,0.06)' }]} />
             <View style={styles.heroBodyInner}>
               <View style={styles.heroMain}>
-                <View style={styles.heroBadge}><Sparkles size={isTablet ? 14 : 12} color="#FFF" /><Text style={styles.heroBadgeText}>Create Story</Text></View><Text style={[styles.heroSub, { opacity: 0.9 }]}>Choose a learning goal 🎯</Text>
+                <View style={[styles.heroBadge, { backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }]}><Sparkles size={12} color="#FFF" /><Text style={styles.heroBadgeText}>AI ADVENTURE</Text></View>
                 <Text style={styles.heroH1}>Magic Story Maker</Text>
-                <Text style={styles.heroSub}>Personalized stories that shape behavior, build confidence, and spark imagination</Text>
-                <Animated.View style={[styles.heroActionBtn, heroActionPulse]}><Wand2 size={isTablet ? 18 : 16} color="#0F172A" /><Text style={styles.heroActionBtnText}>Quick Story ⚡</Text></Animated.View>
+                <Text style={styles.heroSub}>Create a personalized journey where your child is the hero of the day</Text>
+                <Animated.View style={[styles.heroActionBtn, heroActionPulse]}>
+                   <View style={styles.heroActionInner}>
+                      <Wand2 size={18} color={C.primaryDark} strokeWidth={2.5} />
+                      <Text style={[styles.heroActionBtnText, { color: C.primaryDark }]}>Start Magic ⚡</Text>
+                   </View>
+                </Animated.View>
               </View>
-              <View style={styles.heroVisual}><FloatAnim><Text style={styles.heroLargeEmoji}>🧙‍♂️</Text></FloatAnim></View>
+              <View style={styles.heroVisual}>
+                <View style={styles.heroVisualOutline}>
+                   <FloatAnim><Text style={styles.heroLargeEmoji}>✨</Text></FloatAnim>
+                </View>
+              </View>
             </View>
-            <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.08)']} style={styles.heroStrip}>
-              <View style={styles.heroStripItem}><Clock size={isTablet ? 14 : 12} color="rgba(255,255,255,0.8)" /><Text style={styles.heroStripText}>2 min story</Text></View>
-              <View style={styles.heroStripDot} /><View style={styles.heroStripItem}><Award size={isTablet ? 14 : 12} color="rgba(255,255,255,0.8)" /><Text style={styles.heroStripText}>Earn badges</Text></View>
+            <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.1)']} style={styles.heroStrip}>
+              <View style={styles.heroStripItem}><Clock size={12} color="rgba(255,255,255,0.8)" /><Text style={styles.heroStripText}>2 min read</Text></View>
+              <View style={styles.heroStripDot} /><View style={styles.heroStripItem}><Award size={12} color="rgba(255,255,255,0.8)" /><Text style={styles.heroStripText}>Earn badges</Text></View>
             </LinearGradient>
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
 
+      <BehaviorBooster colors={C} profileId={profile.id} languageCode={profile.primary_language} />
+
       <QuickActions handleLastStory={handleLastStory} handleGenerateStory={handleGenerateStory} storiesCount={stories?.length || 0} textPrimary={C.text.primary} textSecondary={C.text.secondary} onLibrary={() => router.push('/(tabs)/history')} continueStory={continueStory} activeStoryId={activeStory?.id} isPlaying={isPlaying} playPause={playPause} styles={styles} />
+      
+      <BehaviorProgressCard stories={stories} compact />
+
       <StatsTicker stories={stories?.length || 0} languages={4} characters={(profile.family_members?.length || 0) + (profile.friends?.length || 0)} primaryColor={C.primary} cardBackground={C.cardBackground} textPrimary={C.text.primary} textSecondary={C.text.secondary} styles={styles} />
 
-      <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.discoverySection}>
-        <Text style={[styles.discoveryTitle, { color: C.text.light }]}>DISCOVER ADVENTURES</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.discoveryScroll}>
-          {DISCOVERY_TAGS.map((tag) => (
-            <TouchableOpacity key={tag.label} onPress={handleGenerateStory} activeOpacity={0.7} style={[styles.discoveryChip, { backgroundColor: C.cardBackground, borderColor: C.text.light + '15' }]}>
-              <Text style={styles.discoveryEmoji}>{tag.emoji}</Text><Text style={[styles.discoveryLabel, { color: C.text.primary }]}>{tag.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </Animated.View>
 
       <View style={styles.section}>
         <View style={styles.secHeader}>

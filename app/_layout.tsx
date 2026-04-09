@@ -6,9 +6,10 @@ import { ReadingPreferencesProvider } from '@/contexts/ReadingPreferencesContext
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { UIProvider } from '@/contexts/UIContext';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
-import { revenueCatService } from '@/services/revenueCatService';
+import { revenueCatService } from '@/services/revenueCatServiceInternal';
+import { logger } from '@/utils/logger';
 import { scheduleBedtimeReminder } from '@/services/notificationService';
-import { videoCacheService } from '@/services/videoCacheService';
+import { videoCacheService } from '@/services/videoCacheServiceInternal';
 import {
 AtkinsonHyperlegible_400Regular,
 AtkinsonHyperlegible_700Bold,
@@ -48,16 +49,40 @@ export default function RootLayout() {
   useFrameworkReady();
 
   useEffect(() => {
-    revenueCatService.configure();
-    videoCacheService.prefetch();
-    (async () => {
-      const raw = await AsyncStorage.getItem('jahera_bedtime_reminder');
-      if (!raw) return;
-      const data = JSON.parse(raw);
-      if (data?.enabled) {
-        await scheduleBedtimeReminder(data.hour ?? 20, data.minute ?? 30);
+    const initServices = async () => {
+      // 1. RevenueCat Configuration (Critical for Pro features)
+      try {
+        await revenueCatService.configure();
+      } catch (e) {
+        logger.warn('[RootLayout] RevenueCat init failed (Bridge may be missing):', e);
       }
-    })();
+
+      // 2. Video Caching (Non-critical, run background)
+      try {
+        videoCacheService.prefetch().catch(() => {});
+      } catch (e) {
+        logger.debug('[RootLayout] Video prefetch skip');
+      }
+
+      // 3. Bedtime Reminder Notifications (Non-critical, delay for interactivity)
+      try {
+        const raw = await AsyncStorage.getItem('jahera_bedtime_reminder');
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data?.enabled) {
+            setTimeout(() => {
+              scheduleBedtimeReminder(data.hour ?? 20, data.minute ?? 30).catch(() => {});
+            }, 3000);
+          }
+        }
+      } catch (e) {
+        logger.debug('[RootLayout] Reminder init skip');
+      }
+    };
+
+    // Use a small delay to let the initial font/component mount complete
+    const timer = setTimeout(initServices, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const [fontsLoaded, fontError] = useFonts({

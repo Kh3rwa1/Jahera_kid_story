@@ -211,7 +211,7 @@ async function init() {
         sdk.Permission.create(sdk.Role.users()),
         sdk.Permission.update(sdk.Role.users()),
         sdk.Permission.delete(sdk.Role.users()),
-      ], false, false, undefined, ['jpg', 'png', 'jpeg', 'mp3', 'wav', 'gif', 'mp4', 'webm']);
+      ], false, false, undefined, ['jpg', 'png', 'jpeg', 'mp3', 'wav', 'gif', 'mp4', 'webm', 'json']);
       console.log(`🪣 Bucket [${id}] created`);
     } catch (err) {
       if (err.code !== 409) console.error(`❌ Error creating bucket ${id}:`, err.message);
@@ -221,7 +221,8 @@ async function init() {
   await Promise.all([
     createBucket('avatars', 'User Avatars (Public)'),
     createBucket('story-audio', 'Story Audio Content'),
-    createBucket('app_assets', 'App Assets (Video & Images)')
+    createBucket('app_assets', 'App Assets (Video & Images)'),
+    createBucket('behavior_assets', 'Nature & Habits Assets (Lottie JSON)')
   ]);
 
   console.log('\n✅ INFRASTRUCTURE READY');

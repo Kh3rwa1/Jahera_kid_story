@@ -104,10 +104,12 @@ export function FloatingTabBar({
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const { activeStory, isPlaying, playPause } = useAudio();
+  const { activeStory, isPlaying, playPause, isBuffering, audioPolling } = useAudio();
   const { isUIDormant } = useUI();
+  const { position } = useAudioProgress();
 
-  const showPlayer = isUIDormant && activeStory !== null;
+  const hasStarted = isPlaying || isBuffering || audioPolling || position > 0;
+  const showPlayer = isUIDormant && activeStory !== null && hasStarted;
 
   const BAR_WIDTH = Math.min(winWidth - 40, 360); 
   const TAB_WIDTH = BAR_WIDTH / TABS.length;
@@ -159,7 +161,6 @@ export function FloatingTabBar({
       { scale: interpolate(modeProgress.value, [0, 0.5], [1, 0.9]) },
       { translateY: interpolate(modeProgress.value, [0, 0.5], [0, 10]) }
     ],
-    pointerEvents: showPlayer ? 'none' : 'auto',
   }));
 
   const playerContainerStyle = useAnimatedStyle(() => ({
@@ -168,7 +169,6 @@ export function FloatingTabBar({
       { scale: interpolate(modeProgress.value, [0.5, 1], [0.9, 1]) },
       { translateY: interpolate(modeProgress.value, [0.5, 1], [-10, 0]) }
     ],
-    pointerEvents: showPlayer ? 'auto' : 'none',
   }));
 
   const bottomOffset = insets.bottom > 0 ? insets.bottom + 8 : 20;
@@ -218,7 +218,10 @@ export function FloatingTabBar({
         </Animated.View>
 
         {/* TABS MODE */}
-        <Animated.View style={[StyleSheet.absoluteFill, tabsContainerStyle, { justifyContent: 'center' }]}>
+        <Animated.View 
+          pointerEvents={showPlayer ? 'none' : 'auto'}
+          style={[StyleSheet.absoluteFill, tabsContainerStyle, { justifyContent: 'center' }]}
+        >
           <View style={styles.tabsRow}>
             {TABS.map((tab, index) => (
               <TabItem
@@ -234,7 +237,10 @@ export function FloatingTabBar({
         </Animated.View>
 
         {/* PLAYER MODE */}
-        <Animated.View style={[StyleSheet.absoluteFill, playerContainerStyle, styles.playerRow]}>
+        <Animated.View 
+          pointerEvents={showPlayer ? 'auto' : 'none'}
+          style={[StyleSheet.absoluteFill, playerContainerStyle, styles.playerRow]}
+        >
           <Pressable 
             style={styles.playerInfo} 
             onPress={() => router.push({ pathname: '/story/playback', params: { storyId: activeStory?.id } })}

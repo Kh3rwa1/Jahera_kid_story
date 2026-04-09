@@ -26,15 +26,36 @@ function mapDoc<T>(doc: Record<string, unknown>): T {
 
 export const profileService = {
   async create(userId: string, kidName: string, primaryLanguage: string, extra?: Partial<Pick<Profile, 'city' | 'region' | 'country' | 'consent_given_at'>>): Promise<Profile | null> {
+    const payload = { user_id: userId, kid_name: kidName, primary_language: primaryLanguage, ...extra };
     try {
       const data = await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.PROFILES,
         ID.unique(),
-        { user_id: userId, kid_name: kidName, primary_language: primaryLanguage, ...extra }
+        payload
       );
       return mapDoc(data);
-    } catch (error) {
+    } catch (error: any) {
+      // Self-healing: Identify and strip unknown attributes
+      if (error?.message?.includes('Unknown attribute:')) {
+        const match = error.message.match(/Unknown attribute: "([^"]+)"/);
+        const attr = match ? match[1] : null;
+        if (attr && payload[attr as keyof typeof payload]) {
+          logger.warn(`[database] Stripping unknown attribute "${attr}" and retrying profile creation.`);
+          const { [attr as keyof typeof payload]: _, ...rest } = payload;
+          try {
+            const retryData = await databases.createDocument(
+              DATABASE_ID,
+              COLLECTIONS.PROFILES,
+              ID.unique(),
+              rest
+            );
+            return mapDoc(retryData);
+          } catch (retryError) {
+            logger.error('Error during profile creation retry:', retryError);
+          }
+        }
+      }
       logger.error('Error creating profile:', error);
       return null;
     }
@@ -89,15 +110,36 @@ export const profileService = {
   },
 
   async update(id: string, updates: Partial<Pick<Profile, 'kid_name' | 'primary_language' | 'avatar_url' | 'parent_pin' | 'age' | 'elevenlabs_voice_id' | 'elevenlabs_model_id' | 'elevenlabs_stability' | 'elevenlabs_similarity' | 'elevenlabs_style' | 'elevenlabs_speaker_boost' | 'city' | 'region' | 'country' | 'consent_given_at'>>): Promise<Profile | null> {
+    const payload = { ...updates, updated_at: new Date().toISOString() };
     try {
       const data = await databases.updateDocument(
         DATABASE_ID,
         COLLECTIONS.PROFILES,
         id,
-        { ...updates, updated_at: new Date().toISOString() }
+        payload
       );
       return mapDoc(data);
-    } catch (error) {
+    } catch (error: any) {
+      // Self-healing: Strip unknown attributes from update
+      if (error?.message?.includes('Unknown attribute:')) {
+        const match = error.message.match(/Unknown attribute: "([^"]+)"/);
+        const attr = match ? match[1] : null;
+        if (attr && payload[attr as keyof typeof payload]) {
+          logger.warn(`[database] Stripping unknown attribute "${attr}" and retrying profile update.`);
+          const { [attr as keyof typeof payload]: _, ...rest } = payload;
+          try {
+            const retryData = await databases.updateDocument(
+              DATABASE_ID,
+              COLLECTIONS.PROFILES,
+              id,
+              rest
+            );
+            return mapDoc(retryData);
+          } catch (retryErr) {
+            logger.error('Error during profile update retry:', retryErr);
+          }
+        }
+      }
       logger.error('Error updating profile:', error);
       return null;
     }
@@ -261,29 +303,55 @@ export const friendService = {
 
 export const storyService = {
   async create(story: Omit<Story, 'id' | 'created_at'>): Promise<Story> {
+    const payload = {
+      profile_id: story.profile_id,
+      language_code: story.language_code,
+      title: story.title,
+      content: story.content,
+      audio_url: story.audio_url,
+      season: story.season,
+      theme: story.theme,
+      mood: story.mood,
+      word_count: story.word_count,
+      share_token: story.share_token,
+      like_count: story.like_count || 0,
+      time_of_day: story.time_of_day,
+      generated_at: story.generated_at,
+      location_city: story.location_city,
+      location_country: story.location_country,
+      behavior_goal: story.behavior_goal,
+    };
+
     try {
       const data = await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.STORIES,
         ID.unique(),
-        {
-          profile_id: story.profile_id,
-          language_code: story.language_code,
-          title: story.title,
-          content: story.content,
-          audio_url: story.audio_url,
-          season: story.season,
-          theme: story.theme,
-          mood: story.mood,
-          word_count: story.word_count,
-          share_token: story.share_token,
-          like_count: story.like_count || 0,
-          time_of_day: story.time_of_day,
-          generated_at: story.generated_at,
-        }
+        payload
       );
       return mapDoc(data);
     } catch (error: any) {
+      // Self-healing: Strip unknown attributes
+      if (error?.message?.includes('Unknown attribute:')) {
+        const match = error.message.match(/Unknown attribute: "([^"]+)"/);
+        const attr = match ? match[1] : null;
+        if (attr && payload[attr as keyof typeof payload]) {
+          logger.warn(`[database] Stripping unknown attribute "${attr}" and retrying story creation.`);
+          const { [attr as keyof typeof payload]: _, ...rest } = payload;
+          try {
+            const retryData = await databases.createDocument(
+              DATABASE_ID,
+              COLLECTIONS.STORIES,
+              ID.unique(),
+              rest as any
+            );
+            return mapDoc(retryData);
+          } catch (retryErr) {
+            logger.error('Error during story retry:', retryErr);
+          }
+        }
+      }
+
       logger.error('Error creating story:', {
         message: error.message,
         code: error.code,
@@ -294,9 +362,30 @@ export const storyService = {
   },
 
   async getById(id: string): Promise<Story | null> {
+    const fetchDoc = async () => {
+      try {
+        const data = await databases.getDocument(DATABASE_ID, COLLECTIONS.STORIES, id);
+        return mapDoc<Story>(data);
+      } catch (error: any) {
+        if (error.code === 404) return null;
+        throw error;
+      }
+    };
+
     try {
-      const data = await databases.getDocument(DATABASE_ID, COLLECTIONS.STORIES, id);
-      return mapDoc(data);
+      // First attempt
+      let story = await fetchDoc();
+      if (story) return story;
+
+      // Retry once after 2s (handles slight Appwrite sync delays)
+      logger.debug(`[database] Story ${id} not found, retrying in 2s...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      story = await fetchDoc();
+      
+      if (!story) {
+        logger.error(`[database] Story ${id} STILL not found after retry.`);
+      }
+      return story;
     } catch (error) {
       logger.error('Error fetching story:', error);
       return null;

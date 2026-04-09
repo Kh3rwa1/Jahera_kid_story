@@ -21,7 +21,7 @@ import { ShimmerCta } from '@/components/ui/ShimmerCta';
 import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Plan,usePurchase } from '@/hooks/usePurchase';
-import { RCOffering } from '@/services/revenueCatService';
+import { RCOffering } from '@/services/revenueCatServiceInternal';
 import { EdgeInsets,ThemeColors } from '@/types/theme';
 
 const FREE_VS_PRO = [

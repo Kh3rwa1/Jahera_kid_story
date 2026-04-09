@@ -1,5 +1,5 @@
 import { useApp } from '@/contexts/AppContext';
-import { RCOffering,RCPackage,revenueCatService } from '@/services/revenueCatService';
+import { RCOffering,RCPackage,revenueCatService } from '@/services/revenueCatServiceInternal';
 import { subscriptionService } from '@/services/subscriptionService';
 import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';

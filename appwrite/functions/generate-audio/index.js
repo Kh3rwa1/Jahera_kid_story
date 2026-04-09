@@ -1,7 +1,13 @@
 const sdk = require('node-appwrite');
 const fetch = require('node-fetch');
-const { EdgeTTS } = require('@andresaya/edge-tts');
 const nodeCrypto = require('node:crypto');
+
+// Polyfill globalThis.crypto for Node 18 (required by @andresaya/edge-tts)
+if (!globalThis.crypto) {
+  globalThis.crypto = nodeCrypto.webcrypto || nodeCrypto;
+}
+
+const { EdgeTTS } = require('@andresaya/edge-tts');
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || 'jahera_db';
 const STORIES_COLLECTION = 'stories';
@@ -24,10 +30,48 @@ const ELEVENLABS_VOICES = {
 // ElevenLabs model: multilingual v2 handles 29+ languages with ONE voice
 const ELEVENLABS_MODEL = 'eleven_multilingual_v2';
 
+// Supported languages for Multilingual V2 on common tiers
+const ELEVENLABS_SUPPORTED_LANGS = [
+  'en', 'ja', 'zh', 'de', 'hi', 'fr', 'ko', 'pt', 'it', 'es', 'id', 'nl', 'tr', 'fil', 'pl', 'sv', 'bg', 'ro', 'ar', 'cs', 'el', 'fi', 'hr', 'ms', 'sk', 'da', 'ta', 'uk', 'ru'
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Edge TTS Fallback — High-quality Microsoft Edge neural voices per language
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Female Edge TTS voices — warm, storytelling
+const EDGE_VOICE_MAP_FEMALE = {
+  en: 'en-US-JennyNeural',   // warm, maternal
+  hi: 'hi-IN-SwaraNeural',
+  es: 'es-ES-ElviraNeural',
+  fr: 'fr-FR-DeniseNeural',
+  de: 'de-DE-KatjaNeural',
+  it: 'it-IT-ElsaNeural',
+  pt: 'pt-BR-FranciscaNeural',
+  ru: 'ru-RU-SvetlanaNeural',
+  zh: 'zh-CN-XiaoxiaoNeural',
+  ja: 'ja-JP-NanamiNeural',
+  ko: 'ko-KR-SunHiNeural',
+  ar: 'ar-SA-ZariyahNeural',
+};
+
+// Male Edge TTS voices — energetic, adventurous
+const EDGE_VOICE_MAP_MALE = {
+  en: 'en-US-GuyNeural',     // clear male narration
+  hi: 'hi-IN-MadhurNeural',
+  es: 'es-ES-AlvaroNeural',
+  fr: 'fr-FR-HenriNeural',
+  de: 'de-DE-ConradNeural',
+  it: 'it-IT-DiegoNeural',
+  pt: 'pt-BR-AntonioNeural',
+  ru: 'ru-RU-DmitryNeural',
+  zh: 'zh-CN-YunxiNeural',
+  ja: 'ja-JP-KeitaNeural',
+  ko: 'ko-KR-InJoonNeural',
+  ar: 'ar-SA-HamedNeural',
+};
+
+// Default neutral female map (all languages)
 const EDGE_VOICE_MAP = {
   en: 'en-US-AnaNeural',
   es: 'es-ES-ElviraNeural',
@@ -174,9 +218,14 @@ async function generateWithElevenLabs(text, lang, apiKey, options, log) {
 // Edge TTS — Fallback (free, decent quality)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function generateWithEdgeTTS(text, lang, log) {
-  const voice = EDGE_VOICE_MAP[lang] || DEFAULT_EDGE_VOICE;
-  log(`[EdgeTTS] Fallback: generating with voice ${voice}, lang ${lang}`);
+async function generateWithEdgeTTS(text, lang, log, gender) {
+  // Pick gender-appropriate voice map when a voice preset is selected
+  let voiceMap = EDGE_VOICE_MAP;
+  if (gender === 'male') voiceMap = EDGE_VOICE_MAP_MALE;
+  else if (gender === 'female') voiceMap = EDGE_VOICE_MAP_FEMALE;
+
+  const voice = voiceMap[lang] || EDGE_VOICE_MAP[lang] || DEFAULT_EDGE_VOICE;
+  log(`[EdgeTTS] Fallback: generating with voice ${voice}, lang ${lang}, gender ${gender || 'neutral'}`);
 
   const tts = new EdgeTTS();
   await tts.synthesize(text, voice);
@@ -211,7 +260,7 @@ async function generateAudioHandler({ req, res, log, error }) {
       return res.json({ success: false, error: 'Invalid JSON' }, 400);
     }
 
-    const { text, languageCode, storyId, noStore, voiceId, modelId, stability, similarity, style, speakerBoost } = body;
+    const { text, languageCode, storyId, noStore, voiceId, modelId, stability, similarity, style, speakerBoost, gender } = body;
     const lang = languageCode || 'en';
 
     if (!text) {
@@ -240,6 +289,10 @@ async function generateAudioHandler({ req, res, log, error }) {
 
     const storage = new sdk.Storage(client);
     const databases = new sdk.Databases(client);
+
+    // Ensure DATABASE_ID is locked to what the environment says
+    const activeDB = DATABASE_ID;
+    log(`[Config] Active Database ID: ${activeDB}`);
 
     // ── Compute deterministic file ID for caching ──
     // Add a cache version to force regeneration for stories created before ElevenLabs
@@ -286,19 +339,23 @@ async function generateAudioHandler({ req, res, log, error }) {
     const elevenLabsVoice = process.env.ELEVENLABS_VOICE_ID;
 
     if (elevenLabsKey) {
-      try {
-        audioBuffer = await generateWithElevenLabs(preparedText, lang, elevenLabsKey, {
-          voiceId: voiceId || elevenLabsVoice,
-          modelId,
-          stability,
-          similarity,
-          style,
-          speakerBoost
-        }, log);
-        engine = 'elevenlabs';
-      } catch (elevenErr) {
-        error(`[ElevenLabs] Failed: ${elevenErr.message}. Falling back to Edge TTS...`);
-        // Fall through to Edge TTS
+      if (!ELEVENLABS_SUPPORTED_LANGS.includes(lang)) {
+        log(`[ElevenLabs] Language '${lang}' is not supported by ${ELEVENLABS_MODEL}. Skipping to Edge TTS.`);
+      } else {
+        try {
+          audioBuffer = await generateWithElevenLabs(preparedText, lang, elevenLabsKey, {
+            voiceId: voiceId || elevenLabsVoice,
+            modelId,
+            stability,
+            similarity,
+            style,
+            speakerBoost
+          }, log);
+          engine = 'elevenlabs';
+        } catch (elevenErr) {
+          error(`[ElevenLabs] Failed: ${elevenErr.message}. Falling back to Edge TTS...`);
+          // Fall through to Edge TTS
+        }
       }
     } else {
       log('[ElevenLabs] No API key configured. Using Edge TTS directly.');
@@ -307,7 +364,7 @@ async function generateAudioHandler({ req, res, log, error }) {
     // Fallback: Edge TTS
     if (!audioBuffer) {
       try {
-        audioBuffer = await generateWithEdgeTTS(preparedText, lang, log);
+        audioBuffer = await generateWithEdgeTTS(preparedText, lang, log, gender);
         engine = 'edge-tts';
       } catch (edgeErr) {
         error(`[EdgeTTS] Also failed: ${edgeErr.message}`);
@@ -336,15 +393,28 @@ async function generateAudioHandler({ req, res, log, error }) {
     // ── Write audio_url to Database ──
     if (storyId) {
       try {
-        log(`Updating story ${storyId} in database...`);
-        await databases.updateDocument(DATABASE_ID, STORIES_COLLECTION, storyId, { audio_url: audioUrl });
+        log(`Updating story ${storyId} in database [${activeDB}]...`);
+        await databases.updateDocument(activeDB, STORIES_COLLECTION, storyId, { audio_url: audioUrl });
         log('Document updated successfully.');
       } catch (dbErr) {
         error(`DB update failed: ${dbErr.message}`);
       }
     }
 
-    return res.json({ success: true, audio_url: audioUrl, cached: false, engine });
+    // ── Prepare Response ──
+    const responseData = { 
+      success: true, 
+      audio_url: audioUrl, 
+      cached: false, 
+      engine 
+    };
+
+    // If noStore is true, also return the raw audio as base64 for instant preview
+    if (noStore) {
+      responseData.base64 = audioBuffer.toString('base64');
+    }
+
+    return res.json(responseData);
 
   } catch (err) {
     error('CRITICAL: Audio generation failure: ' + err.message);

@@ -20,7 +20,7 @@ export function useStoryGeneration() {
   const params = useLocalSearchParams();
   const { profile, subscription, refreshSubscription, refreshStories } = useApp();
 
-  const [selectedBehaviorGoal, setSelectedBehaviorGoal] = useState<string | null>(null);
+  const [selectedBehaviorGoal, setSelectedBehaviorGoal] = useState<string | null>((params.behaviorGoal as string) || null);
   const [selectedTheme, setSelectedTheme] = useState('adventure');
   const [selectedMood, setSelectedMood] = useState('exciting');
   const [selectedLength, setSelectedLength] = useState<'short' | 'medium' | 'long'>('short');
@@ -73,6 +73,7 @@ export function useStoryGeneration() {
       similarity: preset?.settings.similarity ?? profileData.elevenlabs_similarity,
       style: preset?.settings.style ?? profileData.elevenlabs_style,
       speakerBoost: preset?.settings.speakerBoost ?? profileData.elevenlabs_speaker_boost,
+      gender: preset?.gender ?? null,
     };
   };
 
