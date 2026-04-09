@@ -51,14 +51,7 @@ import { randomInt } from '@/utils/secureRandom';
 // Styles
 import { useHomeStyles } from '@/styles/home.styles';
 
-const DISCOVERY_TAGS = [
-  { label: 'Space Adventure', emoji: '🚀', theme: 'Space' },
-  { label: 'Dino World', emoji: '🦖', theme: 'Animals' },
-  { label: 'Deep Ocean', emoji: '🐳', theme: 'Ocean' },
-  { label: 'Magic Kingdom', emoji: '🏰', theme: 'Fantasy' },
-  { label: 'Mystery Forest', emoji: '🌲', theme: 'Nature' },
-  { label: 'Super Powers', emoji: '⚡', theme: 'Superheroes' },
-];
+
 
 function getGreeting(name: string): { line1: string; line2: string } {
   const tod = getTimeOfDay(new Date());
@@ -120,7 +113,7 @@ export default function HomeScreen() {
         } else {
           setContinueStory(null);
         }
-      } catch (e) {
+      } catch (_e) {
         // Silent fail for progress check to avoid UI noise
       }
     };
@@ -136,7 +129,7 @@ export default function HomeScreen() {
       const timer = setTimeout(() => talkative.speak(text, profile.primary_language || 'en'), 1500);
       return () => clearTimeout(timer);
     }
-  }, [profile?.id, isLoading, isFocused]);
+  }, [profile?.id, profile?.kid_name, profile?.primary_language, isLoading, isFocused]);
 
   const handleRefresh = useCallback(async () => { await refreshAll(); }, [refreshAll]);
 

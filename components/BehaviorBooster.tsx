@@ -24,7 +24,7 @@ import { ensureLottieAsset, getAppwriteLottieUrl } from '@/services/lottieServic
 import { logger } from '@/utils/logger';
 
 interface BehaviorBoosterProps {
-  colors: any;
+  colors: Record<string, any>;
   profileId?: string;
   languageCode?: string;
 }
@@ -36,13 +36,12 @@ const BoosterCard = memo(({
   index,
 }: {
   goal: BehaviorGoal;
-  colors: any;
+  colors: Record<string, any>;
   onPress: () => void;
   index: number;
 }) => {
   const [lottieSource, setLottieSource] = useState<any | null>(null);
   const [lottieError, setLottieError] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
   const scale = useSharedValue(1);
 
   // Resolve Asset Source (Appwrite ID takes priority over static URL)
@@ -85,11 +84,6 @@ const BoosterCard = memo(({
     scale.value = withSpring(1);
   };
 
-  const onLottieError = useCallback(() => {
-    logger.warn(`Lottie render failed for ${goal.label}`);
-    setLottieError(true);
-  }, [goal]);
-
   return (
     <Animated.View
       entering={FadeInRight.delay(index * 100).springify().damping(15)}
@@ -113,7 +107,6 @@ const BoosterCard = memo(({
                 autoPlay
                 loop
                 style={styles.lottie}
-                onError={onLottieError}
               />
             ) : (
               <View style={styles.fallBackWrap}>
@@ -142,6 +135,8 @@ const BoosterCard = memo(({
     </Animated.View>
   );
 });
+
+BoosterCard.displayName = 'BoosterCard';
 
 export const BehaviorBooster = ({ colors, profileId, languageCode }: BehaviorBoosterProps) => {
   const router = useRouter();

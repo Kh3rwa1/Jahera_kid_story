@@ -4,11 +4,12 @@ import { VoicePresetPicker } from '@/components/VoicePresetPicker';
 import { ShimmerCta } from '@/components/ui/ShimmerCta';
 import { Language, SUPPORTED_LANGUAGES } from '@/constants/languages';
 import { LENGTHS, MOODS, THEMES } from '@/constants/storyOptions';
-import { FONTS, SHADOWS, SPACING } from '@/constants/theme';
+import { FONTS, SHADOWS } from '@/constants/theme';
+import { FamilyMember, Friend } from '@/types/database';
 import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Check, ChevronLeft, MapPin, Wand as Wand2 } from 'lucide-react-native';
+import { Check, ChevronLeft, Wand as Wand2 } from 'lucide-react-native';
 import { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
@@ -26,16 +27,16 @@ interface OptionsViewProps {
   onVoiceChange: (voiceId: string | null) => void;
   selectedLanguage: string;
   setSelectedLanguage: (id: string) => void;
-  familyMembers: any[];
-  friends: any[];
-  onFamilyMembersChange: (fm: any[]) => void;
-  onFriendsChange: (fr: any[]) => void;
+  familyMembers: FamilyMember[];
+  friends: Friend[];
+  onFamilyMembersChange: (fm: FamilyMember[]) => void;
+  onFriendsChange: (fr: Friend[]) => void;
   locationLabel: string;
   onStart: () => void;
   onBack: () => void;
   isPremium: boolean;
   languageCode: string;
-  subscription: any;
+  subscription: Record<string, any> | null;
   profileId: string;
 }
 

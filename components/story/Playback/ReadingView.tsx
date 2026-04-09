@@ -33,7 +33,7 @@ interface ReadingViewProps {
 export function ReadingView({
   paragraphs,
   activeWordIndex,
-  activeParaIndex,
+  activeParaIndex: _activeParaIndex,
   accentColor,
   colors,
   prefs,

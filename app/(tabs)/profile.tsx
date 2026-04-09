@@ -42,7 +42,7 @@ FadeInUp,
 ZoomIn
 } from 'react-native-reanimated';
 import { ColorScheme } from '@/constants/themeSchemes';
-import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 
 interface AchievementCardData {
   label: string;
@@ -54,7 +54,7 @@ interface AchievementCardData {
 
 type ProfileStyles = ReturnType<typeof useStyles>;
 
-function AnimatedAchievementCard({ card, index, styles }: Readonly<{ card: AchievementCardData; index: number; styles: ProfileStyles }>) {
+function AnimatedAchievementCard({ card, index, styles, _COLORS }: Readonly<{ card: AchievementCardData; index: number; styles: ProfileStyles; _COLORS?: ColorScheme['colors'] }>) {
   const entrance = useEntranceSequence(index, 120, 70);
   const glowStyle = useGlowPulse(0.85, 1, 2000 + index * 300);
 
@@ -107,7 +107,6 @@ const computeStreak = (stories: Story[] | null) => {
   const todayMs = new Date(new Date().toDateString()).getTime();
   const dayMs = 86400000;
   
-  // Refactored nested ternary to independent statement (S3358)
   let startMs: number | null = null;
   if (sortedDays[0] === todayMs) {
     startMs = todayMs;
@@ -134,14 +133,12 @@ function ProfileHero({
   storiesCount, 
   quizStats, 
   streak, 
-  COLORS, 
   styles 
 }: Readonly<{ 
-  profile: any; 
+  profile: { kid_name: string; avatar_url: string | null | undefined; languages?: { language_code: string; language_name: string }[] }; 
   storiesCount: number; 
   quizStats: { totalQuizzes: number }; 
   streak: number; 
-  COLORS: any; 
   styles: ProfileStyles 
 }>) {
   const router = useRouter();
@@ -184,7 +181,7 @@ function ProfileHero({
                 <Text style={[styles.langPillName, { color: COLORS.primary }]}>{topLanguage.language_name}</Text>
                 {(profile.languages?.length || 0) > 1 && (
                   <View style={[styles.langPillMore, { backgroundColor: COLORS.primary + '25' }]}>
-                    <Text style={[styles.langPillMoreText, { color: COLORS.primary }]}>+{profile.languages.length - 1}</Text>
+                    <Text style={[styles.langPillMoreText, { color: COLORS.primary }]}>+{profile.languages!.length - 1}</Text>
                   </View>
                 )}
               </View>
@@ -213,7 +210,7 @@ function ProfileHero({
   );
 }
 
-function AchievementSection({ stats, totalWords, COLORS, styles }: Readonly<{ stats: any; totalWords: number; COLORS: any; styles: ProfileStyles }>) {
+function AchievementSection({ stats, totalWords, COLORS, styles }: Readonly<{ stats: { avgScore: number; perfectScores: number }; totalWords: number; COLORS: ColorScheme['colors']; styles: ProfileStyles }>) {
   return (
     <Animated.View entering={FadeInDown.delay(300).springify()}>
       <View style={styles.sectionHead}>
@@ -233,7 +230,7 @@ function AchievementSection({ stats, totalWords, COLORS, styles }: Readonly<{ st
   );
 }
 
-function LearningCurve({ recentQuizzes, stories, COLORS, styles }: Readonly<{ recentQuizzes: any[]; stories: any[]; COLORS: any; styles: ProfileStyles }>) {
+function LearningCurve({ recentQuizzes, stories, COLORS, styles }: Readonly<{ recentQuizzes: QuizAttempt[]; stories: Story[]; COLORS: ColorScheme['colors']; styles: ProfileStyles }>) {
   return (
     <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.section}>
       <View style={styles.sectionHead}>
@@ -290,7 +287,7 @@ function LearningCurve({ recentQuizzes, stories, COLORS, styles }: Readonly<{ re
   );
 }
 
-function MasterySection({ languages, stories, COLORS, styles }: Readonly<{ languages: any[]; stories: any[]; COLORS: any; styles: ProfileStyles }>) {
+function MasterySection({ languages, stories, COLORS, styles }: Readonly<{ languages: { id: string; language_code: string; language_name: string }[]; stories: Story[]; COLORS: ColorScheme['colors']; styles: ProfileStyles }>) {
   return (
     <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.section}>
       <View style={styles.sectionHead}>
@@ -323,7 +320,7 @@ function MasterySection({ languages, stories, COLORS, styles }: Readonly<{ langu
   );
 }
 
-function XPBanner({ streak, COLORS, styles }: Readonly<{ streak: number; COLORS: any; styles: ProfileStyles }>) {
+function XPBanner({ streak, styles }: Readonly<{ streak: number; styles: ProfileStyles }>) {
   const router = useRouter();
   return (
     <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.section}>
@@ -368,9 +365,6 @@ export default function ProfileScreen() {
   const isTablet = winWidth >= BREAKPOINTS.tablet;
   const isDesktop = winWidth >= BREAKPOINTS.desktop;
   const styles = useStyles(COLORS, insets, isTablet, isDesktop);
-
-  const avatarPulseStyle = usePulse(0.97, 1.03);
-  const streakPinPulseStyle = usePulse(0.92, 1.1);
 
   const stats = useMemo(() => computeQuizStats(quizAttempts), [quizAttempts]);
   const streak = useMemo(() => computeStreak(stories), [stories]);
@@ -437,7 +431,6 @@ export default function ProfileScreen() {
     );
   }
 
-  const topLanguage = profile.languages?.[0];
   const totalWords = (stories || []).reduce((sum, s) => sum + (s.word_count || 0), 0);
   const primaryColor = COLORS.primary;
   const textColor = COLORS.text.primary;
@@ -462,7 +455,6 @@ export default function ProfileScreen() {
           storiesCount={stories?.length || 0}
           quizStats={stats}
           streak={streak}
-          COLORS={COLORS}
           styles={styles}
         />
 
@@ -497,7 +489,6 @@ export default function ProfileScreen() {
 
         <XPBanner 
           streak={streak}
-          COLORS={COLORS}
           styles={styles}
         />
 
@@ -508,7 +499,7 @@ export default function ProfileScreen() {
           </View>
           <View style={[styles.listCard, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '15' }]}>
             <TouchableOpacity
-              onPress={() => expoRouter.push('/settings/notifications')}
+              onPress={() => router.push('/settings/notifications')}
               style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg }}
             >
               <Moon size={20} color={primaryColor} />
@@ -523,7 +514,7 @@ export default function ProfileScreen() {
   );
 }
 
-const useStyles = (C: ColorScheme['colors'], insets: ReturnType<typeof useSafeAreaInsets>, isTablet: boolean, isDesktop: boolean) => {
+const useStyles = (C: ColorScheme['colors'], _insets: EdgeInsets, isTablet: boolean, isDesktop: boolean) => {
   return useMemo(() => StyleSheet.create({
     container: { flex: 1 },
     loadingWrap: { padding: SPACING.xl },
@@ -764,5 +755,5 @@ const useStyles = (C: ColorScheme['colors'], insets: ReturnType<typeof useSafeAr
       width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.25)',
       alignItems: 'center', justifyContent: 'center',
     },
-  }), [C, insets, isTablet, isDesktop]);
+  }), [isTablet, isDesktop]);
 };

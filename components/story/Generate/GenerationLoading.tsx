@@ -37,7 +37,7 @@ interface GenerationLoadingProps {
 }
 
 export function GenerationLoading({
-  colors, status, progress, steps, locationCtx, languageCode, profile
+  colors, status, progress, steps, locationCtx, languageCode, profile: _profile
 }: Readonly<GenerationLoadingProps>) {
   const [funFactIndex, setFunFactIndex] = useState(0);
   const pulseScale = useSharedValue(1);

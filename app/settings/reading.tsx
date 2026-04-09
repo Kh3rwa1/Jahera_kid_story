@@ -13,7 +13,8 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft,Check,RotateCcw } from 'lucide-react-native';
 import React from 'react';
 import { ScrollView,StyleSheet,Text,TouchableOpacity,View,useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { EdgeInsets,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ColorScheme } from '@/constants/themeSchemes';
 
 const PREVIEW_TEXT =
   "Once upon a time, in a forest filled with sparkling fireflies, a young child discovered a hidden door between two ancient oak trees. Behind it lay a world of wonders waiting to be explored.";
@@ -288,7 +289,7 @@ export default function ReadingPreferencesScreen() {
   );
 }
 
-const useStyles = (C: any, insets: any) => {
+const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets) => {
   return React.useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: C.background },
     header: {
@@ -373,5 +374,5 @@ const useStyles = (C: any, insets: any) => {
       marginTop: SPACING.sm, borderColor: C.text.light + '30',
     },
     resetFullBtnText: { fontSize: FONT_SIZES.sm, color: C.text.secondary, fontFamily: FONTS.semibold },
-  }), [C, insets]);
+  }), [C]);
 };

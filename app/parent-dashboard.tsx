@@ -44,7 +44,7 @@ export default function ParentDashboard() {
   const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
-  const styles = useStyles(COLORS, insets, winWidth);
+  const styles = useStyles(COLORS, winWidth);
   const { profile, stories, quizAttempts, subscription, streak } = useApp();
 
   const [unlocked, setUnlocked] = useState(false);
@@ -383,7 +383,7 @@ export default function ParentDashboard() {
           <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.section}>
             <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>Recent Activity</Text>
             <View style={styles.activityList}>
-              {recentActivity.map(({ story, attempt }, idx) => (
+              {recentActivity.map(({ story, attempt }) => (
                 <View
                   key={story.id}
                   style={[styles.activityRow, { backgroundColor: COLORS.cardBackground }]}
@@ -461,7 +461,7 @@ export default function ParentDashboard() {
   );
 }
 
-const useStyles = (C: ThemeColors, insets: EdgeInsets, winWidth: number) => {
+const useStyles = (C: ThemeColors, winWidth: number) => {
   return useMemo(() => StyleSheet.create({
     container: { flex: 1 },
     header: {
@@ -572,5 +572,5 @@ const useStyles = (C: ThemeColors, insets: EdgeInsets, winWidth: number) => {
     },
     unlockButtonText: { fontSize: 16, fontFamily: FONTS.bold, color: '#FFFFFF' },
     defaultPinHint: { fontSize: 12, fontFamily: FONTS.medium },
-  }), [C, insets, winWidth]);
+  }), [C, winWidth]);
 };

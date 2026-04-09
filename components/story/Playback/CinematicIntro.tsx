@@ -16,7 +16,7 @@ interface CinematicIntroProps {
   audioPolling: boolean;
   isBuffering: boolean;
   onDismiss: () => void;
-  introOpacity: any; // SharedValue
+  introOpacity: Record<string, any>; // SharedValue
 }
 
 export function CinematicIntro({

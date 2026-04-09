@@ -21,7 +21,8 @@ TouchableOpacity,
 View,
 } from 'react-native';
 import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
-import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { EdgeInsets,SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ColorScheme } from '@/constants/themeSchemes';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function EditProfileScreen() {
   const C = currentTheme.colors;
   const { profile, updateProfile } = useApp();
   const insets = useSafeAreaInsets();
-  const styles = useStyles(C, insets);
+  const styles = useStyles(C);
 
   const [kidName, setKidName] = useState(profile?.kid_name || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -402,7 +403,7 @@ export default function EditProfileScreen() {
   );
 }
 
-const useStyles = (C: any, insets: any) => {
+const useStyles = (C: ColorScheme['colors']) => {
   return React.useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: C.background },
     emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },

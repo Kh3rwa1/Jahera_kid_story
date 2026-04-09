@@ -43,7 +43,7 @@ const dbId = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID;
 if (!dbId) {
   console.error('[Jahera] EXPO_PUBLIC_APPWRITE_DATABASE_ID is missing.');
 }
-export const DATABASE_ID = dbId;
+export const DATABASE_ID = dbId ?? '';
 export const APPWRITE_ENDPOINT = ENDPOINT;
 export const APPWRITE_PROJECT_ID = PROJECT_ID;
 

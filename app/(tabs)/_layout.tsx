@@ -3,11 +3,12 @@ import { useUI } from '@/contexts/UIContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { Tabs,usePathname,useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { StyleSheet,View } from 'react-native';
+import { StyleSheet,View,Pressable } from 'react-native';
 import { Gesture,GestureDetector,GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS,useSharedValue } from 'react-native-reanimated';
 
 const TAB_ORDER = ['index', 'history', 'profile', 'settings'] as const;
+type TabName = typeof TAB_ORDER[number];
 
 const TAB_ROUTES: Record<string, string> = {
   index: '/(tabs)/',
@@ -25,11 +26,11 @@ const ROUTE_TO_TAB: Record<string, string> = {
   '/(tabs)/settings': 'settings',
 };
 
-function getActiveTab(pathname: string): string {
-  if (ROUTE_TO_TAB[pathname]) return ROUTE_TO_TAB[pathname];
+function getActiveTab(pathname: string): TabName {
+  if (ROUTE_TO_TAB[pathname]) return ROUTE_TO_TAB[pathname] as TabName;
   const segments = pathname.split('/').filter(Boolean);
   const last = segments[segments.length - 1];
-  if (['history', 'profile', 'settings'].includes(last)) return last;
+  if (['history', 'profile', 'settings'].includes(last)) return last as TabName;
   return 'index';
 }
 
@@ -47,7 +48,7 @@ export default function TabLayout() {
   const handleTabPress = useCallback(
     (route: string) => {
       wakeUI();
-      router.push(route as any);
+      router.push(route as Parameters<typeof router.push>[0]);
     },
     [router, wakeUI]
   );
@@ -56,7 +57,7 @@ export default function TabLayout() {
     const route = TAB_ROUTES[tabName];
     if (route) {
       hapticFeedback.selection();
-      router.push(route as any);
+      router.push(route as Parameters<typeof router.push>[0]);
     }
   }, [router]);
 
@@ -66,13 +67,14 @@ export default function TabLayout() {
     .onBegin(() => {
       'worklet';
       hasSwiped.value = 0;
+      runOnJS(wakeUI)();
     })
     .onUpdate((event) => {
       'worklet';
       if (hasSwiped.value === 1) return;
       if (Math.abs(event.translationX) > SWIPE_THRESHOLD) {
         hasSwiped.value = 1;
-        const currentIndex = TAB_ORDER.indexOf(activeTab as any);
+        const currentIndex = TAB_ORDER.indexOf(activeTab);
         if (currentIndex === -1) return;
 
         let nextIndex: number;
@@ -90,7 +92,11 @@ export default function TabLayout() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-        <View style={styles.container}>
+        <Pressable 
+          onPress={wakeUI}
+          style={styles.container}
+          android_ripple={null}
+        >
           <GestureDetector gesture={swipeGesture}>
             <View style={styles.container}>
               <Tabs
@@ -106,7 +112,7 @@ export default function TabLayout() {
             </View>
           </GestureDetector>
           <FloatingTabBar activeTab={activeTab} onTabPress={handleTabPress} />
-        </View>
+        </Pressable>
     </GestureHandlerRootView>
   );
 }

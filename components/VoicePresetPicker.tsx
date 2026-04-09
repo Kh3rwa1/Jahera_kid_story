@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Crown, Lock } from 'lucide-react-native';
 import React, { useMemo, useRef, useEffect, useCallback } from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 interface VoicePresetPickerProps {
@@ -47,7 +47,7 @@ export function VoicePresetPicker({ selectedVoice, onSelect, isPremium, language
   const loopedData = useMemo(() => Array(LOOP_FACTOR).fill(voices).flat(), [voices]);
   const cardWidth = isTablet ? 200 : 160;
   const cardGap = isTablet ? 16 : 12;
-  const itemWidth = cardWidth + cardGap;
+  const itemWidth = useMemo(() => cardWidth + cardGap, [cardWidth, cardGap]);
 
   useEffect(() => {
     if (loopedData.length > voices.length) {
@@ -67,7 +67,7 @@ export function VoicePresetPicker({ selectedVoice, onSelect, isPremium, language
     }
   };
 
-  const handleCardPress = async (preset: VoicePresetLike) => {
+  const handleCardPress = useCallback(async (preset: VoicePresetLike) => {
     const locked = (preset.premium ?? preset.isPremium ?? false) && !isPremium;
     if (locked) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -79,7 +79,7 @@ export function VoicePresetPicker({ selectedVoice, onSelect, isPremium, language
     if (nextVoiceId) {
       analytics.trackVoicePresetSelected(preset.id, preset.label, Boolean(preset.premium ?? preset.isPremium ?? false));
     }
-  };
+  }, [isPremium, selectedVoice, onSelect]);
 
   const renderItem = useCallback(({ item: preset, index }: { item: VoicePresetLike; index: number }) => {
     const locked = (preset.premium ?? preset.isPremium ?? false) && !isPremium;
@@ -116,7 +116,7 @@ export function VoicePresetPicker({ selectedVoice, onSelect, isPremium, language
         </Animated.View>
       </View>
     );
-  }, [colors, voices.length, selectedVoice, isPremium, isTablet, cardGap, styles]);
+  }, [colors, voices.length, selectedVoice, isPremium, isTablet, cardGap, styles, handleCardPress]);
 
   return (
     <View style={[styles.section, { paddingTop: SPACING.xs }]}>
@@ -149,8 +149,6 @@ const createStyles = (
   isTablet: boolean,
   colors: ReturnType<typeof useTheme>['currentTheme']['colors'],
 ) => {
-  const cardGap = isTablet ? 16 : 12;
-
   return StyleSheet.create({
     section: {
       marginBottom: SPACING.lg,

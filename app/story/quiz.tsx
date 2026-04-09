@@ -43,7 +43,8 @@ withSpring,
 withTiming,
 ZoomIn,
 } from 'react-native-reanimated';
-import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { EdgeInsets,SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ColorScheme } from '@/constants/themeSchemes';
 
 // ─── Animated bounce star ───────────────────────────────────────────────
 function BounceStar({ delay = 0, color }: { delay?: number; color: string }) {
@@ -52,7 +53,7 @@ function BounceStar({ delay = 0, color }: { delay?: number; color: string }) {
   useEffect(() => {
     y.value = withDelay(delay, withRepeat(withTiming(-10, { duration: 1200, easing: Easing.inOut(Easing.sin) }), -1, true));
     opacity.value = withDelay(delay, withRepeat(withTiming(1, { duration: 1200 }), -1, true));
-  }, []);
+  }, [delay, y, opacity, color]);
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }], opacity: opacity.value }));
   return <Animated.Text style={[{ fontSize: 18, color, position: 'absolute' }, style]}>⭐</Animated.Text>;
 }
@@ -64,7 +65,7 @@ function PulseRing({ color }: { color: string }) {
   useEffect(() => {
     scale.value = withRepeat(withTiming(1.8, { duration: 1400, easing: Easing.out(Easing.quad) }), -1, false);
     opacity.value = withRepeat(withTiming(0, { duration: 1400 }), -1, false);
-  }, []);
+  }, [scale, opacity, color]);
   const style = useAnimatedStyle(() => ({
     position: 'absolute',
     width: 48, height: 48, borderRadius: 24,
@@ -84,7 +85,7 @@ export default function QuizScreen() {
   const C = currentTheme.colors;
   const { profile, refreshQuizAttempts } = useApp();
   const isTablet = winWidth >= BREAKPOINTS.tablet;
-  const styles = useStyles(C, winWidth, winHeight, isTablet, insets);
+  const styles = useStyles(C, winWidth, winHeight, isTablet);
 
   const [story, setStory] = useState<Story | null>(null);
   const [questions, setQuestions] = useState<QuizQuestionWithAnswers[]>([]);
@@ -118,51 +119,32 @@ export default function QuizScreen() {
     transform: [{ translateX: questionSlide.value }],
   }));
   const scoreAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: scoreScale.value }] }));
-  const progressStyle = useAnimatedStyle(() => ({ width: `${progressWidth.value}%` as any }));
+  const progressStyle = useAnimatedStyle(() => ({ width: `${progressWidth.value}%` }));
   const feedbackStyle = useAnimatedStyle(() => ({ transform: [{ translateY: feedbackSlide.value }] }));
 
-  useEffect(() => {
-    loadQuiz();
-    return () => { sound?.unloadAsync().catch(() => {}); };
-  }, []);
-
-  // Auto-play question
-  useEffect(() => {
-    if (questions.length > 0 && !showResult && !isLoading) {
-      const q = questions[currentQuestionIndex];
-      const timer = setTimeout(() => {
-        speak(q.question_text, `q_${currentQuestionIndex}`);
-      }, 800);
-      return () => clearTimeout(timer);
-    }
-  }, [currentQuestionIndex, questions.length, showResult, isLoading]);
-
-  // Auto-play result
-  useEffect(() => {
-    if (showResult && questions.length > 0) {
-      const pct = Math.round((finalScore / questions.length) * 100);
-      const isPerfect = pct === 100;
-      const isGreat = pct >= 66;
-      let msg = 'Good Effort! Keep practicing!';
-      if (isPerfect) {
-        msg = 'Perfect Score! You are a genius!';
-      } else if (isGreat) {
-        msg = "Great Work! You're a superstar!";
+  const loadQuiz = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setLoadError(null);
+      const storyId = params.storyId as string;
+      const [storyData, quizData] = await Promise.all([
+        storyService.getById(storyId),
+        quizService.getQuestionsByStoryId(storyId),
+      ]);
+      if (!storyData || quizData === null) {
+        setLoadError("Oops, the quiz got lost! Let's try another story.");
+        return;
       }
-      const timer = setTimeout(() => talkative.speak(msg, story?.language_code || 'en'), 1000);
-      return () => clearTimeout(timer);
+      setStory(storyData);
+      setQuestions(quizData);
+    } catch {
+      setLoadError("Oops, the quiz got lost! Let's try another story.");
+    } finally {
+      setIsLoading(false);
     }
-  }, [showResult]);
+  }, [params.storyId]);
 
-  // Progress bar
-  useEffect(() => {
-    if (questions.length > 0) {
-      const pct = ((currentQuestionIndex + 1) / questions.length) * 100;
-      progressWidth.value = withSpring(pct, { damping: 18, stiffness: 120 });
-    }
-  }, [currentQuestionIndex, questions.length]);
-
-  const speak = async (text: string, id: string) => {
+  const speak = useCallback(async (text: string, id: string) => {
     try {
       if (playingId === id && sound) {
         await sound.stopAsync();
@@ -188,29 +170,48 @@ export default function QuizScreen() {
       setIsAudioLoading(false);
       setPlayingId(null);
     }
-  };
+  }, [playingId, sound, story?.language_code]);
 
-  const loadQuiz = async () => {
-    try {
-      setIsLoading(true);
-      setLoadError(null);
-      const storyId = params.storyId as string;
-      const [storyData, quizData] = await Promise.all([
-        storyService.getById(storyId),
-        quizService.getQuestionsByStoryId(storyId),
-      ]);
-      if (!storyData || quizData === null) {
-        setLoadError("Oops, the quiz got lost! Let's try another story.");
-        return;
-      }
-      setStory(storyData);
-      setQuestions(quizData);
-    } catch {
-      setLoadError("Oops, the quiz got lost! Let's try another story.");
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    loadQuiz();
+    return () => { sound?.unloadAsync().catch(() => {}); };
+  }, [loadQuiz, sound]);
+
+  // Auto-play question
+  useEffect(() => {
+    if (questions.length > 0 && !showResult && !isLoading) {
+      const q = questions[currentQuestionIndex];
+      const timer = setTimeout(() => {
+        speak(q.question_text, `q_${currentQuestionIndex}`);
+      }, 800);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [currentQuestionIndex, questions, showResult, isLoading, speak]);
+
+  // Auto-play result
+  useEffect(() => {
+    if (showResult && questions.length > 0) {
+      const pct = Math.round((finalScore / questions.length) * 100);
+      const isPerfect = pct === 100;
+      const isGreat = pct >= 66;
+      let msg = 'Good Effort! Keep practicing!';
+      if (isPerfect) {
+        msg = 'Perfect Score! You are a genius!';
+      } else if (isGreat) {
+        msg = "Great Work! You're a superstar!";
+      }
+      const timer = setTimeout(() => talkative.speak(msg, story?.language_code || 'en'), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [showResult, questions.length, finalScore, story?.language_code]);
+
+  // Progress bar
+  useEffect(() => {
+    if (questions.length > 0) {
+      const pct = ((currentQuestionIndex + 1) / questions.length) * 100;
+      progressWidth.value = withSpring(pct, { damping: 18, stiffness: 120 });
+    }
+  }, [currentQuestionIndex, questions.length, progressWidth]);
 
   const animateTransition = useCallback(() => {
     questionFade.value = withSequence(withTiming(0, { duration: 160 }), withTiming(1, { duration: 240 }));
@@ -219,7 +220,7 @@ export default function QuizScreen() {
       withTiming(50, { duration: 0 }),
       withSpring(0, { damping: 16, stiffness: 200 })
     );
-  }, []);
+  }, [questionFade, questionSlide]);
 
   const handleNextQuestion = useCallback(async () => {
     if (autoAdvanceTimerRef.current) { clearTimeout(autoAdvanceTimerRef.current); autoAdvanceTimerRef.current = null; }
@@ -245,7 +246,7 @@ export default function QuizScreen() {
       // Show result screen immediately — confetti fires at the same tick
       setShowResult(true);
     }
-  }, [currentQuestionIndex, questions, story, profile, refreshQuizAttempts, animateTransition]);
+  }, [currentQuestionIndex, questions.length, story, profile, refreshQuizAttempts, animateTransition, feedbackSlide]);
 
   const handleAnswerSelect = useCallback((answerOrder: string) => {
     if (selectedAnswer !== null) return;
@@ -277,7 +278,7 @@ export default function QuizScreen() {
     const isLastQuestion = currentQuestionIndex === questions.length - 1;
     if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
     autoAdvanceTimerRef.current = setTimeout(handleNextQuestion, isLastQuestion ? 0 : 2200);
-  }, [selectedAnswer, questions, currentQuestionIndex, handleNextQuestion]);
+  }, [selectedAnswer, questions, currentQuestionIndex, handleNextQuestion, profile?.kid_name, story?.language_code, scoreScale, cardScale, feedbackSlide]);
 
   // ─── Loading ─────────────────────────────────────────────────────────
   if (isLoading) {
@@ -626,7 +627,7 @@ export default function QuizScreen() {
   );
 }
 
-function useStyles(C: any, winWidth: number, winHeight: number, isTablet: boolean, insets: any) {
+function useStyles(C: ColorScheme['colors'], winWidth: number, winHeight: number, isTablet: boolean) {
   let qFontSize = 40;
   let qLineHeight = 52;
   if (isTablet) {
@@ -862,5 +863,5 @@ function useStyles(C: any, winWidth: number, winHeight: number, isTablet: boolea
       borderRadius: BORDER_RADIUS.pill, borderWidth: 2,
     },
     resultSecondaryBtnText: { fontSize: isTablet ? 18 : 16 },
-  }), [C, winWidth, winHeight, isTablet, insets]);
+  }), [C, winWidth, winHeight, isTablet]);
 }
