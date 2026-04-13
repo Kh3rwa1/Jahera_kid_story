@@ -277,7 +277,6 @@ export const useHomeStyles = (C: any, isTablet: boolean, isDesktop: boolean) => 
     shimmerOverlay: {
       position: 'absolute', top: 0, bottom: 0, width: 80,
       backgroundColor: 'rgba(255,255,255,0.15)',
-      transform: [{ skewX: '-25deg' }],
     },
   }), [C, isTablet, isDesktop]);
 };
