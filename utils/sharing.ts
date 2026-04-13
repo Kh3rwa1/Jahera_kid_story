@@ -24,7 +24,7 @@ const webShare = async (text: string, title: string): Promise<boolean> => {
 
 const nativeShare = async (text: string): Promise<boolean> => {
   try {
-    const FileSystem = require('expo-file-system');
+    const FileSystem = require('expo-file-system/legacy');
     const Sharing = require('expo-sharing');
 
     const canShare = await Sharing.isAvailableAsync();

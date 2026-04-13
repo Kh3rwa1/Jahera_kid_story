@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "jahera",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
     "jsEngine": "hermes",
     "description": "Jahera - AI-powered personalized story adventures for kids. Create magical, educational stories tailored to your child's interests, family, and friends with multilingual narration.",
     "primaryColor": "#FF4B4B",

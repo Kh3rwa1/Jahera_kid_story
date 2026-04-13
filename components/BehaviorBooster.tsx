@@ -87,8 +87,9 @@ const BoosterCard = memo(({
   return (
     <Animated.View
       entering={FadeInRight.delay(index * 100).springify().damping(15)}
-      style={[styles.cardContainer, animatedStyle]}
+      style={styles.cardContainer}
     >
+      <Animated.View style={[{ flex: 1 }, animatedStyle]}>
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={onPress}
@@ -132,6 +133,7 @@ const BoosterCard = memo(({
           </View>
         </LinearGradient>
       </TouchableOpacity>
+      </Animated.View>
     </Animated.View>
   );
 });

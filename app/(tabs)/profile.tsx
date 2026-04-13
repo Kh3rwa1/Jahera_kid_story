@@ -133,12 +133,14 @@ function ProfileHero({
   storiesCount, 
   quizStats, 
   streak, 
+  COLORS,
   styles 
 }: Readonly<{ 
   profile: { kid_name: string; avatar_url: string | null | undefined; languages?: { language_code: string; language_name: string }[] }; 
   storiesCount: number; 
   quizStats: { totalQuizzes: number }; 
   streak: number; 
+  COLORS: ColorScheme['colors'];
   styles: ProfileStyles 
 }>) {
   const router = useRouter();
@@ -454,6 +456,7 @@ export default function ProfileScreen() {
           storiesCount={stories?.length || 0}
           quizStats={stats}
           streak={streak}
+          COLORS={COLORS}
           styles={styles}
         />
 
