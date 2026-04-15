@@ -245,7 +245,7 @@ export default function HomeScreen() {
               </View>
             </View>
             <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.1)']} style={styles.heroStrip}>
-              <View style={styles.heroStripItem}><Clock size={12} color="rgba(255,255,255,0.8)" /><Text style={styles.heroStripText}>2 min read</Text></View>
+              <View style={styles.heroStripItem}><Clock size={12} color="rgba(255,255,255,0.8)" /><Text style={styles.heroStripText}>5+ min stories</Text></View>
               <View style={styles.heroStripDot} /><View style={styles.heroStripItem}><Award size={12} color="rgba(255,255,255,0.8)" /><Text style={styles.heroStripText}>Earn badges</Text></View>
             </LinearGradient>
           </LinearGradient>

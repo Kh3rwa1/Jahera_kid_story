@@ -392,6 +392,19 @@ export const storyService = {
     }
   },
 
+  async getAll(): Promise<Story[] | null> {
+    try {
+      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORIES, [
+        Query.orderDesc('generated_at'),
+        Query.limit(200)
+      ]);
+      return response.documents.map(doc => mapDoc<Story>(doc));
+    } catch (error) {
+      logger.error('Error fetching all stories:', error);
+      return null;
+    }
+  },
+
   async getByProfileId(profileId: string): Promise<Story[] | null> {
     try {
       const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORIES, [

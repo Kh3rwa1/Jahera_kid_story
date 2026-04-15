@@ -3,9 +3,8 @@ import { useApp } from '@/contexts/AppContext';
 import { generateAdventureStory, QuotaExceededError, StoryOptions } from '@/services/aiService';
 import { analytics } from '@/services/analyticsService';
 import { generateAudio } from '@/services/audioService';
-import { familyMemberService, friendService, profileService, quizService, storyService } from '@/services/database';
+import { profileService, quizService, storyService } from '@/services/database';
 import { getLocationFromProfile, LocationContext } from '@/services/locationService';
-import { FamilyMember, Friend } from '@/types/database';
 import { getCurrentContext } from '@/utils/contextUtils';
 import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
@@ -27,8 +26,7 @@ export function useStoryGeneration() {
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState((params.languageCode as string) || 'en');
 
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [friends, setFriends] = useState<Friend[]>([]);
+
   const [locationCtx, setLocationCtx] = useState<LocationContext | null>(profile ? getLocationFromProfile(profile) : null);
 
   const [phase, setPhase] = useState<GenerationPhase>('options');
@@ -49,17 +47,7 @@ export function useStoryGeneration() {
   useEffect(() => { isMountedRef.current = true; return () => { isMountedRef.current = false; }; }, []);
   useEffect(() => { if (profile) setLocationCtx(getLocationFromProfile(profile)); }, [profile]);
 
-  useEffect(() => {
-    if (!resolvedProfileId) return;
-    (async () => {
-      try {
-        const [fm, fr] = await Promise.all([familyMemberService.getByProfileId(resolvedProfileId), friendService.getByProfileId(resolvedProfileId)]);
-        if (!isMountedRef.current) return;
-        if (fm) setFamilyMembers(fm);
-        if (fr) setFriends(fr);
-      } catch (err) { logger.warn('[useStoryGeneration] Failed to load relations:', err); }
-    })();
-  }, [resolvedProfileId]);
+
 
   const completeStep = useCallback((stepId: string) => { setSteps(prev => prev.map(s => s.id === stepId ? { ...s, completed: true } : s)); hapticFeedback.light(); }, []);
   const markError = useCallback((message: string) => { setError(message); }, []);
@@ -186,8 +174,6 @@ export function useStoryGeneration() {
     selectedLength, setSelectedLength,
     selectedVoice, setSelectedVoice,
     selectedLanguage, setSelectedLanguage,
-    familyMembers, setFamilyMembers,
-    friends, setFriends,
     locationCtx,
     phase, status, progress, error, isQuotaError, steps,
     handleStartGeneration, handleRetry,
