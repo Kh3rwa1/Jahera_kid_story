@@ -4,6 +4,7 @@ import { PlanType, revenueCatService } from '@/services/revenueCatServiceInterna
 import { streakService,subscriptionService } from '@/services/subscriptionService';
 import { ProfileWithRelations,QuizAttempt,Story,Streak,SubscriptionStatus } from '@/types/database';
 import { handleError } from '@/utils/errorHandler';
+import { personalizeStories } from '@/utils/nameSubstitution';
 import React,{ createContext,ReactNode,useCallback,useContext,useEffect,useMemo,useRef,useState } from 'react';
 
 interface AppContextType {
@@ -69,13 +70,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       profileIdRef.current = data.id;
 
       const [storiesData, attemptsData, subData, streakData] = await Promise.all([
-        storyService.getByProfileId(data.id),
+        storyService.getAll(),
         quizService.getAttemptsByProfileId(data.id),
         subscriptionService.getStatus(data.id),
         streakService.getStreak(data.id),
       ]);
 
-      setStories(storiesData || []);
+      setStories(personalizeStories(storiesData || [], data.kid_name, data.city));
       setQuizAttempts(attemptsData || []);
       setSubscription(subData);
       setStreak(streakData);
@@ -131,8 +132,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const refreshStories = useCallback(async () => {
     if (!profile) return;
     try {
-      const data = await storyService.getByProfileId(profile.id);
-      setStories(data || []);
+      const data = await storyService.getAll();
+      setStories(personalizeStories(data || [], profile.kid_name, profile.city));
     } catch (err) {
       handleError(err, 'AppContext.refreshStories');
     }
