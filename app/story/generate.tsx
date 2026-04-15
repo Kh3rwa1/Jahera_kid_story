@@ -33,8 +33,6 @@ export default function GenerateStoryScreen() {
     selectedLength, setSelectedLength,
     selectedVoice, setSelectedVoice,
     selectedLanguage, setSelectedLanguage,
-    familyMembers, setFamilyMembers,
-    friends, setFriends,
     locationCtx,
     phase, status, progress, error, isQuotaError, steps,
     handleStartGeneration, handleRetry,
@@ -120,10 +118,6 @@ export default function GenerateStoryScreen() {
         onVoiceChange={setSelectedVoice}
         selectedLanguage={selectedLanguage}
         setSelectedLanguage={setSelectedLanguage}
-        familyMembers={familyMembers}
-        friends={friends}
-        onFamilyMembersChange={setFamilyMembers}
-        onFriendsChange={setFriends}
         locationLabel={locationCtx ? formatLocationLabel(locationCtx) : 'City not set'}
         onStart={handleStartGeneration}
         onBack={() => router.back()}

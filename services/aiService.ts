@@ -50,8 +50,8 @@ export async function generateAdventureStory(
       ...profile,
       kid_name: sanitizeName(profile.kid_name || ''),
       city: sanitizeCity(profile.city || ''),
-      family_members: (profile.family_members || []).map(m => ({ ...m, name: sanitizeName(m.name || '') })),
-      friends: (profile.friends || []).map(f => ({ ...f, name: sanitizeName(f.name || '') })),
+      family_members: [],
+      friends: [],
     };
 
 

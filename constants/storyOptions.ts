@@ -17,9 +17,9 @@ export const MOODS = [
 ];
 
 export const LENGTHS = [
-  { id: 'short', label: 'Quick', desc: '~50 words', emoji: '⚡' },
-  { id: 'medium', label: 'Medium', desc: '~120 words', emoji: '📖' },
-  { id: 'long', label: 'Long', desc: '~250 words', emoji: '📜', pro: true } as const,
+  { id: 'short', label: 'Quick', desc: '~750 words', emoji: '⚡' },
+  { id: 'medium', label: 'Medium', desc: '~1500 words', emoji: '📖' },
+  { id: 'long', label: 'Long', desc: '~3000 words', emoji: '📜', pro: true } as const,
 ];
 
 export const FUN_FACTS = [
