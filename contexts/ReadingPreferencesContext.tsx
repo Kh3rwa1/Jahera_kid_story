@@ -12,6 +12,8 @@ export interface ReadingPreferences {
   lineSpacing: LineSpacing;
   textAlign: TextAlign;
   fontFamily: FontFamily;
+  /** When false, suppresses auto-play narration on quiz, home, and library screens */
+  autoSpeak: boolean;
 }
 
 export type ReadingPrefs = ReadingPreferences;
@@ -21,6 +23,7 @@ const DEFAULTS: ReadingPreferences = {
   lineSpacing: 'normal',
   textAlign: 'left',
   fontFamily: 'nunito',
+  autoSpeak: true,
 };
 
 export const LINE_SPACING_VALUES: Record<LineSpacing, number> = {
@@ -62,6 +65,7 @@ interface ReadingPreferencesContextValue {
   setLineSpacing: (spacing: LineSpacing) => void;
   setTextAlign: (align: TextAlign) => void;
   setFontFamily: (family: FontFamily) => void;
+  setAutoSpeak: (enabled: boolean) => void;
   resetToDefaults: () => void;
 }
 
@@ -115,6 +119,14 @@ export function ReadingPreferencesProvider({ children }: Readonly<{ children: Re
     });
   }, []);
 
+  const setAutoSpeak = useCallback((enabled: boolean) => {
+    setPrefs(prev => {
+      const updated = { ...prev, autoSpeak: enabled };
+      storage.setItem(STORAGE_KEY, updated).catch(() => {});
+      return updated;
+    });
+  }, []);
+
   const resetToDefaults = useCallback(() => {
     save(DEFAULTS);
   }, [save]);
@@ -125,8 +137,9 @@ export function ReadingPreferencesProvider({ children }: Readonly<{ children: Re
     setLineSpacing,
     setTextAlign,
     setFontFamily,
+    setAutoSpeak,
     resetToDefaults,
-  }), [prefs, setFontSize, setLineSpacing, setTextAlign, setFontFamily, resetToDefaults]);
+  }), [prefs, setFontSize, setLineSpacing, setTextAlign, setFontFamily, setAutoSpeak, resetToDefaults]);
 
   return (
     <ReadingPreferencesContext.Provider value={value}>

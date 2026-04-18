@@ -6,7 +6,8 @@ import { analytics } from '@/services/analyticsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import React from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ConsentScreen() {
   const { currentTheme } = useTheme();

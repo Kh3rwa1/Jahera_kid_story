@@ -1,11 +1,9 @@
 import { BehaviorGoalPicker } from '@/components/BehaviorGoalPicker';
-import { CharacterManager } from '@/components/CharacterManager';
 import { VoicePresetPicker } from '@/components/VoicePresetPicker';
 import { ShimmerCta } from '@/components/ui/ShimmerCta';
 import { Language, SUPPORTED_LANGUAGES } from '@/constants/languages';
 import { LENGTHS, MOODS, THEMES } from '@/constants/storyOptions';
 import { FONTS, SHADOWS } from '@/constants/theme';
-import { FamilyMember, Friend } from '@/types/database';
 import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,10 +25,6 @@ interface OptionsViewProps {
   onVoiceChange: (voiceId: string | null) => void;
   selectedLanguage: string;
   setSelectedLanguage: (id: string) => void;
-  familyMembers: FamilyMember[];
-  friends: Friend[];
-  onFamilyMembersChange: (fm: FamilyMember[]) => void;
-  onFriendsChange: (fr: Friend[]) => void;
   locationLabel: string;
   onStart: () => void;
   onBack: () => void;
@@ -41,9 +35,9 @@ interface OptionsViewProps {
 }
 
 const LENGTH_LABELS: Record<'short'|'medium'|'long', {label: string; desc: string}> = {
-  short: { label: 'Quick (2 min)', desc: 'Perfect for a short break' },
-  medium: { label: 'Bedtime (5 min)', desc: 'Great for nightly stories' },
-  long: { label: 'Weekend (8 min)', desc: 'Deep adventure time' },
+  short: { label: 'Quick (5 min)', desc: 'Ideal for a short story' },
+  medium: { label: 'Bedtime (10 min)', desc: 'Perfect for nightly routines' },
+  long: { label: 'Epic (20+ min)', desc: 'Deep adventure time' },
 };
 
 export function OptionsView(props: Readonly<OptionsViewProps>) {
@@ -87,7 +81,6 @@ export function OptionsView(props: Readonly<OptionsViewProps>) {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langScroll}>{SUPPORTED_LANGUAGES.map(lang => <LanguagePill key={lang.code} lang={lang} selected={props.selectedLanguage===lang.code} colors={props.colors} onPress={() => props.setSelectedLanguage(lang.code)} />)}</ScrollView>
         </Section>
 
-        <View style={styles.characterSection}><CharacterManager profileId={props.profileId} familyMembers={props.familyMembers} friends={props.friends} onFamilyMembersChange={props.onFamilyMembersChange} onFriendsChange={props.onFriendsChange} /></View>
 
         <View style={styles.footer}><ShimmerCta label="Create Story" onPress={props.onStart} gradient={selectedThemeObj.gradient} renderIcon={() => <Wand2 size={22} color="#FFF" />} /></View>
       </ScrollView>

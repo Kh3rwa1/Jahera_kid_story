@@ -1,6 +1,7 @@
 import { BORDER_RADIUS,FONT_SIZES,FONTS,SHADOWS,SPACING } from '@/constants/theme';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { ThemeColors } from '@/types/theme';
 import { generateAudio } from '@/services/audioService';
 import { profileService } from '@/services/database';
 import Slider from '@react-native-community/slider';
@@ -30,7 +31,7 @@ TextInput,
 TouchableOpacity,
 View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const RECOMMENDED_VOICES = [
   { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', description: 'Warm, calm, & storytelling', gender: 'Female' },
@@ -339,7 +340,7 @@ export default function AudioSettingsScreen() {
   );
 }
 
-const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets) => {
+const useStyles = (C: ThemeColors, insets: EdgeInsets) => {
   return React.useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: C.background },
     header: {

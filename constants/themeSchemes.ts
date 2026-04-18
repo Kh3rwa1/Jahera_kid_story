@@ -111,7 +111,7 @@ export const MINT_THEME: ColorScheme = {
     text: {
       primary: '#0D2B29',
       secondary: '#4A7370',
-      light: '#8BB8B5',
+      light: '#6A9895',
       inverse: '#FFFFFF',
       gradient: ['#00C4B4', '#4DD9D0'],
     },
@@ -199,7 +199,7 @@ export const PURPLE_THEME: ColorScheme = {
     text: {
       primary: '#1E0A3C',
       secondary: '#5B4080',
-      light: '#9D82C0',
+      light: '#7D5FA8',
       inverse: '#FFFFFF',
       gradient: ['#7C3AED', '#A78BFA'],
     },
@@ -287,7 +287,7 @@ export const BLUE_THEME: ColorScheme = {
     text: {
       primary: '#001A4D',
       secondary: '#2A5080',
-      light: '#6A96C0',
+      light: '#4D779E',
       inverse: '#FFFFFF',
       gradient: ['#0066FF', '#4D9FFF'],
     },
@@ -375,7 +375,7 @@ export const PINK_THEME: ColorScheme = {
     text: {
       primary: '#330015',
       secondary: '#7A2248',
-      light: '#C07090',
+      light: '#A05070',
       inverse: '#FFFFFF',
       gradient: ['#FF1A6B', '#FF6699'],
     },
@@ -463,7 +463,7 @@ export const GREEN_THEME: ColorScheme = {
     text: {
       primary: '#001A0D',
       secondary: '#1A5C30',
-      light: '#5A9C70',
+      light: '#3D7F55',
       inverse: '#FFFFFF',
       gradient: ['#00C853', '#69F0AE'],
     },
@@ -551,7 +551,7 @@ export const ORANGE_THEME: ColorScheme = {
     text: {
       primary: '#2B0D00',
       secondary: '#7A3010',
-      light: '#C07050',
+      light: '#A05030',
       inverse: '#FFFFFF',
       gradient: ['#FF5500', '#FF8040'],
     },
@@ -639,7 +639,7 @@ export const RED_THEME: ColorScheme = {
     text: {
       primary: '#330D0D',
       secondary: '#7A2424',
-      light: '#C07575',
+      light: '#A05555',
       inverse: '#FFFFFF',
       gradient: ['#FF4B4B', '#FF7D7D'],
     },
@@ -708,6 +708,94 @@ export const RED_THEME: ColorScheme = {
   },
 };
 
+// Night Sky Dark Theme
+export const DARK_THEME: ColorScheme = {
+  id: 'dark',
+  name: 'Night Sky',
+  emoji: '🌙',
+  colors: {
+    primary: '#7C9AFF',
+    primaryDark: '#5A7AFF',
+    primaryLight: '#A5BBFF',
+    secondary: '#4A5580',
+    secondaryDark: '#3A4568',
+    secondaryLight: '#5E6A94',
+    background: '#0F1117',
+    backgroundGradient: ['#0F1117', '#151820', '#1A1E2A'],
+    cardBackground: '#1E2230',
+    cardGradient: ['#1E2230', '#252A3A'],
+    text: {
+      primary: '#E8EAF0',
+      secondary: '#9EA5BC',
+      light: '#6B7394',
+      inverse: '#0F1117',
+      gradient: ['#7C9AFF', '#A5BBFF'],
+    },
+    categoryColors: {
+      green: '#4ADE80',
+      greenGradient: ['#1A3A28', '#4ADE80', '#22C55E'],
+      teal: '#2DD4BF',
+      tealGradient: ['#1A3534', '#2DD4BF', '#14B8A6'],
+      peach: '#FF8A8A',
+      peachGradient: ['#3A1A1A', '#FF8A8A', '#FF6B6B'],
+      purple: '#A78BFA',
+      purpleGradient: ['#2A1A4A', '#A78BFA', '#8B5CF6'],
+      blue: '#60A5FA',
+      blueGradient: ['#1A2A4A', '#60A5FA', '#3B82F6'],
+    },
+    accent: {
+      gold: '#FBBF24',
+      goldGradient: ['#3A3018', '#FBBF24', '#F59E0B'],
+      rose: '#FB7185',
+      roseGradient: ['#3A1820', '#FB7185', '#F43F5E'],
+      mint: '#5EEAD4',
+      mintGradient: ['#1A3530', '#5EEAD4', '#2DD4BF'],
+      lavender: '#C084FC',
+      lavenderGradient: ['#2A1A40', '#C084FC', '#A855F7'],
+    },
+    success: '#4ADE80',
+    successLight: '#86EFAC',
+    error: '#FB7185',
+    errorLight: '#FCA5B0',
+    warning: '#FBBF24',
+    warningLight: '#FDE68A',
+    info: '#60A5FA',
+    infoLight: '#93C5FD',
+    gradients: {
+      primary: ['#A5BBFF', '#7C9AFF', '#5A7AFF'],
+      secondary: ['#5E6A94', '#4A5580', '#3A4568'],
+      sunset: ['#FB7185', '#7C9AFF', '#5EEAD4'],
+      sunrise: ['#5EEAD4', '#7C9AFF', '#FBBF24'],
+      ocean: ['#60A5FA', '#3B82F6', '#2563EB'],
+      forest: ['#86EFAC', '#4ADE80', '#22C55E'],
+      magic: ['#C084FC', '#FB7185', '#FBBF24'],
+      royal: ['#A78BFA', '#8B5CF6', '#6D28D9'],
+      success: ['#86EFAC', '#4ADE80', '#22C55E'],
+      premium: ['#FBBF24', '#7C9AFF', '#5A7AFF'],
+      glassMorphism: ['rgba(30, 34, 48, 0.85)', 'rgba(30, 34, 48, 0.55)'],
+      glassMorphismDark: ['rgba(0, 0, 0, 0.4)', 'rgba(0, 0, 0, 0.2)'],
+    },
+    shadow: {
+      light: 'rgba(124, 154, 255, 0.06)',
+      medium: 'rgba(124, 154, 255, 0.14)',
+      dark: 'rgba(0, 0, 0, 0.4)',
+      darker: 'rgba(0, 0, 0, 0.6)',
+      colored: 'rgba(124, 154, 255, 0.3)',
+      coloredLight: 'rgba(124, 154, 255, 0.15)',
+      purple: 'rgba(167, 139, 250, 0.3)',
+      blue: 'rgba(96, 165, 250, 0.3)',
+      green: 'rgba(74, 222, 128, 0.3)',
+    },
+    glass: {
+      background: 'rgba(30, 34, 48, 0.85)',
+      backgroundDark: 'rgba(15, 17, 23, 0.9)',
+      border: 'rgba(255, 255, 255, 0.08)',
+      borderDark: 'rgba(255, 255, 255, 0.04)',
+      overlay: 'rgba(124, 154, 255, 0.05)',
+    },
+  },
+};
+
 // All available themes
 export const COLOR_SCHEMES: ColorScheme[] = [
   RED_THEME,
@@ -717,6 +805,7 @@ export const COLOR_SCHEMES: ColorScheme[] = [
   PINK_THEME,
   GREEN_THEME,
   ORANGE_THEME,
+  DARK_THEME,
 ];
 
 // Default theme

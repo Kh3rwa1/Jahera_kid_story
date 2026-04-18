@@ -37,11 +37,12 @@ export const SPACING = {
 
 export const BORDER_RADIUS = {
   xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 20,
-  xl: 26,
-  xxl: 32,
+  sm: 12,     // chips, badges, small pills
+  md: 16,     // buttons, inputs, search bars
+  lg: 20,     // small cards, thumbnails
+  xl: 26,     // medium cards, modals
+  xxl: 32,    // feature cards, story cards
+  xxxl: 40,   // hero sections, full-width banners
   round: 100,
   pill: 999,
 };
@@ -95,14 +96,14 @@ export function createShadows(primaryColor: string) {
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.06,
       shadowRadius: 3,
-      elevation: Platform.OS === 'android' ? 0 : 2,
+      elevation: 2,
     },
     sm: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.08,
       shadowRadius: 6,
-      elevation: Platform.OS === 'android' ? 0 : 3,
+      elevation: 3,
     },
     // Use this for top-most cards to prevent shadow bleed on Android
     topCard: {
@@ -110,35 +111,35 @@ export function createShadows(primaryColor: string) {
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.08,
       shadowRadius: 12,
-      elevation: Platform.OS === 'android' ? 0 : 4,
+      elevation: 4,
     },
     md: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 5 },
       shadowOpacity: 0.1,
       shadowRadius: 12,
-      elevation: Platform.OS === 'android' ? 0 : 5,
+      elevation: 5,
     },
     lg: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.16,
       shadowRadius: 24,
-      elevation: Platform.OS === 'android' ? 0 : 10,
+      elevation: 8,
     },
     xl: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 16 },
       shadowOpacity: 0.12,
       shadowRadius: 32,
-      elevation: Platform.OS === 'android' ? 0 : 12,
+      elevation: 10,
     },
     xxl: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 24 },
       shadowOpacity: 0.15,
       shadowRadius: 48,
-      elevation: Platform.OS === 'android' ? 0 : 16,
+      elevation: 12,
     },
     // Colored shadows for premium effect
     colored: {

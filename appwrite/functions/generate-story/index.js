@@ -40,7 +40,7 @@ function httpsPost(baseUrl, path, headers, body, timeoutMs = 25000) {
   return Promise.race([requestPromise, timeoutPromise]);
 }
 
-const THEME_PROMPTS = {
+const DEFAULT_THEME_PROMPTS = {
   adventure: 'an exciting adventure with exploration and discovery',
   fantasy: 'a magical fantasy world with spells, dragons, and wonder',
   magic: 'a magical world with spells and wonder',
@@ -55,7 +55,7 @@ const THEME_PROMPTS = {
   science: 'science, invention, and curious discoveries',
 };
 
-const MOOD_PROMPTS = {
+const DEFAULT_MOOD_PROMPTS = {
   funny: 'side-splittingly funny, full of playful slapstick, silly puns, and hilarious situations that will make a child giggle and laugh out loud',
   exciting: 'thrilling, high-energy, and full of cinematic action and suspense',
   calming: 'gentle, peaceful, and soothing — perfect for settling down',
@@ -64,10 +64,10 @@ const MOOD_PROMPTS = {
   educational: 'engagingly educational — teaching a fascinating fun fact in a story-driven way',
 };
 
-const LENGTH_CONFIGS = {
-  short: { words: '200-280 words', tokens: 1200 }, // Slightly higher tokens for better endings
-  medium: { words: '400-550 words', tokens: 2000 },
-  long: { words: '700-950 words', tokens: 3200 },
+const DEFAULT_LENGTH_CONFIGS = {
+  short: { words: '700-900 words', tokens: 1500 },
+  medium: { words: '1400-1600 words', tokens: 3000 },
+  long: { words: '2800-3200 words', tokens: 6000 },
 };
 
 const OPENROUTER_BASE = 'https://openrouter.ai';
@@ -86,7 +86,7 @@ function sanitizeForPrompt(input) {
     .slice(0, 100);
 }
 
-const BEHAVIOR_GOALS = {
+const DEFAULT_BEHAVIOR_GOALS = {
   confidence: 'The story must show the child taking small brave steps that build confidence over time. Let the hero struggle briefly, then succeed through persistence and support. Do NOT lecture — teach through adventure events.',
   sharing: 'The story must naturally demonstrate why sharing with others brings happiness. Show the main character learning that giving feels better than keeping. Do NOT lecture — teach through story events.',
   kindness: 'Include moments where kindness changes outcomes and helps others feel safe and valued. Show kindness as strength in action. Do NOT lecture — teach through the journey.',
@@ -101,26 +101,85 @@ const BEHAVIOR_GOALS = {
   responsibility: 'Give the hero an important responsibility and show growth through owning actions and finishing tasks. Include consequences and recovery. Do NOT lecture — teach through the adventure.'
 };
 
-async function fetchDynamicPrompt(databases, log) {
+const DEFAULT_SYSTEM_PROMPT = `You are a world-class award-winning creative children's storyteller. 
+You write cinematic, age-appropriate adventures for children aged 4-10. 
+CRITICAL TONE REQUIREMENTS:
+- If Tone is "funny": The story MUST be genuinely humorous for a child. Use silly dialogue, funny misunderstandings, playful slapstick, and whimsical descriptions. The goal is to make them giggle at every turn.
+- If Theme is "adventure": Ensure a strong sense of wonder, discovery, and high-stakes excitement (child-safe).
+- Character Integrity: Family and friends are HUMANS. Never make them animals or objects. Give them distinct personalities.
+
+Response format: Strictly JSON. No markdown, no fences.`;
+
+function safeJsonParse(value, fallback, label, log) {
+  try {
+    const parsed = JSON.parse(value);
+    log(`✅ Loaded ${label} from database.`);
+    return parsed;
+  } catch (err) {
+    log(`⚠️ Failed to parse ${label} from database, using default: ${err.message}`);
+    return fallback;
+  }
+}
+
+async function fetchAllConfigs(databases, log) {
+  const configs = {
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    themePrompts: DEFAULT_THEME_PROMPTS,
+    moodPrompts: DEFAULT_MOOD_PROMPTS,
+    lengthConfigs: DEFAULT_LENGTH_CONFIGS,
+    behaviorGoals: DEFAULT_BEHAVIOR_GOALS,
+  };
+
   try {
     const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || 'jahera_db';
     const response = await databases.listDocuments(
       DATABASE_ID,
       'config',
-      [Query.equal('key', 'story_system_prompt'), Query.limit(1)]
+      [
+        Query.equal('key', [
+          'story_system_prompt',
+          'theme_prompts',
+          'mood_prompts',
+          'length_configs',
+          'behavior_goals'
+        ]),
+        Query.limit(10)
+      ]
     );
 
-    if (response.documents.length > 0) {
-      log('Successfully fetched dynamic system prompt from database.');
-      return response.documents[0].value;
+    const docMap = {};
+    for (const doc of response.documents) {
+      docMap[doc.key] = doc.value;
+    }
+
+    log(`Fetched ${response.documents.length} config(s) from database.`);
+
+    if (docMap['story_system_prompt']) {
+      configs.systemPrompt = docMap['story_system_prompt'];
+      log('✅ Loaded story_system_prompt from database.');
+    }
+    if (docMap['theme_prompts']) {
+      configs.themePrompts = safeJsonParse(docMap['theme_prompts'], DEFAULT_THEME_PROMPTS, 'theme_prompts', log);
+    }
+    if (docMap['mood_prompts']) {
+      configs.moodPrompts = safeJsonParse(docMap['mood_prompts'], DEFAULT_MOOD_PROMPTS, 'mood_prompts', log);
+    }
+    if (docMap['length_configs']) {
+      configs.lengthConfigs = safeJsonParse(docMap['length_configs'], DEFAULT_LENGTH_CONFIGS, 'length_configs', log);
+    }
+    if (docMap['behavior_goals']) {
+      configs.behaviorGoals = safeJsonParse(docMap['behavior_goals'], DEFAULT_BEHAVIOR_GOALS, 'behavior_goals', log);
     }
   } catch (err) {
-    log('Could not fetch dynamic prompt (check if "config" collection exists): ' + err.message);
+    log('⚠️ Could not fetch configs from database, using all defaults: ' + err.message);
   }
-  return null;
+
+  return configs;
 }
 
-function buildPrompt(profile, languageCode, context, options, dynamicSystemPrompt) {
+function buildPrompt(profile, languageCode, context, options, configs) {
+  const { systemPrompt, themePrompts, moodPrompts, lengthConfigs, behaviorGoals } = configs;
+
   const familyMembers = (profile.family_members || []);
   const friends = (profile.friends || []);
   const characterNames = [...familyMembers.map(m => sanitizeForPrompt(m.name)), ...friends.map(f => sanitizeForPrompt(f.name))].filter(Boolean);
@@ -131,35 +190,36 @@ function buildPrompt(profile, languageCode, context, options, dynamicSystemPromp
     ? `You MUST include these specific characters as major, active participants in the adventure: ${characterNames.join(', ')}. They should have dialogue and play key roles in resolving the story hooks. CRITICAL: These named characters are human children/family/friends and must never be rewritten as animals, creatures, or objects.`
     : '';
 
-  const themeDesc = options?.theme ? (THEME_PROMPTS[options.theme] || options.theme) : 'an adventure';
-  const moodDesc = options?.mood ? (MOOD_PROMPTS[options.mood] || options.mood) : 'engaging and fun';
-  const lengthConfig = LENGTH_CONFIGS[options?.length || 'medium'];
+  const themeDesc = options?.theme ? (themePrompts[options.theme] || options.theme) : 'an adventure';
+  const moodDesc = options?.mood ? (moodPrompts[options.mood] || options.mood) : 'engaging and fun';
+  const lengthConfig = lengthConfigs[options?.length || 'medium'];
+
+  const LANGUAGE_MAP = {
+    'en': 'English', 'es': 'Spanish', 'fr': 'French', 'de': 'German', 'it': 'Italian',
+    'pt': 'Portuguese', 'ru': 'Russian', 'zh': 'Chinese', 'ja': 'Japanese', 'ko': 'Korean',
+    'ar': 'Arabic', 'hi': 'Hindi', 'bn': 'Bengali', 'sat': 'Santali (Ol Chiki)', 'tr': 'Turkish',
+    'pl': 'Polish', 'nl': 'Dutch', 'sv': 'Swedish', 'no': 'Norwegian', 'da': 'Danish',
+    'fi': 'Finnish', 'el': 'Greek'
+  };
+  const languageName = LANGUAGE_MAP[languageCode] || languageCode;
 
   const loc = options?.locationContext;
   const locationParts = [loc?.city, loc?.country].filter(Boolean);
   const locationLine = sanitizedCity
-    ? `- Location: Set the story in or around ${sanitizedCity} — weave in local landmarks and cultural details to make it feel authentic and grounded.`
+    ? `- Location: Subtly reference ${sanitizedCity} as their hometown or starting point if it fits the theme. Do NOT let the location override the theme (e.g. if the theme is Outer Space, they can travel from ${sanitizedCity} to space).`
     : '';
 
-  // Use dynamic prompt from DB or robust default
-  const systemMessage = dynamicSystemPrompt || `You are a world-class award-winning creative children's storyteller. 
-You write cinematic, age-appropriate adventures for children aged 4-10. 
-CRITICAL TONE REQUIREMENTS:
-- If Tone is "funny": The story MUST be genuinely humorous for a child. Use silly dialogue, funny misunderstandings, playful slapstick, and whimsical descriptions. The goal is to make them giggle at every turn.
-- If Theme is "adventure": Ensure a strong sense of wonder, discovery, and high-stakes excitement (child-safe).
-- Character Integrity: Family and friends are HUMANS. Never make them animals or objects. Give them distinct personalities.
+  const systemMessage = systemPrompt;
 
-Response format: Strictly JSON. No markdown, no fences.`;
-
-  const behaviorInstruction = options?.behaviorGoal && BEHAVIOR_GOALS[options.behaviorGoal]
+  const behaviorInstruction = options?.behaviorGoal && behaviorGoals[options.behaviorGoal]
     ? `
-- BEHAVIORAL LESSON (CRITICAL): ${BEHAVIOR_GOALS[options.behaviorGoal]} The story MUST naturally weave this lesson into the narrative. Do NOT lecture — teach through the adventure.`
+- BEHAVIORAL LESSON (CRITICAL): ${behaviorGoals[options.behaviorGoal]} The story MUST naturally weave this lesson into the narrative. Do NOT lecture — teach through the adventure.`
     : '';
 
   const userMessage = `Create a magical children's story for ${sanitizedKidName}.
 
 Story Configuration:
-- Language: ${languageCode}
+- Language: ${languageName}
 - Time/Season: ${context.timeOfDay} during ${context.season}
 - Theme: ${themeDesc}
 - Tone/Mood: ${moodDesc} (Master this tone. If funny, be hilarious. If exciting, be thrilling.)
@@ -170,6 +230,10 @@ ${locationLine}
 ${characterContext}
 ${behaviorInstruction}
 - Character Safety Rule: ${sanitizedKidName}${characterNames.length > 0 ? `, ${characterNames.join(', ')}` : ''} are humans. Never transform, recast, or describe them as animals/creatures/objects. If the theme is animals, animals can be side characters only.
+
+CRITICAL INSTRUCTIONS:
+1. You MUST write the ENTIRE story (including title) explicitly in ${languageName}.
+2. You MUST strictly follow the requested Theme (${themeDesc}) and Mood (${moodDesc}). Do not change the theme to fit the location.
 
 Focus on vivid sensory details, emotional warmth, and a satisfying conclusion where the characters learn something positive or find a wonderful surprise.
 
@@ -235,9 +299,9 @@ async function generateStoryHandler({ req, res, log, error }) {
       .setKey(process.env.APPWRITE_API_KEY || process.env.APPWRITE_FUNCTION_API_KEY);
     
     const databases = new Databases(client);
-    const dynamicPrompt = await fetchDynamicPrompt(databases, log);
+    const configs = await fetchAllConfigs(databases, log);
 
-    const { systemMessage, userMessage, tokens } = buildPrompt(profile, languageCode, context, options, dynamicPrompt);
+    const { systemMessage, userMessage, tokens } = buildPrompt(profile, languageCode, context, options, configs);
 
     const openrouterKey = process.env.OPENROUTER_API_KEY;
 

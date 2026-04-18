@@ -1,8 +1,8 @@
 import { VOICE_PRESETS } from '@/constants/voicePresets';
 import { useApp } from '@/contexts/AppContext';
-import { generateAdventureStory, QuotaExceededError, StoryOptions } from '@/services/aiService';
+// import { generateAdventureStory, QuotaExceededError, StoryOptions } from '@/services/aiService'; // removed dead code
 import { analytics } from '@/services/analyticsService';
-import { generateAudio } from '@/services/audioService';
+// import { generateAudio } from '@/services/audioService'; // removed dead code
 import { familyMemberService, friendService, profileService, quizService, storyService } from '@/services/database';
 import { DEVICE_TTS_AUDIO_URL } from '@/services/deviceTTSService';
 import { getLocationFromProfile, LocationContext } from '@/services/locationService';
@@ -29,8 +29,7 @@ export function useStoryGeneration() {
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState((params.languageCode as string) || 'en');
 
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [friends, setFriends] = useState<Friend[]>([]);
+
   const [locationCtx, setLocationCtx] = useState<LocationContext | null>(profile ? getLocationFromProfile(profile) : null);
 
   const [phase, setPhase] = useState<GenerationPhase>('options');
@@ -51,17 +50,7 @@ export function useStoryGeneration() {
   useEffect(() => { isMountedRef.current = true; return () => { isMountedRef.current = false; }; }, []);
   useEffect(() => { if (profile) setLocationCtx(getLocationFromProfile(profile)); }, [profile]);
 
-  useEffect(() => {
-    if (!resolvedProfileId) return;
-    (async () => {
-      try {
-        const [fm, fr] = await Promise.all([familyMemberService.getByProfileId(resolvedProfileId), friendService.getByProfileId(resolvedProfileId)]);
-        if (!isMountedRef.current) return;
-        if (fm) setFamilyMembers(fm);
-        if (fr) setFriends(fr);
-      } catch (err) { logger.warn('[useStoryGeneration] Failed to load relations:', err); }
-    })();
-  }, [resolvedProfileId]);
+
 
   const completeStep = useCallback((stepId: string) => { setSteps(prev => prev.map(s => s.id === stepId ? { ...s, completed: true } : s)); hapticFeedback.light(); }, []);
   const markError = useCallback((message: string) => { setError(message); }, []);
@@ -99,21 +88,12 @@ export function useStoryGeneration() {
       if (!isMountedRef.current) return;
       completeStep('profile');
 
-      const isFreeTemplateStory = subscription?.plan !== 'pro' && subscription?.plan !== 'family';
-      setStatus(isFreeTemplateStory ? 'Choosing a bedtime template...' : 'Creating your adventure story...');
-      setProgress(30);
       const context = getCurrentContext();
-      const preset = VOICE_PRESETS.find(v => v.id === selectedVoice) || null;
-      const options: StoryOptions = {
-        theme: selectedTheme, mood: selectedMood, length: selectedLength, locationContext: locationCtx,
-        behaviorGoal: selectedBehaviorGoal ?? undefined,
-        voicePreset: selectedVoice,
-        voiceSettings: preset?.settings ?? null,
-      };
-
-      const aiStory = isFreeTemplateStory
-        ? await templateStoryService.generateTemplateStory(profileData, selectedBehaviorGoal, selectedLanguage)
-        : await generateAdventureStory(profileData, selectedLanguage, context, options);
+      // Always generate a template story regardless of subscription plan
+      const isFreeTemplateStory = true;
+      setStatus('Choosing a bedtime template...');
+      setProgress(30);
+      const aiStory = await templateStoryService.generateTemplateStory(profileData, selectedBehaviorGoal, selectedLanguage);
 
       if (!aiStory) return markError('Could not generate a story.');
 
@@ -146,46 +126,25 @@ export function useStoryGeneration() {
       if (!isMountedRef.current) return;
       completeStep('quiz'); setStatus('Finalising your story...'); setProgress(90);
 
-      if (isFreeTemplateStory) {
-        completeStep('audio');
-      } else {
-        void generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, buildAudioSettings(profileData))
-          .then((url) => {
-            if (isMountedRef.current) {
-              if (url) {
-                completeStep('audio');
-              } else {
-                // This is the "text story but not audio" case
-                logger.warn('[useStoryGeneration] Audio generation returned null (likely timeout)');
-                setError('Story is ready, but audio is still generating in the background. You can find it in your Library shortly.');
-                // We still mark it as complete so they can view the text
-                completeStep('audio');
-              }
-            }
-          })
-          .catch(err => {
-            logger.error('[useStoryGeneration] Audio error:', err);
-            if (isMountedRef.current) {
-              setError('Audio generation failed. You can still read the story!');
-              completeStep('audio');
-            }
-          });
-      }
+      completeStep('audio'); // Audio generation removed; always use TTS template audio
 
       setStatus('Story ready!'); setProgress(100); hapticFeedback.success();
       await Promise.all([refreshSubscription(), refreshStories()]);
       if (isMountedRef.current) setTimeout(() => router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.id } }), 800);
     } catch (err) {
       logger.error('[useStoryGeneration] Generation Failed:', err);
-      if (err instanceof QuotaExceededError) { setIsQuotaError(true); setError(err.message); return; }
       setError(err instanceof Error ? err.message : 'Failed to generate story');
     }
   };
 
   const handleStartGeneration = () => {
+    // Free users: check story limit
     const isPro = subscription?.plan === 'pro' || subscription?.plan === 'family';
-    if (selectedLength === 'long' && !isPro && subscription?.stories_remaining === 0) return router.push('/paywall');
-    setPhase('generating'); runGeneration();
+    if (!isPro && subscription?.stories_remaining !== undefined && subscription.stories_remaining <= 0) {
+      return router.push('/paywall');
+    }
+    setPhase('generating');
+    runGeneration();
   };
 
   const handleRetry = () => { setError(null); setIsQuotaError(false); setProgress(0); setStatus('Preparing your adventure...'); setSteps(prev => prev.map(s => ({ ...s, completed: false }))); setPhase('options'); };
@@ -197,8 +156,6 @@ export function useStoryGeneration() {
     selectedLength, setSelectedLength,
     selectedVoice, setSelectedVoice,
     selectedLanguage, setSelectedLanguage,
-    familyMembers, setFamilyMembers,
-    friends, setFriends,
     locationCtx,
     phase, status, progress, error, isQuotaError, steps,
     handleStartGeneration, handleRetry,

@@ -1,5 +1,5 @@
 import { storage,STORAGE_BUCKETS } from '@/lib/appwrite';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 

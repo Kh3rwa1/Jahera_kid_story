@@ -24,7 +24,7 @@ export function HeroShimmer({ styles }: Readonly<{ styles: { shimmerOverlay: Sty
     return () => cancelAnimation(x);
   }, [x]);
   const shimmerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(x.value, [-1, 1], [-400, 400]) }],
+    transform: [{ translateX: interpolate(x.value, [-1, 1], [-400, 400]) }, { skewX: '-25deg' }],
   }));
   return (
     <Animated.View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} pointerEvents="none">
@@ -49,8 +49,10 @@ export function AnimatedStreakChip({ count, styles }: Readonly<{ count: number; 
   }));
   
   return (
-    <Animated.View style={[styles.streakChip, { backgroundColor: '#FFF3E0' }, style, pulseStyle]}>
-      <Animated.Text style={styles.streakChipText}>🔥 {count}</Animated.Text>
+    <Animated.View style={[styles.streakChip, { backgroundColor: '#FFF3E0' }, style]}>
+      <Animated.View style={pulseStyle}>
+        <Animated.Text style={styles.streakChipText}>🔥 {count}</Animated.Text>
+      </Animated.View>
     </Animated.View>
   );
 }
