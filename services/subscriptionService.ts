@@ -4,7 +4,7 @@ import { Streak,SubscriptionStatus } from '@/types/database';
 import { logger } from '@/utils/logger';
 
 const PLAN_LIMITS: Record<string, number> = {
-  free: 3,
+  free: 9999,
   pro: 9999,
   family: 9999,
 };
@@ -109,16 +109,16 @@ export const subscriptionService = {
         plan,
         stories_used: used,
         stories_limit: storiesLimit,
-        can_generate: plan !== 'free' || storiesRemaining > 0,
+        can_generate: true,
         stories_remaining: storiesRemaining,
       };
     } catch {
       return {
         plan: 'free',
         stories_used: 0,
-        stories_limit: 3,
+        stories_limit: PLAN_LIMITS.free,
         can_generate: true,
-        stories_remaining: 3,
+        stories_remaining: PLAN_LIMITS.free,
       };
     }
   },

@@ -31,7 +31,7 @@ interface AudioControlsProps {
 
 export function AudioControls({ accentColor, colors }: Readonly<AudioControlsProps>) {
   const { 
-    isPlaying, isBuffering, sound, 
+    isPlaying, isBuffering, isDeviceTTS, sound,
     playPause, seek 
   } = useAudio();
   const { position, duration } = useAudioProgress();
@@ -116,18 +116,18 @@ export function AudioControls({ accentColor, colors }: Readonly<AudioControlsPro
       </View>
 
       <View style={styles.controlsRow}>
-        <TouchableOpacity onPress={handleSkipBack} disabled={!sound} style={styles.skipBtn}>
+        <TouchableOpacity onPress={handleSkipBack} disabled={!sound && !isDeviceTTS} style={styles.skipBtn}>
           <SkipBack size={26} color={colors.text.primary} strokeWidth={2} />
           <Text style={[styles.skipSec, { color: colors.text.secondary, fontFamily: FONTS.bold }]}>10</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={handlePlayPause}
-          disabled={!sound}
+          disabled={!sound && !isDeviceTTS}
           style={[styles.playBtnWrap, { shadowColor: accentColor }]}
         >
           <LinearGradient
-            colors={sound ? [accentColor, accentColor + 'CC'] : ['#888', '#666']}
+            colors={sound || isDeviceTTS ? [accentColor, accentColor + 'CC'] : ['#888', '#666']}
             style={styles.playBtn}
           >
             {isBuffering ? (
@@ -140,7 +140,7 @@ export function AudioControls({ accentColor, colors }: Readonly<AudioControlsPro
           </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleSkipForward} disabled={!sound} style={styles.skipBtn}>
+        <TouchableOpacity onPress={handleSkipForward} disabled={!sound && !isDeviceTTS} style={styles.skipBtn}>
           <SkipForward size={26} color={colors.text.primary} strokeWidth={2} />
           <Text style={[styles.skipSec, { color: colors.text.secondary, fontFamily: FONTS.bold }]}>15</Text>
         </TouchableOpacity>
