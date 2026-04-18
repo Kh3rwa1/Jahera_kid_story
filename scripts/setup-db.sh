@@ -105,6 +105,7 @@ appwrite databases create-string-attribute --database-id jahera_db --collection-
 appwrite databases create-datetime-attribute --database-id jahera_db --collection-id stories --key generated_at --required true
 appwrite databases create-string-attribute --database-id jahera_db --collection-id stories --key location_city --size 255 --required false
 appwrite databases create-string-attribute --database-id jahera_db --collection-id stories --key location_country --size 255 --required false
+appwrite databases create-string-attribute --database-id jahera_db --collection-id stories --key behavior_goal --size 50 --required false
 
 sleep 2
 echo "Creating indexes on stories"
@@ -249,10 +250,33 @@ appwrite databases create-string-attribute --database-id jahera_db --collection-
 sleep 2
 appwrite databases create-index --database-id jahera_db --collection-id api_keys --key idx_key --type key --attributes key --orders ASC
 
+# 14. story_templates
+echo ""
+echo "Creating: story_templates"
+appwrite databases create-collection \
+  --database-id jahera_db \
+  --collection-id story_templates \
+  --name "story_templates" \
+  --document-security
+
+appwrite databases create-string-attribute --database-id jahera_db --collection-id story_templates --key title_template --size 500 --required true
+appwrite databases create-string-attribute --database-id jahera_db --collection-id story_templates --key content_template --size 10000 --required true
+appwrite databases create-string-attribute --database-id jahera_db --collection-id story_templates --key behavior_goal --size 50 --required true
+appwrite databases create-string-attribute --database-id jahera_db --collection-id story_templates --key theme --size 100 --required true
+appwrite databases create-string-attribute --database-id jahera_db --collection-id story_templates --key mood --size 50 --required true
+appwrite databases create-string-attribute --database-id jahera_db --collection-id story_templates --key language_code --size 10 --required true
+appwrite databases create-string-attribute --database-id jahera_db --collection-id story_templates --key placeholder_fields --size 500 --required true
+appwrite databases create-integer-attribute --database-id jahera_db --collection-id story_templates --key word_count --required true
+
+sleep 2
+appwrite databases create-index --database-id jahera_db --collection-id story_templates --key idx_goal_lang --type key --attributes behavior_goal language_code --orders ASC ASC
+sleep 1
+appwrite databases create-index --database-id jahera_db --collection-id story_templates --key idx_language --type key --attributes language_code --orders ASC
+
 echo ""
 echo "=== Setting Collection Permissions ==="
 # Set read/write permissions for all authenticated users on all collections
-COLLECTIONS="profiles user_languages family_members friends stories quiz_questions quiz_answers quiz_attempts subscriptions streaks profile_interests config api_keys"
+COLLECTIONS="profiles user_languages family_members friends stories quiz_questions quiz_answers quiz_attempts subscriptions streaks profile_interests config api_keys story_templates"
 
 for col in $COLLECTIONS; do
   echo "Setting permissions for: $col"

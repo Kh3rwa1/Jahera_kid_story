@@ -1,5 +1,6 @@
 import { generateAudio } from '@/services/audioService';
 import { storyService } from '@/services/database';
+import { deviceTTSService, estimateSpeechDurationMillis, isDeviceTtsAudioUrl } from '@/services/deviceTTSService';
 import { Story } from '@/types/database';
 import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
@@ -12,6 +13,7 @@ interface AudioContextType {
   sound: Audio.Sound | null;
   isPlaying: boolean;
   isBuffering: boolean;
+  isDeviceTTS: boolean;
   audioError: boolean;
   audioPolling: boolean;
   loadAndPlayAudio: (story: Story) => Promise<void>;
@@ -36,6 +38,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isDeviceTTS, setIsDeviceTTS] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioError, setAudioError] = useState(false);
@@ -43,6 +46,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
   const audioPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const deviceProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastPositionRef = useRef<number>(0);
   const soundRef = useRef<Audio.Sound | null>(null);
   const isMountedRef = useRef(true);
@@ -65,6 +69,8 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       }
       if (audioPollingRef.current) clearInterval(audioPollingRef.current);
       if (progressSaveTimerRef.current) clearInterval(progressSaveTimerRef.current);
+      if (deviceProgressTimerRef.current) clearInterval(deviceProgressTimerRef.current);
+      deviceTTSService.stop().catch((e) => { logger.debug('[AudioContext] device TTS stop err:', e); });
     };
   }, []);
 
@@ -195,6 +201,80 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const clearDeviceProgressTimer = () => {
+    if (deviceProgressTimerRef.current) {
+      clearInterval(deviceProgressTimerRef.current);
+      deviceProgressTimerRef.current = null;
+    }
+  };
+
+  const loadDeviceTtsStory = async (story: Story) => {
+    try {
+      if (sound) {
+        await sound.unloadAsync();
+        setSound(null);
+      }
+
+      clearDeviceProgressTimer();
+      await deviceTTSService.stop();
+
+      const estimatedDuration = estimateSpeechDurationMillis(story.content);
+      setActiveStory(story);
+      setAudioError(false);
+      setAudioPolling(false);
+      setIsDeviceTTS(true);
+      setIsBuffering(true);
+      setPosition(0);
+      setDuration(estimatedDuration);
+      lastPositionRef.current = 0;
+
+      await deviceTTSService.speak(story.content, story.language_code || 'en', {
+        onStart: () => {
+          if (!isMountedRef.current) return;
+          setIsBuffering(false);
+          setIsPlaying(true);
+          const startedAt = Date.now();
+          clearDeviceProgressTimer();
+          deviceProgressTimerRef.current = setInterval(() => {
+            const nextPosition = Math.min(Date.now() - startedAt, estimatedDuration);
+            lastPositionRef.current = nextPosition;
+            setPosition(nextPosition);
+          }, 250);
+        },
+        onDone: () => {
+          if (!isMountedRef.current) return;
+          clearDeviceProgressTimer();
+          setIsPlaying(false);
+          setPosition(estimatedDuration);
+          lastPositionRef.current = estimatedDuration;
+          saveProgress(estimatedDuration, estimatedDuration, story).catch((e) => {
+            logger.warn('[AudioContext] Failed to save device TTS completion:', e);
+          });
+        },
+        onStopped: () => {
+          if (!isMountedRef.current) return;
+          clearDeviceProgressTimer();
+          setIsPlaying(false);
+        },
+        onError: (error) => {
+          logger.error('[AudioContext] Device TTS error:', error);
+          if (!isMountedRef.current) return;
+          clearDeviceProgressTimer();
+          setIsBuffering(false);
+          setIsPlaying(false);
+          setAudioError(true);
+        },
+      });
+    } catch (err) {
+      logger.error('[AudioContext] Failed to start device TTS:', err);
+      if (isMountedRef.current) {
+        setIsBuffering(false);
+        setIsPlaying(false);
+        setAudioError(true);
+      }
+    }
+  };
+
   const loadAndPlayAudio = async (story: Story) => {
     // If asking to load the same story that's already playing, just do nothing
     if (activeStory?.id === story.id) {
@@ -212,7 +292,9 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     setDuration(0);
     lastPositionRef.current = 0;
 
-    if (story.audio_url) {
+    if (isDeviceTtsAudioUrl(story.audio_url)) {
+      await loadDeviceTtsStory(story);
+    } else if (story.audio_url) {
       await loadAudioFromUrl(story.audio_url, story);
     } else {
       setAudioPolling(true);
@@ -261,6 +343,10 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const stopAudio = async () => {
+    if (isDeviceTTS) {
+      await deviceTTSService.stop();
+      clearDeviceProgressTimer();
+    }
     if (sound) {
       await sound.stopAsync();
       if (activeStory) {
@@ -271,12 +357,30 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     }
     if (audioPollingRef.current) clearInterval(audioPollingRef.current);
     setActiveStory(null);
+    setIsDeviceTTS(false);
     setIsPlaying(false);
     setPosition(0);
     setDuration(0);
   };
 
   const playPause = async () => {
+    if (isDeviceTTS) {
+      try {
+        hapticFeedback.medium();
+        if (isPlaying) {
+          await deviceTTSService.pause();
+          clearDeviceProgressTimer();
+          setIsPlaying(false);
+        } else {
+          await deviceTTSService.resume();
+          setIsPlaying(true);
+        }
+      } catch (e) {
+        logger.error('[AudioContext] device TTS playPause error:', e);
+        setAudioError(true);
+      }
+      return;
+    }
     if (!sound) return;
     try {
       hapticFeedback.medium();
@@ -288,6 +392,16 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const pauseAudio = async () => {
+    if (isDeviceTTS) {
+      try {
+        await deviceTTSService.pause();
+        clearDeviceProgressTimer();
+        setIsPlaying(false);
+      } catch (e) {
+        logger.error('[AudioContext] device TTS pauseAudio error:', e);
+      }
+      return;
+    }
     if (!sound) return;
     try {
       const status = await sound.getStatusAsync();
@@ -300,6 +414,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const seek = async (positionMillis: number) => {
+    if (isDeviceTTS) return;
     if (!sound) return;
     try {
       await sound.setPositionAsync(positionMillis);
@@ -311,6 +426,10 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const retryAudio = async () => {
     if (!activeStory) return;
     hapticFeedback.medium();
+    if (isDeviceTtsAudioUrl(activeStory.audio_url)) {
+      await loadDeviceTtsStory(activeStory);
+      return;
+    }
     if (sound) { await sound.unloadAsync(); setSound(null); }
     setAudioError(false);
     setAudioPolling(true);
@@ -367,6 +486,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     sound,
     isPlaying,
     isBuffering,
+    isDeviceTTS,
     audioError,
     audioPolling,
     loadAndPlayAudio,
@@ -380,6 +500,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     sound,
     isPlaying,
     isBuffering,
+    isDeviceTTS,
     audioError,
     audioPolling,
     loadAndPlayAudio,

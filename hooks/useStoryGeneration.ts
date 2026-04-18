@@ -3,8 +3,11 @@ import { useApp } from '@/contexts/AppContext';
 import { generateAdventureStory, QuotaExceededError, StoryOptions } from '@/services/aiService';
 import { analytics } from '@/services/analyticsService';
 import { generateAudio } from '@/services/audioService';
-import { profileService, quizService, storyService } from '@/services/database';
+import { familyMemberService, friendService, profileService, quizService, storyService } from '@/services/database';
+import { DEVICE_TTS_AUDIO_URL } from '@/services/deviceTTSService';
 import { getLocationFromProfile, LocationContext } from '@/services/locationService';
+import { templateStoryService } from '@/services/templateStoryService';
+import { FamilyMember, Friend } from '@/types/database';
 import { getCurrentContext } from '@/utils/contextUtils';
 import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
@@ -85,7 +88,9 @@ export function useStoryGeneration() {
       if (!isMountedRef.current) return;
       completeStep('profile');
 
-      setStatus('Creating your adventure story...'); setProgress(30);
+      const isFreeTemplateStory = subscription?.plan !== 'pro' && subscription?.plan !== 'family';
+      setStatus(isFreeTemplateStory ? 'Choosing a bedtime template...' : 'Creating your adventure story...');
+      setProgress(30);
       const context = getCurrentContext();
       const preset = VOICE_PRESETS.find(v => v.id === selectedVoice) || null;
       const options: StoryOptions = {
@@ -95,7 +100,10 @@ export function useStoryGeneration() {
         voiceSettings: preset?.settings ?? null,
       };
 
-      const aiStory = await generateAdventureStory(profileData, selectedLanguage, context, options);
+      const aiStory = isFreeTemplateStory
+        ? await templateStoryService.generateTemplateStory(profileData, selectedBehaviorGoal, selectedLanguage)
+        : await generateAdventureStory(profileData, selectedLanguage, context, options);
+
       if (!aiStory) return markError('Could not generate a story.');
 
       if (!isMountedRef.current) return;
@@ -106,7 +114,7 @@ export function useStoryGeneration() {
         language_code: selectedLanguage,
         title: aiStory.title,
         content: aiStory.content,
-        audio_url: null,
+        audio_url: isFreeTemplateStory ? DEVICE_TTS_AUDIO_URL : null,
         season: context.season,
         time_of_day: context.timeOfDay,
         theme: selectedTheme,
@@ -127,27 +135,31 @@ export function useStoryGeneration() {
       if (!isMountedRef.current) return;
       completeStep('quiz'); setStatus('Finalising your story...'); setProgress(90);
 
-      void generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, buildAudioSettings(profileData))
-        .then((url) => { 
-          if (isMountedRef.current) {
-            if (url) {
-              completeStep('audio'); 
-            } else {
-              // This is the "text story but not audio" case
-              logger.warn('[useStoryGeneration] Audio generation returned null (likely timeout)');
-              setError('Story is ready, but audio is still generating in the background. You can find it in your Library shortly.');
-              // We still mark it as complete so they can view the text
+      if (isFreeTemplateStory) {
+        completeStep('audio');
+      } else {
+        void generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, buildAudioSettings(profileData))
+          .then((url) => {
+            if (isMountedRef.current) {
+              if (url) {
+                completeStep('audio');
+              } else {
+                // This is the "text story but not audio" case
+                logger.warn('[useStoryGeneration] Audio generation returned null (likely timeout)');
+                setError('Story is ready, but audio is still generating in the background. You can find it in your Library shortly.');
+                // We still mark it as complete so they can view the text
+                completeStep('audio');
+              }
+            }
+          })
+          .catch(err => {
+            logger.error('[useStoryGeneration] Audio error:', err);
+            if (isMountedRef.current) {
+              setError('Audio generation failed. You can still read the story!');
               completeStep('audio');
             }
-          } 
-        })
-        .catch(err => {
-          logger.error('[useStoryGeneration] Audio error:', err);
-          if (isMountedRef.current) {
-            setError('Audio generation failed. You can still read the story!');
-            completeStep('audio');
-          }
-        });
+          });
+      }
 
       setStatus('Story ready!'); setProgress(100); hapticFeedback.success();
       await Promise.all([refreshSubscription(), refreshStories()]);
@@ -160,8 +172,8 @@ export function useStoryGeneration() {
   };
 
   const handleStartGeneration = () => {
-    const isPro = subscription?.plan !== 'free';
-    if (selectedLength === 'long' && !isPro) return router.push('/paywall');
+    const isPro = subscription?.plan === 'pro' || subscription?.plan === 'family';
+    if (selectedLength === 'long' && !isPro && subscription?.stories_remaining === 0) return router.push('/paywall');
     setPhase('generating'); runGeneration();
   };
 

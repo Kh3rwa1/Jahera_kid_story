@@ -60,6 +60,7 @@ export const COLLECTIONS = {
   SUBSCRIPTIONS: 'subscriptions',
   STREAKS: 'streaks',
   PROFILE_INTERESTS: 'profile_interests',
+  STORY_TEMPLATES: 'story_templates',
   CONFIG: 'config',
 } as const;
 
