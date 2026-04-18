@@ -24,6 +24,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useUI } from '@/contexts/UIContext';
 import { useAudio } from '@/contexts/AudioContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useReadingPreferences } from '@/contexts/ReadingPreferencesContext';
 import { BREAKPOINTS, SPACING, FONTS } from '@/constants/theme';
 
 // Components
@@ -121,23 +122,24 @@ export default function HomeScreen() {
     checkProgress();
   }, [isFocused, stories]);
 
-  // Welcome Narration
+  // Welcome Narration (respects autoSpeak preference)
+  const { prefs: readingPrefs } = useReadingPreferences();
   useEffect(() => {
-    if (profile && !isLoading && isFocused) {
+    if (profile && !isLoading && isFocused && readingPrefs.autoSpeak) {
       const greeting = getGreeting(profile.kid_name || 'Friend');
       const text = `${greeting.line1} ${profile.kid_name || 'my friend'}! Ready for a new story?`;
       const timer = setTimeout(() => talkative.speak(text, profile.primary_language || 'en'), 1500);
       return () => clearTimeout(timer);
     }
-  }, [profile?.id, profile?.kid_name, profile?.primary_language, isLoading, isFocused]);
+  }, [profile?.id, profile?.kid_name, profile?.primary_language, isLoading, isFocused, readingPrefs.autoSpeak]);
 
   const handleRefresh = useCallback(async () => { await refreshAll(); }, [refreshAll]);
 
   const handleGenerateStory = useCallback(async () => {
     if (!profile) return;
-    talkative.speak("Let's make some magic!", profile.primary_language || 'en');
+    if (readingPrefs.autoSpeak) talkative.speak("Let's make some magic!", profile.primary_language || 'en');
     router.push({ pathname: '/story/generate', params: { profileId: profile.id, languageCode: profile.primary_language } });
-  }, [profile, router]);
+  }, [profile, router, readingPrefs.autoSpeak]);
 
   const handleStoryPress = useCallback((storyId: string) => {
     router.push({ pathname: '/story/playback', params: { storyId } });

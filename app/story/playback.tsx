@@ -59,8 +59,35 @@ export default function StoryPlaybackScreen() {
 
   if (isLoading && !story) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={[styles.fill, { backgroundColor: colors.background }]}>
+        <SafeAreaView edges={['top']} style={styles.fill}>
+          {/* Skeleton header */}
+          <View style={styles.skeletonHeader}>
+            <View style={[styles.skeletonCircle, { backgroundColor: colors.text.light + '18' }]} />
+            <View style={styles.skeletonHeaderCenter}>
+              <View style={[styles.skeletonPill, { backgroundColor: colors.text.light + '18', width: 120 }]} />
+              <View style={[styles.skeletonPill, { backgroundColor: colors.text.light + '12', width: 180, marginTop: 6 }]} />
+            </View>
+            <View style={[styles.skeletonCircle, { backgroundColor: colors.text.light + '18' }]} />
+          </View>
+
+          {/* Skeleton audio area */}
+          <View style={styles.skeletonAudio}>
+            <View style={[styles.skeletonAlbumArt, { backgroundColor: colors.text.light + '12' }]} />
+            <View style={[styles.skeletonPill, { backgroundColor: colors.text.light + '18', width: '60%', height: 20, marginTop: SPACING.xl }]} />
+            <View style={[styles.skeletonPill, { backgroundColor: colors.text.light + '12', width: '40%', height: 14, marginTop: 8 }]} />
+          </View>
+
+          {/* Skeleton controls */}
+          <View style={[styles.skeletonControls, { backgroundColor: colors.cardBackground }]}>
+            <View style={[styles.skeletonBar, { backgroundColor: colors.text.light + '15' }]} />
+            <View style={styles.skeletonControlRow}>
+              <View style={[styles.skeletonCircleSmall, { backgroundColor: colors.text.light + '18' }]} />
+              <View style={[styles.skeletonCircleLarge, { backgroundColor: colors.primary + '25' }]} />
+              <View style={[styles.skeletonCircleSmall, { backgroundColor: colors.text.light + '18' }]} />
+            </View>
+          </View>
+        </SafeAreaView>
       </View>
     );
   }
@@ -246,4 +273,64 @@ const styles = StyleSheet.create({
   errorBannerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   errorText: { color: '#B91C1C', fontSize: 14 },
   retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+
+  // Skeleton loading styles
+  skeletonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
+    gap: SPACING.md,
+  },
+  skeletonHeaderCenter: { flex: 1, alignItems: 'center' },
+  skeletonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  skeletonPill: {
+    height: 12,
+    borderRadius: 6,
+  },
+  skeletonAudio: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xxl,
+  },
+  skeletonAlbumArt: {
+    width: 200,
+    height: 200,
+    borderRadius: 32,
+  },
+  skeletonControls: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: SPACING.xxl,
+    paddingTop: 28,
+    paddingBottom: 40,
+    gap: SPACING.xl,
+    ...SHADOWS.lg,
+  },
+  skeletonBar: {
+    height: 4,
+    borderRadius: 2,
+    width: '100%',
+  },
+  skeletonControlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 32,
+  },
+  skeletonCircleSmall: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  skeletonCircleLarge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
 });

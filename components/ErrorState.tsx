@@ -1,4 +1,5 @@
-import { BORDER_RADIUS,COLORS,SPACING } from '@/constants/theme';
+import { BORDER_RADIUS,SPACING } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useSlideInUp } from '@/utils/animations';
 import { AlertCircle,Home,RefreshCw,Server,WifiOff } from 'lucide-react-native';
 import React from 'react';
@@ -32,6 +33,8 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   testID,
 }) => {
   const enterStyle = useSlideInUp(600, 100);
+  const { currentTheme } = useTheme();
+  const COLORS = currentTheme.colors;
 
   const getDefaultContent = () => {
     switch (type) {
@@ -84,7 +87,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
       </Typography>
 
       {showDetails && errorMessage && (
-        <PremiumCard style={styles.detailsCard} padding={SPACING.md} shadow="sm">
+        <PremiumCard style={{...styles.detailsCard, backgroundColor: COLORS.errorLight + '20' }} padding={SPACING.md} shadow="sm">
           <Typography variant="caption" color="error" align="center" numberOfLines={3}>
             {errorMessage}
           </Typography>
@@ -142,7 +145,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     marginBottom: SPACING.xl,
-    backgroundColor: COLORS.errorLight + '20',
     borderRadius: BORDER_RADIUS.md,
   },
   actions: {
@@ -158,3 +160,4 @@ const styles = StyleSheet.create({
     minWidth: 150,
   },
 });
+
