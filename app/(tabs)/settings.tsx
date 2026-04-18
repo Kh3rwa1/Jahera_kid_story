@@ -14,17 +14,17 @@ import {
 BookOpen,
 ChevronRight,
 Crown,
-Gift,
 Globe,
 Heart,
 LogOut,
-MessageCircle,
 Palette,
-Share2,
 Shield,
 Sparkles,
 Star,
+Trash2,
 UserCog,
+Volume2,
+BookText,
 Zap
 } from 'lucide-react-native';
 import React,{ useMemo,useState } from 'react';
@@ -210,7 +210,7 @@ export default function SettingsTab() {
       ],
     },
     {
-      title: 'Appearance',
+      title: 'Experience',
       emoji: '🎨',
       rows: [
         {
@@ -220,6 +220,22 @@ export default function SettingsTab() {
           icon: <Palette size={24} color="#FFFFFF" strokeWidth={2} />,
           iconGradient: ['#F59E0B', '#D97706'],
           route: '/settings/customization',
+        },
+        {
+          id: 'audio',
+          label: 'Audio & Voice',
+          sublabel: 'Narration speed & voice style',
+          icon: <Volume2 size={24} color="#FFFFFF" strokeWidth={2} />,
+          iconGradient: ['#8B5CF6', '#7C3AED'],
+          route: '/settings/audio',
+        },
+        {
+          id: 'reading',
+          label: 'Reading Settings',
+          sublabel: 'Font size, style & display',
+          icon: <BookText size={24} color="#FFFFFF" strokeWidth={2} />,
+          iconGradient: ['#06B6D4', '#0891B2'],
+          route: '/settings/reading',
         },
       ],
     },
@@ -234,6 +250,24 @@ export default function SettingsTab() {
           iconGradient: [COLORS.error + '30', COLORS.error + '15'],
           destructive: true,
           onPress: handleSignOut,
+        },
+        {
+          id: 'delete-account',
+          label: 'Delete Account',
+          icon: <Trash2 size={24} color={COLORS.error} strokeWidth={2} />,
+          iconGradient: [COLORS.error + '30', COLORS.error + '15'],
+          destructive: true,
+          onPress: () => {
+            hapticFeedback.warning();
+            Alert.alert(
+              'Delete Account',
+              'This will permanently delete your account and all data. This action cannot be undone.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: () => {} },
+              ]
+            );
+          },
         },
       ],
     },
@@ -250,7 +284,7 @@ export default function SettingsTab() {
 
         {/* ── Hero Glasmorphic Card ── */}
         <Animated.View entering={FadeInDown.delay(200).springify()}>
-          <View style={[styles.heroGlass, { backgroundColor: 'rgba(255,255,255,0.4)', borderColor: 'rgba(255,255,255,0.3)' }]}>
+          <View style={[styles.heroGlass, { backgroundColor: COLORS.cardBackground + '99', borderColor: COLORS.text.light + '20' }]}>
             <LinearGradient
               colors={[COLORS.primary + '15', COLORS.primary + '05']}
               start={{ x: 0, y: 0 }}
@@ -285,7 +319,7 @@ export default function SettingsTab() {
               </View>
             </View>
 
-            <View style={[styles.heroStats, { borderTopColor: 'rgba(0,0,0,0.06)' }]}>
+            <View style={[styles.heroStats, { borderTopColor: COLORS.text.light + '15' }]}>
               {[
                 { icon: <BookOpen size={13} color={COLORS.primary} />, value: String(stories.length), label: 'Stories' },
                 { icon: <Star size={13} color={COLORS.primary} />, value: String(profile?.languages?.length ?? 0), label: 'Active' },
@@ -333,29 +367,6 @@ export default function SettingsTab() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* ── Referral Card ── */}
-        <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.referralCard}>
-          <View style={[styles.referralInner, { backgroundColor: '#FFF', borderColor: 'rgba(0,0,0,0.05)' }]}>
-            <LinearGradient
-              colors={['#DB2777' + '15', '#DB2777' + '05']}
-              style={StyleSheet.absoluteFill}
-            />
-            <View style={[styles.referralIcon, { backgroundColor: '#DB2777' + '20' }]}>
-              <Gift size={22} color="#DB2777" />
-            </View>
-            <View style={styles.referralContent}>
-              <Text style={[styles.referralTitle, { color: COLORS.text.primary }]}>Spread the Magic</Text>
-              <Text style={[styles.referralSub, { color: COLORS.text.secondary }]}>Invite a friend and unlock 2 bonus stories!</Text>
-            </View>
-            <TouchableOpacity 
-              style={[styles.referralBtn, { backgroundColor: '#DB2777' }]}
-              onPress={() => hapticFeedback.selection()}
-            >
-              <Share2 size={16} color="#FFFFFF" strokeWidth={3} />
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-
         {/* ── Setting groups ── */}
         {groups.map((group, gIdx) => (
           <Animated.View
@@ -369,7 +380,7 @@ export default function SettingsTab() {
                 {group.title.toUpperCase()}
               </Text>
             </View>
-            <View style={[styles.groupCard, { backgroundColor: '#FFF', borderColor: 'rgba(0,0,0,0.05)', borderWidth: 1 }]}>
+            <View style={[styles.groupCard, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '15', borderWidth: 1 }]}>
               {group.rows.map((row, rIdx) => (
                 <View key={row.id}>
                   <RowItem
@@ -387,45 +398,23 @@ export default function SettingsTab() {
           </Animated.View>
         ))}
 
-        {/* ── Support & Love Card ── */}
-        <Animated.View entering={FadeInDown.delay(550).springify()} style={styles.supportCard}>
-          <View style={[styles.supportInner, { backgroundColor: 'rgba(255,255,255,0.5)', borderColor: 'rgba(0,0,0,0.05)' }]}>
-            <View style={styles.supportHeader}>
-              <View style={[styles.supportIconWrap, { backgroundColor: COLORS.primary }]}>
-                 <MessageCircle size={18} color="#FFFFFF" strokeWidth={2.5} />
-              </View>
-              <Text style={[styles.supportTitle, { color: COLORS.text.primary }]}>Need help?</Text>
-            </View>
-            <Text style={[styles.supportDesc, { color: COLORS.text.secondary }]}>
-              Have a suggestion or found a bug? We'd love to hear from you!
-            </Text>
-            <TouchableOpacity 
-              style={[styles.supportBtn, { backgroundColor: COLORS.primary }]}
-              onPress={() => hapticFeedback.light()}
-            >
-              <Text style={styles.supportBtnText}>Chat with us</Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-
         {/* ── Wisdom Chip ── */}
-        <Animated.View entering={FadeInDown.delay(600).springify()} style={styles.wisdomCard}>
-          <View style={[styles.wisdomBubble, { backgroundColor: '#FFF', borderColor: 'rgba(0,0,0,0.05)' }]}>
+        <Animated.View entering={FadeInDown.delay(550).springify()} style={styles.wisdomCard}>
+          <View style={[styles.wisdomBubble, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.text.light + '15' }]}>
             <Heart size={20} color="#EF4444" fill="#EF4444" />
             <Text style={[styles.wisdomText, { color: COLORS.text.secondary }]}>
               "Daily reading for 15 minutes boosts vocabulary by 50% in children."
             </Text>
-            <View style={[styles.wisdomTail, { borderTopColor: '#FFF' }]} />
           </View>
           <View style={styles.wisdomAuthor}>
             <Sparkles size={12} color="#F59E0B" />
-            <Text style={styles.wisdomAuthorText}>PARENTHOOD TIP</Text>
+            <Text style={[styles.wisdomAuthorText, { color: COLORS.text.light }]}>PARENTHOOD TIP</Text>
           </View>
         </Animated.View>
 
         {/* ── Footer ── */}
-        <Animated.View entering={FadeIn.delay(700)} style={styles.footer}>
-          <View style={[styles.footerPill, { backgroundColor: 'rgba(255,255,255,0.4)', borderColor: 'rgba(0,0,0,0.05)', borderWidth: 1 }]}>
+        <Animated.View entering={FadeIn.delay(600)} style={styles.footer}>
+          <View style={[styles.footerPill, { backgroundColor: COLORS.cardBackground + '99', borderColor: COLORS.text.light + '15', borderWidth: 1 }]}>
             <Shield size={12} color={COLORS.text.light} />
             <Text style={[styles.footerTxt, { color: COLORS.text.light }]}>
               Jahera Kid Adventure · v1.0.0
@@ -460,7 +449,7 @@ const useStyles = (isTablet: boolean, isDesktop: boolean) => {
     },
 
   heroGlass: {
-    borderRadius: BORDER_RADIUS.xxl + 4,
+    borderRadius: BORDER_RADIUS.xxxl,
     overflow: 'hidden',
     borderWidth: 1,
     ...(Platform.OS === 'ios' ? SHADOWS.md : {}),
@@ -508,7 +497,7 @@ const useStyles = (isTablet: boolean, isDesktop: boolean) => {
     marginTop: 4,
   },
     heroPlanText: {
-    fontSize: isTablet ? 11 : 10,
+    fontSize: isTablet ? 12 : 12,
     fontFamily: FONTS.extrabold,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -545,7 +534,7 @@ const useStyles = (isTablet: boolean, isDesktop: boolean) => {
     letterSpacing: -0.2,
   },
     heroStatLbl: {
-    fontSize: isTablet ? 11 : 10,
+    fontSize: isTablet ? 12 : 12,
     fontFamily: FONTS.extrabold,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -558,7 +547,7 @@ const useStyles = (isTablet: boolean, isDesktop: boolean) => {
 
     premiumBanner: {
     padding: isTablet ? SPACING.xxl : SPACING.xl, 
-    borderRadius: BORDER_RADIUS.xxl + 4,
+    borderRadius: BORDER_RADIUS.xxxl,
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: SPACING.lg,
@@ -587,7 +576,7 @@ const useStyles = (isTablet: boolean, isDesktop: boolean) => {
   referralCard: { width: '100%' },
     referralInner: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.lg,
-    padding: isTablet ? SPACING.xxl : SPACING.xl, borderRadius: 28,
+    padding: isTablet ? SPACING.xxl : SPACING.xl, borderRadius: BORDER_RADIUS.xxl,
     overflow: 'hidden', borderWidth: 1, ...SHADOWS.sm,
   },
     referralIcon: {
@@ -616,7 +605,7 @@ const useStyles = (isTablet: boolean, isDesktop: boolean) => {
     borderTopWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent',
   },
   wisdomAuthor: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  wisdomAuthorText: { fontSize: 10, fontFamily: FONTS.extrabold, color: '#94A3B8', letterSpacing: 1.2 },
+  wisdomAuthorText: { fontSize: 12, fontFamily: FONTS.extrabold, letterSpacing: 1.2 },
 
   group: { gap: 10 },
   groupLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: SPACING.md },
@@ -627,7 +616,7 @@ const useStyles = (isTablet: boolean, isDesktop: boolean) => {
     letterSpacing: 0.8,
   },
   groupCard: {
-    borderRadius: 28,
+    borderRadius: BORDER_RADIUS.xxl,
     overflow: 'hidden',
     ...SHADOWS.sm,
   },
@@ -689,7 +678,7 @@ const useStyles = (isTablet: boolean, isDesktop: boolean) => {
     borderRadius: BORDER_RADIUS.pill,
   },
   footerTxt: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: FONTS.extrabold,
     textTransform: 'uppercase',
     letterSpacing: 1,

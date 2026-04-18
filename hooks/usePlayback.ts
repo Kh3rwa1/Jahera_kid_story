@@ -1,7 +1,9 @@
 import { useAudio } from '@/contexts/AudioContext';
+import { useApp } from '@/contexts/AppContext';
 import { quizService,storyService } from '@/services/database';
 import { Story } from '@/types/database';
 import { logger } from '@/utils/logger';
+import { personalizeStory } from '@/utils/nameSubstitution';
 import { useLocalSearchParams,useRouter } from 'expo-router';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import { Easing,useSharedValue,withTiming } from 'react-native-reanimated';
@@ -12,6 +14,7 @@ export function usePlayback() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { loadAndPlayAudio, pauseAudio, stopAudio, retryAudio } = useAudio();
+  const { profile } = useApp();
 
   const [story, setStory] = useState<Story | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,13 +40,19 @@ export function usePlayback() {
         setShowCinematicIntro(false);
         return;
       }
-      setStory(storyData);
+
+      // Personalize story with current user's kid name
+      const personalized = profile
+        ? personalizeStory(storyData, profile.kid_name, profile.city)
+        : storyData;
+
+      setStory(personalized);
       
       const quizData = await quizService.getQuestionsByStoryId(storyId);
       setHasQuiz(!!quizData && quizData.length > 0);
 
-      // Start audio generation/play immediately
-      loadAndPlayAudio(storyData);
+      // Start audio generation/play with personalized content
+      loadAndPlayAudio(personalized);
       
       setIsLoading(false);
       
@@ -56,7 +65,7 @@ export function usePlayback() {
       setIsLoading(false);
       setShowCinematicIntro(false);
     }
-  }, [params.storyId, loadAndPlayAudio]);
+  }, [params.storyId, loadAndPlayAudio, profile]);
 
   const dismissCinematicIntro = useCallback(() => {
     if (introTimerRef.current) {

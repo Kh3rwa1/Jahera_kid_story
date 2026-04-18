@@ -135,6 +135,13 @@ export default function Login() {
               </Animated.Text>
             )}
 
+            <TouchableOpacity 
+              onPress={() => router.push('/auth/forgot-password' as any)}
+              style={styles.forgotLink}
+            >
+              <Text style={[styles.forgotText, { color: '#E2E8F0' }]}>Forgot Password?</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity onPress={handleLogin} activeOpacity={0.88} disabled={isLoading}>
               <LinearGradient
                 colors={isLoading ? ['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.4)'] : ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.95)']}
@@ -249,6 +256,17 @@ const useStyles = (COLORS: ThemeColors, insets: EdgeInsets) => {
       fontFamily: FONTS.semibold,
       textAlign: 'center',
       marginTop: SPACING.xs,
+    },
+    forgotLink: {
+      alignSelf: 'flex-end',
+      paddingVertical: SPACING.xs,
+    },
+    forgotText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: FONTS.medium,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 6,
     },
     ctaButton: {
       flexDirection: 'row',

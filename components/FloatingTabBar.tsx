@@ -17,11 +17,15 @@ useWindowDimensions,
 View,
 } from 'react-native';
 import Animated,{
-interpolate,
-useAnimatedStyle,
-useSharedValue,
-withSpring,
-withTiming,
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -69,6 +73,9 @@ function TabItem({
       onPress={onPress}
       style={styles.tabItem}
       android_ripple={null}
+      accessibilityRole="tab"
+      accessibilityLabel={tab.label}
+      accessibilityState={{ selected: focused }}
     >
       <Animated.View style={[styles.tabContent, iconStyle]}>
         <Icon
@@ -87,6 +94,43 @@ function TabItem({
         {!focused && <Animated.View style={[styles.activeDot, { backgroundColor: 'transparent' }]} />}
       </Animated.View>
     </Pressable>
+  );
+}
+
+function AnimatedEQBars({ color }: { color: string }) {
+  const bar1 = useSharedValue(14);
+  const bar2 = useSharedValue(10);
+  const bar3 = useSharedValue(16);
+  const bar4 = useSharedValue(8);
+
+  React.useEffect(() => {
+    const animateBar = (sv: { value: number }, min: number, max: number, dur: number, delay: number) => {
+      sv.value = withDelay(delay, withRepeat(
+        withSequence(
+          withTiming(max, { duration: dur, easing: Easing.inOut(Easing.ease) }),
+          withTiming(min, { duration: dur, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1, true
+      ));
+    };
+    animateBar(bar1, 4, 16, 400, 0);
+    animateBar(bar2, 6, 14, 500, 100);
+    animateBar(bar3, 3, 18, 350, 200);
+    animateBar(bar4, 5, 12, 450, 150);
+  }, [bar1, bar2, bar3, bar4]);
+
+  const s1 = useAnimatedStyle(() => ({ height: bar1.value }));
+  const s2 = useAnimatedStyle(() => ({ height: bar2.value }));
+  const s3 = useAnimatedStyle(() => ({ height: bar3.value }));
+  const s4 = useAnimatedStyle(() => ({ height: bar4.value }));
+
+  return (
+    <View style={styles.eqContainer}>
+      <Animated.View style={[styles.eqBar, { backgroundColor: color }, s1]} />
+      <Animated.View style={[styles.eqBar, { backgroundColor: color }, s2]} />
+      <Animated.View style={[styles.eqBar, { backgroundColor: color }, s3]} />
+      <Animated.View style={[styles.eqBar, { backgroundColor: color }, s4]} />
+    </View>
   );
 }
 
@@ -250,17 +294,12 @@ export function FloatingTabBar({
           <Pressable 
             style={styles.playerInfo} 
             onPress={() => router.push({ pathname: '/story/playback', params: { storyId: activeStory?.id } })}
+            accessibilityRole="button"
+            accessibilityLabel={`Now playing: ${activeStory?.title || 'Story'}. Tap to open.`}
           >
             <View style={[styles.discIconBg, { backgroundColor: COLORS.primary + '15' }]}>
               {isPlaying ? (
-                <View style={styles.eqContainer}>
-                  {[14, 10, 16, 8].map((h, i) => (
-                    <Animated.View
-                      key={`eq-${h}-${i}`}
-                      style={[styles.eqBar, { backgroundColor: COLORS.primary, height: h }]}
-                    />
-                  ))}
-                </View>
+                <AnimatedEQBars color={COLORS.primary} />
               ) : (
                 <Disc size={20} color={COLORS.primary} />
               )}
@@ -376,7 +415,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: FONTS.bold,
     marginTop: 1,
     letterSpacing: 0.3,
