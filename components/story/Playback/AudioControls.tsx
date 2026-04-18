@@ -116,7 +116,7 @@ export function AudioControls({ accentColor, colors }: Readonly<AudioControlsPro
       </View>
 
       <View style={styles.controlsRow}>
-        <TouchableOpacity onPress={handleSkipBack} disabled={!sound && !isDeviceTTS} style={styles.skipBtn}>
+        <TouchableOpacity onPress={handleSkipBack} disabled={!sound || isDeviceTTS} style={styles.skipBtn}>
           <SkipBack size={26} color={colors.text.primary} strokeWidth={2} />
           <Text style={[styles.skipSec, { color: colors.text.secondary, fontFamily: FONTS.bold }]}>10</Text>
         </TouchableOpacity>
@@ -140,7 +140,7 @@ export function AudioControls({ accentColor, colors }: Readonly<AudioControlsPro
           </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleSkipForward} disabled={!sound && !isDeviceTTS} style={styles.skipBtn}>
+        <TouchableOpacity onPress={handleSkipForward} disabled={!sound || isDeviceTTS} style={styles.skipBtn}>
           <SkipForward size={26} color={colors.text.primary} strokeWidth={2} />
           <Text style={[styles.skipSec, { color: colors.text.secondary, fontFamily: FONTS.bold }]}>15</Text>
         </TouchableOpacity>
