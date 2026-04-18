@@ -10,6 +10,7 @@ View
 interface PlaybackProgressProps {
   accentColor: string;
   colors: ThemeColors;
+  isDeviceTTS?: boolean;
 }
 
 export function formatTime(ms: number) {
@@ -20,7 +21,7 @@ export function formatTime(ms: number) {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-export function PlaybackProgress({ accentColor, colors }: Readonly<PlaybackProgressProps>) {
+export function PlaybackProgress({ accentColor, colors, isDeviceTTS }: Readonly<PlaybackProgressProps>) {
   const { position, duration } = useAudioProgress();
   const progress = duration > 0 ? position / duration : 0;
 
@@ -48,6 +49,11 @@ export function PlaybackProgress({ accentColor, colors }: Readonly<PlaybackProgr
           {formatTime(duration)}
         </Text>
       </View>
+      {isDeviceTTS && (
+        <Text style={[styles.note, { color: colors.text.secondary }]}>
+          Device voice plays locally, so scrubbing is disabled.
+        </Text>
+      )}
     </View>
   );
 }
@@ -89,5 +95,11 @@ const styles = StyleSheet.create({
   timeLabel: {
     fontSize: 11,
     fontFamily: FONTS.medium,
+  },
+  note: {
+    marginTop: 8,
+    fontSize: 11,
+    fontFamily: FONTS.medium,
+    textAlign: 'center',
   },
 });
