@@ -6,7 +6,7 @@ import { logger } from '@/utils/logger';
 const PLAN_LIMITS: Record<string, number> = {
   // Free users can still generate template stories at zero marginal cost.
   // The hook blocks paid AI generation for free plans, so this is intentionally high.
-  free: 9999,
+  free: 3,
   pro: 9999,
   family: 9999,
 };
