@@ -6,6 +6,7 @@ import { FloatingParticles } from '@/components/FloatingParticles';
 import { LoadingSkeleton,Skeleton } from '@/components/LoadingSkeleton';
 import { MeshBackground } from '@/components/MeshBackground';
 import { BORDER_RADIUS,BREAKPOINTS,FONTS,LAYOUT,SHADOWS,SPACING } from '@/constants/theme';
+import { useTabBarHeight } from '@/hooks/useTabBarHeight';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUI } from '@/contexts/UIContext';
@@ -707,7 +708,7 @@ const buildLayoutStyles = (PADDING: number) => ({
   scroll: {
     paddingHorizontal: PADDING,
     paddingTop: SPACING.md,
-    paddingBottom: 240, // Increased further to prevent tab bar overlap
+    paddingBottom: 140, // Will be overridden by useTabBarHeight at runtime
     gap: SPACING.xl,
   },
 });

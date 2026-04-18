@@ -8,6 +8,7 @@ import { MarqueeText } from '@/components/MarqueeText';
 import { MeshBackground } from '@/components/MeshBackground';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { BORDER_RADIUS,BREAKPOINTS,FONTS,LAYOUT,SHADOWS,SPACING } from '@/constants/theme';
+import { useTabBarHeight } from '@/hooks/useTabBarHeight';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUI } from '@/contexts/UIContext';
@@ -523,7 +524,7 @@ const useStyles = (C: ColorScheme['colors'], isTablet: boolean, isDesktop: boole
     scroll: {
       paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
       paddingTop: SPACING.sm,
-      paddingBottom: 120,
+      paddingBottom: 140,
       gap: isTablet ? SPACING.xxl : SPACING.xl,
       width: '100%',
       maxWidth: isDesktop ? 1040 : LAYOUT.maxWidth + 120,
