@@ -4,6 +4,10 @@ import { HydratedTemplate, StoryTemplate } from '@/types/storyTemplate';
 import { ProfileWithRelations } from '@/types/database';
 import { sanitizeCity, sanitizeName } from '@/utils/promptSanitizer';
 import { logger } from '@/utils/logger';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const RECENT_TEMPLATE_LIMIT = 20;
+const RECENT_TEMPLATE_KEY_PREFIX = 'recent_template_story_ids_';
 
 function mapTemplateDoc(doc: Record<string, any>): StoryTemplate {
   return {
@@ -36,6 +40,66 @@ function pickRandom<T>(items: T[]): T | null {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function humanize(value: string): string {
+  return value.replace(/[-_]/g, ' ').trim();
+}
+
+function makeQuestion(
+  question: string,
+  correctAnswer: string,
+  distractors: string[]
+): QuizQuestion {
+  const choices = shuffle([correctAnswer, ...distractors.filter(Boolean)]).slice(0, 3);
+  while (choices.length < 3) {
+    choices.push('Something else');
+  }
+
+  const answerMap: Record<'A' | 'B' | 'C', string> = {
+    A: choices[0],
+    B: choices[1],
+    C: choices[2],
+  };
+
+  const correctIndex = choices.indexOf(correctAnswer);
+  const correctAnswerKey: 'A' | 'B' | 'C' = (['A', 'B', 'C'][correctIndex] ?? 'A') as 'A' | 'B' | 'C';
+
+  return {
+    question,
+    options: answerMap,
+    correct_answer: correctAnswerKey,
+  };
+}
+
+async function getRecentTemplateIds(profileId: string): Promise<string[]> {
+  try {
+    const raw = await AsyncStorage.getItem(`${RECENT_TEMPLATE_KEY_PREFIX}${profileId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+async function rememberTemplateId(profileId: string, templateId: string): Promise<void> {
+  try {
+    const recent = await getRecentTemplateIds(profileId);
+    const next = [templateId, ...recent.filter((id) => id !== templateId)].slice(0, RECENT_TEMPLATE_LIMIT);
+    await AsyncStorage.setItem(`${RECENT_TEMPLATE_KEY_PREFIX}${profileId}`, JSON.stringify(next));
+  } catch (error) {
+    logger.warn('[templateStoryService] Failed to persist recent template id:', error);
+  }
+}
+
 function replacePlaceholders(template: string, profile: ProfileWithRelations): string {
   const childName = sanitizeName(profile.kid_name || '') || 'little hero';
   const friendName = sanitizeName(profile.friends?.[0]?.name || '') || 'best friend';
@@ -50,35 +114,26 @@ function replacePlaceholders(template: string, profile: ProfileWithRelations): s
 }
 
 function buildTemplateQuiz(template: HydratedTemplate): QuizQuestion[] {
-  const lesson = template.behavior_goal.replace(/[-_]/g, ' ');
+  const lesson = humanize(template.behavior_goal);
+  const theme = humanize(template.theme);
+  const mood = humanize(template.mood);
+  const distractorLessons = ['sharing', 'courage', 'calmness', 'kindness', 'curiosity', 'honesty'];
   return [
-    {
-      question: `What lesson was this story helping us practice?`,
-      options: {
-        A: lesson,
-        B: 'Giving up quickly',
-        C: 'Ignoring others',
-      },
-      correct_answer: 'A',
-    },
-    {
-      question: 'What should we remember after reading this story?',
-      options: {
-        A: 'Small kind choices can make a big difference.',
-        B: 'Only adventures matter.',
-        C: 'Feelings are never important.',
-      },
-      correct_answer: 'A',
-    },
-    {
-      question: 'Who was the hero of the story?',
-      options: {
-        A: 'The child in the story',
-        B: 'A stranger',
-        C: 'Nobody',
-      },
-      correct_answer: 'A',
-    },
+    makeQuestion(
+      'What lesson was this story helping us practice?',
+      lesson,
+      distractorLessons.filter((item) => item !== lesson).slice(0, 2)
+    ),
+    makeQuestion(
+      'Which kind of adventure did this story feel like?',
+      theme,
+      ['bedtime', 'forest', 'space', 'ocean'].filter((item) => item !== theme).slice(0, 2)
+    ),
+    makeQuestion(
+      'How did this story feel?',
+      mood,
+      ['exciting', 'quiet', 'serious', 'silly'].filter((item) => item !== mood).slice(0, 2)
+    ),
   ];
 }
 
@@ -127,7 +182,11 @@ export const templateStoryService = {
         ]);
       }
 
-      const selected = pickRandom(response.documents.map((doc) => mapTemplateDoc(doc)));
+      const templates = response.documents.map((doc) => mapTemplateDoc(doc));
+      const recentIds = await getRecentTemplateIds(profile.id);
+      const unseenTemplates = templates.filter((template) => !recentIds.includes(template.id));
+      const selectedPool = unseenTemplates.length > 0 ? unseenTemplates : templates;
+      const selected = pickRandom(selectedPool);
       return selected ? hydrateTemplate(selected, profile) : null;
     } catch (error) {
       logger.error('[templateStoryService] Failed to fetch template:', error);
@@ -142,6 +201,7 @@ export const templateStoryService = {
   ): Promise<GeneratedStory | null> {
     const template = await this.getMatchingTemplate(profile, behaviorGoal, languageCode);
     if (!template) return null;
+    await rememberTemplateId(profile.id, template.id);
 
     return {
       title: template.title,

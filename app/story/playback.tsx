@@ -40,7 +40,7 @@ export default function StoryPlaybackScreen() {
     handleBack, handleGoToQuiz, handleNewStory, retryAudio
   } = usePlayback();
 
-  const { isBuffering, audioPolling, audioError } = useAudio();
+  const { isBuffering, audioPolling, audioError, isDeviceTTS } = useAudio();
   const { position, duration } = useAudioProgress();
   const { prefs } = useReadingPreferences();
 
@@ -93,7 +93,7 @@ export default function StoryPlaybackScreen() {
         >
           <View style={styles.sheetHandle} />
           
-          <PlaybackProgress accentColor={accentColor} colors={colors} />
+          <PlaybackProgress accentColor={accentColor} colors={colors} isDeviceTTS={isDeviceTTS} />
 
           <View style={styles.statsRow}>
             <StatItem value={story?.word_count ?? allWords.length} label="words" colors={colors} />
