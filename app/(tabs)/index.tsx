@@ -29,7 +29,7 @@ import { BREAKPOINTS, SPACING, FONTS } from '@/constants/theme';
 
 // Components
 import { FloatingParticles } from '@/components/FloatingParticles';
-import { Sparkles, Clock, ArrowRight, Wand as Wand2, Award, Crown, ChevronRight, Play } from 'lucide-react-native';
+import { Sparkles, Clock, ArrowRight, Wand as Wand2, Award, Crown, ChevronRight, Play, Sun, Moon, Star, CloudSun } from 'lucide-react-native';
 import { LoadingSkeleton, Skeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
@@ -55,17 +55,25 @@ import { useHomeStyles } from '@/styles/home.styles';
 
 
 
-function getGreeting(name: string): { line1: string; line2: string } {
+function getGreeting(name: string): { line1: string; line2: string; icon: 'sun' | 'cloudsun' | 'moon' | 'star' | 'sparkles' } {
   const tod = getTimeOfDay(new Date());
   const firstName = (name || 'Friend').split(' ')[0];
   switch (tod) {
-    case 'morning': return { line1: 'Good morning,', line2: `${firstName} ☀️` };
-    case 'afternoon': return { line1: 'Hey there,', line2: `${firstName} 🌈` };
-    case 'evening': return { line1: 'Good evening,', line2: `${firstName} 🌙` };
-    case 'night': return { line1: 'Sweet dreams,', line2: `${firstName} ⭐` };
-    default: return { line1: 'Welcome back,', line2: `${firstName} ✨` };
+    case 'morning': return { line1: 'Good morning,', line2: firstName, icon: 'sun' };
+    case 'afternoon': return { line1: 'Hey there,', line2: firstName, icon: 'cloudsun' };
+    case 'evening': return { line1: 'Good evening,', line2: firstName, icon: 'moon' };
+    case 'night': return { line1: 'Sweet dreams,', line2: firstName, icon: 'star' };
+    default: return { line1: 'Welcome back,', line2: firstName, icon: 'sparkles' };
   }
 }
+
+const GREETING_ICONS = {
+  sun: { Component: Sun, color: '#F59E0B' },
+  cloudsun: { Component: CloudSun, color: '#6366F1' },
+  moon: { Component: Moon, color: '#8B5CF6' },
+  star: { Component: Star, color: '#F59E0B' },
+  sparkles: { Component: Sparkles, color: '#EC4899' },
+};
 
 export default function HomeScreen() {
   const { width: winWidth } = useWindowDimensions();
@@ -203,7 +211,9 @@ export default function HomeScreen() {
     );
   }
 
-  const { line1, line2 } = getGreeting(profile.kid_name || 'Friend');
+  const { line1, line2, icon: greetIcon } = getGreeting(profile.kid_name || 'Friend');
+  const GreetIconData = GREETING_ICONS[greetIcon];
+  const GreetIcon = GreetIconData.Component;
   const isPro = subscription?.plan !== 'free';
 
   return (
@@ -215,7 +225,7 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.avatarRow} onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.85}>
           <View style={styles.greetBlock}>
             <Text style={[styles.greetLine1, { color: C.text.secondary }]}>{line1}</Text>
-            <Text style={[styles.greetLine2, { color: C.text.primary }]} numberOfLines={1}>{line2}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Text style={[styles.greetLine2, { color: C.text.primary }]} numberOfLines={1}>{line2}</Text><GreetIcon size={22} color={GreetIconData.color} strokeWidth={2} /></View>
           </View>
         </TouchableOpacity>
         <View style={styles.topBarRight}>
@@ -295,7 +305,7 @@ export default function HomeScreen() {
 
       {!isPro && (
         <Animated.View entering={FadeInDown.delay(600).springify()}>
-          <TouchableOpacity onPress={() => router.push('/paywall')} activeOpacity={0.9} style={styles.premiumBannerWrap}>
+          <AnimatedPressable onPress={() => router.push('/paywall')} scaleDown={0.96} style={styles.premiumBannerWrap}>
             <LinearGradient colors={['#1E293B', '#0F172A']} style={styles.premiumBanner}>
               <View style={styles.premiumGlowRow}>
                 <View style={styles.premiumIconBox}><Crown size={24} color="#F59E0B" strokeWidth={2} /></View>
@@ -303,7 +313,7 @@ export default function HomeScreen() {
                 <View style={styles.premiumAction}><Text style={styles.premiumActionText}>GO PRO</Text><ChevronRight size={14} color="#0F172A" strokeWidth={3} /></View>
               </View>
             </LinearGradient>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </Animated.View>
       )}
     </Container>

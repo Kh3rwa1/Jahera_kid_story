@@ -1,4 +1,5 @@
 import { AnimatedPressable } from '@/components/AnimatedPressable';
+import { getThemeIcon } from '@/utils/themeIcons';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Container } from '@/components/Container';
 import { ErrorState } from '@/components/ErrorState';
@@ -153,7 +154,7 @@ const AnimatedStoryGridCard = React.memo(function AnimatedStoryGridCard({
              <View style={[styles.gridAura, { backgroundColor: palette.accent + '30' }]} />
              <View style={[styles.gridAuraInner, { backgroundColor: '#FFF', opacity: 0.3 }]} />
              
-             <Text style={styles.gridEmoji}>{palette.emoji}</Text>
+             {(() => { const ti = getThemeIcon(story.theme); const TIcon = ti.icon; return <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}><TIcon size={36} color="rgba(255,255,255,0.9)" strokeWidth={1.5} /></View>; })()}
              
              <View style={styles.gridBadgesTop}>
                 <View style={styles.gridGlassBadge}>
@@ -418,9 +419,7 @@ export default function HistoryScreen() {
                      <View style={[styles.featuredAura, { backgroundColor: COLORS.primary + '50' }]} />
                      <View style={[styles.featuredAuraOuter, { backgroundColor: '#FFF', opacity: 0.2 }]} />
                      
-                     <Text style={styles.featuredLargeEmoji}>
-                        {getSeasonPalette(featuredStory.season, COLORS.primary, featuredStory.theme).emoji}
-                     </Text>
+                     {(() => { const ti = getThemeIcon(featuredStory.theme); const TIcon = ti.icon; return <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}><TIcon size={44} color="rgba(255,255,255,0.9)" strokeWidth={1.5} /></View>; })()}
                      
                      <View style={styles.featuredBadges}>
                         <View style={styles.featuredHeroPill}>
@@ -649,7 +648,7 @@ export default function HistoryScreen() {
                       end={{ x: 1, y: 1 }}
                       style={styles.listThumb}
                     >
-                      <Text style={styles.listThumbEmoji}>{palette.emoji}</Text>
+                      {(() => { const ti = getThemeIcon(story.theme); const TIcon = ti.icon; return <TIcon size={24} color="rgba(255,255,255,0.9)" strokeWidth={1.5} />; })()}
                       {story.audio_url && (
                         <View style={styles.listAudioIndicator}>
                           <Volume2 size={8} color="#FFF" />
