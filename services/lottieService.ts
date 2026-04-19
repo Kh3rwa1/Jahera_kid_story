@@ -6,13 +6,11 @@ const LOTTIE_CACHE_DIR = Platform.OS !== 'web' ? `${ExpoFileSystem.cacheDirector
 
 /**
  * Builds a public Appwrite file view URL for a given behavior ID.
- * This assumes the user uploads the Lottie JSON to Appwrite with the behavior ID as the File ID.
  */
 export function getAppwriteLottieUrl(behaviorId: string): string {
   const endpoint = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
   const project = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID;
   const bucketId = 'behavior_assets';
-  // Add a cache-busting timestamp to ensure the app sees the latest version from Storage
   const cacheBuster = `&t=${new Date().getTime()}`;
   return `${endpoint}/storage/buckets/${bucketId}/files/${behaviorId}/view?project=${project}${cacheBuster}`;
 }
@@ -23,14 +21,12 @@ export function getAppwriteLottieUrl(behaviorId: string): string {
  */
 export async function ensureLottieAsset(sourceUrl: string, behaviorId: string, forceRefresh = false): Promise<any | null> {
   try {
-    // 1. On Web, we fetch the JSON object directly for maximum reliability
+    // 1. On Web, fetch JSON directly
     if (Platform.OS === 'web') {
       let response = await fetch(sourceUrl);
       let text = await response.text();
       
-      // Safety check: Is it actually JSON?
       if (!text.trim().startsWith('{') && !text.trim().startsWith('[')) {
-        // SMART FALLBACK: Try with .json extension in the ID
         logger.debug(`[LottieService] Initial fetch failed for ${behaviorId}, trying .json fallback...`);
         const fallbackUrl = sourceUrl.replace(`/files/${behaviorId}/view`, `/files/${behaviorId}.json/view`);
         response = await fetch(fallbackUrl);
@@ -41,7 +37,7 @@ export async function ensureLottieAsset(sourceUrl: string, behaviorId: string, f
         return JSON.parse(text);
       }
       
-      logger.warn(`[LottieService] Appwrite returned non-JSON for ${behaviorId}. Check File ID in console.`);
+      logger.warn(`[LottieService] Appwrite returned non-JSON for ${behaviorId}.`);
       return null;
     }
 
@@ -52,26 +48,26 @@ export async function ensureLottieAsset(sourceUrl: string, behaviorId: string, f
         await ExpoFileSystem.makeDirectoryAsync(LOTTIE_CACHE_DIR, { intermediates: true });
       }
 
-      const filename = \`\${behaviorId}.json\`;
-      const localUri = \`\${LOTTIE_CACHE_DIR}\${filename}\`;
+      const filename = `${behaviorId}.json`;
+      const localUri = `${LOTTIE_CACHE_DIR}${filename}`;
 
       const fileInfo = await ExpoFileSystem.getInfoAsync(localUri);
       if (fileInfo.exists && !forceRefresh) {
         return { uri: localUri };
       }
 
-      logger.debug(\`[LottieService] \${forceRefresh ? 'Refreshing' : 'Fetching'} asset for \${behaviorId}: \${sourceUrl}\`);
+      logger.debug(`[LottieService] ${forceRefresh ? 'Refreshing' : 'Fetching'} asset for ${behaviorId}: ${sourceUrl}`);
       
       const { uri, status } = await ExpoFileSystem.downloadAsync(sourceUrl, localUri);
       
       if (status !== 200) {
-        throw new Error(\`Download failed with status \${status}\`);
+        throw new Error(`Download failed with status ${status}`);
       }
 
       return { uri };
     } catch (fsError) {
       // Fallback for Expo Go where FileSystem.downloadAsync is blocked
-      logger.debug(\`[LottieService] FileSystem failed for \${behaviorId}, using fetch fallback\`);
+      logger.debug(`[LottieService] FileSystem failed for ${behaviorId}, using fetch fallback`);
       try {
         const response = await fetch(sourceUrl);
         const text = await response.text();
@@ -79,7 +75,7 @@ export async function ensureLottieAsset(sourceUrl: string, behaviorId: string, f
           return JSON.parse(text);
         }
       } catch (fetchErr) {
-        logger.warn(\`[LottieService] Fetch fallback also failed for \${behaviorId}\`);
+        logger.warn(`[LottieService] Fetch fallback also failed for ${behaviorId}`);
       }
       return null;
     }
