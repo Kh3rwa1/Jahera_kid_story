@@ -157,18 +157,17 @@ export default function HomeScreen() {
   }, [router]);
 
   const handleLastStory = useCallback(() => {
-    if (activeStory && continueStory && activeStory.id === continueStory.id) {
-      playPause();
-      return;
-    }
-
     if (continueStory) {
       const fullStory = stories.find(s => s.id === continueStory.id);
-      if (fullStory) loadAndPlayAudio(fullStory); else handleStoryPress(continueStory.id);
+      if (fullStory) {
+        loadAndPlayAudio(fullStory);
+      } else {
+        handleStoryPress(continueStory.id);
+      }
     } else if (stories && stories.length > 0) {
       loadAndPlayAudio(stories[0]);
     }
-  }, [continueStory, stories, handleStoryPress, activeStory, playPause, loadAndPlayAudio]);
+  }, [continueStory, stories, handleStoryPress, loadAndPlayAudio]);
 
   const handleRandomStory = useCallback(() => {
     if (stories && stories.length > 0) {
