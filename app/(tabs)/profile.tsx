@@ -395,7 +395,7 @@ export default function ProfileScreen() {
         }}
       >
         <MeshBackground primaryColor={COLORS.primary} />
-        <FloatingParticles count={15} />
+        <FloatingParticles count={5} />
 
         <HeroSkeleton />
 
@@ -440,7 +440,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
       <MeshBackground primaryColor={COLORS.primary} />
-      <FloatingParticles count={15} />
+      <FloatingParticles count={5} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

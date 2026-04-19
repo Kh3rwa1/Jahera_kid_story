@@ -277,7 +277,7 @@ export default function SettingsTab() {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <LinearGradient colors={COLORS.backgroundGradient} style={StyleSheet.absoluteFill} />
       <MeshBackground primaryColor={COLORS.primary} />
-      <FloatingParticles count={15} />
+      <FloatingParticles count={5} />
       
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} onScroll={wakeUI} scrollEventThrottle={16}>
 

@@ -221,7 +221,7 @@ export default function HomeScreen() {
   return (
     <Container maxWidth gradient gradientColors={C.backgroundGradient} safeAreaEdges={['top']} scroll scrollProps={{ onScroll: wakeUI, scrollEventThrottle: 16, refreshControl: <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={C.primary} />, contentContainerStyle: styles.scrollContent }}>
       <MeshBackground primaryColor={C.primary} />
-      <FloatingParticles count={15} />
+      <FloatingParticles count={5} />
 
       <Animated.View entering={FadeIn.delay(40)} style={[styles.topBar, { backgroundColor: C.cardBackground + '90' }]}>
         <TouchableOpacity style={styles.avatarRow} onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.85}>
