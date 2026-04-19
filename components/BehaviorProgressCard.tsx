@@ -3,7 +3,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { analytics } from '@/services/analyticsService';
 import { BehaviorProgressItem, computeBehaviorProgress } from '@/utils/behaviorProgress';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View, Platform } from 'react-native';
 import Animated, { 
   FadeInDown, 
@@ -125,8 +125,10 @@ export function BehaviorProgressCard({
   const mutedTextColor = colors.text.secondary;
   const barTrackColor = `${colors.text.light}15` || '#F0F0F0';
 
+  const hasTrackedRef = useRef(false);
   useEffect(() => {
-    if (progress.length > 0) {
+    if (progress.length > 0 && !hasTrackedRef.current) {
+      hasTrackedRef.current = true;
       analytics.trackBehaviorProgressViewed(progress.length, progress[0]?.label || null);
     }
   }, [progress]);
