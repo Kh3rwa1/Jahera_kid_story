@@ -287,7 +287,7 @@ export default function HistoryScreen() {
         }}
       >
         <MeshBackground primaryColor={COLORS.primary} />
-        <FloatingParticles count={15} />
+        <FloatingParticles count={5} />
         
         <View style={styles.header}>
           <Skeleton width={180} height={32} borderRadius={8} color="rgba(0,0,0,0.08)" />
@@ -354,7 +354,7 @@ export default function HistoryScreen() {
       }}
     >
       <MeshBackground primaryColor={COLORS.primary} />
-      <FloatingParticles count={15} />
+      <FloatingParticles count={5} />
       
       {/* Hero Section: Header + Featured */}
       <View style={{ gap: SPACING.xl }}>

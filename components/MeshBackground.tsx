@@ -1,13 +1,15 @@
-import React,{ useEffect,useMemo } from 'react';
-import { StyleSheet,useWindowDimensions,View } from 'react-native';
-import Animated,{
-Easing,
-useAnimatedStyle,
-useSharedValue,
-withDelay,
-withRepeat,
-withTiming
+import React, { useEffect, useMemo } from 'react';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
 } from 'react-native-reanimated';
+import { useIsFocused } from '@react-navigation/native';
 
 interface Orb {
   id: number;
@@ -20,51 +22,46 @@ interface Orb {
   moveRange: number;
 }
 
-const FloatingOrb: React.FC<{ orb: Orb }> = React.memo(({ orb }) => {
+const FloatingOrb: React.FC<{ orb: Orb; isFocused: boolean }> = React.memo(({ orb, isFocused }) => {
   const transX = useSharedValue(0);
   const transY = useSharedValue(0);
   const scale = useSharedValue(1);
 
   useEffect(() => {
+    if (!isFocused) {
+      cancelAnimation(transX);
+      cancelAnimation(transY);
+      cancelAnimation(scale);
+      return;
+    }
+
     transX.value = withDelay(
       orb.delay,
       withRepeat(
-        withTiming(orb.moveRange, {
-          duration: orb.duration,
-          easing: Easing.inOut(Easing.sin),
-        }),
-        -1,
-        true
+        withTiming(orb.moveRange, { duration: orb.duration, easing: Easing.inOut(Easing.sin) }),
+        -1, true
       )
     );
     transY.value = withDelay(
-      orb.delay + 500,
+      orb.delay + 300,
       withRepeat(
-        withTiming(-orb.moveRange * 0.8, {
-          duration: orb.duration * 1.2,
-          easing: Easing.inOut(Easing.sin),
-        }),
-        -1,
-        true
+        withTiming(orb.moveRange * 0.6, { duration: orb.duration * 1.2, easing: Easing.inOut(Easing.sin) }),
+        -1, true
       )
     );
     scale.value = withDelay(
       orb.delay,
       withRepeat(
-        withTiming(1.2, {
-          duration: orb.duration * 0.8,
-          easing: Easing.inOut(Easing.sin),
-        }),
-        -1,
-        true
+        withTiming(1.15, { duration: orb.duration * 0.8, easing: Easing.inOut(Easing.ease) }),
+        -1, true
       )
     );
-  }, [orb.delay, orb.moveRange, orb.duration, transX, transY, scale]);
+  }, [isFocused]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
+  const style = useAnimatedStyle(() => ({
     transform: [
-      { translateX: transX.value },
-      { translateY: transY.value },
+      { translateX: orb.initialX + transX.value },
+      { translateY: orb.initialY + transY.value },
       { scale: scale.value },
     ],
   }));
@@ -76,57 +73,40 @@ const FloatingOrb: React.FC<{ orb: Orb }> = React.memo(({ orb }) => {
         {
           width: orb.size,
           height: orb.size,
-          left: orb.initialX,
-          top: orb.initialY,
+          borderRadius: orb.size / 2,
           backgroundColor: orb.color,
-          opacity: 0.15,
         },
-        animatedStyle,
+        style,
       ]}
     />
   );
 });
 
-export const MeshBackground: React.FC<{ primaryColor: string }> = React.memo(({ primaryColor }) => {
-  const { width: winWidth, height: winHeight } = useWindowDimensions();
+interface MeshBackgroundProps {
+  primaryColor: string;
+}
+
+export const MeshBackground: React.FC<MeshBackgroundProps> = React.memo(({ primaryColor }) => {
+  const { width, height } = useWindowDimensions();
+  let isFocused = true;
+  try {
+    isFocused = useIsFocused();
+  } catch (_e) {
+    isFocused = true;
+  }
 
   const orbs = useMemo<Orb[]>(() => [
-    {
-      id: 1,
-      size: winWidth * 0.8,
-      initialX: -winWidth * 0.2,
-      initialY: winHeight * 0.1,
-      color: primaryColor,
-      duration: 15000,
-      delay: 0,
-      moveRange: 40,
-    },
-    {
-      id: 2,
-      size: winWidth * 0.7,
-      initialX: winWidth * 0.5,
-      initialY: winHeight * 0.4,
-      color: primaryColor,
-      duration: 18000,
-      delay: 1000,
-      moveRange: 60,
-    },
-    {
-      id: 3,
-      size: winWidth * 0.9,
-      initialX: winWidth * 0.1,
-      initialY: winHeight * 0.7,
-      color: primaryColor,
-      duration: 22000,
-      delay: 2000,
-      moveRange: 50,
-    },
-  ], [winWidth, winHeight, primaryColor]);
+    { id: 0, size: 200, initialX: -50, initialY: -30, color: primaryColor + '08', duration: 8000, delay: 0, moveRange: 40 },
+    { id: 1, size: 160, initialX: width * 0.6, initialY: height * 0.2, color: primaryColor + '06', duration: 10000, delay: 500, moveRange: 30 },
+    { id: 2, size: 120, initialX: width * 0.3, initialY: height * 0.7, color: primaryColor + '05', duration: 9000, delay: 1000, moveRange: 35 },
+  ], [primaryColor, width, height]);
+
+  if (!isFocused) return null;
 
   return (
     <View style={styles.container} pointerEvents="none">
       {orbs.map(orb => (
-        <FloatingOrb key={orb.id} orb={orb} />
+        <FloatingOrb key={orb.id} orb={orb} isFocused={isFocused} />
       ))}
     </View>
   );
@@ -136,10 +116,15 @@ const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
+    zIndex: 0,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   orb: {
     position: 'absolute',
-    borderRadius: 999,
-    // Blur is handled by large size + low opacity + overlapping
+    opacity: 1,
   },
 });
