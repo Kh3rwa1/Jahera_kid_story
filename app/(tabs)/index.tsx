@@ -99,6 +99,7 @@ export default function HomeScreen() {
   const styles = useHomeStyles(C, isTablet, isDesktop);
   const isFocused = useIsFocused();
   const [continueStory, setContinueStory] = React.useState<{ id: string; title: string; progress: number } | null>(null);
+  const hasGreeted = React.useRef(false);
 
   // Fetch continue story metadata
   useEffect(() => {
@@ -131,10 +132,11 @@ export default function HomeScreen() {
     checkProgress();
   }, [isFocused, stories]);
 
-  // Welcome Narration (respects autoSpeak preference)
+  // Welcome Narration — once per app session only
   const { prefs: readingPrefs } = useReadingPreferences();
   useEffect(() => {
-    if (profile && !isLoading && isFocused && readingPrefs.autoSpeak) {
+    if (profile && !isLoading && isFocused && readingPrefs.autoSpeak && !hasGreeted.current) {
+      hasGreeted.current = true;
       const greeting = getGreeting(profile.kid_name || 'Friend');
       const text = `${greeting.line1} ${profile.kid_name || 'my friend'}! Ready for a new story?`;
       const timer = setTimeout(() => talkative.speak(text, profile.primary_language || 'en'), 1500);
