@@ -44,6 +44,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const [audioError, setAudioError] = useState(false);
   const [audioPolling, setAudioPolling] = useState(false);
 
+  const audioLockRef = useRef(false);
   const audioPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const deviceProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -275,8 +276,16 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const loadAndPlayAudio = async (story: Story) => {
     // If asking to load the same story that's already playing, just toggle play/pause
     if (activeStory?.id === story.id && (isPlaying || sound || isDeviceTTS)) {
-        return;
+      await playPause();
+      return;
     }
+
+    // Prevent race condition from simultaneous calls
+    if (audioLockRef.current) {
+      logger.debug('[AudioContext] loadAndPlayAudio locked, ignoring call for', story.id);
+      return;
+    }
+    audioLockRef.current = true;
 
     // === STOP ALL PREVIOUS AUDIO FIRST ===
     // Stop device TTS if it was playing
@@ -305,6 +314,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     setPosition(0);
     setDuration(0);
     lastPositionRef.current = 0;
+    audioLockRef.current = false;
 
     if (isDeviceTtsAudioUrl(story.audio_url)) {
       await loadDeviceTtsStory(story);
