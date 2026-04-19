@@ -6,6 +6,8 @@ import { logger } from '@/utils/logger';
 const LOTTIE_CACHE_DIR = Platform.OS !== 'web' ? ExpoFileSystem.cacheDirectory + 'lottie_assets/' : '';
 const IS_EXPO_GO = Constants.appOwnership === 'expo';
 
+const memoryCache = new Map<string, any>();
+
 export function getAppwriteLottieUrl(behaviorId: string): string {
   const endpoint = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
   const project = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID;
@@ -23,7 +25,9 @@ async function fetchJsonFallback(sourceUrl: string, behaviorId: string): Promise
     logger.debug('[LottieService] Response ' + behaviorId + ' len=' + text.length + ' first50=' + text.substring(0, 50));
     if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
       logger.debug('[LottieService] Valid JSON for ' + behaviorId);
-      return JSON.parse(text);
+      const parsed = JSON.parse(text);
+      memoryCache.set(behaviorId, parsed);
+      return parsed;
     }
     logger.warn('[LottieService] Non-JSON for ' + behaviorId + ' first80=' + text.substring(0, 80));
     return null;
@@ -39,6 +43,11 @@ export async function ensureLottieAsset(
   forceRefresh = false
 ): Promise<any | null> {
   try {
+    const cached = memoryCache.get(behaviorId);
+    if (cached && !forceRefresh) {
+      return cached;
+    }
+
     if (Platform.OS === 'web') {
       return await fetchJsonFallback(sourceUrl, behaviorId);
     }
