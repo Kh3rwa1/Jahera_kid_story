@@ -376,8 +376,12 @@ export default function ProfileScreen() {
 
   const behaviorProgress = useMemo(() => computeBehaviorProgress(stories || [], 30), [stories]);
 
+  const hasTrackedProgress = React.useRef(false);
   useEffect(() => {
-    analytics.trackBehaviorProgressViewed(behaviorProgress.length, behaviorProgress[0]?.label ?? null);
+    if (!hasTrackedProgress.current && behaviorProgress.length > 0) {
+      hasTrackedProgress.current = true;
+      analytics.trackBehaviorProgressViewed(behaviorProgress.length, behaviorProgress[0]?.label ?? null);
+    }
   }, [behaviorProgress]);
 
   const handleRefresh = useCallback(async () => {
