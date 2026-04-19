@@ -74,12 +74,12 @@ export function CinematicIntro({
             {(audioPolling || isBuffering) ? (
               <>
                 <View style={[styles.dot, { backgroundColor: '#4ADE80' }]} />
-                <Text style={styles.statusText}>🎙️ Generating narration...</Text>
+                <Text style={styles.statusText}>Generating narration...</Text>
               </>
             ) : (
               <>
                 <View style={[styles.dot, { backgroundColor: '#4ADE80' }]} />
-                <Text style={styles.statusText}>✨ Audio ready</Text>
+                <Text style={styles.statusText}>Audio ready</Text>
               </>
             )}
           </Animated.View>

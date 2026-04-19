@@ -357,7 +357,7 @@ export default function SettingsTab() {
                 <Crown size={24} color="#F59E0B" fill="#F59E0B" />
               </View>
               <View style={styles.premiumBody}>
-                <Text style={styles.premiumTitle}>Unlock Premium Magic ✨</Text>
+                <Text style={styles.premiumTitle}>Unlock Premium Magic</Text>
                 <Text style={styles.premiumDesc}>Unlimited worlds · High-fidelity voices</Text>
               </View>
               <View style={styles.premiumAction}>
