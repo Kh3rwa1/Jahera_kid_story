@@ -33,6 +33,7 @@ import { Sparkles, Clock, ArrowRight, Wand as Wand2, Award, Crown, ChevronRight,
 import { LoadingSkeleton, Skeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
+import { getThemeIcon } from '@/utils/themeIcons';
 import { MeshBackground } from '@/components/MeshBackground';
 import { Container } from '@/components/Container';
 import { StatsTicker } from '@/components/StatsTicker';
@@ -213,9 +214,8 @@ export default function HomeScreen() {
       <Animated.View entering={FadeIn.delay(40)} style={[styles.topBar, { backgroundColor: C.cardBackground + '90' }]}>
         <TouchableOpacity style={styles.avatarRow} onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.85}>
           <View style={styles.greetBlock}>
-            <Text style={[styles.greetLine2, { color: C.text.primary, fontSize: isTablet ? 28 : 24 }]} numberOfLines={1}>
-              <Text style={{ fontFamily: FONTS.displayMedium, color: C.text.secondary }}>{line1} </Text>{line2}
-            </Text>
+            <Text style={[styles.greetLine1, { color: C.text.secondary }]}>{line1}</Text>
+            <Text style={[styles.greetLine2, { color: C.text.primary }]} numberOfLines={1}>{line2}</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.topBarRight}>
@@ -224,7 +224,7 @@ export default function HomeScreen() {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.heroWrap}>
-        <TouchableOpacity activeOpacity={0.97} onPress={handleRandomStory}>
+        <AnimatedPressable onPress={handleRandomStory} scaleDown={0.97}>
           <LinearGradient colors={[C.primary, C.primaryDark] as [string, string]} style={styles.heroCard}>
             <HeroShimmer styles={styles} />
             <View style={[styles.orb, styles.orbTL, { backgroundColor: 'rgba(255,255,255,0.12)' }]} /><View style={[styles.orb, styles.orbBR, { backgroundColor: 'rgba(0,0,0,0.06)' }]} />
@@ -242,7 +242,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.heroVisual}>
                 <View style={styles.heroVisualOutline}>
-                   <FloatAnim><Text style={styles.heroLargeEmoji}>✨</Text></FloatAnim>
+                   <FloatAnim><View style={{ width: isTablet ? 100 : 80, height: isTablet ? 100 : 80, borderRadius: isTablet ? 50 : 40, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)' }}><Wand2 size={isTablet ? 48 : 38} color="#FFF" strokeWidth={1.5} /></View></FloatAnim>
                 </View>
               </View>
             </View>
@@ -251,7 +251,7 @@ export default function HomeScreen() {
               <View style={styles.heroStripDot} /><View style={styles.heroStripItem}><Award size={12} color="rgba(255,255,255,0.8)" /><Text style={styles.heroStripText}>Earn badges</Text></View>
             </LinearGradient>
           </LinearGradient>
-        </TouchableOpacity>
+        </AnimatedPressable>
       </Animated.View>
 
       <BehaviorBooster colors={C} profileId={profile.id} languageCode={profile.primary_language} />
@@ -269,7 +269,7 @@ export default function HomeScreen() {
           <TouchableOpacity onPress={() => router.push('/(tabs)/history')} style={[styles.seeAllBtn, { backgroundColor: C.primary + '10' }]}><Text style={[styles.seeAllText, { color: C.primary }]}>See All</Text><ArrowRight size={13} color={C.primary} strokeWidth={3} /></TouchableOpacity>
         </View>
         {recentStories.length === 0 ? (
-          <View style={styles.emptyWrap}><View style={[styles.emptyCard, { backgroundColor: C.cardBackground }]}><View style={styles.emptyIconRing}><Text style={styles.emptyEmoji}>✨</Text></View><Text style={[styles.emptyTitle, { color: C.text.primary }]}>No stories yet!</Text><Text style={[styles.emptySub, { color: C.text.secondary }]}>Create your first adventure story with {profile.kid_name}.</Text><TouchableOpacity onPress={handleGenerateStory} activeOpacity={0.8}><LinearGradient colors={[C.primary, C.primaryDark] as [string, string]} style={styles.emptyAction} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}><Sparkles size={18} color="#FFFFFF" /><Text style={styles.emptyActionText}>Start Creating</Text></LinearGradient></TouchableOpacity></View></View>
+          <View style={styles.emptyWrap}><View style={[styles.emptyCard, { backgroundColor: C.cardBackground }]}><View style={styles.emptyIconRing}><Sparkles size={44} color="#FBBF24" strokeWidth={1.5} /></View><Text style={[styles.emptyTitle, { color: C.text.primary }]}>No stories yet!</Text><Text style={[styles.emptySub, { color: C.text.secondary }]}>Create your first adventure story with {profile.kid_name}.</Text><TouchableOpacity onPress={handleGenerateStory} activeOpacity={0.8}><LinearGradient colors={[C.primary, C.primaryDark] as [string, string]} style={styles.emptyAction} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}><Sparkles size={18} color="#FFFFFF" /><Text style={styles.emptyActionText}>Start Creating</Text></LinearGradient></TouchableOpacity></View></View>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel} snapToInterval={CARD_W + SPACING.md} decelerationRate="fast">
             {recentStories?.map((story, i) => {
@@ -279,7 +279,7 @@ export default function HomeScreen() {
                   <AnimatedPressable onPress={() => handleStoryPress(story.id)} style={{ width: CARD_W }}>
                     <View style={[styles.storyCard, { backgroundColor: C.cardBackground, height: isTablet ? 280 : 260 }]}>
                       <LinearGradient colors={palette.colors} style={styles.storyArt}>
-                        <Text style={styles.storyArtEmoji}>{story.theme === 'Space' ? '🚀' : story.theme === 'Animals' ? '🦁' : '📖'}</Text>
+                        {(() => { const ti = getThemeIcon(story.theme); const TIcon = ti.icon; return <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}><TIcon size={ti.size} color="rgba(255,255,255,0.9)" strokeWidth={1.5} /></View>; })()}
                         <View style={styles.storyBadgesTop}><View style={styles.storyFlagBadge}><Text style={styles.storyFlag}>{getLanguageFlag(story.language_code)}</Text></View></View>
                         {story.audio_url && <View style={[styles.storyPlayBtn, { backgroundColor: 'rgba(255,255,255,0.9)' }]}><Play size={14} color={palette.accent} fill={palette.accent} /></View>}
                       </LinearGradient>
