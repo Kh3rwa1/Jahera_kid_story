@@ -363,10 +363,11 @@ export default function ProfileScreen() {
   const COLORS = currentTheme.colors;
   const { profile, stories, quizAttempts, isLoading, error, refreshAll } = useApp();
   const { wakeUI } = useUI();
+  const tabBarPadding = useTabBarHeight();
   const { width: winWidth } = useWindowDimensions();
   const isTablet = winWidth >= BREAKPOINTS.tablet;
   const isDesktop = winWidth >= BREAKPOINTS.desktop;
-  const styles = useStyles(COLORS, isTablet, isDesktop);
+  const styles = useStyles(COLORS, isTablet, isDesktop, tabBarPadding);
 
   const stats = useMemo(() => computeQuizStats(quizAttempts), [quizAttempts]);
   const streak = useMemo(() => computeStreak(stories), [stories]);
@@ -446,8 +447,7 @@ export default function ProfileScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-        onScroll={wakeUI}
-        scrollEventThrottle={16}
+        onScrollBeginDrag={wakeUI}
         refreshControl={
           <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={COLORS.primary} />
         }
@@ -517,14 +517,14 @@ export default function ProfileScreen() {
   );
 }
 
-const useStyles = (C: ColorScheme['colors'], isTablet: boolean, isDesktop: boolean) => {
+const useStyles = (C: ColorScheme['colors'], isTablet: boolean, isDesktop: boolean, tabBarPadding: number = 140) => {
   return StyleSheet.create({
     container: { flex: 1 },
     loadingWrap: { padding: SPACING.xl },
     scroll: {
       paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
       paddingTop: SPACING.sm,
-      paddingBottom: 140,
+      paddingBottom: tabBarPadding,
       gap: isTablet ? SPACING.xxl : SPACING.xl,
       width: '100%',
       maxWidth: isDesktop ? 1040 : LAYOUT.maxWidth + 120,
