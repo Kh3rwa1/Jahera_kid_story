@@ -29,7 +29,10 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Jahera needs microphone access for voice input features.",
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUserNotificationUsageDescription": "Jahera uses notifications for bedtime story reminders."
+        "NSUserNotificationUsageDescription": "Jahera uses notifications for bedtime story reminders.",
+        "UIBackgroundModes": [
+          "audio"
+        ]
       },
       "privacyManifests": {
         "NSPrivacyCollectedDataTypes": [
@@ -55,7 +58,9 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.RECEIVE_BOOT_COMPLETED"
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
       "playStoreUrl": "https://play.google.com/store/apps/details?id=com.hindi.harp"
     },
