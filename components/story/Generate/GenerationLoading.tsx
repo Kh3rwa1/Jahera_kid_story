@@ -1,10 +1,9 @@
 import { FUN_FACTS } from '@/constants/storyOptions';
 import { FONTS,SHADOWS } from '@/constants/theme';
 import { GenerationStep } from '@/hooks/useStoryGeneration';
-import { generateAudio } from '@/services/audioService';
+import { deviceTTSService } from '@/services/deviceTTSService';
 import { formatLocationLabel,LocationContext } from '@/services/locationService';
 import { ThemeColors } from '@/types/theme';
-import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import { Check,MapPin,Sparkles } from 'lucide-react-native';
@@ -79,48 +78,13 @@ export function GenerationLoading({
   }, [orbRotate, pulseScale]);
 
 
-  // Speak fun fact whenever it changes
+  // Speak fun fact using device TTS
   useEffect(() => {
-    let mounted = true;
-    let activeSound: Audio.Sound | null = null;
-
-    const playFact = async () => {
-      const text = FUN_FACTS[funFactIndex];
-      try {
-        const url = await generateAudio(text, languageCode, undefined, true);
-        if (!url || !mounted) return;
-
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          { uri: url },
-          { shouldPlay: true }
-        );
-        
-        if (!mounted) {
-          await newSound.unloadAsync().catch(() => {});
-          return;
-        }
-
-        activeSound = newSound;
-
-        newSound.setOnPlaybackStatusUpdate((status) => {
-          if (status.isLoaded && status.didJustFinish) {
-            // Fact finished
-          }
-        });
-      } catch (e) {
-        console.debug('Fun fact audio playback failed', e);
-      }
-    };
-
-    playFact();
-
-    return () => {
-      mounted = false;
-      if (activeSound) {
-        activeSound.unloadAsync().catch(() => {});
-      }
-    };
+    const text = FUN_FACTS[funFactIndex];
+    deviceTTSService.speak(text, languageCode);
+    return () => { deviceTTSService.stop(); };
   }, [funFactIndex, languageCode]);
+
 
   const orbStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${orbRotate.value}deg` }],

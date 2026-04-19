@@ -34,43 +34,12 @@ export default function GenerateStoryScreen() {
     selectedVoice, setSelectedVoice,
     selectedLanguage, setSelectedLanguage,
     locationCtx,
-    phase, status, progress, error, isQuotaError, steps,
+    phase, status, progress, error, steps,
     handleStartGeneration, handleRetry,
     subscription
   } = useStoryGeneration();
   const isPremium = subscription?.plan !== 'free';
 
-  if (isQuotaError) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.quotaContainer}>
-          <View style={styles.quotaIconWrap}>
-            <LinearGradient colors={['#FEF3C7', '#FDE68A']} style={styles.quotaIconBg}>
-              <Zap size={36} color="#D97706" strokeWidth={2} />
-            </LinearGradient>
-          </View>
-          <Text style={[styles.quotaTitle, { color: colors.text.primary }]}>Monthly Limit Reached</Text>
-          <Text style={[styles.quotaSubtitle, { color: colors.text.secondary }]}>
-            You've used all your free stories this month. Upgrade to Pro for unlimited adventures!
-          </Text>
-          <TouchableOpacity onPress={() => router.push('/paywall')} activeOpacity={0.9} style={styles.fullWidth}>
-            <LinearGradient
-              colors={['#FF8C42', '#FF5C00']}
-              style={styles.upgradeButton}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Sparkles size={18} color="#FFFFFF" />
-              <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
-            <Text style={[styles.backLinkText, { color: colors.text.light }]}>Maybe later</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   if (error) {
     return (

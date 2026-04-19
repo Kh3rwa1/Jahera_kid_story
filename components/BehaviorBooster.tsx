@@ -111,7 +111,7 @@ const BoosterCard = memo(({
               />
             ) : (
               <View style={styles.fallBackWrap}>
-                <Text style={styles.emojiFallback}>{goal.emoji}</Text>
+                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary + '15', alignItems: 'center', justifyContent: 'center' }}><Sparkles size={32} color={colors.primary} strokeWidth={1.8} /></View>
               </View>
             )}
             

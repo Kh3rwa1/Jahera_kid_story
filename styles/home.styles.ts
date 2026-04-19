@@ -26,8 +26,8 @@ export const useHomeStyles = (C: any, isTablet: boolean, isDesktop: boolean) => 
       borderWidth: 2, borderColor: '#FFFFFF',
     },
     greetBlock: { gap: 0 },
-    greetLine1: { fontSize: isTablet ? 15 : 13, fontFamily: FONTS.displayMedium, opacity: 0.8 },
-    greetLine2: { fontSize: isTablet ? 36 : 30, fontFamily: FONTS.display, letterSpacing: -0.8 },
+    greetLine1: { fontSize: isTablet ? 14 : 12, fontFamily: FONTS.displayMedium, opacity: 0.7, letterSpacing: 0.5 },
+    greetLine2: { fontSize: isTablet ? 28 : 24, fontFamily: FONTS.display, letterSpacing: -0.8, marginTop: -2 },
     topBarRight: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
     iconBtn: {
       width: isTablet ? 52 : 44, height: isTablet ? 52 : 44, borderRadius: isTablet ? 26 : 22,
