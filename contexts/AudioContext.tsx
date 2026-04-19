@@ -133,9 +133,10 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadAudioFromUrl = async (audioPath: string, story: Story, retryCount = 0) => {
     try {
-      if (sound) {
-        // Sound already cleaned up by loadAndPlayAudio, just clear ref
-        try { await sound.unloadAsync(); } catch (_e) { /* already unloaded */ }
+      const existingSound = soundRef.current;
+      if (existingSound) {
+        try { await existingSound.unloadAsync(); } catch (_e) { /* already unloaded */ }
+        soundRef.current = null;
         setSound(null);
       }
 
@@ -294,10 +295,11 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       clearDeviceProgressTimer();
       setIsDeviceTTS(false);
     }
-    // Unload any expo-av sound
-    if (sound) {
-      try { await sound.stopAsync(); } catch (_e) { /* already stopped */ }
-      await sound.unloadAsync();
+    // Unload any expo-av sound (use ref, not stale closure)
+    const currentSound = soundRef.current;
+    if (currentSound) {
+      try { await currentSound.stopAsync(); } catch (_e) { /* already stopped */ }
+      try { await currentSound.unloadAsync(); } catch (_e) { /* already unloaded */ }
       soundRef.current = null;
       setSound(null);
     }
@@ -314,13 +316,15 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     setPosition(0);
     setDuration(0);
     lastPositionRef.current = 0;
-    audioLockRef.current = false;
 
     if (isDeviceTtsAudioUrl(story.audio_url)) {
       await loadDeviceTtsStory(story);
+      audioLockRef.current = false;
     } else if (story.audio_url) {
       await loadAudioFromUrl(story.audio_url, story);
+      audioLockRef.current = false;
     } else {
+      audioLockRef.current = false;
       setAudioPolling(true);
       generateAudio(story.content, story.language_code || 'en', story.id).catch(err => 
         logger.error('[AudioContext] generateAudio error:', err)
