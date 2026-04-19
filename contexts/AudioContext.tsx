@@ -133,11 +133,8 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const loadAudioFromUrl = async (audioPath: string, story: Story, retryCount = 0) => {
     try {
       if (sound) {
-        // Crossfade: fade out old audio before unloading
-        try { await sound.setVolumeAsync(0.3); } catch (e) { logger.debug('[AudioContext] vol err:', e); }
-        await new Promise(resolve => setTimeout(resolve, 150));
-        try { await sound.setVolumeAsync(0); } catch (e) { logger.debug('[AudioContext] vol err:', e); }
-        await sound.unloadAsync();
+        // Sound already cleaned up by loadAndPlayAudio, just clear ref
+        try { await sound.unloadAsync(); } catch (_e) { /* already unloaded */ }
         setSound(null);
       }
 
