@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect,useRouter } from 'expo-router';
 import { BookOpen,ChevronRight,Mic as Mic2,Moon,Sparkles,Zap } from 'lucide-react-native';
+import * as SplashScreen from 'expo-splash-screen';
 import { useEffect,useMemo,useRef } from 'react';
 import {
 Image,
@@ -134,34 +135,14 @@ export default function Welcome() {
     transform: [{ translateX: interpolate(shimmer.value, [0, 1], [-250, 250]) }],
   }));
 
+  useEffect(() => {
+    if (!authLoading && !profileLoading && !themeLoading) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [authLoading, profileLoading, themeLoading]);
+
   if (authLoading || profileLoading || themeLoading) {
-    return (
-      <View style={styles.loadingScreen}>
-        <LinearGradient colors={C.backgroundGradient} style={StyleSheet.absoluteFill} />
-        <Animated.View entering={FadeIn.duration(800)}>
-          <View style={styles.loadingOrbOuter}>
-            <View 
-              style={[
-                styles.loadingOrb, 
-                { backgroundColor: C.primary }
-              ]}
-            >
-               <Image 
-                  source={require('@/assets/images/icon.png')}
-                  style={{ 
-                    width: 150, 
-                    height: 150, 
-                    borderRadius: 75,
-                    borderWidth: 3,
-                    borderColor: '#FFFFFF'
-                  }}
-                  resizeMode="cover"
-               />
-            </View>
-          </View>
-        </Animated.View>
-      </View>
-    );
+    return null;
   }
 
   // Auto-redirect authenticated users

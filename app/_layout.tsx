@@ -105,15 +105,12 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-    // Safety timeout: Never stay on splash screen longer than 5 seconds
+    // Safety timeout: Never stay on splash screen longer than 8 seconds
     const safety = setTimeout(() => {
       SplashScreen.hideAsync().catch(() => {});
-    }, 5000);
+    }, 8000);
     return () => clearTimeout(safety);
-  }, [fontsLoaded, fontError]);
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;
