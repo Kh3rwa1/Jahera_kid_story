@@ -13,7 +13,7 @@ import Animated, { FadeIn, FadeInDown, FadeInUp, SlideInDown, useAnimatedStyle, 
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect } from 'react';
 
-import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
 import { useReadingPreferences } from '@/contexts/ReadingPreferencesContext';
 import { useTheme } from '@/contexts/ThemeContext';
