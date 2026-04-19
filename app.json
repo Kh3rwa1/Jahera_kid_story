@@ -16,8 +16,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#FFF8E7"
     },
-    "privacy": "public",
-    "category": "education",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hindi.harp",
@@ -48,7 +46,7 @@
       }
     },
     "android": {
-      "package": "com.hindi.harp",
+      "package": "com.jahera.kidstory",
       "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -62,7 +60,8 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
-      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.hindi.harp"
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.hindi.harp",
+      "targetSdkVersion": 35
     },
     "web": {
       "bundler": "metro",
