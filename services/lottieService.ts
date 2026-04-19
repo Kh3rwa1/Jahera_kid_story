@@ -45,30 +45,44 @@ export async function ensureLottieAsset(sourceUrl: string, behaviorId: string, f
       return null;
     }
 
-    // 2. On Native, we use FileSystem for persistent caching
-    const dirInfo = await ExpoFileSystem.getInfoAsync(LOTTIE_CACHE_DIR);
-    if (!dirInfo.exists) {
-      await ExpoFileSystem.makeDirectoryAsync(LOTTIE_CACHE_DIR, { intermediates: true });
+    // 2. On Native, try FileSystem cache first, then fetch fallback for Expo Go
+    try {
+      const dirInfo = await ExpoFileSystem.getInfoAsync(LOTTIE_CACHE_DIR);
+      if (!dirInfo.exists) {
+        await ExpoFileSystem.makeDirectoryAsync(LOTTIE_CACHE_DIR, { intermediates: true });
+      }
+
+      const filename = \`\${behaviorId}.json\`;
+      const localUri = \`\${LOTTIE_CACHE_DIR}\${filename}\`;
+
+      const fileInfo = await ExpoFileSystem.getInfoAsync(localUri);
+      if (fileInfo.exists && !forceRefresh) {
+        return { uri: localUri };
+      }
+
+      logger.debug(\`[LottieService] \${forceRefresh ? 'Refreshing' : 'Fetching'} asset for \${behaviorId}: \${sourceUrl}\`);
+      
+      const { uri, status } = await ExpoFileSystem.downloadAsync(sourceUrl, localUri);
+      
+      if (status !== 200) {
+        throw new Error(\`Download failed with status \${status}\`);
+      }
+
+      return { uri };
+    } catch (fsError) {
+      // Fallback for Expo Go where FileSystem.downloadAsync is blocked
+      logger.debug(\`[LottieService] FileSystem failed for \${behaviorId}, using fetch fallback\`);
+      try {
+        const response = await fetch(sourceUrl);
+        const text = await response.text();
+        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+          return JSON.parse(text);
+        }
+      } catch (fetchErr) {
+        logger.warn(\`[LottieService] Fetch fallback also failed for \${behaviorId}\`);
+      }
+      return null;
     }
-
-    const filename = `${behaviorId}.json`;
-    const localUri = `${LOTTIE_CACHE_DIR}${filename}`;
-
-    const fileInfo = await ExpoFileSystem.getInfoAsync(localUri);
-    if (fileInfo.exists && !forceRefresh) {
-      return { uri: localUri };
-    }
-
-    logger.debug(`[LottieService] ${forceRefresh ? 'Refreshing' : 'Fetching'} asset for ${behaviorId}: ${sourceUrl}`);
-    
-    // Download and verify
-    const { uri, status } = await ExpoFileSystem.downloadAsync(sourceUrl, localUri);
-    
-    if (status !== 200) {
-      throw new Error(`Download failed with status ${status}`);
-    }
-
-    return { uri };
   } catch (error) {
     logger.error(`[LottieService] Failed to ensure asset for ${behaviorId}:`, error);
     
