@@ -7,7 +7,7 @@ import { ThemeColors } from '@/types/theme';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect,useRouter } from 'expo-router';
-import { BookOpen,ChevronRight,Mic as Mic2,Zap } from 'lucide-react-native';
+import { BookOpen,ChevronRight,Mic as Mic2,Moon,Sparkles,Zap } from 'lucide-react-native';
 import { useEffect,useMemo,useRef } from 'react';
 import {
 Image,
@@ -279,7 +279,9 @@ export default function Welcome() {
             { emoji: '🧩', label: 'Learning' },
           ].map((item) => (
             <View key={item.label} style={styles.pill}>
-              <Text style={styles.pillEmoji}>{item.emoji}</Text>
+              {item.icon === 'sparkle' && <Sparkles size={14} color={C.primaryDark} />}
+              {item.icon === 'moon' && <Moon size={14} color={C.primaryDark} />}
+              {item.icon === 'book' && <BookOpen size={14} color={C.primaryDark} />}
               <Text style={styles.pillText}>{item.label}</Text>
             </View>
           ))}
@@ -599,9 +601,6 @@ const useStyles = (C: ThemeColors, width: number) => {
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.1,
       shadowRadius: 10,
-    },
-    pillEmoji: {
-      fontSize: 14,
     },
     pillText: {
       fontSize: 13,
