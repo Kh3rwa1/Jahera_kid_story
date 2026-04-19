@@ -276,16 +276,33 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const loadAndPlayAudio = async (story: Story) => {
-    // If asking to load the same story that's already playing, just do nothing
-    if (activeStory?.id === story.id) {
+    // If asking to load the same story that's already playing, just toggle play/pause
+    if (activeStory?.id === story.id && (isPlaying || sound || isDeviceTTS)) {
         return;
     }
 
-    if (sound) {
-       await sound.unloadAsync();
-       setSound(null);
+    // === STOP ALL PREVIOUS AUDIO FIRST ===
+    // Stop device TTS if it was playing
+    if (isDeviceTTS) {
+      await deviceTTSService.stop();
+      clearDeviceProgressTimer();
+      setIsDeviceTTS(false);
     }
-    
+    // Unload any expo-av sound
+    if (sound) {
+      try { await sound.stopAsync(); } catch (_e) { /* already stopped */ }
+      await sound.unloadAsync();
+      soundRef.current = null;
+      setSound(null);
+    }
+    // Cancel any ongoing audio polling
+    if (audioPollingRef.current) {
+      clearInterval(audioPollingRef.current);
+      audioPollingRef.current = null;
+    }
+    setAudioPolling(false);
+    setIsPlaying(false);
+
     setActiveStory(story);
     setAudioError(false);
     setPosition(0);
