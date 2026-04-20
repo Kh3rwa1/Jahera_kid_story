@@ -393,6 +393,82 @@ const FALLBACK_STORIES = [
     title: 'The Gratitude Tree',
     content: `In the middle of a village stood an ancient tree. The villagers called it the Gratitude Tree because whenever someone said "thank you" near it, a golden leaf would appear on its branches. One day, a child noticed the tree had very few leaves. "People must have forgotten to be grateful," the child thought. So the child started a mission. They thanked the baker for the bread, the teacher for the lessons, the sun for the warmth, and even the rain for helping the flowers grow. Soon, the tree was covered in shimmering golden leaves, and it became the most beautiful tree in the world. The child learned that gratitude doesn't just make trees beautiful — it makes hearts beautiful too.`,
   },
+
+  {
+    title: 'The Cloud Painter',
+    content:
+      'Every morning, a little cloud painter named Skye mixed colors from the sunrise to paint the sky. One day, Skye ran out of pink paint and had to use orange and purple instead. The result was the most spectacular sunset anyone had ever seen. The birds sang extra songs that evening, and the flowers stayed open a little longer just to watch. Skye learned that mistakes sometimes create the most beautiful things of all.',
+  },
+  {
+    title: 'The Singing River',
+    content:
+      'Deep in the valley, a gentle river hummed a melody that only kind hearts could hear. A young traveler discovered the river and sat beside it, listening carefully. The river sang about every creature it had helped — the thirsty deer, the playful otters, the flowers along its banks. Inspired, the traveler began helping others too, and soon their own heart sang a melody just as beautiful.',
+  },
+  {
+    title: 'The Library of Lost Dreams',
+    content:
+      'In a hidden corner of the city stood a tiny library where forgotten dreams were kept on shelves like books. A curious child wandered in one rainy afternoon and opened a glowing volume. Inside was a dream about learning to fly — not with wings, but with imagination. The child read every page, and by the time they finished, they realized their own dreams were just as powerful as any story ever written.',
+  },
+  {
+    title: 'The Friendship Bridge',
+    content:
+      'Two villages sat on opposite sides of a wide canyon with no way to cross. One day, children from both sides started building a bridge — each side working toward the middle. When the two halves finally met, the children cheered and danced together. They discovered that the friends on the other side loved the same games, the same jokes, and the same starry nights. The bridge became the most popular place in both villages.',
+  },
+  {
+    title: 'The Moonlight Festival',
+    content:
+      'Once a year, when the moon was biggest and brightest, the forest animals held a festival of lights. Every creature brought their own glow — fireflies carried lanterns, mushrooms shimmered softly, and the wise old owl wore a crown of stars. A child who had wandered into the forest was invited to join. They danced with rabbits, sang with frogs, and discovered that magic is everywhere when you know where to look.',
+  },
+  {
+    title: 'The Garden of Gratitude',
+    content:
+      'In a quiet neighborhood, an elderly gardener tended the most wonderful garden anyone had ever seen. The secret was simple: every plant grew from a seed of gratitude. When you whispered something you were thankful for, a seed would sprout instantly. Children came from all around to plant seeds of thanks — for sunny days, warm hugs, and chocolate cake. The garden grew so large it became a park where everyone felt happy.',
+  },
+  {
+    title: 'The Courageous Caterpillar',
+    content:
+      'A small caterpillar named Cleo was afraid of heights, which was a problem because caterpillars are supposed to climb. While all the others raced up the tallest trees, Cleo stayed close to the ground. One day, Cleo found a tiny snail struggling to cross a puddle. Cleo helped the snail, and together they explored the world from ground level — finding treasures everyone else missed. When it was finally time to become a butterfly, Cleo spread the most colorful wings of all, painted with every ground-level adventure.',
+  },
+  {
+    title: 'The Treasure Map of Kindness',
+    content:
+      'A mysterious map appeared on the doorstep one morning, marked with an X and a note: Follow the kind path. The first stop was the bakery, where helping carry bags revealed the next clue. Then the park, where pushing a friend on the swings uncovered another. Each act of kindness led to the next marker. At the end of the trail was a mirror with a golden frame and a message: The treasure was you all along — a heart full of kindness is the greatest treasure in the world.',
+  },
+  {
+    title: 'The Night Sky Orchestra',
+    content:
+      'Every night, the stars formed an orchestra to play lullabies for the sleeping world. The North Star conducted, the constellations played strings, and shooting stars added dramatic crescendos. One restless night, a child looked up and listened — really listened — and heard the faintest, most beautiful music. From that night on, they never had trouble falling asleep, because they knew the stars were always singing just for them.',
+  },
+  {
+    title: 'The Color Thief Mystery',
+    content:
+      'One morning, all the colors in town began to fade. The red fire trucks turned grey, the green trees went pale, and even the blue sky looked washed out. A determined child set out to solve the mystery. They discovered that a lonely cloud had been accidentally absorbing all the colors because it wanted to be beautiful too. The child taught the cloud to share the colors by making rainbows, and the town became more colorful than ever — with twice as many rainbows as before.',
+  },
+  {
+    title: 'The Whispering Shells',
+    content:
+      'At the edge of the sea, special shells washed ashore that whispered stories when held to the ear. Each shell told a different tale — of dolphins dancing at dawn, of seahorses racing through coral cities, of wise old turtles sharing ancient jokes. A child collected these shells and shared them with friends who could not visit the beach. The stories brought the ocean to everyone, proving that sharing joy multiplies it.',
+  },
+  {
+    title: 'The Patience Tree',
+    content:
+      'In the center of town grew an enormous tree that only bloomed for those who waited patiently. Many people came and left quickly, but one child sat beneath it day after day, reading books and drawing pictures. Weeks passed, and just when the child had forgotten about the blooming, the tree burst into the most spectacular flowers — each petal containing a tiny wish that came true. The child learned that the best things in life are worth waiting for.',
+  },
+  {
+    title: 'The Laugh Factory',
+    content:
+      'Hidden behind the tallest building in town was a tiny factory that bottled laughter. Giggles went into blue bottles, belly laughs into red ones, and the rarest of all — snort-laughs — went into golden bottles. A child discovered the factory and was given a job: testing the laughs to make sure they were genuine. It was the best job in the world. Every bottle they tested filled the factory with joy, and the child realized that laughter is the one thing that gets bigger the more you give it away.',
+  },
+  {
+    title: 'The Dream Weaver',
+    content:
+      'Every night, a gentle spider named Silka wove special webs that caught good dreams and sent them floating down to sleeping children. One night, Silka noticed a child having a nightmare and wove the strongest, most beautiful web yet. It caught the bad dream and transformed it into an adventure where the scary monster turned out to be a friendly creature who just wanted a hug. The child woke up smiling, and Silka added a new pattern to remember — sometimes the things that scare us just need a little understanding.',
+  },
+  {
+    title: 'The Compass of Curiosity',
+    content:
+      'An old compass found in a dusty attic did not point north — it pointed toward the most interesting thing nearby. Following it through the neighborhood revealed hidden wonders everywhere: a family of foxes living under the library, a wall covered in tiny fossils, a neighbor who once sailed around the world. Every discovery led to a new question, and every question led to a new adventure. The child learned that curiosity is the compass that makes life extraordinary.',
+  },
 ];
 
 export function getFallbackStory(): { title: string; content: string } {
