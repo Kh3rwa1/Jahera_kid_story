@@ -8,7 +8,7 @@
     "scheme": "jahera",
     "userInterfaceStyle": "light",
     "jsEngine": "hermes",
-    "description": "Jahera - AI-powered personalized story adventures for kids. Create magical, educational stories tailored to your child's interests, family, and friends with multilingual narration.",
+    "description": "Jahera - AI-powered personalized story platform for families. Create magical, educational stories tailored to your family's values, interests, and goals with multilingual narration.",
     "primaryColor": "#FF4B4B",
     "backgroundColor": "#FFF8E7",
     "splash": {
@@ -18,16 +18,16 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hindi.harp",
+      "bundleIdentifier": "com.jahera.kidstory",
       "buildNumber": "1.0.0",
       "requireFullScreen": false,
       "config": {
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Jahera needs microphone access for voice input features.",
+        "NSMicrophoneUsageDescription": "Jahera uses microphone access to enable voice input features for story creation.",
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUserNotificationUsageDescription": "Jahera uses notifications for bedtime story reminders.",
+        "NSUserNotificationUsageDescription": "Jahera sends reminders for your family's story time schedule.",
         "UIBackgroundModes": [
           "audio"
         ]
@@ -73,7 +73,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Allow Jahera to access your microphone for voice features."
+          "microphonePermission": "Allow Jahera to use your microphone for voice-powered story creation."
         }
       ],
       "expo-video",
