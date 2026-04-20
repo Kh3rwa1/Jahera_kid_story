@@ -19,7 +19,7 @@ jest.mock('@/services/database', () => ({
   quizService: { getQuestionsByStoryId: jest.fn().mockResolvedValue([]) },
 }));
 
-jest.mock('@/services/videoCacheService', () => ({
+jest.mock('@/services/videoCacheServiceInternal', () => ({
   videoCacheService: {
     getCachedUri: jest.fn().mockReturnValue('cached-video-uri'),
     prefetch: jest.fn().mockResolvedValue(undefined),
