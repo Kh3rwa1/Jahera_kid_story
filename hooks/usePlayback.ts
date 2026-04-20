@@ -1,12 +1,12 @@
 import { useAudio } from '@/contexts/AudioContext';
 import { useApp } from '@/contexts/AppContext';
-import { quizService,storyService } from '@/services/database';
+import { quizService, storyService } from '@/services/database';
 import { Story } from '@/types/database';
 import { logger } from '@/utils/logger';
 import { personalizeStory } from '@/utils/nameSubstitution';
-import { useLocalSearchParams,useRouter } from 'expo-router';
-import { useCallback,useEffect,useRef,useState } from 'react';
-import { Easing,useSharedValue,withTiming } from 'react-native-reanimated';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Easing, useSharedValue, withTiming } from 'react-native-reanimated';
 
 export type TabMode = 'audio' | 'text';
 
@@ -22,7 +22,7 @@ export function usePlayback() {
   const [hasQuiz, setHasQuiz] = useState(false);
   const [tab, setTab] = useState<TabMode>('audio');
   const [showCinematicIntro, setShowCinematicIntro] = useState(true);
-  
+
   const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const introOpacity = useSharedValue(1);
 
@@ -48,19 +48,19 @@ export function usePlayback() {
         : storyData;
 
       setStory(personalized);
-      
+
       const quizData = await quizService.getQuestionsByStoryId(storyId);
       setHasQuiz(!!quizData && quizData.length > 0);
 
       // Start audio generation/play with personalized content
       // Only load once per story ID - prevents re-render loop
-      if (hasLoadedRef.current !== params.storyId) {
-        hasLoadedRef.current = params.storyId;
+      if (hasLoadedRef.current !== (params.storyId as string)) {
+        hasLoadedRef.current = params.storyId as string;
         loadAndPlayAudio(personalized);
       }
-      
+
       setIsLoading(false);
-      
+
       // Minimum duration for the cinematic intro
       introTimerRef.current = setTimeout(() => {
         dismissCinematicIntro();
@@ -77,7 +77,10 @@ export function usePlayback() {
       clearTimeout(introTimerRef.current);
       introTimerRef.current = null;
     }
-    introOpacity.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) });
+    introOpacity.value = withTiming(0, {
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
+    });
     setTimeout(() => setShowCinematicIntro(false), 600);
   }, [introOpacity]);
 
@@ -102,9 +105,12 @@ export function usePlayback() {
   const handleNewStory = useCallback(() => {
     if (!story) return;
     stopAudio();
-    router.push({ 
-      pathname: '/story/generate', 
-      params: { profileId: story.profile_id, languageCode: story.language_code } 
+    router.push({
+      pathname: '/story/generate',
+      params: {
+        profileId: story.profile_id,
+        languageCode: story.language_code,
+      },
     });
   }, [stopAudio, story, router]);
 
@@ -120,6 +126,6 @@ export function usePlayback() {
     handleBack,
     handleGoToQuiz,
     handleNewStory,
-    retryAudio
+    retryAudio,
   };
 }
