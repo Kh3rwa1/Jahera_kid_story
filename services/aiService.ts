@@ -3,6 +3,7 @@ import { LocationContext } from '@/services/locationService';
 import { ProfileWithRelations } from '@/types/database';
 import { StoryContext } from '@/utils/contextUtils';
 import { sanitizeCity, sanitizeName } from '@/utils/promptSanitizer';
+import { checkStorySafety, getFallbackStory } from '@/utils/storySafetyFilter';
 import { analytics } from '@/services/analyticsService';
 
 export class QuotaExceededError extends Error {
