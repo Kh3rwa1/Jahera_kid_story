@@ -22,95 +22,135 @@ interface Orb {
   moveRange: number;
 }
 
-const FloatingOrb: React.FC<{ orb: Orb; isFocused: boolean }> = React.memo(({ orb, isFocused }) => {
-  const transX = useSharedValue(0);
-  const transY = useSharedValue(0);
-  const scale = useSharedValue(1);
+const FloatingOrb: React.FC<{ orb: Orb; isFocused: boolean }> = React.memo(
+  ({ orb, isFocused }) => {
+    const transX = useSharedValue(0);
+    const transY = useSharedValue(0);
+    const scale = useSharedValue(1);
 
-  useEffect(() => {
-    if (!isFocused) {
-      cancelAnimation(transX);
-      cancelAnimation(transY);
-      cancelAnimation(scale);
-      return;
-    }
+    useEffect(() => {
+      if (!isFocused) {
+        cancelAnimation(transX);
+        cancelAnimation(transY);
+        cancelAnimation(scale);
+        return;
+      }
 
-    transX.value = withDelay(
-      orb.delay,
-      withRepeat(
-        withTiming(orb.moveRange, { duration: orb.duration, easing: Easing.inOut(Easing.sin) }),
-        -1, true
-      )
+      transX.value = withDelay(
+        orb.delay,
+        withRepeat(
+          withTiming(orb.moveRange, {
+            duration: orb.duration,
+            easing: Easing.inOut(Easing.sin),
+          }),
+          -1,
+          true,
+        ),
+      );
+      transY.value = withDelay(
+        orb.delay + 300,
+        withRepeat(
+          withTiming(orb.moveRange * 0.6, {
+            duration: orb.duration * 1.2,
+            easing: Easing.inOut(Easing.sin),
+          }),
+          -1,
+          true,
+        ),
+      );
+      scale.value = withDelay(
+        orb.delay,
+        withRepeat(
+          withTiming(1.15, {
+            duration: orb.duration * 0.8,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          -1,
+          true,
+        ),
+      );
+    }, [isFocused]);
+
+    const style = useAnimatedStyle(() => ({
+      transform: [
+        { translateX: orb.initialX + transX.value },
+        { translateY: orb.initialY + transY.value },
+        { scale: scale.value },
+      ],
+    }));
+
+    return (
+      <Animated.View
+        style={[
+          styles.orb,
+          {
+            width: orb.size,
+            height: orb.size,
+            borderRadius: orb.size / 2,
+            backgroundColor: orb.color,
+          },
+          style,
+        ]}
+      />
     );
-    transY.value = withDelay(
-      orb.delay + 300,
-      withRepeat(
-        withTiming(orb.moveRange * 0.6, { duration: orb.duration * 1.2, easing: Easing.inOut(Easing.sin) }),
-        -1, true
-      )
-    );
-    scale.value = withDelay(
-      orb.delay,
-      withRepeat(
-        withTiming(1.15, { duration: orb.duration * 0.8, easing: Easing.inOut(Easing.ease) }),
-        -1, true
-      )
-    );
-  }, [isFocused]);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: orb.initialX + transX.value },
-      { translateY: orb.initialY + transY.value },
-      { scale: scale.value },
-    ],
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        styles.orb,
-        {
-          width: orb.size,
-          height: orb.size,
-          borderRadius: orb.size / 2,
-          backgroundColor: orb.color,
-        },
-        style,
-      ]}
-    />
-  );
-});
+  },
+);
 
 interface MeshBackgroundProps {
   primaryColor: string;
 }
 
-export const MeshBackground: React.FC<MeshBackgroundProps> = React.memo(({ primaryColor }) => {
-  const { width, height } = useWindowDimensions();
-  let isFocused = true;
-  try {
-    isFocused = useIsFocused();
-  } catch (_e) {
-    isFocused = true;
-  }
+export const MeshBackground: React.FC<MeshBackgroundProps> = React.memo(
+  ({ primaryColor }) => {
+    const isFocused = useIsFocused();
 
-  const orbs = useMemo<Orb[]>(() => [
-    { id: 0, size: 200, initialX: -50, initialY: -30, color: primaryColor + '08', duration: 8000, delay: 0, moveRange: 40 },
-    { id: 1, size: 160, initialX: width * 0.6, initialY: height * 0.2, color: primaryColor + '06', duration: 10000, delay: 500, moveRange: 30 },
-    { id: 2, size: 120, initialX: width * 0.3, initialY: height * 0.7, color: primaryColor + '05', duration: 9000, delay: 1000, moveRange: 35 },
-  ], [primaryColor, width, height]);
+    const orbs = useMemo<Orb[]>(
+      () => [
+        {
+          id: 0,
+          size: 200,
+          initialX: -50,
+          initialY: -30,
+          color: primaryColor + '08',
+          duration: 8000,
+          delay: 0,
+          moveRange: 40,
+        },
+        {
+          id: 1,
+          size: 160,
+          initialX: width * 0.6,
+          initialY: height * 0.2,
+          color: primaryColor + '06',
+          duration: 10000,
+          delay: 500,
+          moveRange: 30,
+        },
+        {
+          id: 2,
+          size: 120,
+          initialX: width * 0.3,
+          initialY: height * 0.7,
+          color: primaryColor + '05',
+          duration: 9000,
+          delay: 1000,
+          moveRange: 35,
+        },
+      ],
+      [primaryColor, width, height],
+    );
 
-  if (!isFocused) return null;
+    if (!isFocused) return null;
 
-  return (
-    <View style={styles.container} pointerEvents="none">
-      {orbs.map(orb => (
-        <FloatingOrb key={orb.id} orb={orb} isFocused={isFocused} />
-      ))}
-    </View>
-  );
-});
+    return (
+      <View style={styles.container} pointerEvents="none">
+        {orbs.map((orb) => (
+          <FloatingOrb key={orb.id} orb={orb} isFocused={isFocused} />
+        ))}
+      </View>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   container: {
