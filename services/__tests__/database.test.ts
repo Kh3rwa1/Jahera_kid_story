@@ -26,11 +26,11 @@ jest.mock('@/lib/appwrite', () => ({
     CONFIG: 'config',
   },
   databases: {
-    createDocument: mockCreateDocument,
-    getDocument: mockGetDocument,
-    listDocuments: mockListDocuments,
-    updateDocument: mockUpdateDocument,
-    deleteDocument: mockDeleteDocument,
+    createDocument: (...args: any[]) => mockCreateDocument(...args),
+    getDocument: (...args: any[]) => mockGetDocument(...args),
+    listDocuments: (...args: any[]) => mockListDocuments(...args),
+    updateDocument: (...args: any[]) => mockUpdateDocument(...args),
+    deleteDocument: (...args: any[]) => mockDeleteDocument(...args),
   },
   ID: { unique: () => 'unique-id' },
   Query: {
