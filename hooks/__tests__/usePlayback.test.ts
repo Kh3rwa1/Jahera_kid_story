@@ -60,19 +60,33 @@ jest.mock('expo-router', () => ({
   }),
 }));
 
-jest.mock('react-native-reanimated', () => {
-  const Reanimated = require('react-native-reanimated/mock');
-  Reanimated.default.call = () => {};
-  return {
-    ...Reanimated,
-    useSharedValue: jest.fn(() => ({ value: 1 })),
-    withTiming: jest.fn(),
-    Easing: {
-      out: jest.fn(),
-      cubic: jest.fn(),
-    },
-  };
-});
+jest.mock('react-native-reanimated', () => ({
+  default: { call: () => {}, createAnimatedComponent: (c: any) => c },
+  useSharedValue: jest.fn((v: any) => ({ value: v })),
+  useAnimatedStyle: jest.fn(() => ({})),
+  withTiming: jest.fn((v: any) => v),
+  withSpring: jest.fn((v: any) => v),
+  withDelay: jest.fn((_: any, v: any) => v),
+  withSequence: jest.fn((...args: any[]) => args[args.length - 1]),
+  withRepeat: jest.fn((v: any) => v),
+  cancelAnimation: jest.fn(),
+  Easing: {
+    bezier: jest.fn(),
+    linear: jest.fn(),
+    inOut: jest.fn((e: any) => e),
+    in: jest.fn((e: any) => e),
+    out: jest.fn((e: any) => e),
+  },
+  FadeIn: { duration: jest.fn().mockReturnThis() },
+  FadeOut: { duration: jest.fn().mockReturnThis() },
+  SlideInRight: { duration: jest.fn().mockReturnThis() },
+  SlideOutLeft: { duration: jest.fn().mockReturnThis() },
+  Layout: { duration: jest.fn().mockReturnThis() },
+  runOnJS: jest.fn((fn: any) => fn),
+  runOnUI: jest.fn((fn: any) => fn),
+  interpolate: jest.fn(),
+  Extrapolation: { CLAMP: 'clamp' },
+}));
 
 jest.mock('@/utils/logger', () => ({
   logger: {
