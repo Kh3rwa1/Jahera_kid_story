@@ -3,14 +3,14 @@ import { useRouter } from 'expo-router';
 import { RotateCcw,X } from 'lucide-react-native';
 import { useMemo } from 'react';
 import {
-Image,
-Platform,
-ScrollView,
-StyleSheet,
-Text,
-TouchableOpacity,
-useWindowDimensions,
-View,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import Animated,{ FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';

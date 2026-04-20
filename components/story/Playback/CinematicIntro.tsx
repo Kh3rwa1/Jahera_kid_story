@@ -2,12 +2,7 @@ import { BrandVideoBackground } from '@/components/BrandVideoBackground';
 import { FONTS,SPACING } from '@/constants/theme';
 import { Story } from '@/types/database';
 import { BookOpen,Sparkles } from 'lucide-react-native';
-import {
-StyleSheet,
-Text,
-TouchableOpacity,
-View
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated,{ FadeIn,FadeInUp,useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

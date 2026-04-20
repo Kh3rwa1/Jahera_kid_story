@@ -31,14 +31,14 @@ Volume2
 } from 'lucide-react-native';
 import React,{ useCallback,useEffect,useMemo,useState } from 'react';
 import {
-RefreshControl,
-ScrollView,
-StyleSheet,
-Text,
-TextInput,
-TouchableOpacity,
-useWindowDimensions,
-View,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import Animated,{
 FadeIn,

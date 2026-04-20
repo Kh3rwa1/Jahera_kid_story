@@ -1,7 +1,7 @@
 import { randomFloat } from '@/utils/secureRandom';
 import { LinearGradient } from 'expo-linear-gradient';
 import React,{ useEffect,useMemo } from 'react';
-import { StyleSheet,useWindowDimensions,View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated,{
 Easing,
 useAnimatedStyle,

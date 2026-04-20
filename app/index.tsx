@@ -11,14 +11,14 @@ import { BookOpen,ChevronRight,Mic as Mic2,Moon,Sparkles,Zap } from 'lucide-reac
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect,useMemo,useRef } from 'react';
 import {
-Image,
-Platform,
-Pressable,
-StatusBar,
-StyleSheet,
-Text,
-useWindowDimensions,
-View,
+  Image,
+  Platform,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import Animated,{
 Easing,
@@ -342,7 +342,7 @@ const useStyles = (C: ThemeColors, width: number) => {
       shadowOffset: { width: 0, height: 12 },
       shadowOpacity: 0.4,
       shadowRadius: 30,
-      elevation: 20,
+      elevation: Platform.OS === 'android' ? 0 : 20,
     },
     loadingInnerOrb: {
       position: 'absolute',
@@ -465,7 +465,7 @@ const useStyles = (C: ThemeColors, width: number) => {
       shadowOffset: { width: 0, height: 20 },
       shadowOpacity: 0.5,
       shadowRadius: 40,
-      elevation: 32,
+      elevation: Platform.OS === 'android' ? 0 : 32,
     },
     orbGold: {
       width: '85%',
@@ -524,7 +524,7 @@ const useStyles = (C: ThemeColors, width: number) => {
       textShadowColor: 'rgba(0,0,0,0.8)',
       textShadowOffset: { width: 0, height: 6 },
       textShadowRadius: 20,
-      elevation: 10,
+      elevation: Platform.OS === 'android' ? 0 : 10,
     },
     shimmerStripe: {
       position: 'absolute',

@@ -3,7 +3,7 @@ import { useUI } from '@/contexts/UIContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { Tabs,usePathname,useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { StyleSheet,View,Pressable } from 'react-native';
+import { StyleSheet, View, Pressable } from 'react-native';
 import { Gesture,GestureDetector,GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS,useSharedValue } from 'react-native-reanimated';
 

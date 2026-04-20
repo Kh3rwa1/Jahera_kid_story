@@ -3,7 +3,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useSlideInUp } from '@/utils/animations';
 import { AlertCircle,Home,RefreshCw,Server,WifiOff } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet,View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { PremiumButton } from './PremiumButton';
 import { PremiumCard } from './PremiumCard';

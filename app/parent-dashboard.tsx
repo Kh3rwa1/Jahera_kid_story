@@ -22,14 +22,14 @@ TrendingUp
 } from 'lucide-react-native';
 import { useMemo,useState } from 'react';
 import {
-Alert,
-ScrollView,
-StyleSheet,
-Text,
-TextInput,
-TouchableOpacity,
-useWindowDimensions,
-View
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';

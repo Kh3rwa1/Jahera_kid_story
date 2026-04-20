@@ -1,9 +1,5 @@
 import { useLocalSearchParams,useRouter } from 'expo-router';
-import {
-StatusBar,
-StyleSheet,
-View,
-} from 'react-native';
+import { StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useApp } from '@/contexts/AppContext';

@@ -111,7 +111,6 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (status.isLoaded) {
       const newPos: number = status.positionMillis ?? 0;
-      // throttle React state updates to 250ms jumps unless just finished
       if (Math.abs(newPos - lastPositionRef.current) >= 250 || status.didJustFinish) {
         lastPositionRef.current = newPos;
         setPosition(newPos);
@@ -119,14 +118,15 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       setDuration(status.durationMillis || 0);
       setIsPlaying(status.isPlaying);
       setIsBuffering(status.isBuffering || false);
-      if (status.didJustFinish) { 
-        setIsPlaying(false); 
-        setPosition(0); 
-        lastPositionRef.current = 0; 
+      if (status.didJustFinish) {
+        lastPositionRef.current = 0;
+        setPosition(0);
+        setIsPlaying(false);
+        // Do NOT call stopAsync here - it re-triggers this callback = infinite loop
       }
-    } else if (status.error) {
+    } else if ('error' in status && status.error) {
       logger.error('[AudioContext] Playback status error:', status.error);
-      setAudioError(true); 
+      setAudioError(true);
       setIsPlaying(false);
     }
   };
@@ -140,18 +140,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
         setSound(null);
       }
 
-      let startPosition = 0;
-      try {
-        const saved = await AsyncStorage.getItem(`${PROGRESS_KEY_PREFIX}${story.id}`);
-        if (saved) {
-          const { position: savedPos, duration: savedDur } = JSON.parse(saved);
-          if (savedPos > 5000 && savedPos < (savedDur * 0.98)) {
-            startPosition = savedPos;
-          }
-        }
-      } catch (e) {
-        console.warn('[AudioContext] Failed to load saved progress:', e);
-      }
+      const startPosition = 0; // Always start from beginning
 
       const { sound: audioSound } = await Audio.Sound.createAsync(
         { uri: audioPath },
@@ -159,7 +148,8 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
           shouldPlay: false, 
           positionMillis: startPosition,
           progressUpdateIntervalMillis: 200,
-          volume: 0, // Start silent for fade-in
+          volume: 0,
+          isLooping: false,
         },
         onPlaybackStatusUpdate
       );
@@ -375,8 +365,9 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       await deviceTTSService.stop();
       clearDeviceProgressTimer();
     }
-    if (sound) {
-      await sound.stopAsync();
+    const snd = soundRef.current || sound;
+    if (snd) {
+      await snd.stopAsync();
       if (activeStory) {
          saveProgress(lastPositionRef.current, duration, activeStory);
       }
@@ -409,11 +400,23 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       }
       return;
     }
-    if (!sound) return;
     try {
-      hapticFeedback.medium();
-      isPlaying ? await sound.pauseAsync() : await sound.playAsync();
+      const s = soundRef.current;
+      if (!s) return;
+      if (s) {
+        const status = await s.getStatusAsync();
+        if (status.isLoaded) {
+          hapticFeedback.medium();
+          if (isPlaying) {
+            await s.pauseAsync();
+          } else {
+            await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: true, shouldDuckAndroid: true });
+            await s.playAsync();
+          }
+        }
+      }
     } catch (e) { 
+      if (e?.message?.includes('not loaded')) return;
       logger.error('[AudioContext] playPause error:', e);
       setAudioError(true); 
     }
@@ -430,11 +433,13 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       }
       return;
     }
-    if (!sound) return;
+    // sound state may be stale, use ref below
     try {
-      const status = await sound.getStatusAsync();
+      const sRef = soundRef.current;
+      if (!sRef) return;
+      const status = await sRef.getStatusAsync();
       if (status.isLoaded && status.isPlaying) {
-        await sound.pauseAsync();
+        await sRef.pauseAsync();
       }
     } catch (e) {
       logger.error('[AudioContext] pauseAudio error:', e);
@@ -443,9 +448,9 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
   const seek = async (positionMillis: number) => {
     if (isDeviceTTS) return;
-    if (!sound) return;
+    // sound state may be stale, use ref below
     try {
-      await sound.setPositionAsync(positionMillis);
+      await (soundRef.current || sound).setPositionAsync(positionMillis);
     } catch (e) {
       console.warn('[AudioContext] Seek error:', e);
     }

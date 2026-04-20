@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Platform,
 } from 'react-native';
 
 interface PlaybackProgressProps {
@@ -27,10 +28,17 @@ export function formatTime(ms: number) {
 
 export function PlaybackProgress({ accentColor, colors, isDeviceTTS }: Readonly<PlaybackProgressProps>) {
   const { position, duration } = useAudioProgress();
-  const { seek, sound } = useAudio();
+  const { seek } = useAudio();
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekPosition, setSeekPosition] = useState(0);
   const trackWidthRef = useRef(0);
+
+  // Use refs so PanResponder closures always have fresh values
+  const seekRef = useRef(seek);
+  const durationRef = useRef(duration);
+  const seekPosRef = useRef(0);
+  seekRef.current = seek;
+  durationRef.current = duration;
 
   const progress = duration > 0 ? position / duration : 0;
   const displayProgress = isSeeking ? seekPosition : progress;
@@ -44,25 +52,29 @@ export function PlaybackProgress({ accentColor, colors, isDeviceTTS }: Readonly<
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => !isDeviceTTS && !!sound,
-      onMoveShouldSetPanResponder: () => !isDeviceTTS && !!sound,
+      onStartShouldSetPanResponder: () => !isDeviceTTS,
+      onMoveShouldSetPanResponder: () => !isDeviceTTS,
       onPanResponderGrant: (evt: GestureResponderEvent) => {
-        if (!trackWidthRef.current || !duration) return;
+        if (!trackWidthRef.current || !durationRef.current) return;
         setIsSeeking(true);
         const x = evt.nativeEvent.locationX;
         const pct = clamp(x / trackWidthRef.current, 0, 1);
+        seekPosRef.current = pct;
         setSeekPosition(pct);
       },
       onPanResponderMove: (evt: GestureResponderEvent) => {
-        if (!trackWidthRef.current || !duration) return;
+        if (!trackWidthRef.current || !durationRef.current) return;
         const x = evt.nativeEvent.locationX;
         const pct = clamp(x / trackWidthRef.current, 0, 1);
+        seekPosRef.current = pct;
         setSeekPosition(pct);
       },
       onPanResponderRelease: async () => {
-        if (duration > 0 && seek) {
-          const seekMs = seekPosition * duration;
-          await seek(seekMs);
+        const d = durationRef.current;
+        const s = seekRef.current;
+        if (d > 0 && s) {
+          const seekMs = seekPosRef.current * d;
+          await s(seekMs);
         }
         setIsSeeking(false);
       },
@@ -147,7 +159,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: Platform.OS === 'android' ? 0 : 5,
   },
   timeRow: {
     flexDirection: 'row',

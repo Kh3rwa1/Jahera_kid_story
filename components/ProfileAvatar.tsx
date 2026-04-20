@@ -2,7 +2,13 @@ import { SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Camera } from 'lucide-react-native';
-import { ActivityIndicator,Image,StyleSheet,TouchableOpacity,View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Animated,{ ZoomIn } from 'react-native-reanimated';
 
 interface ProfileAvatarProps {

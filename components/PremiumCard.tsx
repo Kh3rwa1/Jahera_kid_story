@@ -2,7 +2,7 @@ import { BORDER_RADIUS,COLORS,SHADOWS,SPACING } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Pressable,View,ViewStyle } from 'react-native';
+import { Pressable, View, ViewStyle } from 'react-native';
 import Animated,{
 useAnimatedStyle,
 useSharedValue,

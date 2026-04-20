@@ -21,15 +21,15 @@ Wand2,
 } from 'lucide-react-native';
 import React,{ useEffect,useState } from 'react';
 import {
-ActivityIndicator,
-Alert,
-ScrollView,
-StyleSheet,
-Switch,
-Text,
-TextInput,
-TouchableOpacity,
-View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context';
 

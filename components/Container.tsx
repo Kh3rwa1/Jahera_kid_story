@@ -1,7 +1,7 @@
 import { COLORS,LAYOUT } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { ScrollView,ScrollViewProps,View,ViewStyle } from 'react-native';
+import { ScrollView, ScrollViewProps, View, ViewStyle } from 'react-native';
 import { Edge,SafeAreaView } from 'react-native-safe-area-context';
 
 interface ContainerProps {

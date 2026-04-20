@@ -9,11 +9,11 @@ import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { Minus,Plus } from 'lucide-react-native';
 import {
-ScrollView,
-StyleSheet,
-Text,
-TouchableOpacity,
-View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Animated,{ FadeInDown } from 'react-native-reanimated';
 

@@ -27,14 +27,14 @@ Moon
 } from 'lucide-react-native';
 import React,{ useCallback,useEffect,useMemo } from 'react';
 import {
-Platform,
-RefreshControl,
-ScrollView,
-StyleSheet,
-Text,
-TouchableOpacity,
-View,
-useWindowDimensions,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
 } from 'react-native';
 import Animated,{
 FadeInDown,

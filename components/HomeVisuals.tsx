@@ -1,5 +1,11 @@
 import { useEffect, ReactNode } from 'react';
-import { View, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,

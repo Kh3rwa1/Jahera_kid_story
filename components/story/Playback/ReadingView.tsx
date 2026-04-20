@@ -10,12 +10,7 @@ import { getScriptFontOverride,splitIntoTokens } from '@/hooks/useWordHighlighti
 import { ThemeColors } from '@/types/theme';
 import { Sparkles } from 'lucide-react-native';
 import { useMemo,useRef } from 'react';
-import {
-ScrollView,
-StyleSheet,
-Text,
-View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 interface ReadingViewProps {
   content: string;

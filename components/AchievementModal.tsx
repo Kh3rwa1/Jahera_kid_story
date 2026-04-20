@@ -3,7 +3,14 @@ import { Achievement } from '@/services/achievementService';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Modal,Pressable,StyleSheet,Text,useWindowDimensions,View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { CelebrationOverlay } from './CelebrationOverlay';
 import { PremiumButton } from './PremiumButton';
 

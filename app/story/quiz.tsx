@@ -24,11 +24,11 @@ Zap,
 } from 'lucide-react-native';
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import {
-Pressable,
-StyleSheet,
-Text,
-useWindowDimensions,
-View,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import Animated,{
 Easing,
@@ -172,21 +172,31 @@ export default function QuizScreen() {
     }
   }, [playingId, sound, story?.language_code]);
 
+  // Sound ref for cleanup without re-triggering effect
+  const soundCleanupRef = useRef<Audio.Sound | null>(null);
+  useEffect(() => {
+    soundCleanupRef.current = sound;
+  }, [sound]);
+
   useEffect(() => {
     loadQuiz();
-    return () => { sound?.unloadAsync().catch(() => {}); };
-  }, [loadQuiz, sound]);
+    return () => { soundCleanupRef.current?.unloadAsync().catch(() => {}); };
+  }, [loadQuiz]);
 
-  // Auto-play question
+  // Ref to always have latest speak function without re-triggering effect
+  const speakRef = useRef(speak);
+  speakRef.current = speak;
+
+  // Auto-play question — only re-run when question index changes, NOT when speak changes
   useEffect(() => {
     if (questions.length > 0 && !showResult && !isLoading) {
       const q = questions[currentQuestionIndex];
       const timer = setTimeout(() => {
-        speak(q.question_text, `q_${currentQuestionIndex}`);
+        speakRef.current(q.question_text, `q_${currentQuestionIndex}`);
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [currentQuestionIndex, questions, showResult, isLoading, speak]);
+  }, [currentQuestionIndex, questions.length, showResult, isLoading]);
 
   // Auto-play result
   useEffect(() => {

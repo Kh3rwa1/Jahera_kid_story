@@ -14,6 +14,7 @@ export function usePlayback() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { loadAndPlayAudio, pauseAudio, stopAudio, retryAudio } = useAudio();
+  const hasLoadedRef = useRef<string | null>(null);
   const { profile } = useApp();
 
   const [story, setStory] = useState<Story | null>(null);
@@ -52,7 +53,11 @@ export function usePlayback() {
       setHasQuiz(!!quizData && quizData.length > 0);
 
       // Start audio generation/play with personalized content
-      loadAndPlayAudio(personalized);
+      // Only load once per story ID - prevents re-render loop
+      if (hasLoadedRef.current !== params.storyId) {
+        hasLoadedRef.current = params.storyId;
+        loadAndPlayAudio(personalized);
+      }
       
       setIsLoading(false);
       
@@ -65,7 +70,7 @@ export function usePlayback() {
       setIsLoading(false);
       setShowCinematicIntro(false);
     }
-  }, [params.storyId, loadAndPlayAudio, profile]);
+  }, [params.storyId, profile]); // removed loadAndPlayAudio - causes infinite re-render loop
 
   const dismissCinematicIntro = useCallback(() => {
     if (introTimerRef.current) {
@@ -79,6 +84,7 @@ export function usePlayback() {
   useEffect(() => {
     loadStory();
     return () => {
+      hasLoadedRef.current = null;
       if (introTimerRef.current) clearTimeout(introTimerRef.current);
     };
   }, [loadStory]);

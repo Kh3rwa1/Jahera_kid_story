@@ -9,7 +9,14 @@ import { hapticFeedback } from '@/utils/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check, ChevronLeft, Wand as Wand2 } from 'lucide-react-native';
 import { ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 
 interface OptionsViewProps {
   colors: ThemeColors;

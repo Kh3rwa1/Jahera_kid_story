@@ -29,14 +29,14 @@ Zap
 } from 'lucide-react-native';
 import React,{ useMemo,useState } from 'react';
 import {
-Alert,
-Platform,
-ScrollView,
-StyleSheet,
-Text,
-TouchableOpacity,
-useWindowDimensions,
-View,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import Animated,{
 FadeIn,

@@ -6,14 +6,14 @@ import { hapticFeedback } from '@/utils/haptics';
 import { Check,CreditCard as Edit2,UserPlus,Users,X } from 'lucide-react-native';
 import { useState } from 'react';
 import {
-KeyboardAvoidingView,
-Modal,
-Platform,
-StyleSheet,
-Text,
-TextInput,
-TouchableOpacity,
-View
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import ReAnimated,{ FadeInUp,ZoomIn } from 'react-native-reanimated';
 

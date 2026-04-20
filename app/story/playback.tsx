@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: 0.6,
       shadowRadius: 40,
-    } : { elevation: 20 }),
+    } : { elevation: Platform.OS === 'android' ? 0 : 20 }),
   },
   albumOuter: {
     width: 200,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
-    elevation: 12,
+    elevation: Platform.OS === 'android' ? 0 : 12,
   },
   playBtn: {
     width: 80,

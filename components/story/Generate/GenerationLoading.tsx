@@ -8,11 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import { Check,MapPin,Sparkles } from 'lucide-react-native';
 import { useEffect,useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated,{
 cancelAnimation,
 FadeInUp,

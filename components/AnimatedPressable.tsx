@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { StyleProp,TouchableOpacity,ViewStyle } from 'react-native';
+import { StyleProp, TouchableOpacity, ViewStyle } from 'react-native';
 import Animated,{
 useAnimatedStyle,
 useSharedValue,
