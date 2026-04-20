@@ -10,6 +10,7 @@ import { revenueCatService } from '@/services/revenueCatServiceInternal';
 import { logger } from '@/utils/logger';
 import { scheduleBedtimeReminder } from '@/services/notificationService';
 import { videoCacheService } from '@/services/videoCacheServiceInternal';
+import { offlineStoryService } from '@/services/offlineStoryService';
 import {
   AtkinsonHyperlegible_400Regular,
   AtkinsonHyperlegible_700Bold,
@@ -63,6 +64,7 @@ export default function RootLayout() {
       // 2. Video Caching (Non-critical, run background)
       try {
         videoCacheService.prefetch().catch(() => {});
+        offlineStoryService.startMonitoring();
       } catch {
         logger.debug('[RootLayout] Video prefetch skip');
       }
