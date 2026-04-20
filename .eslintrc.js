@@ -15,6 +15,7 @@ module.exports = {
     'react-hooks/immutability': 'off',
     'react-hooks/refs': 'off',
     'react-compiler/react-compiler': 'off',
+    'react-hooks/preserve-manual-memoization': 'off',
     'no-undef': 'off',
     'prefer-const': 'warn',
   },
