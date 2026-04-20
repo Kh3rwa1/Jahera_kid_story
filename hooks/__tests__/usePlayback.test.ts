@@ -25,6 +25,22 @@ jest.mock('@/lib/appwrite', () => ({
   account: { get: jest.fn(), createEmailPasswordSession: jest.fn() },
 }));
 
+jest.mock('@/contexts/AppContext', () => ({
+  useApp: () => ({
+    profile: { id: 'test-profile', kid_name: 'Test' },
+    subscription: { plan: 'free' },
+    refreshStories: jest.fn(),
+    refreshSubscription: jest.fn(),
+  }),
+}));
+
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { $id: 'test-user' },
+    isAuthenticated: true,
+  }),
+}));
+
 // Mock dependencies
 jest.mock('@/contexts/AudioContext', () => ({
   useAudio: () => ({
