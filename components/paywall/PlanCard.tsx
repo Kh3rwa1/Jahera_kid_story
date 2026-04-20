@@ -18,12 +18,24 @@ interface PlanCardProps {
   colors: ThemeColors;
 }
 
-function PlanInfo({ plan, selected, colors, featured }: Readonly<{ plan: Plan; selected: boolean; colors: ThemeColors; featured?: boolean }>) {
+function PlanInfo({
+  plan,
+  selected,
+  colors,
+  featured,
+}: Readonly<{
+  plan: Plan;
+  selected: boolean;
+  colors: ThemeColors;
+  featured?: boolean;
+}>) {
   const isFeaturedSelected = featured && selected;
-  const labelColor = isFeaturedSelected ? "#FFF" : colors.text.primary;
-  const periodColor = isFeaturedSelected ? "rgba(255,255,255,0.8)" : colors.text.light;
-  const checkBgFeatured = selected ? "#FFF" : "rgba(0,0,0,0.05)";
-  const checkBgNormal = selected ? colors.primary : "rgba(0,0,0,0.05)";
+  const labelColor = isFeaturedSelected ? '#FFF' : colors.text.primary;
+  const periodColor = isFeaturedSelected
+    ? 'rgba(255,255,255,0.8)'
+    : colors.text.light;
+  const checkBgFeatured = selected ? '#FFF' : 'rgba(0,0,0,0.05)';
+  const checkBgNormal = selected ? colors.primary : 'rgba(0,0,0,0.05)';
   const checkBg = featured ? checkBgFeatured : checkBgNormal;
 
   return (
@@ -37,13 +49,24 @@ function PlanInfo({ plan, selected, colors, featured }: Readonly<{ plan: Plan; s
         </Text>
       </View>
       <View style={[styles.checkCircle, { backgroundColor: checkBg }]}>
-        {selected && <Check size={featured ? 14 : 12} color={featured ? "#FF5C00" : "#FFFFFF"} strokeWidth={3} />}
+        {selected && (
+          <Check
+            size={featured ? 14 : 12}
+            color={featured ? '#FF5C00' : '#FFFFFF'}
+            strokeWidth={3}
+          />
+        )}
       </View>
     </View>
   );
 }
 
-export function PlanCard({ plan, selected, onSelect, colors }: Readonly<PlanCardProps>) {
+export function PlanCard({
+  plan,
+  selected,
+  onSelect,
+  colors,
+}: Readonly<PlanCardProps>) {
   const scale = useSharedValue(1);
   const isBestValue = plan.id === 'yearly';
 
@@ -54,7 +77,7 @@ export function PlanCard({ plan, selected, onSelect, colors }: Readonly<PlanCard
   const handlePress = () => {
     scale.value = withSequence(
       withSpring(0.97, { damping: 15 }),
-      withSpring(1, { damping: 15 })
+      withSpring(1, { damping: 15 }),
     );
     onSelect();
   };
@@ -65,19 +88,35 @@ export function PlanCard({ plan, selected, onSelect, colors }: Readonly<PlanCard
         <TouchableOpacity activeOpacity={0.9} onPress={handlePress}>
           <LinearGradient
             colors={['#FF5C00', '#FF9F0A']}
-            style={[styles.card, styles.bestValueCard, selected && styles.selectedBestValue]}
+            style={[
+              styles.card,
+              styles.bestValueCard,
+              selected && styles.selectedBestValue,
+            ]}
           >
             <View style={styles.featuredPlanBadgeRow}>
               <View style={styles.featuredBadge}>
                 <Text style={styles.featuredBadgeText}>BEST VALUE</Text>
               </View>
               {plan.save && (
-                <View style={[styles.saveBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                  <Text style={[styles.saveBadgeText, { color: '#FFF' }]}>{plan.save}</Text>
+                <View
+                  style={[
+                    styles.saveBadge,
+                    { backgroundColor: 'rgba(255,255,255,0.2)' },
+                  ]}
+                >
+                  <Text style={[styles.saveBadgeText, { color: '#FFF' }]}>
+                    {plan.save}
+                  </Text>
                 </View>
               )}
             </View>
-            <PlanInfo plan={plan} selected={selected} colors={colors} featured />
+            <PlanInfo
+              plan={plan}
+              selected={selected}
+              colors={colors}
+              featured
+            />
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
@@ -91,7 +130,10 @@ export function PlanCard({ plan, selected, onSelect, colors }: Readonly<PlanCard
         onPress={handlePress}
         style={[
           styles.card,
-          { backgroundColor: colors.cardBackground, borderColor: selected ? colors.primary : colors.text.light + '15' },
+          {
+            backgroundColor: colors.cardBackground,
+            borderColor: selected ? colors.primary : colors.text.light + '15',
+          },
           selected && styles.selectedCard,
         ]}
       >

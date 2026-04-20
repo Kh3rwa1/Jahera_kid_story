@@ -5,7 +5,14 @@
  * and prevents the common "COLORS is not defined" error.
  */
 
-import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SHADOWS,SPACING } from '@/constants/theme';
+import {
+  BORDER_RADIUS,
+  COLORS,
+  FONT_SIZES,
+  FONT_WEIGHTS,
+  SHADOWS,
+  SPACING,
+} from '@/constants/theme';
 import { StyleSheet } from 'react-native';
 
 /**
@@ -24,7 +31,7 @@ import { StyleSheet } from 'react-native';
  * const styles = useStyles(currentTheme);
  */
 export function createThemedStyles<T extends StyleSheet.NamedStyles<T>>(
-  styleFactory: (theme: any) => T
+  styleFactory: (theme: any) => T,
 ): (theme: any) => T {
   return (theme: any) => StyleSheet.create(styleFactory(theme));
 }

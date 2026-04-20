@@ -20,7 +20,12 @@ export interface StoryOptions {
   locationContext?: LocationContext | null;
   behaviorGoal?: string;
   voicePreset?: string | null;
-  voiceSettings?: { stability: number; similarity: number; style: number; speakerBoost: boolean } | null;
+  voiceSettings?: {
+    stability: number;
+    similarity: number;
+    style: number;
+    speakerBoost: boolean;
+  } | null;
 }
 
 export interface QuizQuestion {
@@ -44,7 +49,7 @@ export async function generateAdventureStory(
   profile: ProfileWithRelations,
   languageCode: string,
   context: StoryContext,
-  options?: StoryOptions
+  options?: StoryOptions,
 ): Promise<GeneratedStory | null> {
   try {
     const sanitizedProfile = {
@@ -54,7 +59,6 @@ export async function generateAdventureStory(
       family_members: [],
       friends: [],
     };
-
 
     const originalKidName = profile.kid_name || '';
     if (sanitizedProfile.kid_name.length !== originalKidName.length) {
@@ -66,15 +70,25 @@ export async function generateAdventureStory(
       });
     }
 
-    const payload = JSON.stringify({ profile: sanitizedProfile, languageCode, context, options });
+    const payload = JSON.stringify({
+      profile: sanitizedProfile,
+      languageCode,
+      context,
+      options,
+    });
     const response = await functions.createExecution({
       functionId: 'generate-story',
       body: payload,
-      async: false // Switch to synchronous for 100% reliable body delivery
+      async: false, // Switch to synchronous for 100% reliable body delivery
     });
 
-    if (response.status === 'failed' || (response.errors && response.errors.length > 0)) {
-      throw new Error(`Story generation service execution error: ${response.errors || 'Execution failed'}`);
+    if (
+      response.status === 'failed' ||
+      (response.errors && response.errors.length > 0)
+    ) {
+      throw new Error(
+        `Story generation service execution error: ${response.errors || 'Execution failed'}`,
+      );
     }
 
     let data: any = {};
@@ -90,13 +104,15 @@ export async function generateAdventureStory(
       throw new Error(data.error);
     }
 
-    if (!data.story) throw new Error('No story returned from generation service');
+    if (!data.story)
+      throw new Error('No story returned from generation service');
 
     const story = data.story as GeneratedStory;
     const wordCount = story.content.split(/\s+/).filter(Boolean).length;
     return { ...story, word_count: wordCount };
   } catch (error) {
-    if (error instanceof QuotaExceededError || error instanceof Error) throw error;
+    if (error instanceof QuotaExceededError || error instanceof Error)
+      throw error;
     return null;
   }
 }

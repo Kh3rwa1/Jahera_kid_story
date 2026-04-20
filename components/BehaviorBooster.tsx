@@ -20,7 +20,10 @@ import { BEHAVIOR_GOALS, BehaviorGoal } from '@/constants/behaviorGoals';
 import { FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { ensureLottieAsset, getAppwriteLottieUrl } from '@/services/lottieService';
+import {
+  ensureLottieAsset,
+  getAppwriteLottieUrl,
+} from '@/services/lottieService';
 import { logger } from '@/utils/logger';
 
 interface BehaviorBoosterProps {
@@ -29,118 +32,162 @@ interface BehaviorBoosterProps {
   languageCode?: string;
 }
 
-const BoosterCard = memo(({
-  goal,
-  colors,
-  onPress,
-  index,
-}: {
-  goal: BehaviorGoal;
-  colors: Record<string, any>;
-  onPress: () => void;
-  index: number;
-}) => {
-  const [lottieSource, setLottieSource] = useState<any | null>(null);
-  const [lottieError, setLottieError] = useState(false);
-  const scale = useSharedValue(1);
+const BoosterCard = memo(
+  ({
+    goal,
+    colors,
+    onPress,
+    index,
+  }: {
+    goal: BehaviorGoal;
+    colors: Record<string, any>;
+    onPress: () => void;
+    index: number;
+  }) => {
+    const [lottieSource, setLottieSource] = useState<any | null>(null);
+    const [lottieError, setLottieError] = useState(false);
+    const scale = useSharedValue(1);
 
-  // Resolve Asset Source (Appwrite ID takes priority over static URL)
-  useEffect(() => {
-    let isMounted = true;
+    // Resolve Asset Source (Appwrite ID takes priority over static URL)
+    useEffect(() => {
+      let isMounted = true;
 
-    async function resolveAsset() {
-      // 1. Try Appwrite first
-      const appwriteUrl = getAppwriteLottieUrl(goal.id);
-      let source = await ensureLottieAsset(appwriteUrl, goal.id, true);
-      
-      // 2. Fallback to static lottieUrl if Appwrite fails or returns invalid data
-      if (!source && goal.lottieUrl) {
-        source = await ensureLottieAsset(goal.lottieUrl, `${goal.id}_static`, false);
-      }
-      
-      if (isMounted) {
-        if (source) {
-          setLottieSource(source);
-          setLottieError(false);
-        } else {
-          setLottieError(true);
+      async function resolveAsset() {
+        // 1. Try Appwrite first
+        const appwriteUrl = getAppwriteLottieUrl(goal.id);
+        let source = await ensureLottieAsset(appwriteUrl, goal.id, true);
+
+        // 2. Fallback to static lottieUrl if Appwrite fails or returns invalid data
+        if (!source && goal.lottieUrl) {
+          source = await ensureLottieAsset(
+            goal.lottieUrl,
+            `${goal.id}_static`,
+            false,
+          );
+        }
+
+        if (isMounted) {
+          if (source) {
+            setLottieSource(source);
+            setLottieError(false);
+          } else {
+            setLottieError(true);
+          }
         }
       }
-    }
 
-    resolveAsset();
-    return () => { isMounted = false; };
-  }, [goal]);
+      resolveAsset();
+      return () => {
+        isMounted = false;
+      };
+    }, [goal]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
 
-  const handlePressIn = () => {
-    scale.value = withSpring(0.95);
-  };
+    const handlePressIn = () => {
+      scale.value = withSpring(0.95);
+    };
 
-  const handlePressOut = () => {
-    scale.value = withSpring(1);
-  };
+    const handlePressOut = () => {
+      scale.value = withSpring(1);
+    };
 
-  return (
-    <Animated.View
-      entering={FadeInRight.delay(index * 100).springify().damping(15)}
-      style={styles.cardContainer}
-    >
-      <Animated.View style={[{ flex: 1 }, animatedStyle]}>
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={styles.cardTouch}
+    return (
+      <Animated.View
+        entering={FadeInRight.delay(index * 100)
+          .springify()
+          .damping(15)}
+        style={styles.cardContainer}
       >
-        <LinearGradient
-          colors={[colors.cardBackground, colors.background]}
-          style={styles.cardGradient}
-        >
-          <View style={styles.lottieContainer}>
-            {(!lottieError && lottieSource) ? (
-              <LottieView
-                source={lottieSource}
-                autoPlay
-                loop
-                style={styles.lottie}
-              />
-            ) : (
-              <View style={styles.fallBackWrap}>
-                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary + '15', alignItems: 'center', justifyContent: 'center' }}><Sparkles size={32} color={colors.primary} strokeWidth={1.8} /></View>
-              </View>
-            )}
-            
-            <View style={styles.glowOverlay} />
-          </View>
+        <Animated.View style={[{ flex: 1 }, animatedStyle]}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={onPress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            style={styles.cardTouch}
+          >
+            <LinearGradient
+              colors={[colors.cardBackground, colors.background]}
+              style={styles.cardGradient}
+            >
+              <View style={styles.lottieContainer}>
+                {!lottieError && lottieSource ? (
+                  <LottieView
+                    source={lottieSource}
+                    autoPlay
+                    loop
+                    style={styles.lottie}
+                  />
+                ) : (
+                  <View style={styles.fallBackWrap}>
+                    <View
+                      style={{
+                        width: 64,
+                        height: 64,
+                        borderRadius: 32,
+                        backgroundColor: colors.primary + '15',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Sparkles
+                        size={32}
+                        color={colors.primary}
+                        strokeWidth={1.8}
+                      />
+                    </View>
+                  </View>
+                )}
 
-          <View style={styles.content}>
-            <View>
-              <Text style={[styles.label, { color: colors.text.primary }]}>{goal.label}</Text>
-              <Text style={[styles.description, { color: colors.text.secondary }]} numberOfLines={2}>
-                {goal.description}
-              </Text>
-            </View>
-            
-            <View style={[styles.actionBtn, { backgroundColor: colors.primary + '15' }]}>
-              <Text style={[styles.actionText, { color: colors.primary }]}>Grow {goal.label}</Text>
-              <Sparkles size={14} color={colors.primary} />
-            </View>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
+                <View style={styles.glowOverlay} />
+              </View>
+
+              <View style={styles.content}>
+                <View>
+                  <Text style={[styles.label, { color: colors.text.primary }]}>
+                    {goal.label}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.description,
+                      { color: colors.text.secondary },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {goal.description}
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.actionBtn,
+                    { backgroundColor: colors.primary + '15' },
+                  ]}
+                >
+                  <Text style={[styles.actionText, { color: colors.primary }]}>
+                    Grow {goal.label}
+                  </Text>
+                  <Sparkles size={14} color={colors.primary} />
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
       </Animated.View>
-    </Animated.View>
-  );
-});
+    );
+  },
+);
 
 BoosterCard.displayName = 'BoosterCard';
 
-export const BehaviorBooster = ({ colors, profileId, languageCode }: BehaviorBoosterProps) => {
+export const BehaviorBooster = ({
+  colors,
+  profileId,
+  languageCode,
+}: BehaviorBoosterProps) => {
   const router = useRouter();
 
   const handleGenerate = async (goal: BehaviorGoal) => {
@@ -161,13 +208,17 @@ export const BehaviorBooster = ({ colors, profileId, languageCode }: BehaviorBoo
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: colors.text.primary }]}>Nature & Habits</Text>
+          <Text style={[styles.title, { color: colors.text.primary }]}>
+            Nature & Habits
+          </Text>
           <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
             Build a beautiful character through magic stories
           </Text>
         </View>
         <TouchableOpacity style={styles.seeAll}>
-          <Text style={[styles.seeAllText, { color: colors.primary }]}>Mastery</Text>
+          <Text style={[styles.seeAllText, { color: colors.primary }]}>
+            Mastery
+          </Text>
           <ArrowRight size={16} color={colors.primary} />
         </TouchableOpacity>
       </View>

@@ -1,9 +1,13 @@
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
-import { FONTS,SPACING } from '@/constants/theme';
+import { FONTS, SPACING } from '@/constants/theme';
 import { Story } from '@/types/database';
-import { BookOpen,Sparkles } from 'lucide-react-native';
+import { BookOpen, Sparkles } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated,{ FadeIn,FadeInUp,useAnimatedStyle } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInUp,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CinematicIntroProps {
@@ -28,7 +32,13 @@ export function CinematicIntro({
   }));
 
   return (
-    <Animated.View style={[StyleSheet.absoluteFill, animatedStyle, { backgroundColor: '#000' }]}>
+    <Animated.View
+      style={[
+        StyleSheet.absoluteFill,
+        animatedStyle,
+        { backgroundColor: '#000' },
+      ]}
+    >
       <BrandVideoBackground
         videoId="onboarding_video"
         fallbackSource={require('@/assets/jahera.mp4')}
@@ -40,7 +50,10 @@ export function CinematicIntro({
           entering={FadeIn.delay(300).duration(600)}
           style={[styles.container, { paddingBottom: insets.bottom + 80 }]}
         >
-          <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.badgeRow}>
+          <Animated.View
+            entering={FadeInUp.delay(400).duration(500)}
+            style={styles.badgeRow}
+          >
             {story.theme && (
               <View style={styles.badge}>
                 <Sparkles size={12} color="#FFF" />
@@ -66,7 +79,7 @@ export function CinematicIntro({
             entering={FadeInUp.delay(700).duration(500)}
             style={styles.statusRow}
           >
-            {(audioPolling || isBuffering) ? (
+            {audioPolling || isBuffering ? (
               <>
                 <View style={[styles.dot, { backgroundColor: '#4ADE80' }]} />
                 <Text style={styles.statusText}>Generating narration...</Text>
@@ -91,7 +104,10 @@ export function CinematicIntro({
         </Animated.View>
       ) : (
         <View style={[StyleSheet.absoluteFill, styles.loader]}>
-          <Animated.View entering={FadeIn.duration(400)} style={{ alignItems: 'center', gap: 16 }}>
+          <Animated.View
+            entering={FadeIn.duration(400)}
+            style={{ alignItems: 'center', gap: 16 }}
+          >
             <View style={styles.loaderRing}>
               <BookOpen size={24} color="rgba(255,255,255,0.9)" />
             </View>

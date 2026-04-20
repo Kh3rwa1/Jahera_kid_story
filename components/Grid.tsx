@@ -43,7 +43,14 @@ export const Grid: React.FC<GridProps> = ({
         };
 
         return (
-          <View key={(React.isValidElement(child) && child.key) ? String(child.key) : `grid-item-${index}`} style={itemStyle}>
+          <View
+            key={
+              React.isValidElement(child) && child.key
+                ? String(child.key)
+                : `grid-item-${index}`
+            }
+            style={itemStyle}
+          >
             {child}
           </View>
         );

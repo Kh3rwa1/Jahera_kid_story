@@ -1,4 +1,4 @@
-import { COLLECTIONS,DATABASE_ID,databases,functions } from '@/lib/appwrite';
+import { COLLECTIONS, DATABASE_ID, databases, functions } from '@/lib/appwrite';
 
 export interface AudioSettings {
   voiceId?: string | null;
@@ -27,7 +27,7 @@ export async function generateAudio(
   languageCode: string,
   storyId?: string,
   noStore: boolean = false,
-  settings?: AudioSettings
+  settings?: AudioSettings,
 ): Promise<string | null> {
   if (!text || text.trim().length < 5) {
     console.warn('[audioService] Skipping generation: Text too short or empty');
@@ -36,20 +36,22 @@ export async function generateAudio(
 
   try {
     const isNarration = !storyId;
-    console.log(`[audioService] Triggering audio generation. storyId: ${storyId}, lang: ${languageCode}, isNarration: ${isNarration}`);
-    
+    console.log(
+      `[audioService] Triggering audio generation. storyId: ${storyId}, lang: ${languageCode}, isNarration: ${isNarration}`,
+    );
+
     // Use sync for narrations (shorter, expected immediately)
     // Use async for stories (longer, background generation)
     const execution = await functions.createExecution({
       functionId: 'generate-audio',
-      body: JSON.stringify({ 
-        text, 
-        languageCode, 
-        storyId, 
+      body: JSON.stringify({
+        text,
+        languageCode,
+        storyId,
         noStore: isNarration ? true : noStore, // Use noStore for narrations to get Base64 back
-        ...settings 
+        ...settings,
       }),
-      async: !isNarration 
+      async: !isNarration,
     });
 
     // For narrations: handle immediate response (Base64)
@@ -68,8 +70,10 @@ export async function generateAudio(
 
     // Fallback polling for narrations if sync failed or returned empty
     if (isNarration) {
-      console.log('[audioService] Narration: sync response empty, falling back to delay');
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log(
+        '[audioService] Narration: sync response empty, falling back to delay',
+      );
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       return null;
     }
 
@@ -82,32 +86,47 @@ export async function generateAudio(
 
     return null;
   } catch (error) {
-    console.error('[audioService] CRITICAL: Failed to trigger generate-audio:', error);
+    console.error(
+      '[audioService] CRITICAL: Failed to trigger generate-audio:',
+      error,
+    );
     return null;
   }
 }
-
 
 /**
  * Poll the story document every 3 seconds until audio_url is set.
  * Times out after maxWaitMs milliseconds.
  */
-async function pollStoryForAudioUrl(storyId: string, maxWaitMs: number): Promise<string | null> {
+async function pollStoryForAudioUrl(
+  storyId: string,
+  maxWaitMs: number,
+): Promise<string | null> {
   const pollInterval = 3000;
   const maxPolls = Math.floor(maxWaitMs / pollInterval);
 
-  console.log(`[audioService] Polling for story ${storyId}. Max wait: ${maxWaitMs/1000}s (${maxPolls} attempts)`);
+  console.log(
+    `[audioService] Polling for story ${storyId}. Max wait: ${maxWaitMs / 1000}s (${maxPolls} attempts)`,
+  );
 
   for (let i = 0; i < maxPolls; i++) {
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
     try {
-      const doc = await databases.getDocument(DATABASE_ID, COLLECTIONS.STORIES, storyId);
+      const doc = await databases.getDocument(
+        DATABASE_ID,
+        COLLECTIONS.STORIES,
+        storyId,
+      );
       const audioUrl = doc?.audio_url;
-      
-      console.log(`[audioService] Poll ${i + 1}/${maxPolls}: audio_url=${audioUrl ? 'FOUND' : 'pending...'}`);
-      
+
+      console.log(
+        `[audioService] Poll ${i + 1}/${maxPolls}: audio_url=${audioUrl ? 'FOUND' : 'pending...'}`,
+      );
+
       if (audioUrl) {
-        console.log(`[audioService] SUCCESS: audio_url found in ${((i + 1) * pollInterval) / 1000}s`);
+        console.log(
+          `[audioService] SUCCESS: audio_url found in ${((i + 1) * pollInterval) / 1000}s`,
+        );
         return audioUrl;
       }
     } catch (err) {
@@ -115,7 +134,9 @@ async function pollStoryForAudioUrl(storyId: string, maxWaitMs: number): Promise
     }
   }
 
-  console.error(`[audioService] TIMEOUT: Could not find audio_url after ${maxWaitMs/1000}s. Check Appwrite Function logs.`);
+  console.error(
+    `[audioService] TIMEOUT: Could not find audio_url after ${maxWaitMs / 1000}s. Check Appwrite Function logs.`,
+  );
   return null;
 }
 

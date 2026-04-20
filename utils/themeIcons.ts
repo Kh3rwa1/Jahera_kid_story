@@ -1,4 +1,16 @@
-import { Rocket, PawPrint, BookOpen, TreePine, Castle, Telescope, Heart, Compass, Music, Globe, Sparkles } from 'lucide-react-native';
+import {
+  Rocket,
+  PawPrint,
+  BookOpen,
+  TreePine,
+  Castle,
+  Telescope,
+  Heart,
+  Compass,
+  Music,
+  Globe,
+  Sparkles,
+} from 'lucide-react-native';
 
 export const THEME_ICONS: Record<string, { icon: any; size: number }> = {
   Space: { icon: Rocket, size: 42 },

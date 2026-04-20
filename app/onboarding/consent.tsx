@@ -27,7 +27,12 @@ export default function ConsentScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.colors.background }]}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: currentTheme.colors.background },
+      ]}
+    >
       <MeshBackground primaryColor={currentTheme.colors.primary} />
       <FloatingParticles />
       <ParentConsentGate onContinue={handleContinue} />

@@ -1,4 +1,4 @@
-import { storage,STORAGE_BUCKETS } from '@/lib/appwrite';
+import { storage, STORAGE_BUCKETS } from '@/lib/appwrite';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
@@ -29,9 +29,10 @@ export async function pickImage(source: ImageSource): Promise<string | null> {
     base64: Platform.OS === 'web',
   };
 
-  const result = source === 'camera'
-    ? await ImagePicker.launchCameraAsync(options)
-    : await ImagePicker.launchImageLibraryAsync(options);
+  const result =
+    source === 'camera'
+      ? await ImagePicker.launchCameraAsync(options)
+      : await ImagePicker.launchImageLibraryAsync(options);
 
   if (result.canceled || !result.assets?.[0]) return null;
 
@@ -40,7 +41,7 @@ export async function pickImage(source: ImageSource): Promise<string | null> {
 
 export async function uploadAvatar(
   profileId: string,
-  imageUri: string
+  imageUri: string,
 ): Promise<string | null> {
   try {
     const uriParts = imageUri.split('.');
@@ -51,7 +52,7 @@ export async function uploadAvatar(
       return 'image/jpeg';
     };
     const mimeType = getMimeType(ext);
-    
+
     // Create a safe 36 char custom ID
     const fileId = profileId.replace(/[^a-zA-Z0-9.\-_]/g, '_').substring(0, 36);
 
@@ -64,13 +65,15 @@ export async function uploadAvatar(
 
     if (Platform.OS === 'web') {
       const response = await fetch(imageUri);
-      const blob = await response.blob() as any;
+      const blob = (await response.blob()) as any;
       const file = new File([blob], `avatar.${ext}`, { type: mimeType });
 
       await storage.createFile(STORAGE_BUCKETS.AVATARS, fileId, file as any);
     } else {
       const fileInfo = await FileSystem.getInfoAsync(imageUri);
-      const size = fileInfo.exists ? (fileInfo as FileSystem.FileInfo & { size?: number }).size ?? 0 : 0;
+      const size = fileInfo.exists
+        ? ((fileInfo as FileSystem.FileInfo & { size?: number }).size ?? 0)
+        : 0;
 
       const file = {
         uri: imageUri,
@@ -82,7 +85,9 @@ export async function uploadAvatar(
       await storage.createFile(STORAGE_BUCKETS.AVATARS, fileId, file as any);
     }
 
-    const fileViewUrl = storage.getFileView(STORAGE_BUCKETS.AVATARS, fileId).toString();
+    const fileViewUrl = storage
+      .getFileView(STORAGE_BUCKETS.AVATARS, fileId)
+      .toString();
     return fileViewUrl;
   } catch (error) {
     console.error('Error uploading avatar:', error);

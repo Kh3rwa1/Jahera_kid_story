@@ -3,6 +3,8 @@
  * Includes happy-path AND error/edge case tests (device without haptics).
  */
 
+import { hapticFeedback } from '../haptics';
+
 const mockImpactAsync = jest.fn();
 const mockNotificationAsync = jest.fn();
 const mockSelectionAsync = jest.fn();
@@ -12,10 +14,12 @@ jest.mock('expo-haptics', () => ({
   notificationAsync: (...args: unknown[]) => mockNotificationAsync(...args),
   selectionAsync: (...args: unknown[]) => mockSelectionAsync(...args),
   ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
-  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
+  NotificationFeedbackType: {
+    Success: 'success',
+    Warning: 'warning',
+    Error: 'error',
+  },
 }));
-
-import { hapticFeedback } from '../haptics';
 
 beforeEach(() => {
   jest.clearAllMocks();

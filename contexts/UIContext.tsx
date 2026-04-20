@@ -1,4 +1,12 @@
-import React,{ createContext,useCallback,useContext,useEffect,useMemo,useRef,useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 interface UIContextType {
   isUIDormant: boolean;
@@ -19,16 +27,16 @@ export const UIProvider = ({ children }: { children: React.ReactNode }) => {
 
   const wakeUI = useCallback(() => {
     if (sleepTimerRef.current) clearTimeout(sleepTimerRef.current);
-    
+
     // Synchronous Ref check prevents the 'Maximum update depth' loop
     // by bailing out BEFORE any React state update can be scheduled
     if (isDormantRef.current) {
-        setIsUIDormant(false);
+      setIsUIDormant(false);
     }
 
     sleepTimerRef.current = setTimeout(() => {
       setIsUIDormant(true);
-    }, 8000); 
+    }, 8000);
   }, [setIsUIDormant]);
 
   useEffect(() => {
@@ -41,11 +49,7 @@ export const UIProvider = ({ children }: { children: React.ReactNode }) => {
 
   const value = useMemo(() => ({ isUIDormant, wakeUI }), [isUIDormant, wakeUI]);
 
-  return (
-    <UIContext.Provider value={value}>
-      {children}
-    </UIContext.Provider>
-  );
+  return <UIContext.Provider value={value}>{children}</UIContext.Provider>;
 };
 
 export const useUI = () => {

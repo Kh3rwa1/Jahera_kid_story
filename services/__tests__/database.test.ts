@@ -4,6 +4,8 @@
  */
 
 // Mock Appwrite SDK
+import { profileService, storyService, languageService } from '../database';
+
 const mockCreateDocument = jest.fn();
 const mockGetDocument = jest.fn();
 const mockListDocuments = jest.fn();
@@ -47,8 +49,6 @@ jest.mock('@/utils/logger', () => ({
   },
 }));
 
-import { profileService, storyService, languageService } from '../database';
-
 beforeEach(() => {
   jest.clearAllMocks();
 });
@@ -72,7 +72,9 @@ describe('profileService', () => {
       expect(result).not.toBeNull();
       expect(result!.id).toBe('p1');
       expect(result!.kid_name).toBe('Aria');
-      expect((result as unknown as Record<string, unknown>)['$id']).toBeUndefined();
+      expect(
+        (result as unknown as Record<string, unknown>)['$id'],
+      ).toBeUndefined();
     });
 
     it('returns null on error', async () => {
@@ -106,7 +108,9 @@ describe('profileService', () => {
   describe('getByUserId', () => {
     it('returns profile when found', async () => {
       mockListDocuments.mockResolvedValue({
-        documents: [{ $id: 'p3', kid_name: 'Luna', $createdAt: '', $updatedAt: '' }],
+        documents: [
+          { $id: 'p3', kid_name: 'Luna', $createdAt: '', $updatedAt: '' },
+        ],
       });
 
       const result = await profileService.getByUserId('user-123');
@@ -160,8 +164,20 @@ describe('storyService', () => {
     it('returns mapped stories', async () => {
       mockListDocuments.mockResolvedValue({
         documents: [
-          { $id: 's1', $createdAt: '', $updatedAt: '', title: 'The Lost Dragon', profile_id: 'p1' },
-          { $id: 's2', $createdAt: '', $updatedAt: '', title: 'Space Adventure', profile_id: 'p1' },
+          {
+            $id: 's1',
+            $createdAt: '',
+            $updatedAt: '',
+            title: 'The Lost Dragon',
+            profile_id: 'p1',
+          },
+          {
+            $id: 's2',
+            $createdAt: '',
+            $updatedAt: '',
+            title: 'Space Adventure',
+            profile_id: 'p1',
+          },
         ],
       });
 

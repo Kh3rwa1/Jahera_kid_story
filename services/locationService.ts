@@ -30,7 +30,9 @@ export function formatLocationLabel(location: LocationContext): string {
   return '';
 }
 
-export async function saveLocationToCache(location: LocationContext): Promise<void> {
+export async function saveLocationToCache(
+  location: LocationContext,
+): Promise<void> {
   await AsyncStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify(location));
 }
 

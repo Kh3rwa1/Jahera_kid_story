@@ -65,7 +65,11 @@ class MonitoringService {
   /**
    * Log error with context
    */
-  logError(error: Error | string, severity: ErrorLog['severity'] = 'medium', context?: Record<string, any>) {
+  logError(
+    error: Error | string,
+    severity: ErrorLog['severity'] = 'medium',
+    context?: Record<string, any>,
+  ) {
     const errorLog: ErrorLog = {
       message: typeof error === 'string' ? error : error.message,
       stack: typeof error === 'object' ? error.stack : undefined,
@@ -121,7 +125,8 @@ class MonitoringService {
         low: this.errorLogs.filter((e) => e.severity === 'low').length,
         medium: this.errorLogs.filter((e) => e.severity === 'medium').length,
         high: this.errorLogs.filter((e) => e.severity === 'high').length,
-        critical: this.errorLogs.filter((e) => e.severity === 'critical').length,
+        critical: this.errorLogs.filter((e) => e.severity === 'critical')
+          .length,
       },
       recent: this.errorLogs.slice(-5),
     };
@@ -162,7 +167,8 @@ class MonitoringService {
 
     const hasRecentCriticalErrors = errorStats.bySeverity.critical > 0;
     const hasHighErrorRate = errorStats.total > 20;
-    const hasPerformanceIssues = performanceStats && performanceStats.average > 5000;
+    const hasPerformanceIssues =
+      performanceStats && performanceStats.average > 5000;
 
     if (hasRecentCriticalErrors) {
       return { status: 'critical', message: 'Critical errors detected' };

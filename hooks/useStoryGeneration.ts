@@ -2,7 +2,10 @@ import { useApp } from '@/contexts/AppContext';
 import { analytics } from '@/services/analyticsService';
 import { profileService, quizService, storyService } from '@/services/database';
 import { DEVICE_TTS_AUDIO_URL } from '@/services/deviceTTSService';
-import { getLocationFromProfile, LocationContext } from '@/services/locationService';
+import {
+  getLocationFromProfile,
+  LocationContext,
+} from '@/services/locationService';
 import { templateStoryService } from '@/services/templateStoryService';
 import { getCurrentContext } from '@/utils/contextUtils';
 import { hapticFeedback } from '@/utils/haptics';
@@ -11,21 +14,34 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type GenerationPhase = 'options' | 'generating';
-export interface GenerationStep { id: string; label: string; completed: boolean; }
+export interface GenerationStep {
+  id: string;
+  label: string;
+  completed: boolean;
+}
 
 export function useStoryGeneration() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { profile, subscription, refreshSubscription, refreshStories } = useApp();
+  const { profile, subscription, refreshSubscription, refreshStories } =
+    useApp();
 
-  const [selectedBehaviorGoal, setSelectedBehaviorGoal] = useState<string | null>((params.behaviorGoal as string) || null);
+  const [selectedBehaviorGoal, setSelectedBehaviorGoal] = useState<
+    string | null
+  >((params.behaviorGoal as string) || null);
   const [selectedTheme, setSelectedTheme] = useState('adventure');
   const [selectedMood, setSelectedMood] = useState('exciting');
-  const [selectedLength, setSelectedLength] = useState<'short' | 'medium' | 'long'>('short');
+  const [selectedLength, setSelectedLength] = useState<
+    'short' | 'medium' | 'long'
+  >('short');
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState((params.languageCode as string) || 'en');
+  const [selectedLanguage, setSelectedLanguage] = useState(
+    (params.languageCode as string) || 'en',
+  );
 
-  const [locationCtx, setLocationCtx] = useState<LocationContext | null>(profile ? getLocationFromProfile(profile) : null);
+  const [locationCtx, setLocationCtx] = useState<LocationContext | null>(
+    profile ? getLocationFromProfile(profile) : null,
+  );
 
   const [phase, setPhase] = useState<GenerationPhase>('options');
   const [status, setStatus] = useState('Preparing your adventure...');
@@ -41,28 +57,66 @@ export function useStoryGeneration() {
   const isMountedRef = useRef(true);
   const resolvedProfileId = (params.profileId as string) || profile?.id;
 
-  useEffect(() => { isMountedRef.current = true; return () => { isMountedRef.current = false; }; }, []);
-  useEffect(() => { if (profile) setLocationCtx(getLocationFromProfile(profile)); }, [profile]);
-
-  const completeStep = useCallback((stepId: string) => { setSteps(prev => prev.map(s => s.id === stepId ? { ...s, completed: true } : s)); hapticFeedback.light(); }, []);
-  const markError = useCallback((message: string) => { setError(message); }, []);
-
-  const createQuizQuestions = useCallback(async (storyId: string, aiStory: any) => {
-    for (let i = 0; i < aiStory.quiz.length; i++) {
-      const q = aiStory.quiz[i];
-      const question = await quizService.createQuestion(storyId, q.question, i + 1);
-      if (!question) continue;
-      await quizService.createAnswer(question.id, q.options.A, q.correct_answer === 'A', 'A');
-      await quizService.createAnswer(question.id, q.options.B, q.correct_answer === 'B', 'B');
-      await quizService.createAnswer(question.id, q.options.C, q.correct_answer === 'C', 'C');
-    }
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
+  useEffect(() => {
+    if (profile) setLocationCtx(getLocationFromProfile(profile));
+  }, [profile]);
+
+  const completeStep = useCallback((stepId: string) => {
+    setSteps((prev) =>
+      prev.map((s) => (s.id === stepId ? { ...s, completed: true } : s)),
+    );
+    hapticFeedback.light();
+  }, []);
+  const markError = useCallback((message: string) => {
+    setError(message);
+  }, []);
+
+  const createQuizQuestions = useCallback(
+    async (storyId: string, aiStory: any) => {
+      for (let i = 0; i < aiStory.quiz.length; i++) {
+        const q = aiStory.quiz[i];
+        const question = await quizService.createQuestion(
+          storyId,
+          q.question,
+          i + 1,
+        );
+        if (!question) continue;
+        await quizService.createAnswer(
+          question.id,
+          q.options.A,
+          q.correct_answer === 'A',
+          'A',
+        );
+        await quizService.createAnswer(
+          question.id,
+          q.options.B,
+          q.correct_answer === 'B',
+          'B',
+        );
+        await quizService.createAnswer(
+          question.id,
+          q.options.C,
+          q.correct_answer === 'C',
+          'C',
+        );
+      }
+    },
+    [],
+  );
 
   const runGeneration = async () => {
     try {
       if (!resolvedProfileId) return markError('Profile not found.');
-      setStatus('Loading your profile...'); setProgress(10);
-      const profileData = await profileService.getWithRelations(resolvedProfileId);
+      setStatus('Loading your profile...');
+      setProgress(10);
+      const profileData =
+        await profileService.getWithRelations(resolvedProfileId);
       if (!profileData) return markError('Profile not found.');
       if (!isMountedRef.current) return;
       completeStep('profile');
@@ -70,11 +124,17 @@ export function useStoryGeneration() {
       const context = getCurrentContext();
       setStatus('Choosing a bedtime template...');
       setProgress(30);
-      const aiStory = await templateStoryService.generateTemplateStory(profileData, selectedBehaviorGoal, selectedLanguage);
+      const aiStory = await templateStoryService.generateTemplateStory(
+        profileData,
+        selectedBehaviorGoal,
+        selectedLanguage,
+      );
 
       if (!aiStory) return markError('Could not generate a story.');
       if (!isMountedRef.current) return;
-      completeStep('story'); setStatus('Creating quiz questions...'); setProgress(50);
+      completeStep('story');
+      setStatus('Creating quiz questions...');
+      setProgress(50);
 
       const storyRecord = await storyService.create({
         profile_id: resolvedProfileId,
@@ -95,18 +155,36 @@ export function useStoryGeneration() {
         behavior_goal: selectedBehaviorGoal,
       });
 
-      if (selectedBehaviorGoal) analytics.trackStoryGeneratedWithGoal(selectedBehaviorGoal, selectedLanguage, selectedVoice ?? null, selectedLength);
+      if (selectedBehaviorGoal)
+        analytics.trackStoryGeneratedWithGoal(
+          selectedBehaviorGoal,
+          selectedLanguage,
+          selectedVoice ?? null,
+          selectedLength,
+        );
 
       setProgress(70);
       await createQuizQuestions(storyRecord.id, aiStory);
       if (!isMountedRef.current) return;
-      completeStep('quiz'); setStatus('Finalising your story...'); setProgress(90);
+      completeStep('quiz');
+      setStatus('Finalising your story...');
+      setProgress(90);
 
       completeStep('audio');
 
-      setStatus('Story ready!'); setProgress(100); hapticFeedback.success();
+      setStatus('Story ready!');
+      setProgress(100);
+      hapticFeedback.success();
       await Promise.all([refreshSubscription(), refreshStories()]);
-      if (isMountedRef.current) setTimeout(() => router.replace({ pathname: '/story/playback', params: { storyId: storyRecord.id } }), 800);
+      if (isMountedRef.current)
+        setTimeout(
+          () =>
+            router.replace({
+              pathname: '/story/playback',
+              params: { storyId: storyRecord.id },
+            }),
+          800,
+        );
     } catch (err) {
       logger.error('[useStoryGeneration] Generation Failed:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate story');
@@ -114,26 +192,48 @@ export function useStoryGeneration() {
   };
 
   const handleStartGeneration = () => {
-    const isPro = subscription?.plan === 'pro' || subscription?.plan === 'family';
-    if (!isPro && subscription?.stories_remaining !== undefined && subscription.stories_remaining <= 0) {
+    const isPro =
+      subscription?.plan === 'pro' || subscription?.plan === 'family';
+    if (
+      !isPro &&
+      subscription?.stories_remaining !== undefined &&
+      subscription.stories_remaining <= 0
+    ) {
       return router.push('/paywall');
     }
     setPhase('generating');
     runGeneration();
   };
 
-  const handleRetry = () => { setError(null); setProgress(0); setStatus('Preparing your adventure...'); setSteps(prev => prev.map(s => ({ ...s, completed: false }))); setPhase('options'); };
+  const handleRetry = () => {
+    setError(null);
+    setProgress(0);
+    setStatus('Preparing your adventure...');
+    setSteps((prev) => prev.map((s) => ({ ...s, completed: false })));
+    setPhase('options');
+  };
 
   return {
-    selectedBehaviorGoal, setSelectedBehaviorGoal,
-    selectedTheme, setSelectedTheme,
-    selectedMood, setSelectedMood,
-    selectedLength, setSelectedLength,
-    selectedVoice, setSelectedVoice,
-    selectedLanguage, setSelectedLanguage,
+    selectedBehaviorGoal,
+    setSelectedBehaviorGoal,
+    selectedTheme,
+    setSelectedTheme,
+    selectedMood,
+    setSelectedMood,
+    selectedLength,
+    setSelectedLength,
+    selectedVoice,
+    setSelectedVoice,
+    selectedLanguage,
+    setSelectedLanguage,
     locationCtx,
-    phase, status, progress, error, steps,
-    handleStartGeneration, handleRetry,
+    phase,
+    status,
+    progress,
+    error,
+    steps,
+    handleStartGeneration,
+    handleRetry,
     subscription,
   };
 }

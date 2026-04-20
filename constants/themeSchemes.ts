@@ -813,5 +813,5 @@ export const DEFAULT_THEME = RED_THEME;
 
 // Helper function to get theme by ID
 export function getThemeById(id: string): ColorScheme {
-  return COLOR_SCHEMES.find(scheme => scheme.id === id) || DEFAULT_THEME;
+  return COLOR_SCHEMES.find((scheme) => scheme.id === id) || DEFAULT_THEME;
 }

@@ -1,7 +1,7 @@
-import { Language,SUPPORTED_LANGUAGES } from '@/constants/languages';
+import { Language, SUPPORTED_LANGUAGES } from '@/constants/languages';
 
 export function getLanguageByCode(code: string): Language | undefined {
-  return SUPPORTED_LANGUAGES.find(lang => lang.code === code);
+  return SUPPORTED_LANGUAGES.find((lang) => lang.code === code);
 }
 
 export function getLanguageName(code: string): string {
@@ -20,5 +20,5 @@ export function getLanguageFlag(code: string): string {
 }
 
 export function validateLanguageCode(code: string): boolean {
-  return SUPPORTED_LANGUAGES.some(lang => lang.code === code);
+  return SUPPORTED_LANGUAGES.some((lang) => lang.code === code);
 }

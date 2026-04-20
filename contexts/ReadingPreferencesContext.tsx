@@ -1,5 +1,13 @@
 import { storage } from '@/utils/storage';
-import React,{ createContext,ReactNode,useCallback,useContext,useEffect,useMemo,useState } from 'react';
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 const STORAGE_KEY = 'reading_preferences';
 
@@ -32,7 +40,10 @@ export const LINE_SPACING_VALUES: Record<LineSpacing, number> = {
   relaxed: 1.9,
 };
 
-export const FONT_FAMILY_VALUES: Record<FontFamily, { regular: string; bold: string; label: string; sample: string }> = {
+export const FONT_FAMILY_VALUES: Record<
+  FontFamily,
+  { regular: string; bold: string; label: string; sample: string }
+> = {
   nunito: {
     regular: 'Nunito-Regular',
     bold: 'Nunito-Bold',
@@ -69,13 +80,16 @@ interface ReadingPreferencesContextValue {
   resetToDefaults: () => void;
 }
 
-const ReadingPreferencesContext = createContext<ReadingPreferencesContextValue | null>(null);
+const ReadingPreferencesContext =
+  createContext<ReadingPreferencesContextValue | null>(null);
 
-export function ReadingPreferencesProvider({ children }: Readonly<{ children: ReactNode }>) {
+export function ReadingPreferencesProvider({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   const [prefs, setPrefs] = useState<ReadingPreferences>(DEFAULTS);
 
   useEffect(() => {
-    storage.getItem<ReadingPreferences>(STORAGE_KEY).then(saved => {
+    storage.getItem<ReadingPreferences>(STORAGE_KEY).then((saved) => {
       if (saved) {
         setPrefs({ ...DEFAULTS, ...saved });
       }
@@ -88,7 +102,7 @@ export function ReadingPreferencesProvider({ children }: Readonly<{ children: Re
   }, []);
 
   const setFontSize = useCallback((size: number) => {
-    setPrefs(prev => {
+    setPrefs((prev) => {
       const updated = { ...prev, fontSize: Math.min(26, Math.max(13, size)) };
       storage.setItem(STORAGE_KEY, updated).catch(() => {});
       return updated;
@@ -96,7 +110,7 @@ export function ReadingPreferencesProvider({ children }: Readonly<{ children: Re
   }, []);
 
   const setLineSpacing = useCallback((spacing: LineSpacing) => {
-    setPrefs(prev => {
+    setPrefs((prev) => {
       const updated = { ...prev, lineSpacing: spacing };
       storage.setItem(STORAGE_KEY, updated).catch(() => {});
       return updated;
@@ -104,7 +118,7 @@ export function ReadingPreferencesProvider({ children }: Readonly<{ children: Re
   }, []);
 
   const setTextAlign = useCallback((align: TextAlign) => {
-    setPrefs(prev => {
+    setPrefs((prev) => {
       const updated = { ...prev, textAlign: align };
       storage.setItem(STORAGE_KEY, updated).catch(() => {});
       return updated;
@@ -112,7 +126,7 @@ export function ReadingPreferencesProvider({ children }: Readonly<{ children: Re
   }, []);
 
   const setFontFamily = useCallback((family: FontFamily) => {
-    setPrefs(prev => {
+    setPrefs((prev) => {
       const updated = { ...prev, fontFamily: family };
       storage.setItem(STORAGE_KEY, updated).catch(() => {});
       return updated;
@@ -120,7 +134,7 @@ export function ReadingPreferencesProvider({ children }: Readonly<{ children: Re
   }, []);
 
   const setAutoSpeak = useCallback((enabled: boolean) => {
-    setPrefs(prev => {
+    setPrefs((prev) => {
       const updated = { ...prev, autoSpeak: enabled };
       storage.setItem(STORAGE_KEY, updated).catch(() => {});
       return updated;
@@ -131,15 +145,26 @@ export function ReadingPreferencesProvider({ children }: Readonly<{ children: Re
     save(DEFAULTS);
   }, [save]);
 
-  const value = useMemo(() => ({
-    prefs,
-    setFontSize,
-    setLineSpacing,
-    setTextAlign,
-    setFontFamily,
-    setAutoSpeak,
-    resetToDefaults,
-  }), [prefs, setFontSize, setLineSpacing, setTextAlign, setFontFamily, setAutoSpeak, resetToDefaults]);
+  const value = useMemo(
+    () => ({
+      prefs,
+      setFontSize,
+      setLineSpacing,
+      setTextAlign,
+      setFontFamily,
+      setAutoSpeak,
+      resetToDefaults,
+    }),
+    [
+      prefs,
+      setFontSize,
+      setLineSpacing,
+      setTextAlign,
+      setFontFamily,
+      setAutoSpeak,
+      resetToDefaults,
+    ],
+  );
 
   return (
     <ReadingPreferencesContext.Provider value={value}>
@@ -150,6 +175,9 @@ export function ReadingPreferencesProvider({ children }: Readonly<{ children: Re
 
 export function useReadingPreferences() {
   const ctx = useContext(ReadingPreferencesContext);
-  if (!ctx) throw new Error('useReadingPreferences must be used within ReadingPreferencesProvider');
+  if (!ctx)
+    throw new Error(
+      'useReadingPreferences must be used within ReadingPreferencesProvider',
+    );
   return ctx;
 }

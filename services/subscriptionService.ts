@@ -1,6 +1,9 @@
-import { COLLECTIONS,DATABASE_ID,databases,ID,Query } from '@/lib/appwrite';
-import { PlanType, revenueCatService } from '@/services/revenueCatServiceInternal';
-import { Streak,SubscriptionStatus } from '@/types/database';
+import { COLLECTIONS, DATABASE_ID, databases, ID, Query } from '@/lib/appwrite';
+import {
+  PlanType,
+  revenueCatService,
+} from '@/services/revenueCatServiceInternal';
+import { Streak, SubscriptionStatus } from '@/types/database';
 import { logger } from '@/utils/logger';
 
 const PLAN_LIMITS: Record<string, number> = {
@@ -48,13 +51,14 @@ async function upsertSubscription(
   profileId: string,
   plan: string,
   storiesLimit: number,
-  trialEndsAt?: string
+  trialEndsAt?: string,
 ): Promise<boolean> {
   try {
-    const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [
-      Query.equal('profile_id', profileId),
-      Query.limit(1)
-    ]);
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTIONS.SUBSCRIPTIONS,
+      [Query.equal('profile_id', profileId), Query.limit(1)],
+    );
 
     const payload: SubscriptionPayload = {
       profile_id: profileId,
@@ -65,9 +69,19 @@ async function upsertSubscription(
     if (trialEndsAt) payload.trial_ends_at = trialEndsAt;
 
     if (response.documents.length > 0) {
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, response.documents[0].$id, payload);
+      await databases.updateDocument(
+        DATABASE_ID,
+        COLLECTIONS.SUBSCRIPTIONS,
+        response.documents[0].$id,
+        payload,
+      );
     } else {
-      await databases.createDocument(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, ID.unique(), payload);
+      await databases.createDocument(
+        DATABASE_ID,
+        COLLECTIONS.SUBSCRIPTIONS,
+        ID.unique(),
+        payload,
+      );
     }
     return true;
   } catch (error) {
@@ -84,13 +98,19 @@ export const subscriptionService = {
       const rcInfo = await revenueCatService.getCustomerInfo();
       if (rcInfo.isActive) {
         plan = rcInfo.plan;
-        await upsertSubscription(profileId, plan, PLAN_LIMITS[plan] ?? 9999, rcInfo.expiresAt ?? undefined);
+        await upsertSubscription(
+          profileId,
+          plan,
+          PLAN_LIMITS[plan] ?? 9999,
+          rcInfo.expiresAt ?? undefined,
+        );
       } else {
-        const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [
-          Query.equal('profile_id', profileId),
-          Query.limit(1)
-        ]);
-        plan = ((response.documents[0]?.plan) || 'free') as PlanType;
+        const response = await databases.listDocuments(
+          DATABASE_ID,
+          COLLECTIONS.SUBSCRIPTIONS,
+          [Query.equal('profile_id', profileId), Query.limit(1)],
+        );
+        plan = (response.documents[0]?.plan || 'free') as PlanType;
       }
 
       const storiesLimit = PLAN_LIMITS[plan] ?? 3;
@@ -99,10 +119,14 @@ export const subscriptionService = {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      const storiesResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORIES, [
-        Query.equal('profile_id', profileId),
-        Query.greaterThanEqual('generated_at', startOfMonth.toISOString()),
-      ]);
+      const storiesResponse = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.STORIES,
+        [
+          Query.equal('profile_id', profileId),
+          Query.greaterThanEqual('generated_at', startOfMonth.toISOString()),
+        ],
+      );
 
       const used = storiesResponse.total ?? 0;
       const storiesRemaining = Math.max(0, storiesLimit - used);
@@ -128,7 +152,12 @@ export const subscriptionService = {
   async syncFromRevenueCat(profileId: string): Promise<PlanType> {
     const rcInfo = await revenueCatService.getCustomerInfo();
     if (rcInfo.isActive) {
-      await upsertSubscription(profileId, rcInfo.plan, PLAN_LIMITS[rcInfo.plan] ?? 9999, rcInfo.expiresAt ?? undefined);
+      await upsertSubscription(
+        profileId,
+        rcInfo.plan,
+        PLAN_LIMITS[rcInfo.plan] ?? 9999,
+        rcInfo.expiresAt ?? undefined,
+      );
       return rcInfo.plan;
     }
     return 'free';
@@ -152,10 +181,11 @@ export const subscriptionService = {
 export const streakService = {
   async getStreak(profileId: string): Promise<Streak | null> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STREAKS, [
-        Query.equal('profile_id', profileId),
-        Query.limit(1)
-      ]);
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.STREAKS,
+        [Query.equal('profile_id', profileId), Query.limit(1)],
+      );
       if (response.documents.length === 0) return null;
       return rowToStreak(response.documents[0] as unknown as AppwriteStreakDoc);
     } catch {
@@ -167,25 +197,26 @@ export const streakService = {
     try {
       const today = new Date().toISOString().split('T')[0];
 
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STREAKS, [
-        Query.equal('profile_id', profileId),
-        Query.limit(1)
-      ]);
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.STREAKS,
+        [Query.equal('profile_id', profileId), Query.limit(1)],
+      );
 
       const existing = response.documents[0];
 
       if (!existing) {
         const created = await databases.createDocument(
-            DATABASE_ID,
-            COLLECTIONS.STREAKS,
-            ID.unique(),
-            {
-              profile_id: profileId,
-              current_streak: 1,
-              longest_streak: 1,
-              last_activity_date: today,
-              total_days_active: 1,
-            }
+          DATABASE_ID,
+          COLLECTIONS.STREAKS,
+          ID.unique(),
+          {
+            profile_id: profileId,
+            current_streak: 1,
+            longest_streak: 1,
+            last_activity_date: today,
+            total_days_active: 1,
+          },
         );
         return rowToStreak(created as unknown as AppwriteStreakDoc);
       }
@@ -204,9 +235,10 @@ export const streakService = {
       }
 
       const longestStreak = Math.max(doc.longest_streak || 0, newStreak);
-      const totalDaysActive = lastDate === today
-        ? doc.total_days_active
-        : (doc.total_days_active || 0) + 1;
+      const totalDaysActive =
+        lastDate === today
+          ? doc.total_days_active
+          : (doc.total_days_active || 0) + 1;
 
       const updated = await databases.updateDocument(
         DATABASE_ID,
@@ -217,7 +249,7 @@ export const streakService = {
           longest_streak: longestStreak,
           last_activity_date: today,
           total_days_active: totalDaysActive,
-        }
+        },
       );
 
       return rowToStreak(updated as unknown as AppwriteStreakDoc);
@@ -230,10 +262,14 @@ export const streakService = {
 export const interestService = {
   async getInterests(profileId: string): Promise<string[]> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILE_INTERESTS, [
-        Query.equal('profile_id', profileId)
-      ]);
-      return response.documents.map((row) => (row as Record<string, unknown>).interest as string);
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.PROFILE_INTERESTS,
+        [Query.equal('profile_id', profileId)],
+      );
+      return response.documents.map(
+        (row) => (row as Record<string, unknown>).interest as string,
+      );
     } catch {
       return [];
     }
@@ -241,15 +277,21 @@ export const interestService = {
 
   async setInterests(profileId: string, interests: string[]): Promise<boolean> {
     try {
-      const existing = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILE_INTERESTS, [
-        Query.equal('profile_id', profileId)
-      ]);
+      const existing = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.PROFILE_INTERESTS,
+        [Query.equal('profile_id', profileId)],
+      );
 
       // Parallel delete all existing interests
       await Promise.all(
         existing.documents.map((doc) =>
-          databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROFILE_INTERESTS, doc.$id)
-        )
+          databases.deleteDocument(
+            DATABASE_ID,
+            COLLECTIONS.PROFILE_INTERESTS,
+            doc.$id,
+          ),
+        ),
       );
 
       // Parallel create all new interests
@@ -259,9 +301,9 @@ export const interestService = {
             DATABASE_ID,
             COLLECTIONS.PROFILE_INTERESTS,
             ID.unique(),
-            { profile_id: profileId, interest }
-          )
-        )
+            { profile_id: profileId, interest },
+          ),
+        ),
       );
       return true;
     } catch {

@@ -1,14 +1,14 @@
 import { COLORS } from '@/constants/theme';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated,{
-Easing,
-useAnimatedStyle,
-useSharedValue,
-withDelay,
-withRepeat,
-withSequence,
-withTiming,
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 
 interface WaveBarProps {
@@ -41,11 +41,11 @@ const WaveBar = ({ color, index, isPlaying }: Readonly<WaveBarProps>) => {
           withTiming(0.3, {
             duration,
             easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-          })
+          }),
         ),
         -1,
-        false
-      )
+        false,
+      ),
     );
   }, [isPlaying]);
 
@@ -86,7 +86,12 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
   return (
     <View style={styles.container}>
       {bars.map((index) => (
-        <WaveBar key={index} color={color} index={index} isPlaying={isPlaying} />
+        <WaveBar
+          key={index}
+          color={color}
+          index={index}
+          isPlaying={isPlaying}
+        />
       ))}
     </View>
   );

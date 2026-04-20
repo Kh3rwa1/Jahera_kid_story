@@ -39,7 +39,8 @@ class CacheService {
     return {
       ...entry,
       insertedAt: entry.insertedAt ?? entry.timestamp ?? now,
-      lastAccessedAt: entry.lastAccessedAt ?? (entry.insertedAt ?? entry.timestamp ?? now),
+      lastAccessedAt:
+        entry.lastAccessedAt ?? entry.insertedAt ?? entry.timestamp ?? now,
       accessCount: entry.accessCount ?? 0,
     };
   }
@@ -48,7 +49,9 @@ class CacheService {
     return Date.now() - entry.timestamp > entry.expiresIn;
   }
 
-  private async maybeCleanupExpiredEntries(force: boolean = false): Promise<void> {
+  private async maybeCleanupExpiredEntries(
+    force: boolean = false,
+  ): Promise<void> {
     const now = Date.now();
     if (!force && now - this.lastCleanupAt < this.cleanupIntervalMs) return;
     this.lastCleanupAt = now;
@@ -56,7 +59,9 @@ class CacheService {
     // Single-pass partition: separate valid from expired
     const entries = Array.from(this.memoryCache.entries());
     const validEntries = entries.filter(([, entry]) => !this.isExpired(entry));
-    const expiredKeys = entries.filter(([, entry]) => this.isExpired(entry)).map(([key]) => key);
+    const expiredKeys = entries
+      .filter(([, entry]) => this.isExpired(entry))
+      .map(([key]) => key);
 
     if (expiredKeys.length === 0) return;
 
@@ -64,7 +69,7 @@ class CacheService {
     this.memoryCache = new Map(validEntries);
 
     try {
-      await AsyncStorage.multiRemove(expiredKeys.map(key => `cache_${key}`));
+      await AsyncStorage.multiRemove(expiredKeys.map((key) => `cache_${key}`));
     } catch (error) {
       console.error('[CacheService] Cleanup error:', error);
     }
@@ -74,18 +79,23 @@ class CacheService {
     if (this.memoryCache.size <= this.maxEntries) return;
 
     // Score all entries, sort, determine which to keep
-    const scored = Array.from(this.memoryCache.entries()).map(([key, entry]) => ({
-      key,
-      entry,
-      score: this.evictionStrategy === 'lru'
-        ? (entry.lastAccessedAt ?? entry.timestamp)
-        : (entry.insertedAt ?? entry.timestamp),
-    }));
+    const scored = Array.from(this.memoryCache.entries()).map(
+      ([key, entry]) => ({
+        key,
+        entry,
+        score:
+          this.evictionStrategy === 'lru'
+            ? (entry.lastAccessedAt ?? entry.timestamp)
+            : (entry.insertedAt ?? entry.timestamp),
+      }),
+    );
     scored.sort((a, b) => a.score - b.score);
 
     const numToEvict = this.memoryCache.size - this.maxEntries;
-    const evictedKeys = scored.slice(0, numToEvict).map(s => s.key);
-    const keepEntries = scored.slice(numToEvict).map(s => [s.key, s.entry] as [string, CacheEntry<unknown>]);
+    const evictedKeys = scored.slice(0, numToEvict).map((s) => s.key);
+    const keepEntries = scored
+      .slice(numToEvict)
+      .map((s) => [s.key, s.entry] as [string, CacheEntry<unknown>]);
 
     if (evictedKeys.length === 0) return;
 
@@ -93,7 +103,7 @@ class CacheService {
     this.memoryCache = new Map(keepEntries);
 
     try {
-      await AsyncStorage.multiRemove(evictedKeys.map(key => `cache_${key}`));
+      await AsyncStorage.multiRemove(evictedKeys.map((key) => `cache_${key}`));
     } catch (error) {
       console.error('[CacheService] Eviction error:', error);
     }
@@ -106,7 +116,9 @@ class CacheService {
     await this.maybeCleanupExpiredEntries();
 
     const now = Date.now();
-    const existingEntry = this.memoryCache.get(key) as CacheEntry<T> | undefined;
+    const existingEntry = this.memoryCache.get(key) as
+      | CacheEntry<T>
+      | undefined;
     const entry: CacheEntry<T> = {
       data,
       timestamp: now,
@@ -188,7 +200,7 @@ class CacheService {
     this.lastCleanupAt = 0;
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const cacheKeys = keys.filter(key => key.startsWith('cache_'));
+      const cacheKeys = keys.filter((key) => key.startsWith('cache_'));
       await AsyncStorage.multiRemove(cacheKeys);
     } catch (error) {
       console.error('Failed to clear cache:', error);
@@ -201,7 +213,7 @@ class CacheService {
   async getOrFetch<T>(
     key: string,
     fetcher: () => Promise<T>,
-    ttl: number = 3600000
+    ttl: number = 3600000,
   ): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached !== null) return cached;
@@ -218,12 +230,14 @@ class CacheService {
     await this.maybeCleanupExpiredEntries();
 
     // Atomic swap: new Map from entries that DON'T match the prefix
-    const kept = Array.from(this.memoryCache.entries()).filter(([key]) => !key.startsWith(prefix));
+    const kept = Array.from(this.memoryCache.entries()).filter(
+      ([key]) => !key.startsWith(prefix),
+    );
     this.memoryCache = new Map(kept);
 
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const cacheKeys = keys.filter(key => key.startsWith(`cache_${prefix}`));
+      const cacheKeys = keys.filter((key) => key.startsWith(`cache_${prefix}`));
       await AsyncStorage.multiRemove(cacheKeys);
     } catch (error) {
       console.error('Failed to invalidate cache by prefix:', error);

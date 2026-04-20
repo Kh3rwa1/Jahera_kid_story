@@ -1,44 +1,34 @@
 {
-    "projectId": "69b5657c000d2c28a436",
-    "projectName": "Jahera",
-    "functions": [
-        {
-            "$id": "generate-story",
-            "name": "generate-story",
-            "runtime": "node-18.0",
-            "execute": [
-                "users"
-            ],
-            "events": [],
-            "schedule": "",
-            "timeout": 300,
-            "entrypoint": "index.js",
-            "commands": "npm install",
-            "ignore": [
-                "node_modules",
-                ".npm"
-            ],
-            "path": "appwrite/functions/generate-story"
-        },
-        {
-            "$id": "generate-audio",
-            "name": "generate-audio",
-            "runtime": "node-18.0",
-            "execute": [
-                "users"
-            ],
-            "events": [],
-            "schedule": "",
-            "timeout": 300,
-            "entrypoint": "index.js",
-            "commands": "npm install",
-            "ignore": [
-                "node_modules",
-                ".npm"
-            ],
-            "path": "appwrite/functions/generate-audio"
-        }
-    ],
-    "tablesDB": [],
-    "tables": []
+  "projectId": "69b5657c000d2c28a436",
+  "projectName": "Jahera",
+  "functions": [
+    {
+      "$id": "generate-story",
+      "name": "generate-story",
+      "runtime": "node-18.0",
+      "execute": ["users"],
+      "events": [],
+      "schedule": "",
+      "timeout": 300,
+      "entrypoint": "index.js",
+      "commands": "npm install",
+      "ignore": ["node_modules", ".npm"],
+      "path": "appwrite/functions/generate-story"
+    },
+    {
+      "$id": "generate-audio",
+      "name": "generate-audio",
+      "runtime": "node-18.0",
+      "execute": ["users"],
+      "events": [],
+      "schedule": "",
+      "timeout": 300,
+      "entrypoint": "index.js",
+      "commands": "npm install",
+      "ignore": ["node_modules", ".npm"],
+      "path": "appwrite/functions/generate-audio"
+    }
+  ],
+  "tablesDB": [],
+  "tables": []
 }

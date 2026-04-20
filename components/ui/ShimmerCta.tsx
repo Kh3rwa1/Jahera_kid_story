@@ -1,6 +1,6 @@
-import { BORDER_RADIUS,FONTS,SHADOWS } from '@/constants/theme';
+import { BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import React,{ useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -10,14 +10,14 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import Animated,{
-Easing,
-interpolate,
-useAnimatedStyle,
-useSharedValue,
-withRepeat,
-withSpring,
-withTiming,
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 interface ShimmerCtaProps {
@@ -50,12 +50,14 @@ export function ShimmerCta({
     shimmerX.value = withRepeat(
       withTiming(1, { duration: 2800, easing: Easing.linear }),
       -1,
-      false
+      false,
     );
   }, [shimmerX]);
 
   const shimmerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(shimmerX.value, [-1, 1], [-220, 220]) }],
+    transform: [
+      { translateX: interpolate(shimmerX.value, [-1, 1], [-220, 220]) },
+    ],
   }));
 
   const scaleStyle = useAnimatedStyle(() => ({
@@ -88,7 +90,7 @@ export function ShimmerCta({
           <View style={styles.shimmerContainer}>
             <Animated.View style={[styles.ctaShimmer, shimmerStyle]} />
           </View>
-          
+
           <View style={styles.content}>
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />

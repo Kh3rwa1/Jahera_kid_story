@@ -22,7 +22,7 @@ export const deviceTTSService = {
       onDone?: () => void;
       onStopped?: () => void;
       onError?: (error: unknown) => void;
-    }
+    },
   ): Promise<void> {
     await Speech.stop();
     Speech.speak(text, {

@@ -1,4 +1,4 @@
-import { act,renderHook } from '@testing-library/react-native';
+import { act, renderHook } from '@testing-library/react-native';
 import { useStoryGeneration } from '../useStoryGeneration';
 
 // Mock dependencies
@@ -25,8 +25,14 @@ jest.mock('expo-router', () => ({
 jest.mock('@/services/database', () => ({
   familyMemberService: { getByProfileId: jest.fn().mockResolvedValue([]) },
   friendService: { getByProfileId: jest.fn().mockResolvedValue([]) },
-  profileService: { getWithRelations: jest.fn().mockResolvedValue({ id: 'test-profile-id' }) },
-  storyService: { create: jest.fn().mockResolvedValue({ id: 'story-123', title: 'Test Story' }) },
+  profileService: {
+    getWithRelations: jest.fn().mockResolvedValue({ id: 'test-profile-id' }),
+  },
+  storyService: {
+    create: jest
+      .fn()
+      .mockResolvedValue({ id: 'story-123', title: 'Test Story' }),
+  },
   quizService: { createQuestion: jest.fn(), createAnswer: jest.fn() },
 }));
 
@@ -44,7 +50,11 @@ jest.mock('@/services/audioService', () => ({
 }));
 
 jest.mock('@/services/locationService', () => ({
-  getLocationFromProfile: jest.fn().mockReturnValue({ city: 'Test City', country: 'Test Country', region: '' }),
+  getLocationFromProfile: jest.fn().mockReturnValue({
+    city: 'Test City',
+    country: 'Test Country',
+    region: '',
+  }),
 }));
 
 jest.mock('@/utils/contextUtils', () => ({
@@ -67,7 +77,7 @@ jest.mock('@/utils/logger', () => ({
 describe('useStoryGeneration hook', () => {
   it('initializes with default values', () => {
     const { result } = renderHook(() => useStoryGeneration());
-    
+
     expect(result.current.phase).toBe('options');
     expect(result.current.selectedTheme).toBe('adventure');
     expect(result.current.progress).toBe(0);
@@ -75,7 +85,7 @@ describe('useStoryGeneration hook', () => {
 
   it('updates form state correctly', () => {
     const { result } = renderHook(() => useStoryGeneration());
-    
+
     act(() => {
       result.current.setSelectedTheme('fantasy');
       result.current.setSelectedMood('calm');
@@ -87,7 +97,7 @@ describe('useStoryGeneration hook', () => {
 
   it('triggers generation phase when started', async () => {
     const { result } = renderHook(() => useStoryGeneration());
-    
+
     await act(async () => {
       result.current.handleStartGeneration();
     });
@@ -97,7 +107,7 @@ describe('useStoryGeneration hook', () => {
 
   it('handles retry correctly', () => {
     const { result } = renderHook(() => useStoryGeneration());
-    
+
     act(() => {
       result.current.handleRetry();
     });

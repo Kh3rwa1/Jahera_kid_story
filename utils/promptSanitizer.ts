@@ -37,7 +37,10 @@ const UNSAFE_PATTERNS: RegExp[] = [
 
 const SPECIAL_CHARS_PATTERN = /[{}[\]<>|\\^~`]/g;
 
-export function sanitizeForPrompt(input: string, maxLength: number = 100): string {
+export function sanitizeForPrompt(
+  input: string,
+  maxLength: number = 100,
+): string {
   if (!input || typeof input !== 'string') {
     return '';
   }

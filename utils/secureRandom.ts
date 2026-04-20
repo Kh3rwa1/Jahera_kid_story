@@ -3,7 +3,7 @@ const UINT32_MAX = 0x100000000;
 function randomUint32(): number {
   const arr = new Uint32Array(1);
   const cryptoRef = globalThis.crypto;
-  
+
   if (cryptoRef?.getRandomValues) {
     cryptoRef.getRandomValues(arr);
     return arr[0];

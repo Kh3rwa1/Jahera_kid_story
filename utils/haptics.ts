@@ -13,7 +13,9 @@ export const hapticFeedback = {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
-      logger.debug('Haptics typically unsupported on this device simulator', { error });
+      logger.debug('Haptics typically unsupported on this device simulator', {
+        error,
+      });
     }
   },
 
@@ -24,7 +26,9 @@ export const hapticFeedback = {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
-      logger.debug('Haptics typically unsupported on this device simulator', { error });
+      logger.debug('Haptics typically unsupported on this device simulator', {
+        error,
+      });
     }
   },
 
@@ -35,7 +39,9 @@ export const hapticFeedback = {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch (error) {
-      logger.debug('Haptics typically unsupported on this device simulator', { error });
+      logger.debug('Haptics typically unsupported on this device simulator', {
+        error,
+      });
     }
   },
 
@@ -93,10 +99,14 @@ export const hapticFeedback = {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       }, 100);
       setTimeout(async () => {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
       }, 200);
     } catch (error) {
-      logger.debug('Haptics typically unsupported on this device simulator', { error });
+      logger.debug('Haptics typically unsupported on this device simulator', {
+        error,
+      });
     }
   },
 };

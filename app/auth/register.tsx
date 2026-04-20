@@ -1,10 +1,18 @@
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
-import { BORDER_RADIUS,FONT_SIZES,FONTS,SPACING } from '@/constants/theme';
+import { BORDER_RADIUS, FONT_SIZES, FONTS, SPACING } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { ArrowLeft,ArrowRight,Eye,EyeOff,Lock,Mail,User } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  User,
+} from 'lucide-react-native';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,7 +27,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 export default function Register() {
   const router = useRouter();
@@ -53,9 +61,16 @@ export default function Register() {
       router.replace('/onboarding/consent');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('already registered') || msg.includes('User already registered') || msg.includes('already exists')) {
+      if (
+        msg.includes('already registered') ||
+        msg.includes('User already registered') ||
+        msg.includes('already exists')
+      ) {
         setError('An account with this email already exists. Try signing in.');
-      } else if (msg.includes('Password should be') || msg.includes('password')) {
+      } else if (
+        msg.includes('Password should be') ||
+        msg.includes('password')
+      ) {
         setError('Password must be at least 6 characters.');
       } else if (msg.includes('valid email') || msg.includes('email')) {
         setError('Please enter a valid email address.');
@@ -71,10 +86,21 @@ export default function Register() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <BrandVideoBackground videoId="onboarding_video" fallbackSource={require('@/assets/jahera.mp4')} overlayOpacity={0.25} />
+      <StatusBar
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
+      />
+      <BrandVideoBackground
+        videoId="onboarding_video"
+        fallbackSource={require('@/assets/jahera.mp4')}
+        overlayOpacity={0.25}
+      />
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.kav}
+      >
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
@@ -90,23 +116,40 @@ export default function Register() {
             </TouchableOpacity>
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.hero}>
+          <Animated.View
+            entering={FadeInUp.delay(100).springify()}
+            style={styles.hero}
+          >
             <View style={[styles.iconCircle, { shadowColor: C.primary }]}>
-              <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.iconGradient}>
-                <Image 
+              <LinearGradient
+                colors={[C.primary, C.primaryDark]}
+                style={styles.iconGradient}
+              >
+                <Image
                   source={require('@/assets/images/icon.png')}
-                  style={{ width: '100%', height: '100%', borderRadius: 60, borderWidth: 3, borderColor: '#FFFFFF' }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 60,
+                    borderWidth: 3,
+                    borderColor: '#FFFFFF',
+                  }}
                   resizeMode="cover"
                 />
               </LinearGradient>
             </View>
-            <Text style={[styles.title, { color: '#FFFFFF' }]}>Create account</Text>
+            <Text style={[styles.title, { color: '#FFFFFF' }]}>
+              Create account
+            </Text>
             <Text style={[styles.subtitle, { color: '#E2E8F0' }]}>
               Start your child's adventure today
             </Text>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.form}>
+          <Animated.View
+            entering={FadeInDown.delay(200).springify()}
+            style={styles.form}
+          >
             <View style={styles.inputGroup}>
               <User size={20} color={C.text.light} strokeWidth={2} />
               <TextInput
@@ -148,50 +191,76 @@ export default function Register() {
                 returnKeyType="done"
                 onSubmitEditing={handleRegister}
               />
-              <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                {showPassword
-                  ? <EyeOff size={20} color={C.text.light} strokeWidth={2} />
-                  : <Eye size={20} color={C.text.light} strokeWidth={2} />
-                }
+              <TouchableOpacity
+                onPress={() => setShowPassword((v) => !v)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                {showPassword ? (
+                  <EyeOff size={20} color={C.text.light} strokeWidth={2} />
+                ) : (
+                  <Eye size={20} color={C.text.light} strokeWidth={2} />
+                )}
               </TouchableOpacity>
             </View>
 
             {error && (
-              <Animated.Text entering={FadeInDown.springify()} style={[styles.errorText, { color: C.error }]}>
+              <Animated.Text
+                entering={FadeInDown.springify()}
+                style={[styles.errorText, { color: C.error }]}
+              >
                 {error}
               </Animated.Text>
             )}
 
-            <TouchableOpacity onPress={handleRegister} activeOpacity={0.88} disabled={isLoading}>
+            <TouchableOpacity
+              onPress={handleRegister}
+              activeOpacity={0.88}
+              disabled={isLoading}
+            >
               <LinearGradient
-                colors={isLoading ? ['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.4)'] : ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.95)']}
+                colors={
+                  isLoading
+                    ? ['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.4)']
+                    : ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.95)']
+                }
                 style={styles.ctaButton}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                {isLoading
-                  ? <ActivityIndicator color={C.primaryDark} size="small" />
-                  : (
-                    <>
-                      <Text style={[styles.ctaText, { color: C.primaryDark }]}>Create Account</Text>
-                      <ArrowRight size={20} color={C.primaryDark} strokeWidth={2.5} />
-                    </>
-                  )
-                }
+                {isLoading ? (
+                  <ActivityIndicator color={C.primaryDark} size="small" />
+                ) : (
+                  <>
+                    <Text style={[styles.ctaText, { color: C.primaryDark }]}>
+                      Create Account
+                    </Text>
+                    <ArrowRight
+                      size={20}
+                      color={C.primaryDark}
+                      strokeWidth={2.5}
+                    />
+                  </>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 
             <Text style={[styles.termsText, { color: '#CBD5E1' }]}>
-              By creating an account you agree to our Terms of Service and Privacy Policy.
+              By creating an account you agree to our Terms of Service and
+              Privacy Policy.
             </Text>
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.footer}>
+          <Animated.View
+            entering={FadeInUp.delay(400).springify()}
+            style={styles.footer}
+          >
             <Text style={[styles.footerText, { color: '#F1F5F9' }]}>
               Already have an account?{' '}
             </Text>
             <TouchableOpacity onPress={() => router.push('/auth/login')}>
-              <Text style={[styles.linkText, { color: C.primary }]}>Sign in</Text>
+              <Text style={[styles.linkText, { color: C.primary }]}>
+                Sign in
+              </Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>

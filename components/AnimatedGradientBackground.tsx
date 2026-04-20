@@ -1,14 +1,14 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React,{ useEffect,useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
-import Animated,{
-cancelAnimation,
-Easing,
-interpolate,
-useAnimatedStyle,
-useSharedValue,
-withRepeat,
-withTiming,
+import Animated, {
+  cancelAnimation,
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from 'react-native-reanimated';
 
 type GradientSet = readonly [string, string, ...string[]];
@@ -18,7 +18,9 @@ interface AnimatedGradientBackgroundProps {
   duration?: number;
 }
 
-export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProps> = ({
+export const AnimatedGradientBackground: React.FC<
+  AnimatedGradientBackgroundProps
+> = ({
   colorSets = [
     ['#F9FFFE', '#F0FFFE', '#E8FDFC'],
     ['#FFF9FC', '#FFF0F7', '#FFE8F5'],
@@ -27,7 +29,9 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
   ],
   duration = 8000,
 }) => {
-  const [currentColorSet, setCurrentColorSet] = useState<GradientSet>(colorSets[0]);
+  const [currentColorSet, setCurrentColorSet] = useState<GradientSet>(
+    colorSets[0],
+  );
   const [nextColorSet, setNextColorSet] = useState<GradientSet>(colorSets[1]);
   const opacity = useSharedValue(0);
 
@@ -55,7 +59,7 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
         easing: Easing.inOut(Easing.ease),
       }),
       -1,
-      true
+      true,
     );
 
     return () => {
@@ -74,7 +78,10 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
 
   return (
     <>
-      <LinearGradient colors={currentColorSet} style={StyleSheet.absoluteFill} />
+      <LinearGradient
+        colors={currentColorSet}
+        style={StyleSheet.absoluteFill}
+      />
       <Animated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
         <LinearGradient colors={nextColorSet} style={StyleSheet.absoluteFill} />
       </Animated.View>

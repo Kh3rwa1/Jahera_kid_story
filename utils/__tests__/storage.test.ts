@@ -26,7 +26,9 @@ beforeEach(() => {
 
 describe('storage.getItem', () => {
   it('returns parsed JSON value for a stored key', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify({ name: 'test' }));
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+      JSON.stringify({ name: 'test' }),
+    );
     const result = await storage.getItem('key');
     expect(result).toEqual({ name: 'test' });
   });
@@ -38,13 +40,17 @@ describe('storage.getItem', () => {
   });
 
   it('returns null on AsyncStorage error (graceful)', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockRejectedValue(new Error('Storage fail'));
+    (AsyncStorage.getItem as jest.Mock).mockRejectedValue(
+      new Error('Storage fail'),
+    );
     const result = await storage.getItem('error');
     expect(result).toBeNull();
   });
 
   it('returns string values correctly', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify('hello'));
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+      JSON.stringify('hello'),
+    );
     const result = await storage.getItem<string>('key');
     expect(result).toBe('hello');
   });
@@ -54,7 +60,10 @@ describe('storage.setItem', () => {
   it('stores JSON stringified value', async () => {
     (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
     await storage.setItem('key', { foo: 'bar' });
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith('key', JSON.stringify({ foo: 'bar' }));
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+      'key',
+      JSON.stringify({ foo: 'bar' }),
+    );
   });
 
   it('throws on AsyncStorage error', async () => {

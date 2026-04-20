@@ -1,4 +1,11 @@
-import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SHADOWS,SPACING } from '@/constants/theme';
+import {
+  BORDER_RADIUS,
+  COLORS,
+  FONT_SIZES,
+  FONT_WEIGHTS,
+  SHADOWS,
+  SPACING,
+} from '@/constants/theme';
 import { Achievement } from '@/services/achievementService';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,7 +33,7 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({
   onClose,
 }) => {
   const { width } = useWindowDimensions();
-  
+
   if (!achievement) return null;
 
   return (
@@ -41,7 +48,9 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({
 
         <Pressable style={styles.backdrop} onPress={onClose} />
 
-        <View style={[styles.modalContainer, { width: width - SPACING.xxxl * 2 }]}>
+        <View
+          style={[styles.modalContainer, { width: width - SPACING.xxxl * 2 }]}
+        >
           <LinearGradient
             colors={COLORS.gradients.magic}
             start={{ x: 0, y: 0 }}
@@ -54,7 +63,9 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({
 
             <View style={styles.achievementInfo}>
               <Text style={styles.achievementTitle}>{achievement.title}</Text>
-              <Text style={styles.achievementDescription}>{achievement.description}</Text>
+              <Text style={styles.achievementDescription}>
+                {achievement.description}
+              </Text>
             </View>
 
             <PremiumButton

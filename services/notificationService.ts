@@ -43,7 +43,9 @@ if (!isExpoGo) {
 export async function registerForPushNotifications(): Promise<string | null> {
   const Notifications = getNotificationsModule();
   if (!Notifications) {
-    console.warn('[Notifications] Push notifications are not supported in Expo Go. Use a development build.');
+    console.warn(
+      '[Notifications] Push notifications are not supported in Expo Go. Use a development build.',
+    );
     return null;
   }
   if (!Device.isDevice) return null;
@@ -69,16 +71,27 @@ export async function registerForPushNotifications(): Promise<string | null> {
   return token.data;
 }
 
-export async function scheduleBedtimeReminder(hour: number, minute: number): Promise<string> {
+export async function scheduleBedtimeReminder(
+  hour: number,
+  minute: number,
+): Promise<string> {
   const Notifications = getNotificationsModule();
   if (!Notifications) {
-    console.warn('[Notifications] Local notifications have limited support in Expo Go.');
+    console.warn(
+      '[Notifications] Local notifications have limited support in Expo Go.',
+    );
     return 'expo-go-stub';
   }
-  const body = BEDTIME_MESSAGES[Math.floor(Math.random() * BEDTIME_MESSAGES.length)];
+  const body =
+    BEDTIME_MESSAGES[Math.floor(Math.random() * BEDTIME_MESSAGES.length)];
   return Notifications.scheduleNotificationAsync({
     content: { title: 'Jahera', body, sound: 'default' },
-    trigger: { hour, minute, channelId: 'bedtime', type: Notifications.SchedulableTriggerInputTypes.DAILY },
+    trigger: {
+      hour,
+      minute,
+      channelId: 'bedtime',
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+    },
   });
 }
 

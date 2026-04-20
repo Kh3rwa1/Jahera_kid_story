@@ -1,8 +1,19 @@
 import { generatePalette } from '@/components/ColorWheelPicker';
-import { ColorScheme,DEFAULT_THEME,getThemeById } from '@/constants/themeSchemes';
+import {
+  ColorScheme,
+  DEFAULT_THEME,
+  getThemeById,
+} from '@/constants/themeSchemes';
 import { handleError } from '@/utils/errorHandler';
 import { storage } from '@/utils/storage';
-import React,{ createContext,ReactNode,useContext,useEffect,useMemo,useState } from 'react';
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 const THEME_STORAGE_KEY = 'app_theme_id';
 const ICON_STORAGE_KEY = 'app_icon_id';
@@ -16,17 +27,40 @@ export interface AppIcon {
 }
 
 export const APP_ICONS: AppIcon[] = [
-  { id: 'default', name: 'Classic', emoji: '📚', description: 'Original Jahera icon' },
-  { id: 'rocket', name: 'Rocket', emoji: '🚀', description: 'Adventure awaits!' },
+  {
+    id: 'default',
+    name: 'Classic',
+    emoji: '📚',
+    description: 'Original Jahera icon',
+  },
+  {
+    id: 'rocket',
+    name: 'Rocket',
+    emoji: '🚀',
+    description: 'Adventure awaits!',
+  },
   { id: 'star', name: 'Star', emoji: '⭐', description: 'Shining bright' },
-  { id: 'rainbow', name: 'Rainbow', emoji: '🌈', description: 'Colorful stories' },
+  {
+    id: 'rainbow',
+    name: 'Rainbow',
+    emoji: '🌈',
+    description: 'Colorful stories',
+  },
   { id: 'magic', name: 'Magic', emoji: '✨', description: 'Magical tales' },
   { id: 'book', name: 'Book', emoji: '📖', description: 'Classic reading' },
-  { id: 'sparkles', name: 'Sparkles', emoji: '💫', description: 'Sparkly stories' },
+  {
+    id: 'sparkles',
+    name: 'Sparkles',
+    emoji: '💫',
+    description: 'Sparkly stories',
+  },
   { id: 'heart', name: 'Heart', emoji: '💝', description: 'Made with love' },
 ];
 
-function buildCustomTheme(baseTheme: ColorScheme, customColor: string): ColorScheme {
+function buildCustomTheme(
+  baseTheme: ColorScheme,
+  customColor: string,
+): ColorScheme {
   const palette = generatePalette(customColor);
   return {
     ...baseTheme,
@@ -40,10 +74,18 @@ function buildCustomTheme(baseTheme: ColorScheme, customColor: string): ColorSch
       primaryLight: palette.primaryLight,
       secondary: palette.secondary,
       background: palette.background,
-      backgroundGradient: [palette.background, palette.background, palette.background],
+      backgroundGradient: [
+        palette.background,
+        palette.background,
+        palette.background,
+      ],
       gradients: {
         ...baseTheme.colors.gradients,
-        primary: [palette.gradientStart, palette.gradientMid, palette.gradientEnd],
+        primary: [
+          palette.gradientStart,
+          palette.gradientMid,
+          palette.gradientEnd,
+        ],
         secondary: [palette.primaryLight, palette.secondary, palette.secondary],
         sunset: [palette.gradientStart, palette.primary, palette.secondary],
         sunrise: [palette.secondary, palette.primaryLight, palette.primary],
@@ -81,7 +123,9 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [currentIcon, setCurrentIcon] = useState<AppIcon>(APP_ICONS[0]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const currentTheme = customColor ? buildCustomTheme(baseTheme, customColor) : baseTheme;
+  const currentTheme = customColor
+    ? buildCustomTheme(baseTheme, customColor)
+    : baseTheme;
 
   useEffect(() => {
     loadThemeAndIcon();
@@ -92,7 +136,9 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
 
       const savedThemeId = await storage.getItem<string>(THEME_STORAGE_KEY);
-      const isFirstNewVersionLaunch = await storage.getItem<string>('branding_migrated_v1');
+      const isFirstNewVersionLaunch = await storage.getItem<string>(
+        'branding_migrated_v1',
+      );
 
       if (!isFirstNewVersionLaunch) {
         // One-time migration to the new Red branding for everyone
@@ -111,7 +157,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
       const savedIconId = await storage.getItem<string>(ICON_STORAGE_KEY);
       if (savedIconId) {
-        const icon = APP_ICONS.find(i => i.id === savedIconId) || APP_ICONS[0];
+        const icon =
+          APP_ICONS.find((i) => i.id === savedIconId) || APP_ICONS[0];
         setCurrentIcon(icon);
       }
     } catch (error) {
@@ -156,7 +203,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   const setIcon = async (iconId: string) => {
     try {
-      const icon = APP_ICONS.find(i => i.id === iconId) || APP_ICONS[0];
+      const icon = APP_ICONS.find((i) => i.id === iconId) || APP_ICONS[0];
       setCurrentIcon(icon);
       await storage.setItem(ICON_STORAGE_KEY, iconId);
     } catch (error) {
@@ -165,18 +212,23 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const value: ThemeContextType = useMemo(() => ({
-    currentTheme,
-    currentIcon,
-    customColor,
-    setTheme,
-    setIcon,
-    setCustomColor,
-    clearCustomColor,
-    isLoading,
-  }), [currentTheme, currentIcon, customColor, isLoading]);
+  const value: ThemeContextType = useMemo(
+    () => ({
+      currentTheme,
+      currentIcon,
+      customColor,
+      setTheme,
+      setIcon,
+      setCustomColor,
+      clearCustomColor,
+      isLoading,
+    }),
+    [currentTheme, currentIcon, customColor, isLoading],
+  );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 };
 
 export const useTheme = (): ThemeContextType => {

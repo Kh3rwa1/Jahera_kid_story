@@ -16,7 +16,9 @@ export const validateKidName = (name: string): string => {
   }
 
   if (!/^[\p{L}\s'-]+$/u.test(trimmed)) {
-    throw new ValidationError('Name can only contain letters, spaces, hyphens, and apostrophes');
+    throw new ValidationError(
+      'Name can only contain letters, spaces, hyphens, and apostrophes',
+    );
   }
 
   return trimmed;
@@ -41,10 +43,7 @@ export const validateMemberName = (name: string): string => {
 };
 
 export const sanitizeInput = (input: string): string => {
-  return input
-    .trim()
-    .replace(/[<>]/g, '')
-    .replace(/\s+/g, ' ');
+  return input.trim().replace(/[<>]/g, '').replace(/\s+/g, ' ');
 };
 
 export const validateLanguageSelection = (languages: unknown[]): boolean => {

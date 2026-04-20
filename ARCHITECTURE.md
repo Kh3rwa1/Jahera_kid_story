@@ -1,11 +1,13 @@
 # DreamTales - Production Architecture
 
 ## Overview
+
 DreamTales is a production-ready React Native app built with Expo that generates personalized stories for children with multilingual support and interactive quizzes.
 
 ## Architecture Improvements
 
 ### 1. Error Handling System
+
 **Location:** `/utils/errorHandler.ts`
 
 - Custom error classes (NetworkError, ValidationError, DatabaseError)
@@ -14,8 +16,13 @@ DreamTales is a production-ready React Native app built with Expo that generates
 - Automatic retry with exponential backoff via `retryWithBackoff()`
 
 **Usage:**
+
 ```typescript
-import { handleError, showErrorAlert, retryWithBackoff } from '@/utils/errorHandler';
+import {
+  handleError,
+  showErrorAlert,
+  retryWithBackoff,
+} from '@/utils/errorHandler';
 
 try {
   const result = await retryWithBackoff(() => apiCall());
@@ -26,6 +33,7 @@ try {
 ```
 
 ### 2. Data Validation & Sanitization
+
 **Location:** `/utils/validation.ts`
 
 - Input validation for names and text fields
@@ -34,12 +42,14 @@ try {
 - Type-safe validation functions
 
 **Functions:**
+
 - `validateKidName()` - Validates child names (2-50 chars, letters only)
 - `validateMemberName()` - Validates family/friend names (2-30 chars)
 - `sanitizeInput()` - Removes harmful characters and normalizes whitespace
 - `validateLanguageSelection()` - Ensures valid language array
 
 ### 3. Improved Storage System
+
 **Location:** `/utils/storage.ts`
 
 - Type-safe AsyncStorage wrapper
@@ -48,11 +58,13 @@ try {
 - JSON serialization/deserialization
 
 **Features:**
+
 - `setProfileId()` / `getProfileId()` - Profile management
 - `setItem<T>()` / `getItem<T>()` - Generic storage with types
 - Error recovery and logging
 
 ### 4. Enhanced Database Service
+
 **Location:** `/services/databaseImproved.ts`
 
 - Retry logic for failed database operations
@@ -61,6 +73,7 @@ try {
 - Promise.allSettled for parallel queries (graceful degradation)
 
 **Services:**
+
 - `profileServiceImproved` - Profile CRUD operations
 - `languageServiceImproved` - Language management
 - `familyMemberServiceImproved` - Family member operations
@@ -68,6 +81,7 @@ try {
 - `storyServiceImproved` - Story operations
 
 ### 5. Global State Management
+
 **Location:** `/contexts/AppContext.tsx`
 
 - React Context for global app state
@@ -77,6 +91,7 @@ try {
 - Profile refresh capabilities
 
 **Usage:**
+
 ```typescript
 import { useApp } from '@/contexts/AppContext';
 
@@ -86,9 +101,11 @@ const { profile, isLoading, error, refreshProfile } = useApp();
 ### 6. Custom Hooks
 
 #### useAsyncData
+
 **Location:** `/hooks/useAsyncData.ts`
 
 Generic hook for async data fetching with:
+
 - Loading states
 - Error handling
 - Data caching
@@ -96,6 +113,7 @@ Generic hook for async data fetching with:
 - Success/error callbacks
 
 **Usage:**
+
 ```typescript
 const { data, isLoading, error, refetch } = useAsyncData({
   fetchFn: () => storyService.getByProfileId(profileId),
@@ -107,6 +125,7 @@ const { data, isLoading, error, refetch } = useAsyncData({
 ### 7. UI Components
 
 #### ErrorBoundary
+
 **Location:** `/components/ErrorBoundary.tsx`
 
 - Catches React component errors
@@ -115,6 +134,7 @@ const { data, isLoading, error, refetch } = useAsyncData({
 - "Try Again" recovery option
 
 #### LoadingSkeleton
+
 **Location:** `/components/LoadingSkeleton.tsx`
 
 - Animated skeleton screens for better UX
@@ -123,6 +143,7 @@ const { data, isLoading, error, refetch } = useAsyncData({
 - Smooth opacity animation
 
 #### EmptyState
+
 **Location:** `/components/EmptyState.tsx`
 
 - Consistent empty state design
@@ -130,6 +151,7 @@ const { data, isLoading, error, refetch } = useAsyncData({
 - Reusable across different sections
 
 #### ConfirmDialog
+
 **Location:** `/components/ConfirmDialog.tsx`
 
 - Modal confirmation dialogs
@@ -138,9 +160,11 @@ const { data, isLoading, error, refetch } = useAsyncData({
 - Accessible dismissal
 
 ### 8. Configuration Management
+
 **Location:** `/constants/config.ts`
 
 Centralized configuration:
+
 - `APP_CONFIG` - App settings (retry logic, validation rules, cache TTL)
 - `ERROR_MESSAGES` - Consistent error messages
 - `SUCCESS_MESSAGES` - Success feedback messages
@@ -148,6 +172,7 @@ Centralized configuration:
 ## Best Practices Implemented
 
 ### 1. Error Handling
+
 ```typescript
 // ✅ Good
 try {
@@ -166,6 +191,7 @@ if (!profile) {
 ```
 
 ### 2. Data Validation
+
 ```typescript
 // ✅ Good
 const validatedName = validateKidName(input);
@@ -176,6 +202,7 @@ const name = input.trim();
 ```
 
 ### 3. Loading States
+
 ```typescript
 // ✅ Good
 if (isLoading) return <StoryCardSkeleton />;
@@ -188,6 +215,7 @@ return <StoryList data={stories} />;
 ```
 
 ### 4. Async Operations
+
 ```typescript
 // ✅ Good
 const { data, isLoading, error } = useAsyncData({
@@ -207,6 +235,7 @@ useEffect(() => {
 ### From Old Services to New Services
 
 **Before:**
+
 ```typescript
 import { profileService } from '@/services/database';
 
@@ -217,6 +246,7 @@ if (!profile) {
 ```
 
 **After:**
+
 ```typescript
 import { profileServiceImproved } from '@/services/databaseImproved';
 import { handleError, showErrorAlert } from '@/utils/errorHandler';
@@ -233,6 +263,7 @@ try {
 ### Using Context Instead of Props
 
 **Before:**
+
 ```typescript
 function HomeScreen() {
   const [profile, setProfile] = useState(null);
@@ -244,6 +275,7 @@ function HomeScreen() {
 ```
 
 **After:**
+
 ```typescript
 import { useApp } from '@/contexts/AppContext';
 
@@ -271,15 +303,18 @@ function HomeScreen() {
 ## Testing Strategy
 
 ### Unit Tests
+
 - Validation functions
 - Error handling utilities
 - Storage operations
 
 ### Integration Tests
+
 - Database services
 - API calls with retry logic
 
 ### E2E Tests
+
 - Complete user flows
 - Error recovery scenarios
 - Offline behavior
@@ -287,11 +322,13 @@ function HomeScreen() {
 ## Monitoring & Analytics
 
 ### Error Tracking
+
 - All errors logged with context
 - User actions tracked
 - Database query performance
 
 ### User Analytics
+
 - Screen views
 - Story generation rate
 - Quiz completion rate
@@ -311,6 +348,7 @@ function HomeScreen() {
 ## Development Guidelines
 
 ### Code Review Checklist
+
 - [ ] Error handling implemented
 - [ ] Input validation added
 - [ ] Loading states shown
@@ -321,19 +359,24 @@ function HomeScreen() {
 - [ ] Performance optimized
 
 ### Pull Request Template
+
 ```markdown
 ## Changes
+
 - Brief description
 
 ## Testing
+
 - [ ] Manual testing completed
 - [ ] Edge cases covered
 - [ ] Error scenarios tested
 
 ## Screenshots
+
 - Before/After comparison
 
 ## Performance Impact
+
 - Any performance considerations
 ```
 
@@ -351,12 +394,14 @@ function HomeScreen() {
 ## Support & Maintenance
 
 ### Health Checks
+
 - Database connectivity
 - API response times
 - Error rates
 - User session duration
 
 ### Maintenance Windows
+
 - Database backups: Daily at 2 AM UTC
 - Performance optimization: Weekly
 - Dependency updates: Monthly

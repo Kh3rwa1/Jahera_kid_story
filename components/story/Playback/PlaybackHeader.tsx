@@ -1,9 +1,15 @@
 import { MarqueeText } from '@/components/MarqueeText';
-import { BORDER_RADIUS,FONTS,SPACING } from '@/constants/theme';
+import { BORDER_RADIUS, FONTS, SPACING } from '@/constants/theme';
 import { TabMode } from '@/hooks/usePlayback';
 import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
-import { ArrowLeft,BookMarked,Headphones,Share2,Type } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  BookMarked,
+  Headphones,
+  Share2,
+  Type,
+} from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -39,20 +45,49 @@ export function PlaybackHeader({
       <SafeAreaView edges={['top']} style={styles.audioTopBar}>
         <View style={styles.row}>
           <TouchableOpacity onPress={onBack} style={styles.audioBtn}>
-            <ArrowLeft size={20} color="rgba(255,255,255,0.9)" strokeWidth={2.5} />
+            <ArrowLeft
+              size={20}
+              color="rgba(255,255,255,0.9)"
+              strokeWidth={2.5}
+            />
           </TouchableOpacity>
 
           <View style={styles.audioTabPill}>
-            <View style={[styles.audioTabBtn, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
+            <View
+              style={[
+                styles.audioTabBtn,
+                { backgroundColor: 'rgba(255,255,255,0.95)' },
+              ]}
+            >
               <Headphones size={13} color="#111" />
-              <Text style={[styles.audioTabText, { fontFamily: FONTS.semibold, color: '#111' }]}>Listen</Text>
+              <Text
+                style={[
+                  styles.audioTabText,
+                  { fontFamily: FONTS.semibold, color: '#111' },
+                ]}
+              >
+                Listen
+              </Text>
             </View>
             <TouchableOpacity
-              onPress={() => { hapticFeedback.light(); onTabChange('text'); }}
+              onPress={() => {
+                hapticFeedback.light();
+                onTabChange('text');
+              }}
               style={styles.audioTabBtn}
             >
               <BookMarked size={13} color="rgba(255,255,255,0.7)" />
-              <Text style={[styles.audioTabText, { fontFamily: FONTS.semibold, color: 'rgba(255,255,255,0.7)' }]}>Read</Text>
+              <Text
+                style={[
+                  styles.audioTabText,
+                  {
+                    fontFamily: FONTS.semibold,
+                    color: 'rgba(255,255,255,0.7)',
+                  },
+                ]}
+              >
+                Read
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -65,8 +100,16 @@ export function PlaybackHeader({
   }
 
   return (
-    <SafeAreaView edges={['top']} style={{ backgroundColor: colors.cardBackground }}>
-      <View style={[styles.readNavBar, { borderBottomColor: colors.text.light + '22' }]}>
+    <SafeAreaView
+      edges={['top']}
+      style={{ backgroundColor: colors.cardBackground }}
+    >
+      <View
+        style={[
+          styles.readNavBar,
+          { borderBottomColor: colors.text.light + '22' },
+        ]}
+      >
         <TouchableOpacity onPress={onBack} style={styles.readNavBtn}>
           <ArrowLeft size={20} color={colors.text.primary} strokeWidth={2.5} />
         </TouchableOpacity>
@@ -76,27 +119,51 @@ export function PlaybackHeader({
             text={title}
             style={[styles.readNavTitle, { color: colors.text.primary }]}
           />
-          <View style={[styles.readNavAccent, { backgroundColor: accentColor }]} />
+          <View
+            style={[styles.readNavAccent, { backgroundColor: accentColor }]}
+          />
         </View>
 
         <View style={styles.readNavRight}>
           <TouchableOpacity
-            onPress={() => { hapticFeedback.light(); onTabChange('audio'); }}
-            style={[styles.readNavChip, { backgroundColor: accentColor + '18', borderColor: accentColor + '40' }]}
+            onPress={() => {
+              hapticFeedback.light();
+              onTabChange('audio');
+            }}
+            style={[
+              styles.readNavChip,
+              {
+                backgroundColor: accentColor + '18',
+                borderColor: accentColor + '40',
+              },
+            ]}
           >
             <Headphones size={13} color={accentColor} />
-            <Text style={{ color: accentColor, fontFamily: FONTS.semibold, fontSize: 11 }}>Audio</Text>
+            <Text
+              style={{
+                color: accentColor,
+                fontFamily: FONTS.semibold,
+                fontSize: 11,
+              }}
+            >
+              Audio
+            </Text>
           </TouchableOpacity>
-          
+
           {showSettingsBtn && (
             <TouchableOpacity
               onPress={onToggleSettings}
-              style={[styles.readNavIconBtn, isSettingsOpen && { backgroundColor: colors.text.primary + '10' }]}
+              style={[
+                styles.readNavIconBtn,
+                isSettingsOpen && {
+                  backgroundColor: colors.text.primary + '10',
+                },
+              ]}
             >
               <Type size={18} color={colors.text.secondary} />
             </TouchableOpacity>
           )}
-          
+
           <TouchableOpacity onPress={onShare} style={styles.readNavIconBtn}>
             <Share2 size={18} color={colors.text.secondary} />
           </TouchableOpacity>

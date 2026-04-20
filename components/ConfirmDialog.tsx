@@ -1,4 +1,10 @@
-import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SPACING } from '@/constants/theme';
+import {
+  BORDER_RADIUS,
+  COLORS,
+  FONT_SIZES,
+  FONT_WEIGHTS,
+  SPACING,
+} from '@/constants/theme';
 import { AlertTriangle } from 'lucide-react-native';
 import {
   Modal,
@@ -31,14 +37,23 @@ export const ConfirmDialog = ({
   destructive = false,
 }: Readonly<ConfirmDialogProps>) => {
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+    >
       <TouchableWithoutFeedback onPress={onCancel}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <View style={styles.dialog}>
               {destructive && (
                 <View style={styles.iconContainer}>
-                  <AlertTriangle size={48} color={COLORS.error} strokeWidth={1.5} />
+                  <AlertTriangle
+                    size={48}
+                    color={COLORS.error}
+                    strokeWidth={1.5}
+                  />
                 </View>
               )}
 
@@ -49,7 +64,8 @@ export const ConfirmDialog = ({
                 <TouchableOpacity
                   style={[styles.button, styles.cancelButton]}
                   onPress={onCancel}
-                  activeOpacity={0.8}>
+                  activeOpacity={0.8}
+                >
                   <Text style={styles.cancelButtonText}>{cancelText}</Text>
                 </TouchableOpacity>
 
@@ -60,7 +76,8 @@ export const ConfirmDialog = ({
                     destructive && styles.destructiveButton,
                   ]}
                   onPress={onConfirm}
-                  activeOpacity={0.8}>
+                  activeOpacity={0.8}
+                >
                   <Text style={styles.confirmButtonText}>{confirmText}</Text>
                 </TouchableOpacity>
               </View>

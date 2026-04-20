@@ -1,4 +1,4 @@
-import { COLORS,TYPOGRAPHY } from '@/constants/theme';
+import { COLORS, TYPOGRAPHY } from '@/constants/theme';
 import React from 'react';
 import { Text, TextStyle } from 'react-native';
 
@@ -19,7 +19,14 @@ type TypographyVariant =
   | 'label'
   | 'labelLarge';
 
-type ColorVariant = 'primary' | 'secondary' | 'light' | 'inverse' | 'error' | 'success' | 'warning';
+type ColorVariant =
+  | 'primary'
+  | 'secondary'
+  | 'light'
+  | 'inverse'
+  | 'error'
+  | 'success'
+  | 'warning';
 
 interface TypographyProps {
   variant?: TypographyVariant;
@@ -76,7 +83,10 @@ export const Typography: React.FC<TypographyProps> = ({
     <Text
       style={[textStyle, style]}
       numberOfLines={numberOfLines}
-      accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)}
+      accessibilityLabel={
+        accessibilityLabel ||
+        (typeof children === 'string' ? children : undefined)
+      }
       accessibilityRole={accessRole}
       testID={testID}
     >

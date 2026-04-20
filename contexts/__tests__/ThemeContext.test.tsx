@@ -2,7 +2,11 @@
  * Tests for ThemeContext — getThemeById, APP_ICONS, and theme constants
  * Includes both happy-path and edge-case/error tests.
  */
-import { COLOR_SCHEMES, DEFAULT_THEME, getThemeById } from '@/constants/themeSchemes';
+import {
+  COLOR_SCHEMES,
+  DEFAULT_THEME,
+  getThemeById,
+} from '@/constants/themeSchemes';
 import { APP_ICONS } from '../ThemeContext';
 
 describe('getThemeById', () => {
@@ -78,7 +82,7 @@ describe('COLOR_SCHEMES', () => {
   });
 
   it('has unique IDs across all schemes', () => {
-    const ids = COLOR_SCHEMES.map(s => s.id);
+    const ids = COLOR_SCHEMES.map((s) => s.id);
     const uniqueIds = new Set(ids);
     expect(uniqueIds.size).toBe(ids.length);
   });
@@ -112,7 +116,7 @@ describe('APP_ICONS', () => {
   });
 
   it('has unique IDs', () => {
-    const ids = APP_ICONS.map(i => i.id);
+    const ids = APP_ICONS.map((i) => i.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 

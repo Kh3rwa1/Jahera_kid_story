@@ -1,13 +1,13 @@
-import { BORDER_RADIUS,COLORS,SHADOWS,SPACING } from '@/constants/theme';
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Pressable, View, ViewStyle } from 'react-native';
-import Animated,{
-useAnimatedStyle,
-useSharedValue,
-withSpring,
-withTiming,
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -17,7 +17,19 @@ interface PremiumCardProps {
   gradient?: readonly [string, string, ...string[]];
   onPress?: () => void;
   style?: ViewStyle;
-  shadow?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'colored' | 'coloredLight' | 'purple' | 'blue' | 'green';
+  shadow?:
+    | 'none'
+    | 'xs'
+    | 'sm'
+    | 'md'
+    | 'lg'
+    | 'xl'
+    | 'xxl'
+    | 'colored'
+    | 'coloredLight'
+    | 'purple'
+    | 'blue'
+    | 'green';
   padding?: number;
   animated?: boolean;
   accessibilityLabel?: string;

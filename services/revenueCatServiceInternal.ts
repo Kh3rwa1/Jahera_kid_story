@@ -94,24 +94,27 @@ export const revenueCatService = {
   async configure(userId?: string): Promise<void> {
     const p = Purchases; // Capture to local variable for closure safety
     if (Platform.OS === 'web' || !p) return;
-    
+
     const apiKey = getApiKey();
     if (!apiKey) return;
 
     try {
       // Secondary guard for internal Purchases state
       if (!p) return;
-      
+
       const isConfiguredFunc = p.isConfigured;
-      const alreadySet = typeof isConfiguredFunc === 'function' 
-        ? await isConfiguredFunc.call(p)
-        : _isConfigured;
-      
+      const alreadySet =
+        typeof isConfiguredFunc === 'function'
+          ? await isConfiguredFunc.call(p)
+          : _isConfigured;
+
       if (!alreadySet && p.configure) {
         // Use a timeout to avoid blocking the app indefinitely if the bridge hangs
         await Promise.race([
           p.configure({ apiKey }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('RC_TIMEOUT')), 3000))
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('RC_TIMEOUT')), 3000),
+          ),
         ]).catch(() => {
           logger.debug('[RevenueCat] configure timed out');
         });
@@ -151,7 +154,13 @@ export const revenueCatService = {
   },
 
   async getOfferings(): Promise<RCOffering> {
-    const empty: RCOffering = { weekly: null, monthly: null, yearly: null, family: null, raw: null };
+    const empty: RCOffering = {
+      weekly: null,
+      monthly: null,
+      yearly: null,
+      family: null,
+      raw: null,
+    };
     const p = Purchases;
     if (Platform.OS === 'web' || !p || !_isConfigured) return empty;
 
@@ -161,8 +170,10 @@ export const revenueCatService = {
       if (!current) return empty;
 
       const findPackage = (id: string) =>
-        current.availablePackages?.find((pkg: any) =>
-          pkg.packageType === id || pkg.identifier?.toLowerCase().includes(id.toLowerCase())
+        current.availablePackages?.find(
+          (pkg: any) =>
+            pkg.packageType === id ||
+            pkg.identifier?.toLowerCase().includes(id.toLowerCase()),
         ) ?? null;
 
       return {
@@ -178,7 +189,9 @@ export const revenueCatService = {
     }
   },
 
-  async purchasePackage(rcPackage: any): Promise<{ success: boolean; plan: PlanType; cancelled: boolean }> {
+  async purchasePackage(
+    rcPackage: any,
+  ): Promise<{ success: boolean; plan: PlanType; cancelled: boolean }> {
     const p = Purchases;
     if (Platform.OS === 'web' || !p || !rcPackage || !_isConfigured) {
       return { success: false, plan: 'free', cancelled: false };
@@ -198,7 +211,12 @@ export const revenueCatService = {
   },
 
   async presentPaywall(offering?: any): Promise<RCPaywallResult> {
-    const empty: RCPaywallResult = { purchased: false, restored: false, cancelled: true, plan: 'free' };
+    const empty: RCPaywallResult = {
+      purchased: false,
+      restored: false,
+      cancelled: true,
+      plan: 'free',
+    };
     const rui = RevenueCatUI;
     const p = Purchases;
     if (Platform.OS === 'web' || !rui) return empty;
@@ -208,7 +226,7 @@ export const revenueCatService = {
       const result = await rui.presentPaywall(params);
       const purchased = result === 'PURCHASED';
       const restored = result === 'RESTORED';
-      
+
       let customerInfo = null;
       if ((purchased || restored) && p && _isConfigured && p.getCustomerInfo) {
         customerInfo = await p.getCustomerInfo();
@@ -222,8 +240,15 @@ export const revenueCatService = {
     }
   },
 
-  async presentPaywallIfNeeded(entitlementId: string): Promise<RCPaywallResult> {
-    const empty: RCPaywallResult = { purchased: false, restored: false, cancelled: true, plan: 'free' };
+  async presentPaywallIfNeeded(
+    entitlementId: string,
+  ): Promise<RCPaywallResult> {
+    const empty: RCPaywallResult = {
+      purchased: false,
+      restored: false,
+      cancelled: true,
+      plan: 'free',
+    };
     const rui = RevenueCatUI;
     const p = Purchases;
     if (Platform.OS === 'web' || !rui) return empty;
@@ -235,21 +260,33 @@ export const revenueCatService = {
       const purchased = result === 'PURCHASED';
       const restored = result === 'RESTORED';
       const notRequired = result === 'NOT_PRESENTED';
-      
+
       let customerInfo = null;
-      if (p && _isConfigured && (purchased || restored || notRequired) && p.getCustomerInfo) {
+      if (
+        p &&
+        _isConfigured &&
+        (purchased || restored || notRequired) &&
+        p.getCustomerInfo
+      ) {
         customerInfo = await p.getCustomerInfo();
       }
 
       const plan = customerInfo ? extractPlan(customerInfo) : 'free';
-      return { purchased, restored, cancelled: !purchased && !restored && !notRequired, plan };
+      return {
+        purchased,
+        restored,
+        cancelled: !purchased && !restored && !notRequired,
+        plan,
+      };
     } catch (err) {
       logger.debug('[RevenueCat] presentPaywallIfNeeded exception');
       return empty;
     }
   },
 
-  async presentCustomerCenter(onRestored?: (plan: PlanType) => void): Promise<void> {
+  async presentCustomerCenter(
+    onRestored?: (plan: PlanType) => void,
+  ): Promise<void> {
     const rui = RevenueCatUI;
     if (Platform.OS === 'web' || !rui) return;
 
@@ -269,9 +306,17 @@ export const revenueCatService = {
     }
   },
 
-  addCustomerInfoListener(callback: (info: RCCustomerInfo) => void): () => void {
+  addCustomerInfoListener(
+    callback: (info: RCCustomerInfo) => void,
+  ): () => void {
     const p = Purchases;
-    if (Platform.OS === 'web' || !p || !_isConfigured || !p.addCustomerInfoUpdateListener) return () => {};
+    if (
+      Platform.OS === 'web' ||
+      !p ||
+      !_isConfigured ||
+      !p.addCustomerInfoUpdateListener
+    )
+      return () => {};
 
     try {
       const listener = (customerInfo: any) => {
@@ -282,7 +327,7 @@ export const revenueCatService = {
           expiresAt: extractExpiry(customerInfo),
         });
       };
-      
+
       p.addCustomerInfoUpdateListener(listener);
       return () => {
         try {
@@ -298,14 +343,22 @@ export const revenueCatService = {
   },
 
   async restorePurchases(): Promise<RCCustomerInfo> {
-    const empty: RCCustomerInfo = { plan: 'free', isActive: false, expiresAt: null };
+    const empty: RCCustomerInfo = {
+      plan: 'free',
+      isActive: false,
+      expiresAt: null,
+    };
     const p = Purchases;
     if (Platform.OS === 'web' || !p || !_isConfigured) return empty;
 
     try {
       const customerInfo = await p.restorePurchases();
       const plan = extractPlan(customerInfo);
-      return { plan, isActive: plan !== 'free', expiresAt: extractExpiry(customerInfo) };
+      return {
+        plan,
+        isActive: plan !== 'free',
+        expiresAt: extractExpiry(customerInfo),
+      };
     } catch (err) {
       logger.debug('[RevenueCat] restorePurchases failed');
       return empty;
@@ -313,14 +366,23 @@ export const revenueCatService = {
   },
 
   async getCustomerInfo(): Promise<RCCustomerInfo> {
-    const empty: RCCustomerInfo = { plan: 'free', isActive: false, expiresAt: null };
+    const empty: RCCustomerInfo = {
+      plan: 'free',
+      isActive: false,
+      expiresAt: null,
+    };
     const p = Purchases;
-    if (Platform.OS === 'web' || !p || !_isConfigured || !p.getCustomerInfo) return empty;
+    if (Platform.OS === 'web' || !p || !_isConfigured || !p.getCustomerInfo)
+      return empty;
 
     try {
       const customerInfo = await p.getCustomerInfo();
       const plan = extractPlan(customerInfo);
-      return { plan, isActive: plan !== 'free', expiresAt: extractExpiry(customerInfo) };
+      return {
+        plan,
+        isActive: plan !== 'free',
+        expiresAt: extractExpiry(customerInfo),
+      };
     } catch (err) {
       logger.debug('[RevenueCat] getCustomerInfo exception');
       return empty;

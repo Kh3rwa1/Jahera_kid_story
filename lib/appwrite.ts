@@ -1,32 +1,38 @@
 import { Platform } from 'react-native';
-import { Account,Client,Databases,Functions,Storage } from 'react-native-appwrite';
+import {
+  Account,
+  Client,
+  Databases,
+  Functions,
+  Storage,
+} from 'react-native-appwrite';
 
 const REQUIRED_APPWRITE_VARS = [
   'EXPO_PUBLIC_APPWRITE_ENDPOINT',
   'EXPO_PUBLIC_APPWRITE_PROJECT_ID',
 ] as const;
 
-const missingRequiredVars = REQUIRED_APPWRITE_VARS.filter((name) => !process.env[name]);
+const missingRequiredVars = REQUIRED_APPWRITE_VARS.filter(
+  (name) => !process.env[name],
+);
 
 if (missingRequiredVars.length > 0) {
   console.error(
     `[Jahera] Missing required environment variables: ${missingRequiredVars.join(', ')}. ` +
-      'Check your .env and EAS configuration.'
+      'Check your .env and EAS configuration.',
   );
 }
 
 const ENDPOINT = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT as string;
 const PROJECT_ID = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID as string;
 
-const clientBuilder = new Client()
-  .setEndpoint(ENDPOINT)
-  .setProject(PROJECT_ID);
+const clientBuilder = new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID);
 
 if (Platform.OS !== 'web') {
   const platform = process.env.EXPO_PUBLIC_APPWRITE_PLATFORM;
   if (!platform) {
     throw new Error(
-      '[Jahera] EXPO_PUBLIC_APPWRITE_PLATFORM must be set for native builds. Set it to your app package id (example: com.hindi.harp) in .env, then rebuild the native app.'
+      '[Jahera] EXPO_PUBLIC_APPWRITE_PLATFORM must be set for native builds. Set it to your app package id (example: com.hindi.harp) in .env, then rebuild the native app.',
     );
   }
   clientBuilder.setPlatform(platform);

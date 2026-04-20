@@ -1,4 +1,4 @@
-import { act,renderHook } from '@testing-library/react-native';
+import { act, renderHook } from '@testing-library/react-native';
 import { usePlayback } from '../usePlayback';
 
 // Mock dependencies
@@ -11,7 +11,11 @@ jest.mock('@/contexts/AudioContext', () => ({
 }));
 
 jest.mock('@/services/database', () => ({
-  storyService: { getById: jest.fn().mockResolvedValue({ id: 'story-123', title: 'Test Story' }) },
+  storyService: {
+    getById: jest
+      .fn()
+      .mockResolvedValue({ id: 'story-123', title: 'Test Story' }),
+  },
   quizService: { getQuestionsByStoryId: jest.fn().mockResolvedValue([]) },
 }));
 
@@ -55,7 +59,7 @@ jest.mock('@/utils/logger', () => ({
 describe('usePlayback hook', () => {
   it('initializes with default values and loads story', async () => {
     const { result } = renderHook(() => usePlayback());
-    
+
     // Initial state before loadStory completes
     expect(result.current.isLoading).toBe(true);
     expect(result.current.showCinematicIntro).toBe(true);
@@ -70,7 +74,7 @@ describe('usePlayback hook', () => {
 
   it('toggles tab mode correctly', () => {
     const { result } = renderHook(() => usePlayback());
-    
+
     act(() => {
       result.current.setTab('text');
     });
@@ -80,12 +84,12 @@ describe('usePlayback hook', () => {
 
   it('dismisses cinematic intro', () => {
     const { result } = renderHook(() => usePlayback());
-    
+
     act(() => {
       result.current.dismissCinematicIntro();
     });
 
-    // The state change happens after a timeout in the hook, 
+    // The state change happens after a timeout in the hook,
     // but the function call itself triggers reanimated
     expect(result.current.dismissCinematicIntro).toBeDefined();
   });

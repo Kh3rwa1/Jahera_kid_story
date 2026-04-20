@@ -24,7 +24,7 @@ function escapeRegExp(str: string): string {
 export function personalizeStory(
   story: Story,
   currentKidName: string,
-  currentCity?: string | null
+  currentCity?: string | null,
 ): Story {
   if (!currentKidName) return story;
 
@@ -36,8 +36,8 @@ export function personalizeStory(
   // Build a regex that matches the original name (case-insensitive)
   const nameRegex = new RegExp(escapeRegExp(ORIGINAL_KID_NAME), 'gi');
 
-  let personalizedTitle = story.title.replace(nameRegex, currentKidName);
-  let personalizedContent = story.content.replace(nameRegex, currentKidName);
+  const personalizedTitle = story.title.replace(nameRegex, currentKidName);
+  const personalizedContent = story.content.replace(nameRegex, currentKidName);
 
   return {
     ...story,
@@ -52,7 +52,7 @@ export function personalizeStory(
 export function personalizeStories(
   stories: Story[],
   currentKidName: string,
-  currentCity?: string | null
+  currentCity?: string | null,
 ): Story[] {
-  return stories.map(s => personalizeStory(s, currentKidName, currentCity));
+  return stories.map((s) => personalizeStory(s, currentKidName, currentCity));
 }

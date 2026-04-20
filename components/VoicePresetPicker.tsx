@@ -34,24 +34,37 @@ type VoicePresetLike = {
   isPremium?: boolean;
 };
 
-export function VoicePresetPicker({ selectedVoice, onSelect, isPremium, languageCode }: Readonly<VoicePresetPickerProps>) {
+export function VoicePresetPicker({
+  selectedVoice,
+  onSelect,
+  isPremium,
+  languageCode,
+}: Readonly<VoicePresetPickerProps>) {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
   const { currentTheme } = useTheme();
   const colors = currentTheme.colors;
   const flatListRef = useRef<FlatList>(null);
 
-  const styles = useMemo(() => createStyles(isTablet, colors), [isTablet, colors]);
+  const styles = useMemo(
+    () => createStyles(isTablet, colors),
+    [isTablet, colors],
+  );
 
   const voices = useMemo(() => {
     const presets = VOICE_PRESETS as VoicePresetLike[];
-    const languageFiltered = presets.filter((preset) => preset.languages.includes(languageCode));
+    const languageFiltered = presets.filter((preset) =>
+      preset.languages.includes(languageCode),
+    );
     return languageFiltered.length > 0 ? languageFiltered : presets;
   }, [languageCode]);
 
   // Infinite Buffer logic
   const LOOP_FACTOR = 3;
-  const loopedData = useMemo(() => Array(LOOP_FACTOR).fill(voices).flat(), [voices]);
+  const loopedData = useMemo(
+    () => Array(LOOP_FACTOR).fill(voices).flat(),
+    [voices],
+  );
   const cardWidth = isTablet ? 200 : 160;
   const cardGap = isTablet ? 16 : 12;
   const itemWidth = useMemo(() => cardWidth + cardGap, [cardWidth, cardGap]);
@@ -70,60 +83,99 @@ export function VoicePresetPicker({ selectedVoice, onSelect, isPremium, language
   const handleInfiniteScroll = (offset: number) => {
     const totalContentWidth = voices.length * itemWidth;
     if (offset <= 0 || offset >= totalContentWidth * 2) {
-      flatListRef.current?.scrollToOffset({ offset: totalContentWidth, animated: false });
+      flatListRef.current?.scrollToOffset({
+        offset: totalContentWidth,
+        animated: false,
+      });
     }
   };
 
-  const handleCardPress = useCallback(async (preset: VoicePresetLike) => {
-    const locked = (preset.premium ?? preset.isPremium ?? false) && !isPremium;
-    if (locked) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      return;
-    }
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const nextVoiceId = selectedVoice === preset.id ? null : preset.id;
-    onSelect(nextVoiceId);
-    if (nextVoiceId) {
-      analytics.trackVoicePresetSelected(preset.id, preset.label, Boolean(preset.premium ?? preset.isPremium ?? false));
-    }
-  }, [isPremium, selectedVoice, onSelect]);
+  const handleCardPress = useCallback(
+    async (preset: VoicePresetLike) => {
+      const locked =
+        (preset.premium ?? preset.isPremium ?? false) && !isPremium;
+      if (locked) {
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Warning,
+        );
+        return;
+      }
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const nextVoiceId = selectedVoice === preset.id ? null : preset.id;
+      onSelect(nextVoiceId);
+      if (nextVoiceId) {
+        analytics.trackVoicePresetSelected(
+          preset.id,
+          preset.label,
+          Boolean(preset.premium ?? preset.isPremium ?? false),
+        );
+      }
+    },
+    [isPremium, selectedVoice, onSelect],
+  );
 
-  const renderItem = useCallback(({ item: preset, index }: { item: VoicePresetLike; index: number }) => {
-    const locked = (preset.premium ?? preset.isPremium ?? false) && !isPremium;
-    const selected = selectedVoice === preset.id;
+  const renderItem = useCallback(
+    ({ item: preset, index }: { item: VoicePresetLike; index: number }) => {
+      const locked =
+        (preset.premium ?? preset.isPremium ?? false) && !isPremium;
+      const selected = selectedVoice === preset.id;
 
-    return (
-      <View style={{ marginRight: cardGap }}>
-        <Animated.View entering={FadeInRight.delay(80 + (index % voices.length) * 60).springify().damping(18).stiffness(90)}>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => void handleCardPress(preset)}
-            style={[styles.card, selected && styles.cardSelected, locked && styles.cardLocked]}
+      return (
+        <View style={{ marginRight: cardGap }}>
+          <Animated.View
+            entering={FadeInRight.delay(80 + (index % voices.length) * 60)
+              .springify()
+              .damping(18)
+              .stiffness(90)}
           >
-            {selected && (
-              <LinearGradient
-                colors={[colors.primary + '22', colors.primary + '08']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={styles.selectedOverlay}
-              />
-            )}
-            {locked && (
-              <View style={styles.lockedBadge}>
-                <Crown size={isTablet ? 18 : 14} color="#FFD700" />
-                <Lock size={isTablet ? 14 : 12} color={colors.text.secondary} />
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => void handleCardPress(preset)}
+              style={[
+                styles.card,
+                selected && styles.cardSelected,
+                locked && styles.cardLocked,
+              ]}
+            >
+              {selected && (
+                <LinearGradient
+                  colors={[colors.primary + '22', colors.primary + '08']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.selectedOverlay}
+                />
+              )}
+              {locked && (
+                <View style={styles.lockedBadge}>
+                  <Crown size={isTablet ? 18 : 14} color="#FFD700" />
+                  <Lock
+                    size={isTablet ? 14 : 12}
+                    color={colors.text.secondary}
+                  />
+                </View>
+              )}
+              <Text style={styles.emoji}>{preset.emoji}</Text>
+              <Text style={styles.label}>{preset.label}</Text>
+              <Text style={styles.description}>{preset.description}</Text>
+              <View style={styles.vibePill}>
+                <Text style={styles.vibeText}>{preset.vibe}</Text>
               </View>
-            )}
-            <Text style={styles.emoji}>{preset.emoji}</Text>
-            <Text style={styles.label}>{preset.label}</Text>
-            <Text style={styles.description}>{preset.description}</Text>
-            <View style={styles.vibePill}>
-              <Text style={styles.vibeText}>{preset.vibe}</Text>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
-    );
-  }, [colors, voices.length, selectedVoice, isPremium, isTablet, cardGap, styles, handleCardPress]);
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      );
+    },
+    [
+      colors,
+      voices.length,
+      selectedVoice,
+      isPremium,
+      isTablet,
+      cardGap,
+      styles,
+      handleCardPress,
+    ],
+  );
 
   return (
     <View style={[styles.section, { paddingTop: SPACING.xs }]}>
@@ -144,8 +196,13 @@ export function VoicePresetPicker({ selectedVoice, onSelect, isPremium, language
           maxToRenderPerBatch={5}
         />
       ) : (
-        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No voices available for this language yet</Text>
+        <Animated.View
+          entering={FadeInDown.delay(200).springify()}
+          style={styles.emptyContainer}
+        >
+          <Text style={styles.emptyText}>
+            No voices available for this language yet
+          </Text>
         </Animated.View>
       )}
     </View>

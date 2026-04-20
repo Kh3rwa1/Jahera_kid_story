@@ -1,9 +1,15 @@
 import { FONTS } from '@/constants/theme';
-import { useAudio,useAudioProgress } from '@/contexts/AudioContext';
+import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
 import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BookOpen,Pause,Play,SkipBack,SkipForward } from 'lucide-react-native';
+import {
+  BookOpen,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+} from 'lucide-react-native';
 import { useEffect } from 'react';
 import {
   ActivityIndicator,
@@ -30,11 +36,12 @@ interface AudioControlsProps {
   colors: ThemeColors;
 }
 
-export function AudioControls({ accentColor, colors }: Readonly<AudioControlsProps>) {
-  const { 
-    isPlaying, isBuffering, isDeviceTTS, sound,
-    playPause, seek 
-  } = useAudio();
+export function AudioControls({
+  accentColor,
+  colors,
+}: Readonly<AudioControlsProps>) {
+  const { isPlaying, isBuffering, isDeviceTTS, sound, playPause, seek } =
+    useAudio();
   const { position, duration } = useAudioProgress();
 
   const vinylRotation = useSharedValue(0);
@@ -51,28 +58,62 @@ export function AudioControls({ accentColor, colors }: Readonly<AudioControlsPro
   useEffect(() => {
     if (isPlaying) {
       vinylRotation.value = withRepeat(
-        withTiming(360, { duration: 8000, easing: Easing.linear }), -1, false
+        withTiming(360, { duration: 8000, easing: Easing.linear }),
+        -1,
+        false,
       );
       vinylElevation.value = withSpring(1, { damping: 12 });
-      [waveAnim1, waveAnim2, waveAnim3, waveAnim4, waveAnim5, waveAnim6].forEach((anim, i) => {
+      [
+        waveAnim1,
+        waveAnim2,
+        waveAnim3,
+        waveAnim4,
+        waveAnim5,
+        waveAnim6,
+      ].forEach((anim, i) => {
         const heights = [0.4, 0.9, 0.6, 1, 0.5, 0.75];
         const durations = [320, 420, 380, 460, 340, 400];
         anim.value = withRepeat(
           withSequence(
-            withTiming(heights[i], { duration: durations[i], easing: Easing.inOut(Easing.sin) }),
-            withTiming(0.15, { duration: durations[i], easing: Easing.inOut(Easing.sin) })
-          ), -1, true
+            withTiming(heights[i], {
+              duration: durations[i],
+              easing: Easing.inOut(Easing.sin),
+            }),
+            withTiming(0.15, {
+              duration: durations[i],
+              easing: Easing.inOut(Easing.sin),
+            }),
+          ),
+          -1,
+          true,
         );
       });
     } else {
       cancelAnimation(vinylRotation);
       vinylElevation.value = withSpring(0, { damping: 12 });
-      [waveAnim1, waveAnim2, waveAnim3, waveAnim4, waveAnim5, waveAnim6].forEach(anim => {
+      [
+        waveAnim1,
+        waveAnim2,
+        waveAnim3,
+        waveAnim4,
+        waveAnim5,
+        waveAnim6,
+      ].forEach((anim) => {
         cancelAnimation(anim);
         anim.value = withTiming(0.3, { duration: 400 });
       });
     }
-  }, [isPlaying, vinylRotation, vinylElevation, waveAnim1, waveAnim2, waveAnim3, waveAnim4, waveAnim5, waveAnim6]);
+  }, [
+    isPlaying,
+    vinylRotation,
+    vinylElevation,
+    waveAnim1,
+    waveAnim2,
+    waveAnim3,
+    waveAnim4,
+    waveAnim5,
+    waveAnim6,
+  ]);
 
   const vinylStyle = useAnimatedStyle(() => ({
     transform: [
@@ -82,7 +123,10 @@ export function AudioControls({ accentColor, colors }: Readonly<AudioControlsPro
   }));
 
   const handlePlayPause = () => {
-    playScale.value = withSequence(withSpring(0.88, { damping: 8 }), withSpring(1, { damping: 10 }));
+    playScale.value = withSequence(
+      withSpring(0.88, { damping: 8 }),
+      withSpring(1, { damping: 10 }),
+    );
     playPause();
   };
 
@@ -104,12 +148,27 @@ export function AudioControls({ accentColor, colors }: Readonly<AudioControlsPro
           <LinearGradient
             colors={[accentColor + '50', accentColor + '20', 'rgba(0,0,0,0.4)']}
             style={styles.albumInner}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           >
-            <View style={[styles.albumDecorRing, { borderColor: accentColor + '25' }]} />
+            <View
+              style={[
+                styles.albumDecorRing,
+                { borderColor: accentColor + '25' },
+              ]}
+            />
             <View style={styles.albumRing}>
-              <View style={[styles.albumCore, { backgroundColor: accentColor + '44' }]}>
-                <BookOpen size={28} color="rgba(255,255,255,0.95)" strokeWidth={1.5} />
+              <View
+                style={[
+                  styles.albumCore,
+                  { backgroundColor: accentColor + '44' },
+                ]}
+              >
+                <BookOpen
+                  size={28}
+                  color="rgba(255,255,255,0.95)"
+                  strokeWidth={1.5}
+                />
               </View>
             </View>
           </LinearGradient>
@@ -117,9 +176,20 @@ export function AudioControls({ accentColor, colors }: Readonly<AudioControlsPro
       </View>
 
       <View style={styles.controlsRow}>
-        <TouchableOpacity onPress={handleSkipBack} disabled={!sound || isDeviceTTS} style={styles.skipBtn}>
+        <TouchableOpacity
+          onPress={handleSkipBack}
+          disabled={!sound || isDeviceTTS}
+          style={styles.skipBtn}
+        >
           <SkipBack size={26} color={colors.text.primary} strokeWidth={2} />
-          <Text style={[styles.skipSec, { color: colors.text.secondary, fontFamily: FONTS.bold }]}>10</Text>
+          <Text
+            style={[
+              styles.skipSec,
+              { color: colors.text.secondary, fontFamily: FONTS.bold },
+            ]}
+          >
+            10
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -128,7 +198,11 @@ export function AudioControls({ accentColor, colors }: Readonly<AudioControlsPro
           style={[styles.playBtnWrap, { shadowColor: accentColor }]}
         >
           <LinearGradient
-            colors={sound || isDeviceTTS ? [accentColor, accentColor + 'CC'] : ['#888', '#666']}
+            colors={
+              sound || isDeviceTTS
+                ? [accentColor, accentColor + 'CC']
+                : ['#888', '#666']
+            }
             style={styles.playBtn}
           >
             {isBuffering ? (
@@ -136,14 +210,30 @@ export function AudioControls({ accentColor, colors }: Readonly<AudioControlsPro
             ) : isPlaying ? (
               <Pause size={32} color="#FFF" fill="#FFF" />
             ) : (
-              <Play size={32} color="#FFF" fill="#FFF" style={{ marginLeft: 3 }} />
+              <Play
+                size={32}
+                color="#FFF"
+                fill="#FFF"
+                style={{ marginLeft: 3 }}
+              />
             )}
           </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleSkipForward} disabled={!sound || isDeviceTTS} style={styles.skipBtn}>
+        <TouchableOpacity
+          onPress={handleSkipForward}
+          disabled={!sound || isDeviceTTS}
+          style={styles.skipBtn}
+        >
           <SkipForward size={26} color={colors.text.primary} strokeWidth={2} />
-          <Text style={[styles.skipSec, { color: colors.text.secondary, fontFamily: FONTS.bold }]}>15</Text>
+          <Text
+            style={[
+              styles.skipSec,
+              { color: colors.text.secondary, fontFamily: FONTS.bold },
+            ]}
+          >
+            15
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

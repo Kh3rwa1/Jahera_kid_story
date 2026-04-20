@@ -19,7 +19,10 @@ export function getRelativeTime(dateStr: string): string {
   const days = Math.floor(hrs / 24);
   if (days === 1) return 'Yesterday';
   if (days < 7) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return new Date(dateStr).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 export interface SeasonPalette {
@@ -35,7 +38,7 @@ export interface SeasonPalette {
 function darkenColor(hex: string, amount: number): string {
   // Remove hash if present
   const base = hex.replace('#', '');
-  
+
   // Convert to RGB
   let r = Number.parseInt(base.substring(0, 2), 16);
   let g = Number.parseInt(base.substring(2, 4), 16);
@@ -59,12 +62,12 @@ function darkenColor(hex: string, amount: number): string {
  * Modified for a premium 'Magic' aesthetic (3-stop gradients).
  */
 export function getSeasonPalette(
-  season: string | null | undefined, 
+  season: string | null | undefined,
   themePrimary?: string,
-  theme?: string | null
+  theme?: string | null,
 ): SeasonPalette {
   const base = themePrimary || '#0EA5E9';
-  
+
   // Create a 3-stop "Magic Gradient" derived from the theme primary
   // Step 1: Base (Theme Primary)
   // Step 2: Slightly shifted (12% darker)
@@ -73,18 +76,30 @@ export function getSeasonPalette(
     colors: [
       base,
       darkenColor(base, 0.12),
-      darkenColor(base, 0.24)
+      darkenColor(base, 0.24),
     ] as readonly [string, string, string],
     accent: darkenColor(base, 0.35),
-    emoji: '📖'
+    emoji: '📖',
   };
 
   // 1. Theme-based emoji mapping (Content Priority)
   const themeEmojis: Record<string, string> = {
-    adventure: '🗺️', fantasy: '🐉', space: '🚀', animals: '🦁',
-    ocean: '🌊', superheroes: '🦸‍♂️', nature: '🌿', science: '🔬',
-    exciting: '⚡', funny: '😄', calming: '🌙', educational: '📚',
-    mystery: '🕵️', music: '🎵', sports: '⚽', food: '🍎'
+    adventure: '🗺️',
+    fantasy: '🐉',
+    space: '🚀',
+    animals: '🦁',
+    ocean: '🌊',
+    superheroes: '🦸‍♂️',
+    nature: '🌿',
+    science: '🔬',
+    exciting: '⚡',
+    funny: '😄',
+    calming: '🌙',
+    educational: '📚',
+    mystery: '🕵️',
+    music: '🎵',
+    sports: '⚽',
+    food: '🍎',
   };
 
   const normalizedTheme = theme?.toLowerCase() || '';
@@ -95,11 +110,21 @@ export function getSeasonPalette(
 
   // 2. Fallback: Seasonal emoji
   switch (season?.toLowerCase()) {
-    case 'spring': palette.emoji = '🌸'; break;
-    case 'summer': palette.emoji = '☀️'; break;
-    case 'fall':   palette.emoji = '🍂'; break;
-    case 'winter': palette.emoji = '❄️'; break;
-    default:       palette.emoji = '📖'; break;
+    case 'spring':
+      palette.emoji = '🌸';
+      break;
+    case 'summer':
+      palette.emoji = '☀️';
+      break;
+    case 'fall':
+      palette.emoji = '🍂';
+      break;
+    case 'winter':
+      palette.emoji = '❄️';
+      break;
+    default:
+      palette.emoji = '📖';
+      break;
   }
 
   return palette;

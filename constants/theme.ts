@@ -37,12 +37,12 @@ export const SPACING = {
 
 export const BORDER_RADIUS = {
   xs: 8,
-  sm: 12,     // chips, badges, small pills
-  md: 16,     // buttons, inputs, search bars
-  lg: 20,     // small cards, thumbnails
-  xl: 26,     // medium cards, modals
-  xxl: 32,    // feature cards, story cards
-  xxxl: 40,   // hero sections, full-width banners
+  sm: 12, // chips, badges, small pills
+  md: 16, // buttons, inputs, search bars
+  lg: 20, // small cards, thumbnails
+  xl: 26, // medium cards, modals
+  xxl: 32, // feature cards, story cards
+  xxxl: 40, // hero sections, full-width banners
   round: 100,
   pill: 999,
 };
@@ -132,7 +132,7 @@ export function createShadows(primaryColor: string) {
     xl: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 16 },
-      shadowOpacity: 0.10,
+      shadowOpacity: 0.1,
       shadowRadius: 32,
       elevation: isAndroid ? 0 : 10,
     },
@@ -146,7 +146,7 @@ export function createShadows(primaryColor: string) {
     colored: {
       shadowColor: primaryColor,
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.20,
+      shadowOpacity: 0.2,
       shadowRadius: 16,
       elevation: isAndroid ? 0 : 8,
     },

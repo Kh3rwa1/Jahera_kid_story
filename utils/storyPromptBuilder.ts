@@ -1,7 +1,11 @@
 import { BEHAVIOR_GOALS } from '@/constants/behaviorGoals';
 import { ProfileWithRelations } from '@/types/database';
 import { StoryContext } from '@/utils/contextUtils';
-import { sanitizeCity, sanitizeFreeText, sanitizeName } from '@/utils/promptSanitizer';
+import {
+  sanitizeCity,
+  sanitizeFreeText,
+  sanitizeName,
+} from '@/utils/promptSanitizer';
 
 interface PromptOptions {
   theme?: string;
@@ -15,18 +19,22 @@ export function buildStorySystemPrompt(
   languageCode: string,
   context: StoryContext,
   _contextLocation: { city?: string | null } | null,
-  options?: PromptOptions
+  options?: PromptOptions,
 ): string {
   const kid = sanitizeName(profile.kid_name || 'Child');
-  const family = (profile.family_members || []).map(m => sanitizeName(m.name)).filter(Boolean);
-  const friends = (profile.friends || []).map(f => sanitizeName(f.name)).filter(Boolean);
+  const family = (profile.family_members || [])
+    .map((m) => sanitizeName(m.name))
+    .filter(Boolean);
+  const friends = (profile.friends || [])
+    .map((f) => sanitizeName(f.name))
+    .filter(Boolean);
   const city = sanitizeCity(profile.city || '');
   const theme = sanitizeFreeText(options?.theme || 'adventure');
   const mood = sanitizeFreeText(options?.mood || 'exciting');
-  const goal = BEHAVIOR_GOALS.find(g => g.id === options?.behaviorGoal);
+  const goal = BEHAVIOR_GOALS.find((g) => g.id === options?.behaviorGoal);
 
   return [
-    'You are a world-class children\'s storyteller writing safe, engaging adventure stories.',
+    "You are a world-class children's storyteller writing safe, engaging adventure stories.",
     `Child: ${kid}`,
     `Family members: ${family.length ? family.join(', ') : 'None provided'}`,
     `Friends: ${friends.length ? friends.join(', ') : 'None provided'}`,
@@ -39,5 +47,7 @@ export function buildStorySystemPrompt(
     goal
       ? `BEHAVIORAL LESSON (CRITICAL): ${goal.promptInstruction} The story MUST naturally weave this lesson into the narrative. Do NOT lecture — teach through the adventure.`
       : null,
-  ].filter(Boolean).join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 }

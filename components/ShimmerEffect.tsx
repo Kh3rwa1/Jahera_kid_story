@@ -1,13 +1,13 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React,{ useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
-import Animated,{
-Easing,
-interpolate,
-useAnimatedStyle,
-useSharedValue,
-withRepeat,
-withTiming,
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from 'react-native-reanimated';
 
 interface ShimmerEffectProps {
@@ -20,7 +20,11 @@ interface ShimmerEffectProps {
 export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
   width = '100%',
   height = '100%',
-  colors = ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.5)', 'rgba(255, 255, 255, 0)'],
+  colors = [
+    'rgba(255, 255, 255, 0)',
+    'rgba(255, 255, 255, 0.5)',
+    'rgba(255, 255, 255, 0)',
+  ],
   duration = 2000,
 }) => {
   const shimmerTranslate = useSharedValue(-1);
@@ -32,13 +36,17 @@ export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
         easing: Easing.linear,
       }),
       -1,
-      false
+      false,
     );
   }, [duration]);
 
   const shimmerStyle = useAnimatedStyle(() => {
     'worklet';
-    const translateX = interpolate(shimmerTranslate.value, [-1, 1], [-400, 400]);
+    const translateX = interpolate(
+      shimmerTranslate.value,
+      [-1, 1],
+      [-400, 400],
+    );
 
     return {
       transform: [{ translateX }],
@@ -46,13 +54,7 @@ export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
   });
 
   return (
-    <Animated.View
-      style={[
-        styles.shimmer,
-        shimmerStyle,
-      ]}
-      pointerEvents="none"
-    >
+    <Animated.View style={[styles.shimmer, shimmerStyle]} pointerEvents="none">
       <LinearGradient
         colors={colors}
         start={{ x: 0, y: 0 }}
