@@ -103,6 +103,7 @@ interface MeshBackgroundProps {
 export const MeshBackground: React.FC<MeshBackgroundProps> = React.memo(
   ({ primaryColor }) => {
     const isFocused = useIsFocused();
+    const { width, height } = useWindowDimensions();
 
     const orbs = useMemo<Orb[]>(
       () => [

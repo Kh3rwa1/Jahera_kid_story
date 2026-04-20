@@ -136,6 +136,7 @@ interface FloatingParticlesProps {
 export const FloatingParticles: React.FC<FloatingParticlesProps> = React.memo(
   ({ count = 5 }) => {
     const isFocused = useIsFocused();
+    const { width, height } = useWindowDimensions();
 
     const particles = React.useMemo<Particle[]>(() => {
       return Array.from({ length: count }, (_, i) => ({

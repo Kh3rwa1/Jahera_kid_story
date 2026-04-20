@@ -26,7 +26,11 @@ export function formatTime(ms: number) {
   return minutes + ':' + seconds.toString().padStart(2, '0');
 }
 
-export function PlaybackProgress({ accentColor, colors, isDeviceTTS }: Readonly<PlaybackProgressProps>) {
+export function PlaybackProgress({
+  accentColor,
+  colors,
+  isDeviceTTS,
+}: Readonly<PlaybackProgressProps>) {
   const { position, duration } = useAudioProgress();
   const { seek } = useAudio();
   const [isSeeking, setIsSeeking] = useState(false);
@@ -48,7 +52,8 @@ export function PlaybackProgress({ accentColor, colors, isDeviceTTS }: Readonly<
     trackWidthRef.current = e.nativeEvent.layout.width;
   }, []);
 
-  const clamp = (val: number, min: number, max: number) => Math.min(Math.max(val, min), max);
+  const clamp = (val: number, min: number, max: number) =>
+    Math.min(Math.max(val, min), max);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -81,7 +86,7 @@ export function PlaybackProgress({ accentColor, colors, isDeviceTTS }: Readonly<
       onPanResponderTerminate: () => {
         setIsSeeking(false);
       },
-    })
+    }),
   ).current;
 
   return (
@@ -91,11 +96,16 @@ export function PlaybackProgress({ accentColor, colors, isDeviceTTS }: Readonly<
         onLayout={onTrackLayout}
         {...panResponder.panHandlers}
       >
-        <View style={[styles.track, { backgroundColor: colors.text.light + '15' }]}>
+        <View
+          style={[styles.track, { backgroundColor: colors.text.light + '15' }]}
+        >
           <View
             style={[
               styles.filled,
-              { backgroundColor: accentColor, width: (displayProgress * 100) + '%' }
+              {
+                backgroundColor: accentColor,
+                width: (displayProgress * 100 + '%') as any,
+              },
             ]}
           />
         </View>
@@ -103,11 +113,11 @@ export function PlaybackProgress({ accentColor, colors, isDeviceTTS }: Readonly<
           style={[
             styles.thumb,
             {
-              left: (displayProgress * 100) + '%',
+              left: (displayProgress * 100 + '%') as any,
               backgroundColor: accentColor,
               borderColor: '#FFF',
               transform: [{ scale: isSeeking ? 1.3 : 1 }],
-            }
+            },
           ]}
         />
       </View>
