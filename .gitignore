@@ -50,3 +50,9 @@ credentials.json
 logs.txt
 build_log*.txt
 out.log
+
+# Logs
+*.log
+logs.txt
+build_log*.txt
+out.log
