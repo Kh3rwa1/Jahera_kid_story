@@ -28,7 +28,7 @@
         "EXPO_PUBLIC_APPWRITE_ENDPOINT": "https://sfo.cloud.appwrite.io/v1",
         "EXPO_PUBLIC_APPWRITE_PROJECT_ID": "69b5657c000d2c28a436",
         "EXPO_PUBLIC_APPWRITE_DATABASE_ID": "jahera_db",
-        "EXPO_PUBLIC_APPWRITE_PLATFORM": "com.hindi.harp"
+        "EXPO_PUBLIC_APPWRITE_PLATFORM": "com.celestial.spire"
       }
     },
     "production": {
@@ -41,11 +41,12 @@
         "EXPO_PUBLIC_APPWRITE_ENDPOINT": "https://sfo.cloud.appwrite.io/v1",
         "EXPO_PUBLIC_APPWRITE_PROJECT_ID": "69b5657c000d2c28a436",
         "EXPO_PUBLIC_APPWRITE_DATABASE_ID": "jahera_db",
-        "EXPO_PUBLIC_APPWRITE_PLATFORM": "com.hindi.harp"
+        "EXPO_PUBLIC_APPWRITE_PLATFORM": "com.celestial.spire"
       },
       "distribution": "store",
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "credentialsSource": "local"
       }
     },
     "production-store": {
@@ -55,7 +56,8 @@
         "buildConfiguration": "Release"
       },
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "credentialsSource": "local"
       }
     }
   },

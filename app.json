@@ -44,7 +44,7 @@
       }
     },
     "android": {
-      "package": "com.jahera.kidstory",
+      "package": "com.celestial.spire",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#FFF8E7"

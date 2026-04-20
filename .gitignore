@@ -42,3 +42,5 @@ android/
 .vscode/
 *.apk
 *.aab
+credentials/
+credentials.json
