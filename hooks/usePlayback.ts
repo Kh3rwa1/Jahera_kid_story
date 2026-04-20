@@ -6,6 +6,7 @@ import { logger } from '@/utils/logger';
 import { personalizeStory } from '@/utils/nameSubstitution';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { offlineStoryService } from '@/services/offlineStoryService';
 import { Easing, useSharedValue, withTiming } from 'react-native-reanimated';
 
 export type TabMode = 'audio' | 'text';
@@ -35,7 +36,22 @@ export function usePlayback() {
         return;
       }
 
-      const storyData = await storyService.getById(storyId);
+      let storyData = await storyService.getById(storyId);
+
+      // Fallback to offline cache if fetch fails or returns null
+      if (!storyData) {
+        const offline = await offlineStoryService.getOfflineStory(storyId);
+        if (offline) {
+          storyData = offline.story;
+          if (
+            offline.audioLocalUri &&
+            !offline.story.audio_url?.startsWith('device-tts://')
+          ) {
+            storyData = { ...storyData, audio_url: offline.audioLocalUri };
+          }
+        }
+      }
+
       if (!storyData) {
         setIsLoading(false);
         setShowCinematicIntro(false);
@@ -60,6 +76,11 @@ export function usePlayback() {
       }
 
       setIsLoading(false);
+
+      // Auto-save story for offline use
+      offlineStoryService
+        .autoSaveIfOnline(personalized, quizData)
+        .catch(() => {});
 
       // Minimum duration for the cinematic intro
       introTimerRef.current = setTimeout(() => {
