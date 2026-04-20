@@ -48,7 +48,10 @@ class AppRatingService {
   private async saveRatingData() {
     try {
       if (this.ratingData) {
-        await AsyncStorage.setItem(RATING_STORAGE_KEY, JSON.stringify(this.ratingData));
+        await AsyncStorage.setItem(
+          RATING_STORAGE_KEY,
+          JSON.stringify(this.ratingData),
+        );
       }
     } catch (error) {
       console.error('Failed to save rating data:', error);
@@ -79,14 +82,18 @@ class AppRatingService {
     }
 
     // Check minimum days since first launch
-    const daysSinceFirstLaunch = this.getDaysSince(this.ratingData.firstLaunchDate);
+    const daysSinceFirstLaunch = this.getDaysSince(
+      this.ratingData.firstLaunchDate,
+    );
     if (daysSinceFirstLaunch < MIN_DAYS_FOR_RATING) {
       return false;
     }
 
     // Check if user selected "remind later"
     if (this.ratingData.remindLater && this.ratingData.lastPromptDate) {
-      const daysSinceLastPrompt = this.getDaysSince(this.ratingData.lastPromptDate);
+      const daysSinceLastPrompt = this.getDaysSince(
+        this.ratingData.lastPromptDate,
+      );
       if (daysSinceLastPrompt < REMIND_LATER_DAYS) {
         return false;
       }
@@ -117,7 +124,7 @@ class AppRatingService {
           onPress: () => this.handleRateNow(),
         },
       ],
-      { cancelable: false }
+      { cancelable: false },
     );
 
     analytics.track('rating_prompt_shown');

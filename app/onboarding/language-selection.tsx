@@ -1,6 +1,10 @@
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
-import { Language,MAX_LANGUAGES,SUPPORTED_LANGUAGES } from '@/constants/languages';
-import { FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import {
+  Language,
+  MAX_LANGUAGES,
+  SUPPORTED_LANGUAGES,
+} from '@/constants/languages';
+import { FONTS, SHADOWS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { analytics } from '@/services/analyticsService';
 import { useNarrationAudio } from '@/hooks/useNarrationAudio';
@@ -9,8 +13,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { CityOption, POPULAR_CITIES } from '@/constants/indianCities';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import { Check,ChevronRight,MapPin,Search,Sparkles,X } from 'lucide-react-native';
-import { useCallback,useEffect,useMemo,useState } from 'react';
+import {
+  Check,
+  ChevronRight,
+  MapPin,
+  Search,
+  Sparkles,
+  X,
+} from 'lucide-react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Keyboard,
   Platform,
@@ -22,24 +33,30 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Animated,{
-FadeIn,
-FadeInDown,
-FadeInUp,
-useAnimatedStyle,
-useSharedValue,
-withSequence,
-withSpring,
-ZoomIn
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  ZoomIn,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ColorScheme } from '@/constants/themeSchemes';
 
-function ProgressDot({ active, styles }: Readonly<{ active: boolean; styles: ReturnType<typeof useStyles> }>) {
-  const animatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: active ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
-    transform: [{ scale: withSpring(active ? 1.2 : 1) }],
-  }), [active]);
+function ProgressDot({
+  active,
+  styles,
+}: Readonly<{ active: boolean; styles: ReturnType<typeof useStyles> }>) {
+  const animatedStyle = useAnimatedStyle(
+    () => ({
+      backgroundColor: active ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
+      transform: [{ scale: withSpring(active ? 1.2 : 1) }],
+    }),
+    [active],
+  );
 
   return <Animated.View style={[styles.dot, animatedStyle]} />;
 }
@@ -54,38 +71,49 @@ export default function LanguageSelection() {
   const { speak } = useNarrationAudio('language-selection');
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [nearbyLanguageCodes] = useState<string[]>(['en','hi']);
+  const [nearbyLanguageCodes] = useState<string[]>(['en', 'hi']);
   const [useOtherCity, setUseOtherCity] = useState(false);
 
   const btnScale = useSharedValue(1);
   const [cityInput, setCityInput] = useState('');
-  const [selectedCityOption, setSelectedCityOption] = useState<CityOption | null>(null);
+  const [selectedCityOption, setSelectedCityOption] =
+    useState<CityOption | null>(null);
 
   // Welcome narration
   useEffect(() => {
     const timer = setTimeout(() => {
-      speak("Hi there! Which languages should we use for your stories?", 'en');
+      speak('Hi there! Which languages should we use for your stories?', 'en');
     }, 800);
     return () => clearTimeout(timer);
   }, [speak]);
 
-  const btnAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
+  const btnAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: btnScale.value }],
+  }));
 
   const toggleLanguage = async (language: Language) => {
-    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const isSelected = selectedLanguages.some(l => l.code === language.code);
+    if (Platform.OS !== 'web')
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const isSelected = selectedLanguages.some((l) => l.code === language.code);
     if (isSelected) {
-      setSelectedLanguages(selectedLanguages.filter(l => l.code !== language.code));
+      setSelectedLanguages(
+        selectedLanguages.filter((l) => l.code !== language.code),
+      );
     } else {
       if (selectedLanguages.length >= MAX_LANGUAGES) {
-        if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        if (Platform.OS !== 'web')
+          await Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Warning,
+          );
         return;
       }
       const newSelection = [...selectedLanguages, language];
       setSelectedLanguages(newSelection);
       // Satisfying success haptic on first language selection
       if (newSelection.length === 1 && Platform.OS !== 'web') {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
       }
       speak(language.name, language.code);
     }
@@ -93,14 +121,23 @@ export default function LanguageSelection() {
 
   const handleContinue = async () => {
     if (selectedLanguages.length === 0) {
-      if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      if (Platform.OS !== 'web')
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Warning,
+        );
       return;
     }
-    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    btnScale.value = withSequence(withSpring(0.92, { damping: 10 }), withSpring(1, { damping: 12 }));
+    if (Platform.OS !== 'web')
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    btnScale.value = withSequence(
+      withSpring(0.92, { damping: 10 }),
+      withSpring(1, { damping: 12 }),
+    );
     Keyboard.dismiss();
 
-    const languageParams = JSON.stringify(selectedLanguages.map(l => ({ code: l.code, name: l.name })));
+    const languageParams = JSON.stringify(
+      selectedLanguages.map((l) => ({ code: l.code, name: l.name })),
+    );
     setTimeout(() => {
       router.push({
         pathname: '/onboarding/kid-name',
@@ -125,10 +162,10 @@ export default function LanguageSelection() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(
-        l =>
+        (l) =>
           l.name.toLowerCase().includes(q) ||
           l.nativeName.toLowerCase().includes(q) ||
-          l.code.toLowerCase().includes(q)
+          l.code.toLowerCase().includes(q),
       );
     }
 
@@ -157,12 +194,23 @@ export default function LanguageSelection() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <BrandVideoBackground videoId="onboarding_video" fallbackSource={require('@/assets/jahera.mp4')} overlayOpacity={0.25} />
+      <StatusBar
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
+      />
+      <BrandVideoBackground
+        videoId="onboarding_video"
+        fallbackSource={require('@/assets/jahera.mp4')}
+        overlayOpacity={0.25}
+      />
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 140 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 140 },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -170,9 +218,12 @@ export default function LanguageSelection() {
           <View style={styles.topRow}>
             <View style={styles.progressContainer}>
               <View style={styles.progressLineOuter}>
-                <Animated.View 
+                <Animated.View
                   entering={FadeInDown.delay(200)}
-                  style={[styles.progressFill, { width: '25%', backgroundColor: '#FFFFFF' }]} 
+                  style={[
+                    styles.progressFill,
+                    { width: '25%', backgroundColor: '#FFFFFF' },
+                  ]}
                 />
               </View>
               <Text style={styles.progressText}>JOURNEY START</Text>
@@ -181,40 +232,61 @@ export default function LanguageSelection() {
 
           <View style={styles.heroSection}>
             <LottieView
-              source={{ uri: 'https://lottie.host/76cc96a6-f13e-436d-963d-4c3822295cf7/l9GzB6p7Qk.json' }}
+              source={{
+                uri: 'https://lottie.host/76cc96a6-f13e-436d-963d-4c3822295cf7/l9GzB6p7Qk.json',
+              }}
               autoPlay
               loop
               style={styles.lottieGlobe}
             />
-            <Animated.View entering={ZoomIn.delay(400).springify()} style={styles.sparkleIcon}>
+            <Animated.View
+              entering={ZoomIn.delay(400).springify()}
+              style={styles.sparkleIcon}
+            >
               <Sparkles size={28} color="#FFD700" fill="#FFD700" />
             </Animated.View>
           </View>
 
-          <Animated.Text entering={FadeInUp.delay(300).springify()} style={styles.title}>
+          <Animated.Text
+            entering={FadeInUp.delay(300).springify()}
+            style={styles.title}
+          >
             Choose Your Tongue
           </Animated.Text>
-          <Animated.Text entering={FadeInUp.delay(400).springify()} style={styles.subtitle}>
+          <Animated.Text
+            entering={FadeInUp.delay(400).springify()}
+            style={styles.subtitle}
+          >
             Select the languages for your magical{'\n'}adventure to begin.
           </Animated.Text>
 
-          <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.selectionPill}>
-             <View style={styles.pillGlow} />
+          <Animated.View
+            entering={FadeInUp.delay(500).springify()}
+            style={styles.selectionPill}
+          >
+            <View style={styles.pillGlow} />
             <Text style={styles.selectionLabel}>
-              {selectedLanguages.length === 0 
-                ? 'Pick up to 3' 
+              {selectedLanguages.length === 0
+                ? 'Pick up to 3'
                 : `${selectedLanguages.length} Language${selectedLanguages.length > 1 ? 's' : ''} Selected`}
             </Text>
             <View style={styles.dotRow}>
-              {[0, 1, 2].map(i => (
-                <ProgressDot key={String(i)} active={i < selectedLanguages.length} styles={styles} />
+              {[0, 1, 2].map((i) => (
+                <ProgressDot
+                  key={String(i)}
+                  active={i < selectedLanguages.length}
+                  styles={styles}
+                />
               ))}
             </View>
           </Animated.View>
         </View>
 
         {/* ── Search Bar ─────────────────────────────────────────────── */}
-        <Animated.View entering={FadeInDown.delay(550).springify()} style={styles.searchSection}>
+        <Animated.View
+          entering={FadeInDown.delay(550).springify()}
+          style={styles.searchSection}
+        >
           <View style={styles.searchBar}>
             <Search size={18} color="rgba(255,255,255,0.5)" strokeWidth={2.5} />
             <TextInput
@@ -237,12 +309,21 @@ export default function LanguageSelection() {
           </View>
 
           {/* City input */}
-          <Animated.View entering={FadeIn.duration(300)} style={styles.locationChip}>
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            style={styles.locationChip}
+          >
             <MapPin size={12} color="#34D399" strokeWidth={2.5} />
             <Text style={styles.locationChipText}>Where do you live?</Text>
           </Animated.View>
-          <Text style={styles.locationChipText}>This makes stories feel local and personal ✨</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 10 }}>
+          <Text style={styles.locationChipText}>
+            This makes stories feel local and personal ✨
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8, marginTop: 10 }}
+          >
             {POPULAR_CITIES.map((cityOption) => (
               <TouchableOpacity
                 key={cityOption.city}
@@ -250,9 +331,20 @@ export default function LanguageSelection() {
                   setUseOtherCity(false);
                   setSelectedCityOption(cityOption);
                   setCityInput(cityOption.city);
-                  analytics.trackCitySelectedOnboarding(cityOption.city, 'chip');
+                  analytics.trackCitySelectedOnboarding(
+                    cityOption.city,
+                    'chip',
+                  );
                 }}
-                style={[styles.locationChip, { borderColor: cityInput === cityOption.city ? '#34D399' : 'rgba(255,255,255,0.3)' }]}
+                style={[
+                  styles.locationChip,
+                  {
+                    borderColor:
+                      cityInput === cityOption.city
+                        ? '#34D399'
+                        : 'rgba(255,255,255,0.3)',
+                  },
+                ]}
               >
                 <Text style={styles.locationChipText}>{cityOption.city}</Text>
               </TouchableOpacity>
@@ -263,14 +355,30 @@ export default function LanguageSelection() {
                 setSelectedCityOption(null);
                 setCityInput('');
               }}
-              style={[styles.locationChip, { borderColor: useOtherCity ? '#34D399' : 'rgba(255,255,255,0.3)' }]}
+              style={[
+                styles.locationChip,
+                {
+                  borderColor: useOtherCity
+                    ? '#34D399'
+                    : 'rgba(255,255,255,0.3)',
+                },
+              ]}
             >
               <Text style={styles.locationChipText}>Other ✏️</Text>
             </TouchableOpacity>
           </ScrollView>
           {useOtherCity ? (
             <TextInput
-              style={[styles.searchInput, { marginTop: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }]}
+              style={[
+                styles.searchInput,
+                {
+                  marginTop: 10,
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderRadius: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                },
+              ]}
               placeholder="Enter city/town"
               placeholderTextColor="rgba(255,255,255,0.5)"
               value={cityInput}
@@ -288,21 +396,30 @@ export default function LanguageSelection() {
         {/* ── Language List ───────────────────────────────────────────── */}
         <View style={styles.listSection}>
           {sortedLanguages.length === 0 ? (
-            <Animated.View entering={FadeIn.duration(300)} style={styles.emptySearch}>
+            <Animated.View
+              entering={FadeIn.duration(300)}
+              style={styles.emptySearch}
+            >
               <Text style={styles.emptySearchEmoji}>🔍</Text>
-              <Text style={styles.emptySearchText}>No languages match "{searchQuery}"</Text>
+              <Text style={styles.emptySearchText}>
+                No languages match "{searchQuery}"
+              </Text>
               <TouchableOpacity onPress={clearSearch}>
                 <Text style={styles.emptySearchClear}>Clear search</Text>
               </TouchableOpacity>
             </Animated.View>
           ) : (
             sortedLanguages.map((lang, idx) => {
-              const isSelected = selectedLanguages.some(l => l.code === lang.code);
+              const isSelected = selectedLanguages.some(
+                (l) => l.code === lang.code,
+              );
               const isNearby = nearbyLanguageCodes.includes(lang.code);
               return (
-                <Animated.View 
+                <Animated.View
                   key={lang.code}
-                  entering={FadeInDown.delay(600 + idx * 50).springify().damping(12)}
+                  entering={FadeInDown.delay(600 + idx * 50)
+                    .springify()
+                    .damping(12)}
                 >
                   <TouchableOpacity
                     onPress={() => toggleLanguage(lang)}
@@ -313,12 +430,26 @@ export default function LanguageSelection() {
                       isNearby && !isSelected && styles.cardNearby,
                     ]}
                   >
-                    <View style={[styles.flagCircle, { backgroundColor: isSelected ? C.primary + '15' : '#F8FAFC' }]}>
+                    <View
+                      style={[
+                        styles.flagCircle,
+                        {
+                          backgroundColor: isSelected
+                            ? C.primary + '15'
+                            : '#F8FAFC',
+                        },
+                      ]}
+                    >
                       <Text style={styles.flagEmoji}>{lang.flag}</Text>
                     </View>
                     <View style={styles.cardInfo}>
                       <View style={styles.cardNameRow}>
-                        <Text style={[styles.langName, { color: isSelected ? C.primary : C.text.primary }]}>
+                        <Text
+                          style={[
+                            styles.langName,
+                            { color: isSelected ? C.primary : C.text.primary },
+                          ]}
+                        >
                           {lang.name}
                         </Text>
                         {isNearby && (
@@ -331,7 +462,13 @@ export default function LanguageSelection() {
                       <Text style={styles.langNative}>{lang.nativeName}</Text>
                     </View>
                     {isSelected ? (
-                      <Animated.View entering={ZoomIn.springify()} style={[styles.checkCircle, { backgroundColor: C.primary }]}>
+                      <Animated.View
+                        entering={ZoomIn.springify()}
+                        style={[
+                          styles.checkCircle,
+                          { backgroundColor: C.primary },
+                        ]}
+                      >
                         <Check size={18} color="#FFFFFF" strokeWidth={3} />
                       </Animated.View>
                     ) : (
@@ -345,33 +482,51 @@ export default function LanguageSelection() {
         </View>
       </ScrollView>
 
-      <Animated.View 
+      <Animated.View
         entering={FadeInUp.delay(300).springify()}
         style={[styles.footer, { paddingBottom: insets.bottom + SPACING.lg }]}
       >
         <LinearGradient
-           colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.8)']}
-           style={styles.footerGradient}
+          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.8)']}
+          style={styles.footerGradient}
         />
         <Animated.View style={btnAnimStyle}>
-          <TouchableOpacity 
-            onPress={handleContinue} 
-            disabled={!canContinue} 
+          <TouchableOpacity
+            onPress={handleContinue}
+            disabled={!canContinue}
             activeOpacity={0.9}
             style={styles.ctaWrapper}
           >
             <LinearGradient
-              colors={canContinue ? ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.95)'] : ['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.4)']}
+              colors={
+                canContinue
+                  ? ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.95)']
+                  : ['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.4)']
+              }
               style={styles.cta}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Text style={[styles.ctaText, { color: canContinue ? C.primaryDark : '#CBD5E1' }]}>
+              <Text
+                style={[
+                  styles.ctaText,
+                  { color: canContinue ? C.primaryDark : '#CBD5E1' },
+                ]}
+              >
                 {canContinue ? 'Continue Journey' : 'Choose a Language'}
               </Text>
               {canContinue && (
-                <View style={[styles.ctaArrow, { backgroundColor: C.primary + '15' }]}>
-                   <ChevronRight size={22} color={C.primaryDark} strokeWidth={3} />
+                <View
+                  style={[
+                    styles.ctaArrow,
+                    { backgroundColor: C.primary + '15' },
+                  ]}
+                >
+                  <ChevronRight
+                    size={22}
+                    color={C.primaryDark}
+                    strokeWidth={3}
+                  />
                 </View>
               )}
             </LinearGradient>
@@ -383,323 +538,330 @@ export default function LanguageSelection() {
 }
 
 const useStyles = (C: ColorScheme['colors']) => {
-  return useMemo(() => StyleSheet.create({
-    root: { flex: 1, backgroundColor: '#000' },
-    scroll: { flex: 1 },
-    scrollContent: { flexGrow: 1 },
-    header: {
-      paddingHorizontal: SPACING.xl,
-      paddingBottom: SPACING.xl,
-      alignItems: 'center',
-      overflow: 'hidden',
-    },
-    topRow: {
-      width: '100%',
-      marginBottom: SPACING.xl,
-    },
-    progressContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 16,
-    },
-    progressLineOuter: {
-      flex: 1,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: 'rgba(255,255,255,0.2)',
-      overflow: 'hidden',
-    },
-    progressFill: {
-      height: '100%',
-      borderRadius: 4,
-    },
-    progressText: {
-      fontSize: 10,
-      fontFamily: FONTS.extrabold,
-      color: '#FFFFFF',
-      letterSpacing: 1.5,
-      opacity: 0.8,
-    },
-    heroSection: {
-      position: 'relative',
-      width: 140,
-      height: 140,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: SPACING.sm,
-    },
-    lottieGlobe: {
-      width: 180,
-      height: 180,
-    },
-    sparkleIcon: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-    },
-    title: {
-      fontSize: 32,
-      fontFamily: FONTS.extrabold,
-      color: '#FFFFFF',
-      textAlign: 'center',
-      marginBottom: 6,
-      letterSpacing: -0.5,
-      textShadowColor: 'rgba(0,0,0,0.5)',
-      textShadowOffset: { width: 0, height: 4 },
-      textShadowRadius: 10,
-    },
-    subtitle: {
-      fontSize: 15,
-      fontFamily: FONTS.medium,
-      color: '#FFFFFF',
-      textAlign: 'center',
-      lineHeight: 22,
-      marginBottom: SPACING.lg,
-      textShadowColor: 'rgba(0,0,0,0.5)',
-      textShadowOffset: { width: 0, height: 2 },
-      textShadowRadius: 6,
-    },
-    selectionPill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: 'rgba(255,255,255,0.15)',
-      paddingHorizontal: 24,
-      paddingVertical: 12,
-      borderRadius: 30,
-      gap: 14,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.25)',
-    },
-    pillGlow: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: '#FFFFFF',
-      opacity: 0.05,
-      borderRadius: 30,
-    },
-    selectionLabel: {
-      fontSize: 14,
-      fontFamily: FONTS.extrabold,
-      color: '#FFFFFF',
-      letterSpacing: 0.5,
-    },
-    dotRow: {
-      flexDirection: 'row',
-      gap: 6,
-    },
-    dot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-    },
+  return useMemo(
+    () =>
+      StyleSheet.create({
+        root: { flex: 1, backgroundColor: '#000' },
+        scroll: { flex: 1 },
+        scrollContent: { flexGrow: 1 },
+        header: {
+          paddingHorizontal: SPACING.xl,
+          paddingBottom: SPACING.xl,
+          alignItems: 'center',
+          overflow: 'hidden',
+        },
+        topRow: {
+          width: '100%',
+          marginBottom: SPACING.xl,
+        },
+        progressContainer: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 16,
+        },
+        progressLineOuter: {
+          flex: 1,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: 'rgba(255,255,255,0.2)',
+          overflow: 'hidden',
+        },
+        progressFill: {
+          height: '100%',
+          borderRadius: 4,
+        },
+        progressText: {
+          fontSize: 10,
+          fontFamily: FONTS.extrabold,
+          color: '#FFFFFF',
+          letterSpacing: 1.5,
+          opacity: 0.8,
+        },
+        heroSection: {
+          position: 'relative',
+          width: 140,
+          height: 140,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: SPACING.sm,
+        },
+        lottieGlobe: {
+          width: 180,
+          height: 180,
+        },
+        sparkleIcon: {
+          position: 'absolute',
+          top: 0,
+          right: 0,
+        },
+        title: {
+          fontSize: 32,
+          fontFamily: FONTS.extrabold,
+          color: '#FFFFFF',
+          textAlign: 'center',
+          marginBottom: 6,
+          letterSpacing: -0.5,
+          textShadowColor: 'rgba(0,0,0,0.5)',
+          textShadowOffset: { width: 0, height: 4 },
+          textShadowRadius: 10,
+        },
+        subtitle: {
+          fontSize: 15,
+          fontFamily: FONTS.medium,
+          color: '#FFFFFF',
+          textAlign: 'center',
+          lineHeight: 22,
+          marginBottom: SPACING.lg,
+          textShadowColor: 'rgba(0,0,0,0.5)',
+          textShadowOffset: { width: 0, height: 2 },
+          textShadowRadius: 6,
+        },
+        selectionPill: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: 'rgba(255,255,255,0.15)',
+          paddingHorizontal: 24,
+          paddingVertical: 12,
+          borderRadius: 30,
+          gap: 14,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.25)',
+        },
+        pillGlow: {
+          ...StyleSheet.absoluteFillObject,
+          backgroundColor: '#FFFFFF',
+          opacity: 0.05,
+          borderRadius: 30,
+        },
+        selectionLabel: {
+          fontSize: 14,
+          fontFamily: FONTS.extrabold,
+          color: '#FFFFFF',
+          letterSpacing: 0.5,
+        },
+        dotRow: {
+          flexDirection: 'row',
+          gap: 6,
+        },
+        dot: {
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+        },
 
-    // ── Search ──────────────────────────────────────────────────
-    searchSection: {
-      paddingHorizontal: SPACING.xl,
-      paddingTop: SPACING.lg,
-      gap: 10,
-    },
-    searchBar: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: 'rgba(255,255,255,0.12)',
-      borderRadius: 22,
-      paddingHorizontal: 18,
-      height: 52,
-      gap: 12,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.15)',
-    },
-    searchInput: {
-      flex: 1,
-      fontSize: 16,
-      fontFamily: FONTS.medium,
-      color: '#FFFFFF',
-      height: '100%',
-    },
-    clearBtn: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: 'rgba(255,255,255,0.15)',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    locationChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      alignSelf: 'flex-start',
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 20,
-      backgroundColor: 'rgba(255,255,255,0.1)',
-    },
-    locationChipText: {
-      fontSize: 12,
-      fontFamily: FONTS.medium,
-      color: 'rgba(255,255,255,0.65)',
-    },
-    locationChipBold: {
-      fontFamily: FONTS.extrabold,
-      color: 'rgba(255,255,255,0.85)',
-    },
+        // ── Search ──────────────────────────────────────────────────
+        searchSection: {
+          paddingHorizontal: SPACING.xl,
+          paddingTop: SPACING.lg,
+          gap: 10,
+        },
+        searchBar: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: 'rgba(255,255,255,0.12)',
+          borderRadius: 22,
+          paddingHorizontal: 18,
+          height: 52,
+          gap: 12,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.15)',
+        },
+        searchInput: {
+          flex: 1,
+          fontSize: 16,
+          fontFamily: FONTS.medium,
+          color: '#FFFFFF',
+          height: '100%',
+        },
+        clearBtn: {
+          width: 28,
+          height: 28,
+          borderRadius: 14,
+          backgroundColor: 'rgba(255,255,255,0.15)',
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        locationChip: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          alignSelf: 'flex-start',
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderRadius: 20,
+          backgroundColor: 'rgba(255,255,255,0.1)',
+        },
+        locationChipText: {
+          fontSize: 12,
+          fontFamily: FONTS.medium,
+          color: 'rgba(255,255,255,0.65)',
+        },
+        locationChipBold: {
+          fontFamily: FONTS.extrabold,
+          color: 'rgba(255,255,255,0.85)',
+        },
 
-    // ── Empty search ────────────────────────────────────────────
-    emptySearch: {
-      alignItems: 'center',
-      paddingVertical: 48,
-      gap: 10,
-    },
-    emptySearchEmoji: {
-      fontSize: 40,
-      marginBottom: 4,
-    },
-    emptySearchText: {
-      fontSize: 16,
-      fontFamily: FONTS.medium,
-      color: 'rgba(255,255,255,0.6)',
-      textAlign: 'center',
-    },
-    emptySearchClear: {
-      fontSize: 14,
-      fontFamily: FONTS.extrabold,
-      color: '#60A5FA',
-      marginTop: 4,
-    },
+        // ── Empty search ────────────────────────────────────────────
+        emptySearch: {
+          alignItems: 'center',
+          paddingVertical: 48,
+          gap: 10,
+        },
+        emptySearchEmoji: {
+          fontSize: 40,
+          marginBottom: 4,
+        },
+        emptySearchText: {
+          fontSize: 16,
+          fontFamily: FONTS.medium,
+          color: 'rgba(255,255,255,0.6)',
+          textAlign: 'center',
+        },
+        emptySearchClear: {
+          fontSize: 14,
+          fontFamily: FONTS.extrabold,
+          color: '#60A5FA',
+          marginTop: 4,
+        },
 
-    // ── Language Cards ──────────────────────────────────────────
-    listSection: {
-      paddingHorizontal: SPACING.xl,
-      paddingTop: SPACING.lg,
-      gap: 14,
-    },
-    card: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: 'rgba(255,255,255,0.85)',
-      borderRadius: 28,
-      padding: 18,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.5)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 10,
-    },
-    cardSelected: {
-      borderColor: '#FFFFFF',
-      backgroundColor: 'rgba(255,255,255,1)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.15,
-      shadowRadius: 15,
-    },
-    cardNearby: {
-      borderColor: 'rgba(52,211,153,0.5)',
-      backgroundColor: 'rgba(255,255,255,0.92)',
-    },
-    flagCircle: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 16,
-      ...SHADOWS.xs,
-    },
-    flagEmoji: { fontSize: 30 },
-    cardInfo: { flex: 1, gap: 3 },
-    cardNameRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    langName: {
-      fontSize: 18,
-      fontFamily: FONTS.extrabold,
-      letterSpacing: -0.3,
-    },
-    nearbyBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 3,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 10,
-      backgroundColor: '#D1FAE5',
-    },
-    nearbyBadgeText: {
-      fontSize: 10,
-      fontFamily: FONTS.extrabold,
-      color: '#059669',
-      letterSpacing: 0.3,
-    },
-    langNative: {
-      fontSize: 13,
-      fontFamily: FONTS.semibold,
-      color: C.text.light,
-      opacity: 0.8,
-    },
-    checkCircle: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...SHADOWS.sm,
-    },
-    emptyCheck: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      borderWidth: 2,
-      borderColor: '#E2E8F0',
-    },
+        // ── Language Cards ──────────────────────────────────────────
+        listSection: {
+          paddingHorizontal: SPACING.xl,
+          paddingTop: SPACING.lg,
+          gap: 14,
+        },
+        card: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: 'rgba(255,255,255,0.85)',
+          borderRadius: 28,
+          padding: 18,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.5)',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 10,
+        },
+        cardSelected: {
+          borderColor: '#FFFFFF',
+          backgroundColor: 'rgba(255,255,255,1)',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.15,
+          shadowRadius: 15,
+        },
+        cardNearby: {
+          borderColor: 'rgba(52,211,153,0.5)',
+          backgroundColor: 'rgba(255,255,255,0.92)',
+        },
+        flagCircle: {
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 16,
+          ...SHADOWS.xs,
+        },
+        flagEmoji: { fontSize: 30 },
+        cardInfo: { flex: 1, gap: 3 },
+        cardNameRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+        },
+        langName: {
+          fontSize: 18,
+          fontFamily: FONTS.extrabold,
+          letterSpacing: -0.3,
+        },
+        nearbyBadge: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 3,
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          borderRadius: 10,
+          backgroundColor: '#D1FAE5',
+        },
+        nearbyBadgeText: {
+          fontSize: 10,
+          fontFamily: FONTS.extrabold,
+          color: '#059669',
+          letterSpacing: 0.3,
+        },
+        langNative: {
+          fontSize: 13,
+          fontFamily: FONTS.semibold,
+          color: C.text.light,
+          opacity: 0.8,
+        },
+        checkCircle: {
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          alignItems: 'center',
+          justifyContent: 'center',
+          ...SHADOWS.sm,
+        },
+        emptyCheck: {
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          borderWidth: 2,
+          borderColor: '#E2E8F0',
+        },
 
-    // ── Footer ──────────────────────────────────────────────────
-    footer: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      paddingHorizontal: SPACING.xl,
-      paddingTop: SPACING.xl,
-    },
-    footerGradient: {
-       position: 'absolute',
-       top: -40, left: 0, right: 0, height: 160,
-    },
-    ctaWrapper: {
-       width: '100%',
-    },
-    cta: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 20,
-      borderRadius: 32,
-      gap: 12,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.7)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.2,
-      shadowRadius: 20,
-    },
-    ctaText: {
-      fontSize: 20,
-      fontFamily: FONTS.extrabold,
-      color: C.primaryDark,
-      letterSpacing: -0.2,
-    },
-    ctaArrow: {
-       width: 40,
-       height: 40,
-       borderRadius: 20,
-       backgroundColor: C.primary + '15',
-       alignItems: 'center',
-       justifyContent: 'center',
-       marginLeft: 4,
-    },
-  }), [C]);
+        // ── Footer ──────────────────────────────────────────────────
+        footer: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          paddingHorizontal: SPACING.xl,
+          paddingTop: SPACING.xl,
+        },
+        footerGradient: {
+          position: 'absolute',
+          top: -40,
+          left: 0,
+          right: 0,
+          height: 160,
+        },
+        ctaWrapper: {
+          width: '100%',
+        },
+        cta: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingVertical: 20,
+          borderRadius: 32,
+          gap: 12,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.7)',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.2,
+          shadowRadius: 20,
+        },
+        ctaText: {
+          fontSize: 20,
+          fontFamily: FONTS.extrabold,
+          color: C.primaryDark,
+          letterSpacing: -0.2,
+        },
+        ctaArrow: {
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: C.primary + '15',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginLeft: 4,
+        },
+      }),
+    [C],
+  );
 };

@@ -1,21 +1,29 @@
-import { COLLECTIONS,DATABASE_ID,databases,ID,Query } from '@/lib/appwrite';
+import { COLLECTIONS, DATABASE_ID, databases, ID, Query } from '@/lib/appwrite';
 import {
-FamilyMember,
-Friend,
-Profile,
-ProfileWithRelations,
-QuizAnswer,
-QuizAttempt,
-QuizQuestion,
-QuizQuestionWithAnswers,
-Story,
-UserLanguage,
+  FamilyMember,
+  Friend,
+  Profile,
+  ProfileWithRelations,
+  QuizAnswer,
+  QuizAttempt,
+  QuizQuestion,
+  QuizQuestionWithAnswers,
+  Story,
+  UserLanguage,
 } from '@/types/database';
 import { logger } from '@/utils/logger';
 
 function mapDoc<T>(doc: Record<string, unknown>): T {
   if (!doc) return null as unknown as T;
-  const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...rest } = doc;
+  const {
+    $id,
+    $createdAt,
+    $updatedAt,
+    $permissions,
+    $databaseId,
+    $collectionId,
+    ...rest
+  } = doc;
   return {
     ...rest,
     id: $id,
@@ -25,14 +33,26 @@ function mapDoc<T>(doc: Record<string, unknown>): T {
 }
 
 export const profileService = {
-  async create(userId: string, kidName: string, primaryLanguage: string, extra?: Partial<Pick<Profile, 'city' | 'region' | 'country' | 'consent_given_at'>>): Promise<Profile | null> {
-    const payload = { user_id: userId, kid_name: kidName, primary_language: primaryLanguage, ...extra };
+  async create(
+    userId: string,
+    kidName: string,
+    primaryLanguage: string,
+    extra?: Partial<
+      Pick<Profile, 'city' | 'region' | 'country' | 'consent_given_at'>
+    >,
+  ): Promise<Profile | null> {
+    const payload = {
+      user_id: userId,
+      kid_name: kidName,
+      primary_language: primaryLanguage,
+      ...extra,
+    };
     try {
       const data = await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.PROFILES,
         ID.unique(),
-        payload
+        payload,
       );
       return mapDoc(data);
     } catch (error: any) {
@@ -41,14 +61,16 @@ export const profileService = {
         const match = error.message.match(/Unknown attribute: "([^"]+)"/);
         const attr = match ? match[1] : null;
         if (attr && payload[attr as keyof typeof payload]) {
-          logger.warn(`[database] Stripping unknown attribute "${attr}" and retrying profile creation.`);
+          logger.warn(
+            `[database] Stripping unknown attribute "${attr}" and retrying profile creation.`,
+          );
           const { [attr as keyof typeof payload]: _, ...rest } = payload;
           try {
             const retryData = await databases.createDocument(
               DATABASE_ID,
               COLLECTIONS.PROFILES,
               ID.unique(),
-              rest
+              rest,
             );
             return mapDoc(retryData);
           } catch (retryError) {
@@ -63,7 +85,11 @@ export const profileService = {
 
   async getById(id: string): Promise<Profile | null> {
     try {
-      const data = await databases.getDocument(DATABASE_ID, COLLECTIONS.PROFILES, id);
+      const data = await databases.getDocument(
+        DATABASE_ID,
+        COLLECTIONS.PROFILES,
+        id,
+      );
       return mapDoc(data);
     } catch (error) {
       logger.error('Error fetching profile:', error);
@@ -73,10 +99,11 @@ export const profileService = {
 
   async getByUserId(userId: string): Promise<Profile | null> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-        Query.equal('user_id', userId),
-        Query.limit(1)
-      ]);
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.PROFILES,
+        [Query.equal('user_id', userId), Query.limit(1)],
+      );
       return response.documents.length ? mapDoc(response.documents[0]) : null;
     } catch (error) {
       logger.error('Error fetching profile by userId:', error);
@@ -103,20 +130,44 @@ export const profileService = {
     };
   },
 
-  async getWithRelationsByUserId(userId: string): Promise<ProfileWithRelations | null> {
+  async getWithRelationsByUserId(
+    userId: string,
+  ): Promise<ProfileWithRelations | null> {
     const profile = await this.getByUserId(userId);
     if (!profile) return null;
     return this.getWithRelations(profile.id);
   },
 
-  async update(id: string, updates: Partial<Pick<Profile, 'kid_name' | 'primary_language' | 'avatar_url' | 'parent_pin' | 'age' | 'elevenlabs_voice_id' | 'elevenlabs_model_id' | 'elevenlabs_stability' | 'elevenlabs_similarity' | 'elevenlabs_style' | 'elevenlabs_speaker_boost' | 'city' | 'region' | 'country' | 'consent_given_at'>>): Promise<Profile | null> {
+  async update(
+    id: string,
+    updates: Partial<
+      Pick<
+        Profile,
+        | 'kid_name'
+        | 'primary_language'
+        | 'avatar_url'
+        | 'parent_pin'
+        | 'age'
+        | 'elevenlabs_voice_id'
+        | 'elevenlabs_model_id'
+        | 'elevenlabs_stability'
+        | 'elevenlabs_similarity'
+        | 'elevenlabs_style'
+        | 'elevenlabs_speaker_boost'
+        | 'city'
+        | 'region'
+        | 'country'
+        | 'consent_given_at'
+      >
+    >,
+  ): Promise<Profile | null> {
     const payload = { ...updates, updated_at: new Date().toISOString() };
     try {
       const data = await databases.updateDocument(
         DATABASE_ID,
         COLLECTIONS.PROFILES,
         id,
-        payload
+        payload,
       );
       return mapDoc(data);
     } catch (error: any) {
@@ -125,14 +176,16 @@ export const profileService = {
         const match = error.message.match(/Unknown attribute: "([^"]+)"/);
         const attr = match ? match[1] : null;
         if (attr && payload[attr as keyof typeof payload]) {
-          logger.warn(`[database] Stripping unknown attribute "${attr}" and retrying profile update.`);
+          logger.warn(
+            `[database] Stripping unknown attribute "${attr}" and retrying profile update.`,
+          );
           const { [attr as keyof typeof payload]: _, ...rest } = payload;
           try {
             const retryData = await databases.updateDocument(
               DATABASE_ID,
               COLLECTIONS.PROFILES,
               id,
-              rest
+              rest,
             );
             return mapDoc(retryData);
           } catch (retryErr) {
@@ -145,7 +198,10 @@ export const profileService = {
     }
   },
 
-  async updateAvatarUrl(id: string, avatarUrl: string | null): Promise<Profile | null> {
+  async updateAvatarUrl(
+    id: string,
+    avatarUrl: string | null,
+  ): Promise<Profile | null> {
     return this.update(id, { avatar_url: avatarUrl });
   },
 
@@ -159,20 +215,34 @@ export const profileService = {
     }
   },
 
-  async uploadAvatar(_profileId: string, _fileUri: string, _mimeType: string): Promise<string | null> {
-    logger.warn('Avatar upload via storage should be used instead of Profile Service');
+  async uploadAvatar(
+    _profileId: string,
+    _fileUri: string,
+    _mimeType: string,
+  ): Promise<string | null> {
+    logger.warn(
+      'Avatar upload via storage should be used instead of Profile Service',
+    );
     return null;
   },
 };
 
 export const languageService = {
-  async add(profileId: string, languageCode: string, languageName: string): Promise<UserLanguage | null> {
+  async add(
+    profileId: string,
+    languageCode: string,
+    languageName: string,
+  ): Promise<UserLanguage | null> {
     try {
       const data = await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.USER_LANGUAGES,
         ID.unique(),
-        { profile_id: profileId, language_code: languageCode, language_name: languageName }
+        {
+          profile_id: profileId,
+          language_code: languageCode,
+          language_name: languageName,
+        },
       );
       return mapDoc(data);
     } catch (error) {
@@ -183,10 +253,12 @@ export const languageService = {
 
   async getByProfileId(profileId: string): Promise<UserLanguage[] | null> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, [
-        Query.equal('profile_id', profileId)
-      ]);
-      return response.documents.map(doc => mapDoc<UserLanguage>(doc));
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.USER_LANGUAGES,
+        [Query.equal('profile_id', profileId)],
+      );
+      return response.documents.map((doc) => mapDoc<UserLanguage>(doc));
     } catch (error) {
       logger.error('Error fetching languages:', error);
       return null;
@@ -195,7 +267,11 @@ export const languageService = {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, id);
+      await databases.deleteDocument(
+        DATABASE_ID,
+        COLLECTIONS.USER_LANGUAGES,
+        id,
+      );
       return true;
     } catch (error) {
       logger.error('Error deleting language:', error);
@@ -203,17 +279,28 @@ export const languageService = {
     }
   },
 
-  async deleteByProfileAndCode(profileId: string, languageCode: string): Promise<boolean> {
+  async deleteByProfileAndCode(
+    profileId: string,
+    languageCode: string,
+  ): Promise<boolean> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, [
-        Query.equal('profile_id', profileId),
-        Query.equal('language_code', languageCode)
-      ]);
-      
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.USER_LANGUAGES,
+        [
+          Query.equal('profile_id', profileId),
+          Query.equal('language_code', languageCode),
+        ],
+      );
+
       await Promise.all(
         response.documents.map((doc) =>
-          databases.deleteDocument(DATABASE_ID, COLLECTIONS.USER_LANGUAGES, doc.$id)
-        )
+          databases.deleteDocument(
+            DATABASE_ID,
+            COLLECTIONS.USER_LANGUAGES,
+            doc.$id,
+          ),
+        ),
       );
       return true;
     } catch (error) {
@@ -230,7 +317,7 @@ export const familyMemberService = {
         DATABASE_ID,
         COLLECTIONS.FAMILY_MEMBERS,
         ID.unique(),
-        { profile_id: profileId, name }
+        { profile_id: profileId, name },
       );
       return mapDoc(data);
     } catch (error) {
@@ -241,10 +328,12 @@ export const familyMemberService = {
 
   async getByProfileId(profileId: string): Promise<FamilyMember[] | null> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.FAMILY_MEMBERS, [
-        Query.equal('profile_id', profileId)
-      ]);
-      return response.documents.map(doc => mapDoc<FamilyMember>(doc));
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.FAMILY_MEMBERS,
+        [Query.equal('profile_id', profileId)],
+      );
+      return response.documents.map((doc) => mapDoc<FamilyMember>(doc));
     } catch (error) {
       logger.error('Error fetching family members:', error);
       return null;
@@ -253,7 +342,11 @@ export const familyMemberService = {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await databases.deleteDocument(DATABASE_ID, COLLECTIONS.FAMILY_MEMBERS, id);
+      await databases.deleteDocument(
+        DATABASE_ID,
+        COLLECTIONS.FAMILY_MEMBERS,
+        id,
+      );
       return true;
     } catch (error) {
       logger.error('Error deleting family member:', error);
@@ -269,7 +362,7 @@ export const friendService = {
         DATABASE_ID,
         COLLECTIONS.FRIENDS,
         ID.unique(),
-        { profile_id: profileId, name }
+        { profile_id: profileId, name },
       );
       return mapDoc(data);
     } catch (error) {
@@ -280,10 +373,12 @@ export const friendService = {
 
   async getByProfileId(profileId: string): Promise<Friend[] | null> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.FRIENDS, [
-        Query.equal('profile_id', profileId)
-      ]);
-      return response.documents.map(doc => mapDoc<Friend>(doc));
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.FRIENDS,
+        [Query.equal('profile_id', profileId)],
+      );
+      return response.documents.map((doc) => mapDoc<Friend>(doc));
     } catch (error) {
       logger.error('Error fetching friends:', error);
       return null;
@@ -327,7 +422,7 @@ export const storyService = {
         DATABASE_ID,
         COLLECTIONS.STORIES,
         ID.unique(),
-        payload
+        payload,
       );
       return mapDoc(data);
     } catch (error: any) {
@@ -336,14 +431,16 @@ export const storyService = {
         const match = error.message.match(/Unknown attribute: "([^"]+)"/);
         const attr = match ? match[1] : null;
         if (attr && payload[attr as keyof typeof payload]) {
-          logger.warn(`[database] Stripping unknown attribute "${attr}" and retrying story creation.`);
+          logger.warn(
+            `[database] Stripping unknown attribute "${attr}" and retrying story creation.`,
+          );
           const { [attr as keyof typeof payload]: _, ...rest } = payload;
           try {
             const retryData = await databases.createDocument(
               DATABASE_ID,
               COLLECTIONS.STORIES,
               ID.unique(),
-              rest as any
+              rest as any,
             );
             return mapDoc(retryData);
           } catch (retryErr) {
@@ -364,7 +461,11 @@ export const storyService = {
   async getById(id: string): Promise<Story | null> {
     const fetchDoc = async () => {
       try {
-        const data = await databases.getDocument(DATABASE_ID, COLLECTIONS.STORIES, id);
+        const data = await databases.getDocument(
+          DATABASE_ID,
+          COLLECTIONS.STORIES,
+          id,
+        );
         return mapDoc<Story>(data);
       } catch (error: any) {
         if (error.code === 404) return null;
@@ -379,9 +480,9 @@ export const storyService = {
 
       // Retry once after 2s (handles slight Appwrite sync delays)
       logger.debug(`[database] Story ${id} not found, retrying in 2s...`);
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       story = await fetchDoc();
-      
+
       if (!story) {
         logger.error(`[database] Story ${id} STILL not found after retry.`);
       }
@@ -394,11 +495,12 @@ export const storyService = {
 
   async getAll(): Promise<Story[] | null> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORIES, [
-        Query.orderDesc('generated_at'),
-        Query.limit(200)
-      ]);
-      return response.documents.map(doc => mapDoc<Story>(doc));
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.STORIES,
+        [Query.orderDesc('generated_at'), Query.limit(200)],
+      );
+      return response.documents.map((doc) => mapDoc<Story>(doc));
     } catch (error) {
       logger.error('Error fetching all stories:', error);
       return null;
@@ -407,38 +509,49 @@ export const storyService = {
 
   async getByProfileId(profileId: string): Promise<Story[] | null> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORIES, [
-        Query.equal('profile_id', profileId),
-        Query.orderDesc('generated_at')
-      ]);
-      return response.documents.map(doc => mapDoc<Story>(doc));
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.STORIES,
+        [Query.equal('profile_id', profileId), Query.orderDesc('generated_at')],
+      );
+      return response.documents.map((doc) => mapDoc<Story>(doc));
     } catch (error) {
       logger.error('Error fetching stories:', error);
       return null;
     }
   },
 
-  async getByProfileAndLanguage(profileId: string, languageCode: string): Promise<Story[] | null> {
+  async getByProfileAndLanguage(
+    profileId: string,
+    languageCode: string,
+  ): Promise<Story[] | null> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORIES, [
-        Query.equal('profile_id', profileId),
-        Query.equal('language_code', languageCode),
-        Query.orderDesc('generated_at')
-      ]);
-      return response.documents.map(doc => mapDoc<Story>(doc));
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.STORIES,
+        [
+          Query.equal('profile_id', profileId),
+          Query.equal('language_code', languageCode),
+          Query.orderDesc('generated_at'),
+        ],
+      );
+      return response.documents.map((doc) => mapDoc<Story>(doc));
     } catch (error) {
       logger.error('Error fetching stories by language:', error);
       return null;
     }
   },
 
-  async update(id: string, updates: Partial<Pick<Story, 'audio_url' | 'title' | 'content'>>): Promise<Story | null> {
+  async update(
+    id: string,
+    updates: Partial<Pick<Story, 'audio_url' | 'title' | 'content'>>,
+  ): Promise<Story | null> {
     try {
       const data = await databases.updateDocument(
         DATABASE_ID,
         COLLECTIONS.STORIES,
         id,
-        updates
+        updates,
       );
       return mapDoc(data);
     } catch (error) {
@@ -459,13 +572,21 @@ export const storyService = {
 };
 
 export const quizService = {
-  async createQuestion(storyId: string, questionText: string, questionOrder: number): Promise<QuizQuestion | null> {
+  async createQuestion(
+    storyId: string,
+    questionText: string,
+    questionOrder: number,
+  ): Promise<QuizQuestion | null> {
     try {
       const data = await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.QUIZ_QUESTIONS,
         ID.unique(),
-        { story_id: storyId, question_text: questionText, question_order: questionOrder }
+        {
+          story_id: storyId,
+          question_text: questionText,
+          question_order: questionOrder,
+        },
       );
       return mapDoc(data);
     } catch (error) {
@@ -474,13 +595,23 @@ export const quizService = {
     }
   },
 
-  async createAnswer(questionId: string, answerText: string, isCorrect: boolean, answerOrder: string): Promise<QuizAnswer | null> {
+  async createAnswer(
+    questionId: string,
+    answerText: string,
+    isCorrect: boolean,
+    answerOrder: string,
+  ): Promise<QuizAnswer | null> {
     try {
       const data = await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.QUIZ_ANSWERS,
         ID.unique(),
-        { question_id: questionId, answer_text: answerText, is_correct: isCorrect, answer_order: answerOrder }
+        {
+          question_id: questionId,
+          answer_text: answerText,
+          is_correct: isCorrect,
+          answer_order: answerOrder,
+        },
       );
       return mapDoc(data);
     } catch (error) {
@@ -489,22 +620,29 @@ export const quizService = {
     }
   },
 
-  async getQuestionsByStoryId(storyId: string): Promise<QuizQuestionWithAnswers[] | null> {
+  async getQuestionsByStoryId(
+    storyId: string,
+  ): Promise<QuizQuestionWithAnswers[] | null> {
     try {
-      const qResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUIZ_QUESTIONS, [
-        Query.equal('story_id', storyId),
-        Query.orderAsc('question_order')
-      ]);
+      const qResponse = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.QUIZ_QUESTIONS,
+        [Query.equal('story_id', storyId), Query.orderAsc('question_order')],
+      );
 
       if (qResponse.documents.length === 0) return [];
 
       // Batch-fetch ALL answers for ALL questions in ONE query (eliminates N+1)
       const questionIds = qResponse.documents.map((q) => q.$id);
-      const aResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUIZ_ANSWERS, [
-        Query.equal('question_id', questionIds),
-        Query.orderAsc('answer_order'),
-        Query.limit(500),
-      ]);
+      const aResponse = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.QUIZ_ANSWERS,
+        [
+          Query.equal('question_id', questionIds),
+          Query.orderAsc('answer_order'),
+          Query.limit(500),
+        ],
+      );
 
       // Group answers by question_id
       const answersByQuestion = new Map<string, QuizAnswer[]>();
@@ -529,7 +667,12 @@ export const quizService = {
     }
   },
 
-  async createAttempt(profileId: string, storyId: string, score: number, totalQuestions: number): Promise<QuizAttempt | null> {
+  async createAttempt(
+    profileId: string,
+    storyId: string,
+    score: number,
+    totalQuestions: number,
+  ): Promise<QuizAttempt | null> {
     try {
       const data = await databases.createDocument(
         DATABASE_ID,
@@ -541,7 +684,7 @@ export const quizService = {
           score,
           total_questions: totalQuestions,
           completed_at: new Date().toISOString(),
-        }
+        },
       );
       return mapDoc(data);
     } catch (error) {
@@ -550,13 +693,16 @@ export const quizService = {
     }
   },
 
-  async getAttemptsByProfileId(profileId: string): Promise<QuizAttempt[] | null> {
+  async getAttemptsByProfileId(
+    profileId: string,
+  ): Promise<QuizAttempt[] | null> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUIZ_ATTEMPTS, [
-        Query.equal('profile_id', profileId),
-        Query.orderDesc('completed_at')
-      ]);
-      return response.documents.map(doc => mapDoc<QuizAttempt>(doc));
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.QUIZ_ATTEMPTS,
+        [Query.equal('profile_id', profileId), Query.orderDesc('completed_at')],
+      );
+      return response.documents.map((doc) => mapDoc<QuizAttempt>(doc));
     } catch (error) {
       logger.error('Error fetching quiz attempts:', error);
       return null;
@@ -567,14 +713,15 @@ export const quizService = {
 export const configService = {
   async getByKey(key: string): Promise<string | null> {
     try {
-      const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.CONFIG, [
-        Query.equal('key', key),
-        Query.limit(1)
-      ]);
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.CONFIG,
+        [Query.equal('key', key), Query.limit(1)],
+      );
       return response.documents.length ? response.documents[0].value : null;
     } catch (error) {
       logger.error(`Error fetching config for key ${key}:`, error);
       return null;
     }
-  }
+  },
 };

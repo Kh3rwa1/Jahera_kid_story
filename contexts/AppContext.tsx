@@ -1,11 +1,32 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { profileService,quizService,storyService } from '@/services/database';
-import { PlanType, revenueCatService } from '@/services/revenueCatServiceInternal';
-import { streakService,subscriptionService } from '@/services/subscriptionService';
-import { ProfileWithRelations,QuizAttempt,Story,Streak,SubscriptionStatus } from '@/types/database';
+import { profileService, quizService, storyService } from '@/services/database';
+import {
+  PlanType,
+  revenueCatService,
+} from '@/services/revenueCatServiceInternal';
+import {
+  streakService,
+  subscriptionService,
+} from '@/services/subscriptionService';
+import {
+  ProfileWithRelations,
+  QuizAttempt,
+  Story,
+  Streak,
+  SubscriptionStatus,
+} from '@/types/database';
 import { handleError } from '@/utils/errorHandler';
 import { personalizeStories } from '@/utils/nameSubstitution';
-import React,{ createContext,ReactNode,useCallback,useContext,useEffect,useMemo,useRef,useState } from 'react';
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 interface AppContextType {
   profile: ProfileWithRelations | null;
@@ -31,7 +52,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [profile, setProfile] = useState<ProfileWithRelations | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
-  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(
+    null,
+  );
   const [streak, setStreak] = useState<Streak | null>(null);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,14 +92,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setProfile(data);
       profileIdRef.current = data.id;
 
-      const [storiesData, attemptsData, subData, streakData] = await Promise.all([
-        storyService.getAll(),
-        quizService.getAttemptsByProfileId(data.id),
-        subscriptionService.getStatus(data.id),
-        streakService.getStreak(data.id),
-      ]);
+      const [storiesData, attemptsData, subData, streakData] =
+        await Promise.all([
+          storyService.getAll(),
+          quizService.getAttemptsByProfileId(data.id),
+          subscriptionService.getStatus(data.id),
+          streakService.getStreak(data.id),
+        ]);
 
-      setStories(personalizeStories(storiesData || [], data.kid_name, data.city));
+      setStories(
+        personalizeStories(storiesData || [], data.kid_name, data.city),
+      );
       setQuizAttempts(attemptsData || []);
       setSubscription(subData);
       setStreak(streakData);
@@ -84,23 +110,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (rcListenerCleanupRef.current) {
         rcListenerCleanupRef.current();
       }
-      rcListenerCleanupRef.current = revenueCatService.addCustomerInfoListener((rcInfo) => {
-        (async () => {
-          const pid = profileIdRef.current;
-          if (!pid) return;
-          try {
-            await subscriptionService.syncFromRevenueCat(pid);
-            const [newSubData, newStreakData] = await Promise.all([
-              subscriptionService.getStatus(pid),
-              streakService.getStreak(pid),
-            ]);
-            setSubscription(newSubData);
-            setStreak(newStreakData);
-          } catch {
-            // ignore background sync errors
-          }
-        })();
-      });
+      rcListenerCleanupRef.current = revenueCatService.addCustomerInfoListener(
+        (rcInfo) => {
+          (async () => {
+            const pid = profileIdRef.current;
+            if (!pid) return;
+            try {
+              await subscriptionService.syncFromRevenueCat(pid);
+              const [newSubData, newStreakData] = await Promise.all([
+                subscriptionService.getStatus(pid),
+                streakService.getStreak(pid),
+              ]);
+              setSubscription(newSubData);
+              setStreak(newStreakData);
+            } catch {
+              // ignore background sync errors
+            }
+          })();
+        },
+      );
     } catch (err) {
       const appError = handleError(err, 'AppContext.loadProfile');
       setError(appError.message);
@@ -110,9 +138,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
-  const updateProfile = useCallback((updates: Partial<ProfileWithRelations>) => {
-    setProfile(prev => prev ? { ...prev, ...updates } : null);
-  }, []);
+  const updateProfile = useCallback(
+    (updates: Partial<ProfileWithRelations>) => {
+      setProfile((prev) => (prev ? { ...prev, ...updates } : null));
+    },
+    [],
+  );
 
   const clearProfile = useCallback(() => {
     if (rcListenerCleanupRef.current) {
@@ -133,7 +164,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!profile) return;
     try {
       const data = await storyService.getAll();
-      setStories(personalizeStories(data || [], profile.kid_name, profile.city));
+      setStories(
+        personalizeStories(data || [], profile.kid_name, profile.city),
+      );
     } catch (err) {
       handleError(err, 'AppContext.refreshStories');
     }
@@ -180,23 +213,42 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [authLoading, isAuthenticated, loadProfile]);
 
-  const value: AppContextType = useMemo(() => ({
-    profile,
-    stories,
-    quizAttempts,
-    subscription,
-    streak,
-    isLoading,
-    error,
-    loadProfile,
-    updateProfile,
-    refreshSubscription,
-    clearProfile,
-    refreshAll,
-    refreshStories,
-    refreshQuizAttempts,
-    setStories,
-  }), [profile, stories, quizAttempts, subscription, streak, isLoading, error, loadProfile, updateProfile, refreshSubscription, clearProfile, refreshAll, refreshStories, refreshQuizAttempts, setStories]);
+  const value: AppContextType = useMemo(
+    () => ({
+      profile,
+      stories,
+      quizAttempts,
+      subscription,
+      streak,
+      isLoading,
+      error,
+      loadProfile,
+      updateProfile,
+      refreshSubscription,
+      clearProfile,
+      refreshAll,
+      refreshStories,
+      refreshQuizAttempts,
+      setStories,
+    }),
+    [
+      profile,
+      stories,
+      quizAttempts,
+      subscription,
+      streak,
+      isLoading,
+      error,
+      loadProfile,
+      updateProfile,
+      refreshSubscription,
+      clearProfile,
+      refreshAll,
+      refreshStories,
+      refreshQuizAttempts,
+      setStories,
+    ],
+  );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

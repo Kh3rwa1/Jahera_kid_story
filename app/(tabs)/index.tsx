@@ -29,7 +29,20 @@ import { BREAKPOINTS, SPACING, FONTS } from '@/constants/theme';
 
 // Components
 import { FloatingParticles } from '@/components/FloatingParticles';
-import { Sparkles, Clock, ArrowRight, Wand as Wand2, Award, Crown, ChevronRight, Play, Sun, Moon, Star, CloudSun } from 'lucide-react-native';
+import {
+  Sparkles,
+  Clock,
+  ArrowRight,
+  Wand as Wand2,
+  Award,
+  Crown,
+  ChevronRight,
+  Play,
+  Sun,
+  Moon,
+  Star,
+  CloudSun,
+} from 'lucide-react-native';
 import { LoadingSkeleton, Skeleton } from '@/components/LoadingSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
@@ -38,7 +51,11 @@ import { MeshBackground } from '@/components/MeshBackground';
 import { Container } from '@/components/Container';
 import { StatsTicker } from '@/components/StatsTicker';
 import { QuickActions } from '@/components/QuickActions';
-import { FloatAnim, HeroShimmer, AnimatedStreakChip } from '@/components/HomeVisuals';
+import {
+  FloatAnim,
+  HeroShimmer,
+  AnimatedStreakChip,
+} from '@/components/HomeVisuals';
 import { BehaviorBooster } from '@/components/BehaviorBooster';
 import { BehaviorProgressCard } from '@/components/BehaviorProgressCard';
 
@@ -53,17 +70,24 @@ import { randomInt } from '@/utils/secureRandom';
 // Styles
 import { useHomeStyles } from '@/styles/home.styles';
 
-
-
-function getGreeting(name: string): { line1: string; line2: string; icon: 'sun' | 'cloudsun' | 'moon' | 'star' | 'sparkles' } {
+function getGreeting(name: string): {
+  line1: string;
+  line2: string;
+  icon: 'sun' | 'cloudsun' | 'moon' | 'star' | 'sparkles';
+} {
   const tod = getTimeOfDay(new Date());
   const firstName = (name || 'Friend').split(' ')[0];
   switch (tod) {
-    case 'morning': return { line1: 'Good morning,', line2: firstName, icon: 'sun' };
-    case 'afternoon': return { line1: 'Hey there,', line2: firstName, icon: 'cloudsun' };
-    case 'evening': return { line1: 'Good evening,', line2: firstName, icon: 'moon' };
-    case 'night': return { line1: 'Sweet dreams,', line2: firstName, icon: 'star' };
-    default: return { line1: 'Welcome back,', line2: firstName, icon: 'sparkles' };
+    case 'morning':
+      return { line1: 'Good morning,', line2: firstName, icon: 'sun' };
+    case 'afternoon':
+      return { line1: 'Hey there,', line2: firstName, icon: 'cloudsun' };
+    case 'evening':
+      return { line1: 'Good evening,', line2: firstName, icon: 'moon' };
+    case 'night':
+      return { line1: 'Sweet dreams,', line2: firstName, icon: 'star' };
+    default:
+      return { line1: 'Welcome back,', line2: firstName, icon: 'sparkles' };
   }
 }
 
@@ -79,9 +103,9 @@ export default function HomeScreen() {
   const { width: winWidth } = useWindowDimensions();
   const isTablet = winWidth >= BREAKPOINTS.tablet;
   const isDesktop = winWidth >= BREAKPOINTS.desktop;
-  
+
   const heroActionPulse = usePulse(0.97, 1.05);
-  
+
   const CARD_W = useMemo(() => {
     if (winWidth >= 1280) return 340;
     if (isDesktop) return 310;
@@ -92,13 +116,25 @@ export default function HomeScreen() {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
-  const { profile, stories, isLoading, error, refreshAll, subscription, streak } = useApp();
+  const {
+    profile,
+    stories,
+    isLoading,
+    error,
+    refreshAll,
+    subscription,
+    streak,
+  } = useApp();
   const { wakeUI } = useUI();
   const { activeStory, isPlaying, playPause, loadAndPlayAudio } = useAudio();
 
   const styles = useHomeStyles(C, isTablet, isDesktop);
   const isFocused = useIsFocused();
-  const [continueStory, setContinueStory] = React.useState<{ id: string; title: string; progress: number } | null>(null);
+  const [continueStory, setContinueStory] = React.useState<{
+    id: string;
+    title: string;
+    progress: number;
+  } | null>(null);
   const hasGreeted = React.useRef(false);
 
   // Fetch continue story metadata
@@ -113,14 +149,20 @@ export default function HomeScreen() {
         const lastId = await AsyncStorage.getItem('last_active_story_id');
         if (!lastId) return;
 
-        const progressData = await AsyncStorage.getItem(`story_progress_${lastId}`);
+        const progressData = await AsyncStorage.getItem(
+          `story_progress_${lastId}`,
+        );
         if (!progressData) return;
 
         const { position, duration, title } = JSON.parse(progressData);
         const pct = duration > 0 ? (position / duration) * 100 : 0;
-        
+
         if (pct > 1 && pct < 98) {
-          setContinueStory(prev => (prev?.id === lastId && Math.abs(prev.progress - pct) < 0.1) ? prev : { id: lastId, title, progress: pct });
+          setContinueStory((prev) =>
+            prev?.id === lastId && Math.abs(prev.progress - pct) < 0.1
+              ? prev
+              : { id: lastId, title, progress: pct },
+          );
         } else {
           setContinueStory(null);
         }
@@ -135,30 +177,58 @@ export default function HomeScreen() {
   // Welcome Narration — once per app session only
   const { prefs: readingPrefs } = useReadingPreferences();
   useEffect(() => {
-    if (profile && !isLoading && isFocused && readingPrefs.autoSpeak && !hasGreeted.current) {
+    if (
+      profile &&
+      !isLoading &&
+      isFocused &&
+      readingPrefs.autoSpeak &&
+      !hasGreeted.current
+    ) {
       hasGreeted.current = true;
       const greeting = getGreeting(profile.kid_name || 'Friend');
       const text = `${greeting.line1} ${profile.kid_name || 'my friend'}! Ready for a new story?`;
-      const timer = setTimeout(() => talkative.speak(text, profile.primary_language || 'en'), 1500);
+      const timer = setTimeout(
+        () => talkative.speak(text, profile.primary_language || 'en'),
+        1500,
+      );
       return () => clearTimeout(timer);
     }
-  }, [profile?.id, profile?.kid_name, profile?.primary_language, isLoading, isFocused, readingPrefs.autoSpeak]);
+  }, [
+    profile?.id,
+    profile?.kid_name,
+    profile?.primary_language,
+    isLoading,
+    isFocused,
+    readingPrefs.autoSpeak,
+  ]);
 
-  const handleRefresh = useCallback(async () => { await refreshAll(); }, [refreshAll]);
+  const handleRefresh = useCallback(async () => {
+    await refreshAll();
+  }, [refreshAll]);
 
   const handleGenerateStory = useCallback(async () => {
     if (!profile) return;
-    if (readingPrefs.autoSpeak) talkative.speak("Let's make some magic!", profile.primary_language || 'en');
-    router.push({ pathname: '/story/generate', params: { profileId: profile.id, languageCode: profile.primary_language } });
+    if (readingPrefs.autoSpeak)
+      talkative.speak(
+        "Let's make some magic!",
+        profile.primary_language || 'en',
+      );
+    router.push({
+      pathname: '/story/generate',
+      params: { profileId: profile.id, languageCode: profile.primary_language },
+    });
   }, [profile, router, readingPrefs.autoSpeak]);
 
-  const handleStoryPress = useCallback((storyId: string) => {
-    router.push({ pathname: '/story/playback', params: { storyId } });
-  }, [router]);
+  const handleStoryPress = useCallback(
+    (storyId: string) => {
+      router.push({ pathname: '/story/playback', params: { storyId } });
+    },
+    [router],
+  );
 
   const handleLastStory = useCallback(() => {
     if (continueStory) {
-      const fullStory = stories.find(s => s.id === continueStory.id);
+      const fullStory = stories.find((s) => s.id === continueStory.id);
       if (fullStory) {
         loadAndPlayAudio(fullStory);
       } else {
@@ -174,9 +244,13 @@ export default function HomeScreen() {
       const randomIndex = randomInt(stories.length);
       handleStoryPress(stories[randomIndex].id);
     } else {
-      router.push({ 
-        pathname: '/story/generate', 
-        params: { profileId: profile?.id, languageCode: profile?.primary_language, surprise: 'true' } 
+      router.push({
+        pathname: '/story/generate',
+        params: {
+          profileId: profile?.id,
+          languageCode: profile?.primary_language,
+          surprise: 'true',
+        },
       });
     }
   }, [stories, handleStoryPress, profile, router]);
@@ -185,18 +259,72 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <Container maxWidth gradient gradientColors={C.backgroundGradient} safeAreaEdges={['top']} scroll scrollProps={{ contentContainerStyle: styles.scrollContent }}>
+      <Container
+        maxWidth
+        gradient
+        gradientColors={C.backgroundGradient}
+        safeAreaEdges={['top']}
+        scroll
+        scrollProps={{ contentContainerStyle: styles.scrollContent }}
+      >
         <MeshBackground primaryColor={C.primary} />
         <View style={styles.topBar}>
-          <Skeleton width={180} height={32} borderRadius={8} color="rgba(0,0,0,0.08)" />
-          <View style={styles.topBarRight}><Skeleton width={60} height={32} borderRadius={16} color="rgba(0,0,0,0.05)" /></View>
+          <Skeleton
+            width={180}
+            height={32}
+            borderRadius={8}
+            color="rgba(0,0,0,0.08)"
+          />
+          <View style={styles.topBarRight}>
+            <Skeleton
+              width={60}
+              height={32}
+              borderRadius={16}
+              color="rgba(0,0,0,0.05)"
+            />
+          </View>
         </View>
-        <View style={styles.heroWrap}><Skeleton width="100%" height={240} borderRadius={32} color="rgba(0,0,0,0.08)" /></View>
-        <View style={styles.section}><LoadingSkeleton type="quick-actions" count={1} /></View>
-        <View style={styles.section}><Skeleton width="100%" height={50} borderRadius={25} color="rgba(0,0,0,0.04)" /></View>
+        <View style={styles.heroWrap}>
+          <Skeleton
+            width="100%"
+            height={240}
+            borderRadius={32}
+            color="rgba(0,0,0,0.08)"
+          />
+        </View>
         <View style={styles.section}>
-           <Skeleton width={150} height={20} borderRadius={4} style={{ marginBottom: 12 }} color="rgba(0,0,0,0.08)" />
-           <View style={{ flexDirection: 'row', gap: 12 }}><Skeleton width={120} height={40} borderRadius={20} color="rgba(0,0,0,0.05)" /><Skeleton width={120} height={40} borderRadius={20} color="rgba(0,0,0,0.05)" /></View>
+          <LoadingSkeleton type="quick-actions" count={1} />
+        </View>
+        <View style={styles.section}>
+          <Skeleton
+            width="100%"
+            height={50}
+            borderRadius={25}
+            color="rgba(0,0,0,0.04)"
+          />
+        </View>
+        <View style={styles.section}>
+          <Skeleton
+            width={150}
+            height={20}
+            borderRadius={4}
+            style={{ marginBottom: 12 }}
+            color="rgba(0,0,0,0.08)"
+          />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Skeleton
+              width={120}
+              height={40}
+              borderRadius={20}
+              color="rgba(0,0,0,0.05)"
+            />
+            <Skeleton
+              width={120}
+              height={40}
+              borderRadius={20}
+              color="rgba(0,0,0,0.05)"
+            />
+          </View>
         </View>
       </Container>
     );
@@ -205,96 +333,388 @@ export default function HomeScreen() {
   if (error || !profile) {
     if (!profile && !error) return <Redirect href="/onboarding/consent" />;
     return (
-      <SafeAreaView style={[styles.root, { backgroundColor: C.background }]} edges={['top']}>
-        <LinearGradient colors={C.backgroundGradient} style={StyleSheet.absoluteFill} />
-        <ErrorState type="general" title="Unable to Load" message={error || 'Failed to load profile.'} onRetry={refreshAll} onGoHome={() => router.replace('/')} />
+      <SafeAreaView
+        style={[styles.root, { backgroundColor: C.background }]}
+        edges={['top']}
+      >
+        <LinearGradient
+          colors={C.backgroundGradient}
+          style={StyleSheet.absoluteFill}
+        />
+        <ErrorState
+          type="general"
+          title="Unable to Load"
+          message={error || 'Failed to load profile.'}
+          onRetry={refreshAll}
+          onGoHome={() => router.replace('/')}
+        />
       </SafeAreaView>
     );
   }
 
-  const { line1, line2, icon: greetIcon } = getGreeting(profile.kid_name || 'Friend');
+  const {
+    line1,
+    line2,
+    icon: greetIcon,
+  } = getGreeting(profile.kid_name || 'Friend');
   const GreetIconData = GREETING_ICONS[greetIcon];
   const GreetIcon = GreetIconData.Component;
   const isPro = subscription?.plan !== 'free';
 
   return (
-    <Container maxWidth gradient gradientColors={C.backgroundGradient} safeAreaEdges={['top']} scroll scrollProps={{ onScroll: wakeUI, scrollEventThrottle: 16, refreshControl: <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={C.primary} />, contentContainerStyle: styles.scrollContent }}>
+    <Container
+      maxWidth
+      gradient
+      gradientColors={C.backgroundGradient}
+      safeAreaEdges={['top']}
+      scroll
+      scrollProps={{
+        onScroll: wakeUI,
+        scrollEventThrottle: 16,
+        refreshControl: (
+          <RefreshControl
+            refreshing={false}
+            onRefresh={handleRefresh}
+            tintColor={C.primary}
+          />
+        ),
+        contentContainerStyle: styles.scrollContent,
+      }}
+    >
       <MeshBackground primaryColor={C.primary} />
       <FloatingParticles count={5} />
 
-      <Animated.View entering={FadeIn.delay(40)} style={[styles.topBar, { backgroundColor: C.cardBackground + '90' }]}>
-        <TouchableOpacity style={styles.avatarRow} onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.85}>
+      <Animated.View
+        entering={FadeIn.delay(40)}
+        style={[styles.topBar, { backgroundColor: C.cardBackground + '90' }]}
+      >
+        <TouchableOpacity
+          style={styles.avatarRow}
+          onPress={() => router.push('/(tabs)/profile')}
+          activeOpacity={0.85}
+        >
           <View style={styles.greetBlock}>
-            <Text style={[styles.greetLine1, { color: C.text.secondary }]}>{line1}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Text style={[styles.greetLine2, { color: C.text.primary }]} numberOfLines={1}>{line2}</Text><GreetIcon size={22} color={GreetIconData.color} strokeWidth={2} /></View>
+            <Text style={[styles.greetLine1, { color: C.text.secondary }]}>
+              {line1}
+            </Text>
+            <View
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+            >
+              <Text
+                style={[styles.greetLine2, { color: C.text.primary }]}
+                numberOfLines={1}
+              >
+                {line2}
+              </Text>
+              <GreetIcon
+                size={22}
+                color={GreetIconData.color}
+                strokeWidth={2}
+              />
+            </View>
           </View>
         </TouchableOpacity>
         <View style={styles.topBarRight}>
-          {streak && streak.current_streak > 0 && <AnimatedStreakChip count={streak.current_streak} styles={styles} />}
+          {streak && streak.current_streak > 0 && (
+            <AnimatedStreakChip count={streak.current_streak} styles={styles} />
+          )}
         </View>
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.heroWrap}>
+      <Animated.View
+        entering={FadeInDown.delay(100).springify()}
+        style={styles.heroWrap}
+      >
         <AnimatedPressable onPress={handleRandomStory} scaleDown={0.97}>
-          <LinearGradient colors={[C.primary, C.primaryDark] as [string, string]} style={styles.heroCard}>
+          <LinearGradient
+            colors={[C.primary, C.primaryDark] as [string, string]}
+            style={styles.heroCard}
+          >
             <HeroShimmer styles={styles} />
-            <View style={[styles.orb, styles.orbTL, { backgroundColor: 'rgba(255,255,255,0.12)' }]} /><View style={[styles.orb, styles.orbBR, { backgroundColor: 'rgba(0,0,0,0.06)' }]} />
+            <View
+              style={[
+                styles.orb,
+                styles.orbTL,
+                { backgroundColor: 'rgba(255,255,255,0.12)' },
+              ]}
+            />
+            <View
+              style={[
+                styles.orb,
+                styles.orbBR,
+                { backgroundColor: 'rgba(0,0,0,0.06)' },
+              ]}
+            />
             <View style={styles.heroBodyInner}>
               <View style={styles.heroMain}>
-                <View style={[styles.heroBadge, { backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }]}><Sparkles size={12} color="#FFF" /><Text style={styles.heroBadgeText}>AI ADVENTURE</Text></View>
+                <View
+                  style={[
+                    styles.heroBadge,
+                    {
+                      backgroundColor: 'rgba(255,255,255,0.15)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.2)',
+                    },
+                  ]}
+                >
+                  <Sparkles size={12} color="#FFF" />
+                  <Text style={styles.heroBadgeText}>AI ADVENTURE</Text>
+                </View>
                 <Text style={styles.heroH1}>Magic Story Maker</Text>
-                <Text style={styles.heroSub}>Create a personalized journey where your child is the hero of the day</Text>
+                <Text style={styles.heroSub}>
+                  Create a personalized journey where your child is the hero of
+                  the day
+                </Text>
                 <Animated.View style={[styles.heroActionBtn, heroActionPulse]}>
-                   <View style={styles.heroActionInner}>
-                      <Wand2 size={18} color={C.primaryDark} strokeWidth={2.5} />
-                      <Text style={[styles.heroActionBtnText, { color: C.primaryDark }]}>Start Magic ⚡</Text>
-                   </View>
+                  <View style={styles.heroActionInner}>
+                    <Wand2 size={18} color={C.primaryDark} strokeWidth={2.5} />
+                    <Text
+                      style={[
+                        styles.heroActionBtnText,
+                        { color: C.primaryDark },
+                      ]}
+                    >
+                      Start Magic ⚡
+                    </Text>
+                  </View>
                 </Animated.View>
               </View>
               <View style={styles.heroVisual}>
                 <View style={styles.heroVisualOutline}>
-                   <FloatAnim><View style={{ width: isTablet ? 100 : 80, height: isTablet ? 100 : 80, borderRadius: isTablet ? 50 : 40, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)' }}><Wand2 size={isTablet ? 48 : 38} color="#FFF" strokeWidth={1.5} /></View></FloatAnim>
+                  <FloatAnim>
+                    <View
+                      style={{
+                        width: isTablet ? 100 : 80,
+                        height: isTablet ? 100 : 80,
+                        borderRadius: isTablet ? 50 : 40,
+                        backgroundColor: 'rgba(255,255,255,0.15)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderWidth: 1.5,
+                        borderColor: 'rgba(255,255,255,0.2)',
+                      }}
+                    >
+                      <Wand2
+                        size={isTablet ? 48 : 38}
+                        color="#FFF"
+                        strokeWidth={1.5}
+                      />
+                    </View>
+                  </FloatAnim>
                 </View>
               </View>
             </View>
-            <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.1)']} style={styles.heroStrip}>
-              <View style={styles.heroStripItem}><Clock size={12} color="rgba(255,255,255,0.8)" /><Text style={styles.heroStripText}>5+ min stories</Text></View>
-              <View style={styles.heroStripDot} /><View style={styles.heroStripItem}><Award size={12} color="rgba(255,255,255,0.8)" /><Text style={styles.heroStripText}>Earn badges</Text></View>
+            <LinearGradient
+              colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.1)']}
+              style={styles.heroStrip}
+            >
+              <View style={styles.heroStripItem}>
+                <Clock size={12} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.heroStripText}>5+ min stories</Text>
+              </View>
+              <View style={styles.heroStripDot} />
+              <View style={styles.heroStripItem}>
+                <Award size={12} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.heroStripText}>Earn badges</Text>
+              </View>
             </LinearGradient>
           </LinearGradient>
         </AnimatedPressable>
       </Animated.View>
 
-      <BehaviorBooster colors={C} profileId={profile.id} languageCode={profile.primary_language} />
+      <BehaviorBooster
+        colors={C}
+        profileId={profile.id}
+        languageCode={profile.primary_language}
+      />
 
-      <QuickActions handleLastStory={handleLastStory} handleGenerateStory={handleGenerateStory} storiesCount={stories?.length || 0} textPrimary={C.text.primary} textSecondary={C.text.secondary} onLibrary={() => router.push('/(tabs)/history')} continueStory={continueStory} activeStoryId={activeStory?.id} isPlaying={isPlaying} playPause={playPause} styles={styles} />
-      
+      <QuickActions
+        handleLastStory={handleLastStory}
+        handleGenerateStory={handleGenerateStory}
+        storiesCount={stories?.length || 0}
+        textPrimary={C.text.primary}
+        textSecondary={C.text.secondary}
+        onLibrary={() => router.push('/(tabs)/history')}
+        continueStory={continueStory}
+        activeStoryId={activeStory?.id}
+        isPlaying={isPlaying}
+        playPause={playPause}
+        styles={styles}
+      />
+
       <BehaviorProgressCard stories={stories} compact />
 
-      <StatsTicker stories={stories?.length || 0} languages={4} characters={(profile.family_members?.length || 0) + (profile.friends?.length || 0)} primaryColor={C.primary} cardBackground={C.cardBackground} textPrimary={C.text.primary} textSecondary={C.text.secondary} styles={styles} />
-
+      <StatsTicker
+        stories={stories?.length || 0}
+        languages={4}
+        characters={
+          (profile.family_members?.length || 0) + (profile.friends?.length || 0)
+        }
+        primaryColor={C.primary}
+        cardBackground={C.cardBackground}
+        textPrimary={C.text.primary}
+        textSecondary={C.text.secondary}
+        styles={styles}
+      />
 
       <View style={styles.section}>
         <View style={styles.secHeader}>
-          <Text style={[styles.secTitle, { color: C.text.primary }]}>Recent Stories</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/history')} style={[styles.seeAllBtn, { backgroundColor: C.primary + '10' }]}><Text style={[styles.seeAllText, { color: C.primary }]}>See All</Text><ArrowRight size={13} color={C.primary} strokeWidth={3} /></TouchableOpacity>
+          <Text style={[styles.secTitle, { color: C.text.primary }]}>
+            Recent Stories
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/history')}
+            style={[styles.seeAllBtn, { backgroundColor: C.primary + '10' }]}
+          >
+            <Text style={[styles.seeAllText, { color: C.primary }]}>
+              See All
+            </Text>
+            <ArrowRight size={13} color={C.primary} strokeWidth={3} />
+          </TouchableOpacity>
         </View>
         {recentStories.length === 0 ? (
-          <View style={styles.emptyWrap}><View style={[styles.emptyCard, { backgroundColor: C.cardBackground }]}><View style={styles.emptyIconRing}><Sparkles size={44} color="#FBBF24" strokeWidth={1.5} /></View><Text style={[styles.emptyTitle, { color: C.text.primary }]}>No stories yet!</Text><Text style={[styles.emptySub, { color: C.text.secondary }]}>Create your first adventure story with {profile.kid_name}.</Text><TouchableOpacity onPress={handleGenerateStory} activeOpacity={0.8}><LinearGradient colors={[C.primary, C.primaryDark] as [string, string]} style={styles.emptyAction} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}><Sparkles size={18} color="#FFFFFF" /><Text style={styles.emptyActionText}>Start Creating</Text></LinearGradient></TouchableOpacity></View></View>
+          <View style={styles.emptyWrap}>
+            <View
+              style={[styles.emptyCard, { backgroundColor: C.cardBackground }]}
+            >
+              <View style={styles.emptyIconRing}>
+                <Sparkles size={44} color="#FBBF24" strokeWidth={1.5} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: C.text.primary }]}>
+                No stories yet!
+              </Text>
+              <Text style={[styles.emptySub, { color: C.text.secondary }]}>
+                Create your first adventure story with {profile.kid_name}.
+              </Text>
+              <TouchableOpacity
+                onPress={handleGenerateStory}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={[C.primary, C.primaryDark] as [string, string]}
+                  style={styles.emptyAction}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Sparkles size={18} color="#FFFFFF" />
+                  <Text style={styles.emptyActionText}>Start Creating</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel} snapToInterval={CARD_W + SPACING.md} decelerationRate="fast">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carousel}
+            snapToInterval={CARD_W + SPACING.md}
+            decelerationRate="fast"
+          >
             {recentStories?.map((story, i) => {
-              const palette = getSeasonPalette(story.season, C.primary, story.theme);
+              const palette = getSeasonPalette(
+                story.season,
+                C.primary,
+                story.theme,
+              );
               return (
-                <Animated.View key={story.id} entering={FadeInRight.delay(400 + i * 100).springify()}>
-                  <AnimatedPressable onPress={() => handleStoryPress(story.id)} style={{ width: CARD_W }}>
-                    <View style={[styles.storyCard, { backgroundColor: C.cardBackground, height: isTablet ? 280 : 260 }]}>
-                      <LinearGradient colors={palette.colors} style={styles.storyArt}>
-                        {(() => { const ti = getThemeIcon(story.theme); const TIcon = ti.icon; return <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}><TIcon size={ti.size} color="rgba(255,255,255,0.9)" strokeWidth={1.5} /></View>; })()}
-                        <View style={styles.storyBadgesTop}><View style={styles.storyFlagBadge}><Text style={styles.storyFlag}>{getLanguageFlag(story.language_code)}</Text></View></View>
-                        {story.audio_url && <View style={[styles.storyPlayBtn, { backgroundColor: 'rgba(255,255,255,0.9)' }]}><Play size={14} color={palette.accent} fill={palette.accent} /></View>}
+                <Animated.View
+                  key={story.id}
+                  entering={FadeInRight.delay(400 + i * 100).springify()}
+                >
+                  <AnimatedPressable
+                    onPress={() => handleStoryPress(story.id)}
+                    style={{ width: CARD_W }}
+                  >
+                    <View
+                      style={[
+                        styles.storyCard,
+                        {
+                          backgroundColor: C.cardBackground,
+                          height: isTablet ? 280 : 260,
+                        },
+                      ]}
+                    >
+                      <LinearGradient
+                        colors={palette.colors}
+                        style={styles.storyArt}
+                      >
+                        {(() => {
+                          const ti = getThemeIcon(story.theme);
+                          const TIcon = ti.icon;
+                          return (
+                            <View
+                              style={{
+                                width: 72,
+                                height: 72,
+                                borderRadius: 36,
+                                backgroundColor: 'rgba(255,255,255,0.2)',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <TIcon
+                                size={ti.size}
+                                color="rgba(255,255,255,0.9)"
+                                strokeWidth={1.5}
+                              />
+                            </View>
+                          );
+                        })()}
+                        <View style={styles.storyBadgesTop}>
+                          <View style={styles.storyFlagBadge}>
+                            <Text style={styles.storyFlag}>
+                              {getLanguageFlag(story.language_code)}
+                            </Text>
+                          </View>
+                        </View>
+                        {story.audio_url && (
+                          <View
+                            style={[
+                              styles.storyPlayBtn,
+                              { backgroundColor: 'rgba(255,255,255,0.9)' },
+                            ]}
+                          >
+                            <Play
+                              size={14}
+                              color={palette.accent}
+                              fill={palette.accent}
+                            />
+                          </View>
+                        )}
                       </LinearGradient>
-                      <View style={styles.storyContent}><Text style={[styles.storyTitle, { color: C.text.primary }]} numberOfLines={2}>{story.title}</Text><View style={styles.storyMeta}><View style={[styles.seasonTag, { backgroundColor: palette.colors[0] + '15' }]}><Text style={[styles.seasonTagText, { color: palette.accent }]}>{story.season || 'Story'}</Text></View><Text style={[styles.storyMetaText, { color: C.text.light }]}>{getRelativeTime(story.generated_at)}</Text></View></View>
+                      <View style={styles.storyContent}>
+                        <Text
+                          style={[styles.storyTitle, { color: C.text.primary }]}
+                          numberOfLines={2}
+                        >
+                          {story.title}
+                        </Text>
+                        <View style={styles.storyMeta}>
+                          <View
+                            style={[
+                              styles.seasonTag,
+                              { backgroundColor: palette.colors[0] + '15' },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.seasonTagText,
+                                { color: palette.accent },
+                              ]}
+                            >
+                              {story.season || 'Story'}
+                            </Text>
+                          </View>
+                          <Text
+                            style={[
+                              styles.storyMetaText,
+                              { color: C.text.light },
+                            ]}
+                          >
+                            {getRelativeTime(story.generated_at)}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
                   </AnimatedPressable>
                 </Animated.View>
@@ -306,12 +726,29 @@ export default function HomeScreen() {
 
       {!isPro && (
         <Animated.View entering={FadeInDown.delay(600).springify()}>
-          <AnimatedPressable onPress={() => router.push('/paywall')} scaleDown={0.96} style={styles.premiumBannerWrap}>
-            <LinearGradient colors={['#1E293B', '#0F172A']} style={styles.premiumBanner}>
+          <AnimatedPressable
+            onPress={() => router.push('/paywall')}
+            scaleDown={0.96}
+            style={styles.premiumBannerWrap}
+          >
+            <LinearGradient
+              colors={['#1E293B', '#0F172A']}
+              style={styles.premiumBanner}
+            >
               <View style={styles.premiumGlowRow}>
-                <View style={styles.premiumIconBox}><Crown size={24} color="#F59E0B" strokeWidth={2} /></View>
-                <View style={styles.premiumBody}><Text style={styles.premiumTitle}>Unlock Pro Features</Text><Text style={styles.premiumDesc}>Unlimited high-quality stories, voices, and creative themes.</Text></View>
-                <View style={styles.premiumAction}><Text style={styles.premiumActionText}>GO PRO</Text><ChevronRight size={14} color="#0F172A" strokeWidth={3} /></View>
+                <View style={styles.premiumIconBox}>
+                  <Crown size={24} color="#F59E0B" strokeWidth={2} />
+                </View>
+                <View style={styles.premiumBody}>
+                  <Text style={styles.premiumTitle}>Unlock Pro Features</Text>
+                  <Text style={styles.premiumDesc}>
+                    Unlimited high-quality stories, voices, and creative themes.
+                  </Text>
+                </View>
+                <View style={styles.premiumAction}>
+                  <Text style={styles.premiumActionText}>GO PRO</Text>
+                  <ChevronRight size={14} color="#0F172A" strokeWidth={3} />
+                </View>
               </View>
             </LinearGradient>
           </AnimatedPressable>

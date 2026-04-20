@@ -40,7 +40,8 @@ export function constantTimeEqual(a: string, b: string): boolean {
     let result = a.length ^ b.length;
     const maxLen = Math.max(a.length, b.length);
     for (let i = 0; i < maxLen; i++) {
-      result |= (a.codePointAt(i % a.length) ?? 0) ^ (b.codePointAt(i % b.length) ?? 0);
+      result |=
+        (a.codePointAt(i % a.length) ?? 0) ^ (b.codePointAt(i % b.length) ?? 0);
     }
     return result === 0;
   }

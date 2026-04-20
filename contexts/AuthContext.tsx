@@ -1,5 +1,13 @@
-import { account,ID } from '@/lib/appwrite';
-import React,{ createContext,ReactNode,useCallback,useContext,useEffect,useMemo,useState } from 'react';
+import { account, ID } from '@/lib/appwrite';
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { Models } from 'react-native-appwrite';
 
 interface AuthContextType {
@@ -16,7 +24,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
+  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(
+    null,
+  );
   const [session, setSession] = useState<Models.Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -49,16 +59,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, name?: string) => {
-    await account.create(ID.unique(), email, password, name);
-    const sessionRes = await account.createEmailPasswordSession(email, password);
-    const userRes = await account.get();
-    setSession(sessionRes);
-    setUser(userRes);
-  }, []);
+  const signUp = useCallback(
+    async (email: string, password: string, name?: string) => {
+      await account.create(ID.unique(), email, password, name);
+      const sessionRes = await account.createEmailPasswordSession(
+        email,
+        password,
+      );
+      const userRes = await account.get();
+      setSession(sessionRes);
+      setUser(userRes);
+    },
+    [],
+  );
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const sessionRes = await account.createEmailPasswordSession(email, password);
+    const sessionRes = await account.createEmailPasswordSession(
+      email,
+      password,
+    );
     const userRes = await account.get();
     setSession(sessionRes);
     setUser(userRes);
@@ -74,22 +93,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
   }, []);
 
-  const value = useMemo(() => ({
-    user,
-    session,
-    isLoading,
-    isAuthenticated: !!user,
-    signUp,
-    signIn,
-    signOut,
-    refreshUser,
-  }), [user, session, isLoading, signUp, signIn, signOut, refreshUser]);
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      session,
+      isLoading,
+      isAuthenticated: !!user,
+      signUp,
+      signIn,
+      signOut,
+      refreshUser,
+    }),
+    [user, session, isLoading, signUp, signIn, signOut, refreshUser],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

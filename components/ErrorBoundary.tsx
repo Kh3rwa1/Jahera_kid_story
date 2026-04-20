@@ -1,6 +1,12 @@
-import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SPACING } from '@/constants/theme';
+import {
+  BORDER_RADIUS,
+  COLORS,
+  FONT_SIZES,
+  FONT_WEIGHTS,
+  SPACING,
+} from '@/constants/theme';
 import { AlertCircle } from 'lucide-react-native';
-import React,{ Component,ReactNode } from 'react';
+import React, { Component, ReactNode } from 'react';
 import {
   StyleSheet,
   Text,
@@ -55,10 +61,16 @@ export class ErrorBoundary extends Component<Props, State> {
             </Text>
             {__DEV__ && this.state.error && (
               <View style={styles.errorDetails}>
-                <Text style={styles.errorText}>{this.state.error.toString()}</Text>
+                <Text style={styles.errorText}>
+                  {this.state.error.toString()}
+                </Text>
               </View>
             )}
-            <TouchableOpacity style={styles.button} onPress={this.handleReset} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={this.handleReset}
+              activeOpacity={0.8}
+            >
               <Text style={styles.buttonText}>Try Again</Text>
             </TouchableOpacity>
           </View>

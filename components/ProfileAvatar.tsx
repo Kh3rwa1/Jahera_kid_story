@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Animated,{ ZoomIn } from 'react-native-reanimated';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 
 interface ProfileAvatarProps {
   avatarUrl?: string | null;
@@ -95,12 +95,12 @@ export function ProfileAvatar({
                 },
               ]}
             >
-              <Image 
-                source={require('@/assets/images/icon.png')} 
-                style={{ 
-                  width: dims.container, 
+              <Image
+                source={require('@/assets/images/icon.png')}
+                style={{
+                  width: dims.container,
                   height: dims.container,
-                }} 
+                }}
                 resizeMode="cover"
               />
             </LinearGradient>
@@ -117,7 +117,10 @@ export function ProfileAvatar({
                 },
               ]}
             >
-              <ActivityIndicator color="#FFFFFF" size={size === 'small' ? 'small' : 'large'} />
+              <ActivityIndicator
+                color="#FFFFFF"
+                size={size === 'small' ? 'small' : 'large'}
+              />
             </View>
           )}
 

@@ -1,7 +1,7 @@
-import { BORDER_RADIUS,FONTS,SHADOWS,SPACING } from '@/constants/theme';
+import { BORDER_RADIUS, FONTS, SHADOWS, SPACING } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Check,RotateCcw } from 'lucide-react-native';
-import { useCallback,useRef,useState } from 'react';
+import { Check, RotateCcw } from 'lucide-react-native';
+import { useCallback, useRef, useState } from 'react';
 import {
   PanResponder,
   StyleSheet,
@@ -10,12 +10,12 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import Animated,{
-FadeIn,
-FadeInDown,
-useAnimatedStyle,
-useSharedValue,
-withSpring,
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from 'react-native-reanimated';
 
 function hslToHex(h: number, s: number, l: number): string {
@@ -40,16 +40,24 @@ function hexToHsl(hex: string): [number, number, number] {
   const r = Number.parseInt(result[1], 16) / 255;
   const g = Number.parseInt(result[2], 16) / 255;
   const b = Number.parseInt(result[3], 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  let h = 0,
+    s = 0;
   const l = (max + min) / 2;
   if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
     switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) * 60; break;
-      case g: h = ((b - r) / d + 2) * 60; break;
-      case b: h = ((r - g) / d + 4) * 60; break;
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+        break;
+      case g:
+        h = ((b - r) / d + 2) * 60;
+        break;
+      case b:
+        h = ((r - g) / d + 4) * 60;
+        break;
     }
   }
   return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
@@ -61,7 +69,11 @@ function generatePalette(hex: string) {
     primary: hex,
     primaryDark: hslToHex(h, Math.min(s + 10, 100), Math.max(l - 12, 15)),
     primaryLight: hslToHex(h, Math.max(s - 10, 10), Math.min(l + 15, 90)),
-    secondary: hslToHex((h + 30) % 360, Math.max(s - 15, 20), Math.min(l + 20, 85)),
+    secondary: hslToHex(
+      (h + 30) % 360,
+      Math.max(s - 15, 20),
+      Math.min(l + 20, 85),
+    ),
     background: hslToHex(h, Math.max(s - 50, 5), 97),
     cardBackground: '#FFFFFF',
     gradientStart: hslToHex(h, Math.max(s - 5, 20), Math.min(l + 10, 80)),
@@ -118,7 +130,7 @@ export function ColorWheelPicker({
       setSelectedColor(hex);
       onColorSelect(hex);
     },
-    [WHEEL_RADIUS, saturation, lightness, onColorSelect]
+    [WHEEL_RADIUS, saturation, lightness, onColorSelect],
   );
 
   const panResponder = useRef(
@@ -139,12 +151,18 @@ export function ColorWheelPicker({
         handleScale.value = withSpring(1, { damping: 12, stiffness: 200 });
         previewScale.value = withSpring(1, { damping: 12, stiffness: 200 });
       },
-    })
+    }),
   ).current;
 
   const handleAngle = (hue * Math.PI) / 180;
-  const handleX = WHEEL_RADIUS + (WHEEL_RADIUS - RING_WIDTH / 2) * Math.cos(handleAngle) - HANDLE_SIZE / 2;
-  const handleY = WHEEL_RADIUS + (WHEEL_RADIUS - RING_WIDTH / 2) * Math.sin(handleAngle) - HANDLE_SIZE / 2;
+  const handleX =
+    WHEEL_RADIUS +
+    (WHEEL_RADIUS - RING_WIDTH / 2) * Math.cos(handleAngle) -
+    HANDLE_SIZE / 2;
+  const handleY =
+    WHEEL_RADIUS +
+    (WHEEL_RADIUS - RING_WIDTH / 2) * Math.sin(handleAngle) -
+    HANDLE_SIZE / 2;
 
   const handleAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: handleScale.value }],
@@ -155,16 +173,32 @@ export function ColorWheelPicker({
   }));
 
   const presetColors = [
-    '#3B82F6', '#10B981', '#F59E0B', '#EF4444',
-    '#EC4899', '#8B5CF6', '#06B6D4', '#F97316',
+    '#3B82F6',
+    '#10B981',
+    '#F59E0B',
+    '#EF4444',
+    '#EC4899',
+    '#8B5CF6',
+    '#06B6D4',
+    '#F97316',
   ];
 
   return (
-    <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.container}>
+    <Animated.View
+      entering={FadeInDown.delay(100).springify()}
+      style={styles.container}
+    >
       <View style={styles.wheelSection}>
         <View
           ref={wheelRef}
-          style={[styles.wheelContainer, { width: WHEEL_SIZE, height: WHEEL_SIZE, borderRadius: WHEEL_SIZE / 2 }]}
+          style={[
+            styles.wheelContainer,
+            {
+              width: WHEEL_SIZE,
+              height: WHEEL_SIZE,
+              borderRadius: WHEEL_SIZE / 2,
+            },
+          ]}
           {...panResponder.panHandlers}
         >
           {Array.from({ length: 360 }, (_, i) => i).map((deg) => (
@@ -201,7 +235,11 @@ export function ColorWheelPicker({
             ]}
           >
             <LinearGradient
-              colors={[palette.gradientStart, palette.gradientMid, palette.gradientEnd]}
+              colors={[
+                palette.gradientStart,
+                palette.gradientMid,
+                palette.gradientEnd,
+              ]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.centerGradient}
@@ -227,10 +265,13 @@ export function ColorWheelPicker({
       </View>
 
       <Animated.View entering={FadeIn.delay(200)} style={styles.presetsSection}>
-        <Text style={[styles.presetsLabel, { color: textSecondary }]}>Quick Pick</Text>
+        <Text style={[styles.presetsLabel, { color: textSecondary }]}>
+          Quick Pick
+        </Text>
         <View style={styles.presetsRow}>
           {presetColors.map((color) => {
-            const isActive = selectedColor.toLowerCase() === color.toLowerCase();
+            const isActive =
+              selectedColor.toLowerCase() === color.toLowerCase();
             return (
               <TouchableOpacity
                 key={color}
@@ -246,7 +287,9 @@ export function ColorWheelPicker({
                 }}
                 activeOpacity={0.7}
               >
-                {isActive && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
+                {isActive && (
+                  <Check size={14} color="#FFFFFF" strokeWidth={3} />
+                )}
               </TouchableOpacity>
             );
           })}
@@ -254,13 +297,45 @@ export function ColorWheelPicker({
       </Animated.View>
 
       <Animated.View entering={FadeIn.delay(300)} style={styles.palettePreview}>
-        <Text style={[styles.presetsLabel, { color: textSecondary }]}>Generated Palette</Text>
+        <Text style={[styles.presetsLabel, { color: textSecondary }]}>
+          Generated Palette
+        </Text>
         <View style={styles.paletteRow}>
-          <View style={[styles.paletteSwatch, { backgroundColor: palette.primaryLight }]} />
-          <View style={[styles.paletteSwatch, styles.paletteSwatchLarge, { backgroundColor: palette.primary }]} />
-          <View style={[styles.paletteSwatch, { backgroundColor: palette.primaryDark }]} />
-          <View style={[styles.paletteSwatch, { backgroundColor: palette.secondary }]} />
-          <View style={[styles.paletteSwatch, { backgroundColor: palette.background, borderWidth: 1, borderColor: textSecondary + '20' }]} />
+          <View
+            style={[
+              styles.paletteSwatch,
+              { backgroundColor: palette.primaryLight },
+            ]}
+          />
+          <View
+            style={[
+              styles.paletteSwatch,
+              styles.paletteSwatchLarge,
+              { backgroundColor: palette.primary },
+            ]}
+          />
+          <View
+            style={[
+              styles.paletteSwatch,
+              { backgroundColor: palette.primaryDark },
+            ]}
+          />
+          <View
+            style={[
+              styles.paletteSwatch,
+              { backgroundColor: palette.secondary },
+            ]}
+          />
+          <View
+            style={[
+              styles.paletteSwatch,
+              {
+                backgroundColor: palette.background,
+                borderWidth: 1,
+                borderColor: textSecondary + '20',
+              },
+            ]}
+          />
         </View>
       </Animated.View>
 
@@ -272,7 +347,9 @@ export function ColorWheelPicker({
             activeOpacity={0.7}
           >
             <RotateCcw size={16} color={textSecondary} />
-            <Text style={[styles.resetText, { color: textSecondary }]}>Reset to preset theme</Text>
+            <Text style={[styles.resetText, { color: textSecondary }]}>
+              Reset to preset theme
+            </Text>
           </TouchableOpacity>
         </Animated.View>
       )}
@@ -396,4 +473,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export { generatePalette,hexToHsl,hslToHex };
+export { generatePalette, hexToHsl, hslToHex };

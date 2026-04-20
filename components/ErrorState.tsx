@@ -1,7 +1,13 @@
-import { BORDER_RADIUS,SPACING } from '@/constants/theme';
+import { BORDER_RADIUS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSlideInUp } from '@/utils/animations';
-import { AlertCircle,Home,RefreshCw,Server,WifiOff } from 'lucide-react-native';
+import {
+  AlertCircle,
+  Home,
+  RefreshCw,
+  Server,
+  WifiOff,
+} from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -42,23 +48,30 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
         return {
           icon: <WifiOff size={80} color={COLORS.error} strokeWidth={1.5} />,
           title: 'No Internet Connection',
-          message: "It seems you're offline. Please check your internet connection and try again.",
+          message:
+            "It seems you're offline. Please check your internet connection and try again.",
         };
       case 'server':
         return {
           icon: <Server size={80} color={COLORS.error} strokeWidth={1.5} />,
           title: 'Server Error',
-          message: "We're having trouble connecting to our servers. Please try again in a moment.",
+          message:
+            "We're having trouble connecting to our servers. Please try again in a moment.",
         };
       case 'notFound':
         return {
-          icon: <AlertCircle size={80} color={COLORS.warning} strokeWidth={1.5} />,
+          icon: (
+            <AlertCircle size={80} color={COLORS.warning} strokeWidth={1.5} />
+          ),
           title: 'Not Found',
-          message: "We couldn't find what you're looking for. It may have been moved or deleted.",
+          message:
+            "We couldn't find what you're looking for. It may have been moved or deleted.",
         };
       default:
         return {
-          icon: <AlertCircle size={80} color={COLORS.error} strokeWidth={1.5} />,
+          icon: (
+            <AlertCircle size={80} color={COLORS.error} strokeWidth={1.5} />
+          ),
           title: 'Something Went Wrong',
           message: 'An unexpected error occurred. Please try again.',
         };
@@ -74,21 +87,36 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
       testID={testID}
       accessibilityLabel={`Error: ${title || defaultContent.title}`}
     >
-      <View style={styles.iconContainer}>
-        {defaultContent.icon}
-      </View>
+      <View style={styles.iconContainer}>{defaultContent.icon}</View>
 
       <Typography variant="h2" align="center" style={styles.title}>
         {title || defaultContent.title}
       </Typography>
 
-      <Typography variant="bodyMedium" color="secondary" align="center" style={styles.message}>
+      <Typography
+        variant="bodyMedium"
+        color="secondary"
+        align="center"
+        style={styles.message}
+      >
         {message || defaultContent.message}
       </Typography>
 
       {showDetails && errorMessage && (
-        <PremiumCard style={{...styles.detailsCard, backgroundColor: COLORS.errorLight + '20' }} padding={SPACING.md} shadow="sm">
-          <Typography variant="caption" color="error" align="center" numberOfLines={3}>
+        <PremiumCard
+          style={{
+            ...styles.detailsCard,
+            backgroundColor: COLORS.errorLight + '20',
+          }}
+          padding={SPACING.md}
+          shadow="sm"
+        >
+          <Typography
+            variant="caption"
+            color="error"
+            align="center"
+            numberOfLines={3}
+          >
             {errorMessage}
           </Typography>
         </PremiumCard>
@@ -160,4 +188,3 @@ const styles = StyleSheet.create({
     minWidth: 150,
   },
 });
-

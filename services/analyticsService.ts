@@ -73,7 +73,15 @@ class AnalyticsService {
     });
   }
 
-  trackEngagement(action: 'audio_played' | 'story_shared' | 'achievement_unlocked' | 'achievement_shared' | 'app_shared', properties?: Record<string, any>) {
+  trackEngagement(
+    action:
+      | 'audio_played'
+      | 'story_shared'
+      | 'achievement_unlocked'
+      | 'achievement_shared'
+      | 'app_shared',
+    properties?: Record<string, any>,
+  ) {
     this.track('user_engagement', {
       action,
       ...properties,
@@ -88,7 +96,11 @@ class AnalyticsService {
     });
   }
 
-  trackPerformance(metric: string, value: number, unit: 'ms' | 'bytes' | 'count') {
+  trackPerformance(
+    metric: string,
+    value: number,
+    unit: 'ms' | 'bytes' | 'count',
+  ) {
     this.track('performance_metric', {
       metric,
       value,
@@ -96,11 +108,19 @@ class AnalyticsService {
     });
   }
 
-  trackBehaviorGoalSelected(goalId: string, goalLabel: string, category: string) {
+  trackBehaviorGoalSelected(
+    goalId: string,
+    goalLabel: string,
+    category: string,
+  ) {
     this.track('behavior_goal_selected', { goalId, goalLabel, category });
   }
 
-  trackVoicePresetSelected(voiceId: string, voiceLabel: string, isPremium: boolean) {
+  trackVoicePresetSelected(
+    voiceId: string,
+    voiceLabel: string,
+    isPremium: boolean,
+  ) {
     this.track('voice_preset_selected', { voiceId, voiceLabel, isPremium });
   }
 
@@ -120,8 +140,18 @@ class AnalyticsService {
     this.track('parent_consent_given', { timestamp, version });
   }
 
-  trackStoryGeneratedWithGoal(goalId: string, language: string, voiceId: string | null, duration: string) {
-    this.track('story_generated_with_goal', { goalId, language, voiceId, duration });
+  trackStoryGeneratedWithGoal(
+    goalId: string,
+    language: string,
+    voiceId: string | null,
+    duration: string,
+  ) {
+    this.track('story_generated_with_goal', {
+      goalId,
+      language,
+      voiceId,
+      duration,
+    });
   }
 
   trackCitySelectedOnboarding(city: string, method: 'chip' | 'custom') {

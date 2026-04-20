@@ -1,5 +1,11 @@
-import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SPACING } from '@/constants/theme';
-import { BookOpen,Sparkles } from 'lucide-react-native';
+import {
+  BORDER_RADIUS,
+  COLORS,
+  FONT_SIZES,
+  FONT_WEIGHTS,
+  SPACING,
+} from '@/constants/theme';
+import { BookOpen, Sparkles } from 'lucide-react-native';
 import {
   StyleSheet,
   Text,
@@ -25,7 +31,12 @@ const getIconForType = (type: string = 'general') => {
   return Sparkles;
 };
 
-export const EmptyState = ({ type = 'general', title, description, action }: Readonly<EmptyStateProps>) => {
+export const EmptyState = ({
+  type = 'general',
+  title,
+  description,
+  action,
+}: Readonly<EmptyStateProps>) => {
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
@@ -38,7 +49,11 @@ export const EmptyState = ({ type = 'general', title, description, action }: Rea
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{description}</Text>
       {action && (
-        <TouchableOpacity style={styles.button} onPress={action.onPress} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={action.onPress}
+          activeOpacity={0.8}
+        >
           <Text style={styles.buttonText}>{action.label}</Text>
         </TouchableOpacity>
       )}

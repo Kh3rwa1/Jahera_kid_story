@@ -2,14 +2,22 @@ import { useMemo } from 'react';
 import { Platform } from 'react-native';
 
 export function splitIntoParagraphs(content: string): string[] {
-  return content.split(/\n+/).map(p => p.trim()).filter(p => p.length > 0);
+  return content
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
 }
 
-export function splitIntoTokens(text: string): Array<{ word: string; isSpace: boolean }> {
-  return text.split(/(\s+)/).filter(t => t.length > 0).map(t => ({
-    word: t,
-    isSpace: /^\s+$/.test(t),
-  }));
+export function splitIntoTokens(
+  text: string,
+): { word: string; isSpace: boolean }[] {
+  return text
+    .split(/(\s+)/)
+    .filter((t) => t.length > 0)
+    .map((t) => ({
+      word: t,
+      isSpace: /^\s+$/.test(t),
+    }));
 }
 
 function buildWordIndex(paragraphs: string[]): string[] {
@@ -36,8 +44,10 @@ function countTotalChars(words: string[]): number {
   return words.reduce((sum, w) => sum + w.length + 1, 0);
 }
 
-function buildSentences(words: string[]): Array<{ start: number; end: number; text: string }> {
-  const sentences: Array<{ start: number; end: number; text: string }> = [];
+function buildSentences(
+  words: string[],
+): { start: number; end: number; text: string }[] {
+  const sentences: { start: number; end: number; text: string }[] = [];
   let start = 0;
   let current: string[] = [];
   for (let i = 0; i < words.length; i++) {
@@ -54,7 +64,10 @@ function buildSentences(words: string[]): Array<{ start: number; end: number; te
 const FALLBACK_SCRIPT_LANG_CODES = new Set(['bn', 'sat']);
 
 export function getScriptFontOverride(languageCode?: string) {
-  if (!languageCode || !FALLBACK_SCRIPT_LANG_CODES.has(languageCode.toLowerCase())) {
+  if (
+    !languageCode ||
+    !FALLBACK_SCRIPT_LANG_CODES.has(languageCode.toLowerCase())
+  ) {
     return null;
   }
   return Platform.select({
@@ -64,20 +77,29 @@ export function getScriptFontOverride(languageCode?: string) {
   });
 }
 
-export function useWordHighlighting(content: string, position: number, duration: number) {
+export function useWordHighlighting(
+  content: string,
+  position: number,
+  duration: number,
+) {
   const paragraphs = useMemo(() => splitIntoParagraphs(content), [content]);
   const allWords = useMemo(() => buildWordIndex(paragraphs), [paragraphs]);
   const totalChars = useMemo(() => countTotalChars(allWords), [allWords]);
-  const wordTimings = useMemo(() => buildWordTimings(allWords, totalChars), [allWords, totalChars]);
+  const wordTimings = useMemo(
+    () => buildWordTimings(allWords, totalChars),
+    [allWords, totalChars],
+  );
   const sentences = useMemo(() => buildSentences(allWords), [allWords]);
 
   const paragraphWordRanges = useMemo(() => {
-    const ranges: Array<{ start: number; end: number }> = [];
+    const ranges: { start: number; end: number }[] = [];
     let count = 0;
     for (const para of paragraphs) {
-      const wordCount = splitIntoTokens(para).reduce((acc, tok) => (
-        !tok.isSpace && tok.word.trim().length > 0 ? acc + 1 : acc
-      ), 0);
+      const wordCount = splitIntoTokens(para).reduce(
+        (acc, tok) =>
+          !tok.isSpace && tok.word.trim().length > 0 ? acc + 1 : acc,
+        0,
+      );
       ranges.push({ start: count, end: count + wordCount - 1 });
       count += wordCount;
     }
@@ -87,11 +109,15 @@ export function useWordHighlighting(content: string, position: number, duration:
   const activeWordIndex = useMemo(() => {
     if (duration <= 0 || allWords.length === 0 || position === 0) return -1;
     const progress = Math.min(position / duration, 1);
-    let lo = 0, hi = wordTimings.length - 1, best = -1;
+    let lo = 0,
+      hi = wordTimings.length - 1,
+      best = -1;
     while (lo <= hi) {
       const mid = (lo + hi) >> 1;
-      if (wordTimings[mid] <= progress) { best = mid; lo = mid + 1; }
-      else hi = mid - 1;
+      if (wordTimings[mid] <= progress) {
+        best = mid;
+        lo = mid + 1;
+      } else hi = mid - 1;
     }
     return best;
   }, [position, duration, wordTimings, allWords.length]);
@@ -99,7 +125,11 @@ export function useWordHighlighting(content: string, position: number, duration:
   const activeSentenceIndex = useMemo(() => {
     if (activeWordIndex < 0) return -1;
     for (let i = 0; i < sentences.length; i++) {
-      if (activeWordIndex >= sentences[i].start && activeWordIndex <= sentences[i].end) return i;
+      if (
+        activeWordIndex >= sentences[i].start &&
+        activeWordIndex <= sentences[i].end
+      )
+        return i;
     }
     return -1;
   }, [activeWordIndex, sentences]);
@@ -120,6 +150,6 @@ export function useWordHighlighting(content: string, position: number, duration:
     activeWordIndex,
     activeSentenceIndex,
     activeParaIndex,
-    paragraphWordRanges
+    paragraphWordRanges,
   };
 }

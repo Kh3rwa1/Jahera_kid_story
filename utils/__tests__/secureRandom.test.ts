@@ -1,4 +1,9 @@
-import { randomInt, randomFloat, randomChoice, randomBool } from '../secureRandom';
+import {
+  randomInt,
+  randomFloat,
+  randomChoice,
+  randomBool,
+} from '../secureRandom';
 
 describe('secureRandom', () => {
   describe('randomInt', () => {

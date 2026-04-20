@@ -4,7 +4,8 @@ import { logger } from '@/utils/logger';
 
 // Dynamic require to bypass type-system mismatch in this environment
 // while still using the modern FileSystem API for stability.
-const FileSystem = Platform.OS !== 'web' ? require('expo-file-system/legacy') : null;
+const FileSystem =
+  Platform.OS !== 'web' ? require('expo-file-system/legacy') : null;
 const { Asset } = require('expo-asset');
 
 // Normalize cache property across Expo versions
@@ -15,7 +16,8 @@ const getCacheDir = () => {
 };
 
 const CACHE_DIR = Platform.OS !== 'web' ? `${getCacheDir()}video/` : '';
-const CACHED_VIDEO_PATH = Platform.OS !== 'web' ? `${CACHE_DIR}brand_video.mp4` : '';
+const CACHED_VIDEO_PATH =
+  Platform.OS !== 'web' ? `${CACHE_DIR}brand_video.mp4` : '';
 
 class VideoCacheService {
   private _cachedUri: string | null = null;
@@ -72,7 +74,6 @@ class VideoCacheService {
       }
 
       await this._downloadFromAppwrite();
-
     } catch (err) {
       logger.error('[VideoCache] Prefetch error:', err);
       if (this._cachedUri) this._isReady = true;
@@ -81,19 +82,25 @@ class VideoCacheService {
 
   private async _downloadFromAppwrite(): Promise<void> {
     try {
-      const res = await storage.listFiles(STORAGE_BUCKETS.APP_ASSETS, [Query.limit(10)]);
-      const videoFile = res.files.find((f: any) => (f.mimeType ?? '').startsWith('video/'));
-      
+      const res = await storage.listFiles(STORAGE_BUCKETS.APP_ASSETS, [
+        Query.limit(10),
+      ]);
+      const videoFile = res.files.find((f: any) =>
+        (f.mimeType ?? '').startsWith('video/'),
+      );
+
       if (!videoFile) return;
 
-      const url = storage.getFileView(STORAGE_BUCKETS.APP_ASSETS, videoFile.$id).toString();
+      const url = storage
+        .getFileView(STORAGE_BUCKETS.APP_ASSETS, videoFile.$id)
+        .toString();
       logger.info('[VideoCache] Downloading video from Appwrite...');
 
       // sessionType: 1 corresponds to BACKGROUND in most versions
       const result = await FileSystem.downloadAsync(url, CACHED_VIDEO_PATH, {
-        sessionType: 1 
+        sessionType: 1,
       });
-      
+
       if (result.status === 200) {
         this._cachedUri = CACHED_VIDEO_PATH;
         this._isReady = true;
@@ -101,27 +108,43 @@ class VideoCacheService {
       }
     } catch (err) {
       // Expected failure in Expo Go due to sandbox limitations with Appwrite storage
-      logger.warn('[VideoCache] Appwrite download skipped (expected in Expo Go):', (err as Error)?.message || err);
+      logger.warn(
+        '[VideoCache] Appwrite download skipped (expected in Expo Go):',
+        (err as Error)?.message || err,
+      );
     }
   }
 
   private async _backgroundRefresh(): Promise<void> {
     try {
-      const res = await storage.listFiles(STORAGE_BUCKETS.APP_ASSETS, [Query.limit(10)]);
-      const videoFile = res.files.find((f: any) => (f.mimeType ?? '').startsWith('video/'));
+      const res = await storage.listFiles(STORAGE_BUCKETS.APP_ASSETS, [
+        Query.limit(10),
+      ]);
+      const videoFile = res.files.find((f: any) =>
+        (f.mimeType ?? '').startsWith('video/'),
+      );
       if (!videoFile) return;
 
-      const url = storage.getFileView(STORAGE_BUCKETS.APP_ASSETS, videoFile.$id).toString();
+      const url = storage
+        .getFileView(STORAGE_BUCKETS.APP_ASSETS, videoFile.$id)
+        .toString();
       const tempPath = `${CACHE_DIR}brand_video_refresh.mp4`;
-      
+
       const localInfo = await FileSystem.getInfoAsync(CACHED_VIDEO_PATH);
-      if (localInfo.exists && (localInfo as any).size === videoFile.sizeOriginal) {
+      if (
+        localInfo.exists &&
+        (localInfo as any).size === videoFile.sizeOriginal
+      ) {
         return;
       }
 
-      const result = await FileSystem.downloadAsync(url, tempPath, { sessionType: 1 });
+      const result = await FileSystem.downloadAsync(url, tempPath, {
+        sessionType: 1,
+      });
       if (result.status === 200) {
-        try { await FileSystem.deleteAsync(CACHED_VIDEO_PATH, { idempotent: true }); } catch {}
+        try {
+          await FileSystem.deleteAsync(CACHED_VIDEO_PATH, { idempotent: true });
+        } catch {}
         await FileSystem.moveAsync({ from: tempPath, to: CACHED_VIDEO_PATH });
         this._cachedUri = CACHED_VIDEO_PATH;
         logger.info('[VideoCache] ✅ Background refresh complete');

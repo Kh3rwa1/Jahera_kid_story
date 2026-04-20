@@ -1,8 +1,8 @@
-import { COLORS,LAYOUT } from '@/constants/theme';
+import { COLORS, LAYOUT } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { ScrollView, ScrollViewProps, View, ViewStyle } from 'react-native';
-import { Edge,SafeAreaView } from 'react-native-safe-area-context';
+import { Edge, SafeAreaView } from 'react-native-safe-area-context';
 
 interface ContainerProps {
   children: React.ReactNode;
@@ -43,8 +43,12 @@ export const Container: React.FC<ContainerProps> = ({
     flex: 1,
     backgroundColor: gradient ? 'transparent' : COLORS.background,
     ...(padding && { padding: LAYOUT.screenPadding }),
-    ...(paddingHorizontal !== undefined && { paddingHorizontal: paddingHorizontal ? LAYOUT.screenPadding : 0 }),
-    ...(paddingVertical !== undefined && { paddingVertical: paddingVertical ? LAYOUT.screenPadding : 0 }),
+    ...(paddingHorizontal !== undefined && {
+      paddingHorizontal: paddingHorizontal ? LAYOUT.screenPadding : 0,
+    }),
+    ...(paddingVertical !== undefined && {
+      paddingVertical: paddingVertical ? LAYOUT.screenPadding : 0,
+    }),
     ...(centered && {
       justifyContent: 'center',
       alignItems: 'center',
@@ -65,9 +69,9 @@ export const Container: React.FC<ContainerProps> = ({
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={[
-            containerStyle, 
+            containerStyle,
             { flexGrow: 1 },
-            maxWidth && { alignItems: 'center' } // Centering the content wrapper
+            maxWidth && { alignItems: 'center' }, // Centering the content wrapper
           ]}
           showsVerticalScrollIndicator={false}
           {...scrollProps}
@@ -82,13 +86,9 @@ export const Container: React.FC<ContainerProps> = ({
     }
 
     return (
-      <View 
-        style={[
-          containerStyle, 
-          style, 
-          maxWidth && { alignItems: 'center' }
-        ]} 
-        accessibilityLabel={accessibilityLabel} 
+      <View
+        style={[containerStyle, style, maxWidth && { alignItems: 'center' }]}
+        accessibilityLabel={accessibilityLabel}
         testID={testID}
       >
         <View style={[contentStyle, maxWidth && { flex: 1, width: '100%' }]}>
@@ -107,7 +107,11 @@ export const Container: React.FC<ContainerProps> = ({
     );
 
     if (safeArea) {
-      return <SafeAreaView style={{ flex: 1 }} edges={safeAreaEdges}>{gradientContainer}</SafeAreaView>;
+      return (
+        <SafeAreaView style={{ flex: 1 }} edges={safeAreaEdges}>
+          {gradientContainer}
+        </SafeAreaView>
+      );
     }
 
     return gradientContainer;
@@ -115,7 +119,10 @@ export const Container: React.FC<ContainerProps> = ({
 
   if (safeArea) {
     return (
-      <SafeAreaView style={[{ flex: 1, backgroundColor: COLORS.background }, style]} edges={safeAreaEdges}>
+      <SafeAreaView
+        style={[{ flex: 1, backgroundColor: COLORS.background }, style]}
+        edges={safeAreaEdges}
+      >
         {renderContent()}
       </SafeAreaView>
     );

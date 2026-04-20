@@ -9,9 +9,16 @@ export interface BehaviorProgressItem {
   percentage: number;
 }
 
-export function computeBehaviorProgress(stories: Story[], days: number = 30): BehaviorProgressItem[] {
+export function computeBehaviorProgress(
+  stories: Story[],
+  days: number = 30,
+): BehaviorProgressItem[] {
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-  const filtered = stories.filter(s => s.behavior_goal && new Date(s.generated_at || s.created_at).getTime() >= cutoff);
+  const filtered = stories.filter(
+    (s) =>
+      s.behavior_goal &&
+      new Date(s.generated_at || s.created_at).getTime() >= cutoff,
+  );
   const total = filtered.length;
   if (total === 0) return [];
 
@@ -23,7 +30,7 @@ export function computeBehaviorProgress(stories: Story[], days: number = 30): Be
 
   return Object.entries(counts)
     .map(([goalId, count]) => {
-      const goal = BEHAVIOR_GOALS.find(g => g.id === goalId);
+      const goal = BEHAVIOR_GOALS.find((g) => g.id === goalId);
       return {
         goalId,
         label: goal?.label || goalId,
@@ -37,7 +44,11 @@ export function computeBehaviorProgress(stories: Story[], days: number = 30): Be
 
 export function getWeeklySummary(stories: Story[]) {
   const last7 = computeBehaviorProgress(stories, 7);
-  const totalStories = stories.filter(s => new Date(s.generated_at || s.created_at).getTime() >= Date.now() - 7 * 24 * 60 * 60 * 1000).length;
+  const totalStories = stories.filter(
+    (s) =>
+      new Date(s.generated_at || s.created_at).getTime() >=
+      Date.now() - 7 * 24 * 60 * 60 * 1000,
+  ).length;
   return {
     totalStories,
     topGoal: last7[0] || null,

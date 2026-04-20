@@ -1,4 +1,4 @@
-import { useLocalSearchParams,useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,7 +10,7 @@ import { formatLocationLabel } from '@/services/locationService';
 import { ErrorState } from '@/components/ErrorState';
 import { GenerationLoading } from '@/components/story/Generate/GenerationLoading';
 import { OptionsView } from '@/components/story/Generate/OptionsView';
-import { BORDER_RADIUS,FONTS,SHADOWS } from '@/constants/theme';
+import { BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function GenerateStoryScreen() {
@@ -21,23 +21,35 @@ export default function GenerateStoryScreen() {
   const { profile } = useApp();
 
   const {
-    selectedBehaviorGoal, setSelectedBehaviorGoal,
-    selectedTheme, setSelectedTheme,
-    selectedMood, setSelectedMood,
-    selectedLength, setSelectedLength,
-    selectedVoice, setSelectedVoice,
-    selectedLanguage, setSelectedLanguage,
+    selectedBehaviorGoal,
+    setSelectedBehaviorGoal,
+    selectedTheme,
+    setSelectedTheme,
+    selectedMood,
+    setSelectedMood,
+    selectedLength,
+    setSelectedLength,
+    selectedVoice,
+    setSelectedVoice,
+    selectedLanguage,
+    setSelectedLanguage,
     locationCtx,
-    phase, status, progress, error, steps,
-    handleStartGeneration, handleRetry,
-    subscription
+    phase,
+    status,
+    progress,
+    error,
+    steps,
+    handleStartGeneration,
+    handleRetry,
+    subscription,
   } = useStoryGeneration();
   const isPremium = subscription?.plan !== 'free';
 
-
   if (error) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
         <ErrorState
           type="general"
           title="Generation Failed"
@@ -65,7 +77,9 @@ export default function GenerateStoryScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <StatusBar barStyle="dark-content" />
       <OptionsView
         colors={colors}
@@ -81,7 +95,9 @@ export default function GenerateStoryScreen() {
         onVoiceChange={setSelectedVoice}
         selectedLanguage={selectedLanguage}
         setSelectedLanguage={setSelectedLanguage}
-        locationLabel={locationCtx ? formatLocationLabel(locationCtx) : 'City not set'}
+        locationLabel={
+          locationCtx ? formatLocationLabel(locationCtx) : 'City not set'
+        }
         onStart={handleStartGeneration}
         onBack={() => router.back()}
         isPremium={isPremium}

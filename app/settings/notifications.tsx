@@ -3,11 +3,22 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { BORDER_RADIUS, FONTS, SHADOWS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { analytics } from '@/services/analyticsService';
-import { cancelAll, registerForPushNotifications, scheduleBedtimeReminder } from '@/services/notificationService';
+import {
+  cancelAll,
+  registerForPushNotifications,
+  scheduleBedtimeReminder,
+} from '@/services/notificationService';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Bell, ChevronDown, ChevronLeft, ChevronUp, Clock, Moon } from 'lucide-react-native';
+import {
+  Bell,
+  ChevronDown,
+  ChevronLeft,
+  ChevronUp,
+  Clock,
+  Moon,
+} from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Platform,
@@ -61,16 +72,23 @@ export default function NotificationSettingsScreen() {
     loadSettings();
   }, []);
 
-  const trackReminder = useCallback((enabled: boolean, nextHour?: number, nextMinute?: number) => {
-    if (enabled && typeof nextHour === 'number' && typeof nextMinute === 'number') {
-      analytics.trackBedtimeReminderSet(nextHour, nextMinute, true);
-      return;
-    }
+  const trackReminder = useCallback(
+    (enabled: boolean, nextHour?: number, nextMinute?: number) => {
+      if (
+        enabled &&
+        typeof nextHour === 'number' &&
+        typeof nextMinute === 'number'
+      ) {
+        analytics.trackBedtimeReminderSet(nextHour, nextMinute, true);
+        return;
+      }
 
-    if (!enabled) {
-      analytics.trackBedtimeReminderDisabled();
-    }
-  }, []);
+      if (!enabled) {
+        analytics.trackBedtimeReminderDisabled();
+      }
+    },
+    [],
+  );
 
   const persistSettings = useCallback(async (next: BedtimeReminderSettings) => {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -83,42 +101,63 @@ export default function NotificationSettingsScreen() {
     return `${twelveHour}:${paddedMinute} ${period}`;
   }, []);
 
-  const handleToggle = useCallback(async (newValue: boolean) => {
-    setIsEnabled(newValue);
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  const handleToggle = useCallback(
+    async (newValue: boolean) => {
+      setIsEnabled(newValue);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    if (newValue) {
-      await registerForPushNotifications();
-      await scheduleBedtimeReminder(hour, minute);
-      await persistSettings({ enabled: true, hour, minute });
-      trackReminder(true, hour, minute);
-      return;
-    }
+      if (newValue) {
+        await registerForPushNotifications();
+        await scheduleBedtimeReminder(hour, minute);
+        await persistSettings({ enabled: true, hour, minute });
+        trackReminder(true, hour, minute);
+        return;
+      }
 
-    await cancelAll();
-    await persistSettings({ enabled: false, hour, minute });
-    trackReminder(false);
-  }, [hour, minute, persistSettings, trackReminder]);
+      await cancelAll();
+      await persistSettings({ enabled: false, hour, minute });
+      trackReminder(false);
+    },
+    [hour, minute, persistSettings, trackReminder],
+  );
 
-  const handleTimeChange = useCallback(async (newHour: number, newMinute: number) => {
-    setHour(newHour);
-    setMinute(newMinute);
+  const handleTimeChange = useCallback(
+    async (newHour: number, newMinute: number) => {
+      setHour(newHour);
+      setMinute(newMinute);
 
-    if (isEnabled) {
-      await scheduleBedtimeReminder(newHour, newMinute);
-      await persistSettings({ enabled: true, hour: newHour, minute: newMinute });
-      trackReminder(true, newHour, newMinute);
-    } else {
-      await persistSettings({ enabled: false, hour: newHour, minute: newMinute });
-    }
-  }, [isEnabled, persistSettings, trackReminder]);
+      if (isEnabled) {
+        await scheduleBedtimeReminder(newHour, newMinute);
+        await persistSettings({
+          enabled: true,
+          hour: newHour,
+          minute: newMinute,
+        });
+        trackReminder(true, newHour, newMinute);
+      } else {
+        await persistSettings({
+          enabled: false,
+          hour: newHour,
+          minute: newMinute,
+        });
+      }
+    },
+    [isEnabled, persistSettings, trackReminder],
+  );
 
   const styles = createStyles(C, isTablet);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Animated.View entering={FadeInDown.delay(50).springify()} style={styles.header}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => router.back()} activeOpacity={0.8}>
+      <Animated.View
+        entering={FadeInDown.delay(50).springify()}
+        style={styles.header}
+      >
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => router.back()}
+          activeOpacity={0.8}
+        >
           <ChevronLeft size={24} color={C.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Bedtime Reminders</Text>
@@ -128,7 +167,10 @@ export default function NotificationSettingsScreen() {
       </Animated.View>
 
       <View style={styles.content}>
-        <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.heroWrap}>
+        <Animated.View
+          entering={FadeInDown.delay(150).springify()}
+          style={styles.heroWrap}
+        >
           <LinearGradient
             colors={[`${C.primary}22`, `${C.primary}15`, `${C.primary}08`]}
             start={{ x: 0, y: 0 }}
@@ -139,7 +181,10 @@ export default function NotificationSettingsScreen() {
           </LinearGradient>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(250).springify()} style={styles.card}>
+        <Animated.View
+          entering={FadeInDown.delay(250).springify()}
+          style={styles.card}
+        >
           <View style={styles.row}>
             <Bell size={isTablet ? 26 : 22} color={C.primary} />
             <View style={styles.rowTextWrap}>
@@ -156,12 +201,17 @@ export default function NotificationSettingsScreen() {
         </Animated.View>
 
         {isEnabled && (
-          <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.card}>
+          <Animated.View
+            entering={FadeInUp.delay(100).springify()}
+            style={styles.card}
+          >
             <View style={styles.row}>
               <Clock size={isTablet ? 26 : 22} color={C.primary} />
               <View style={styles.rowTextWrap}>
                 <Text style={styles.cardTitle}>Story Time</Text>
-                <Text style={styles.cardSubtitle}>When should we remind you?</Text>
+                <Text style={styles.cardSubtitle}>
+                  When should we remind you?
+                </Text>
               </View>
             </View>
 
@@ -189,25 +239,38 @@ export default function NotificationSettingsScreen() {
                   }
 
                   if (selectedDate) {
-                    void handleTimeChange(selectedDate.getHours(), selectedDate.getMinutes());
+                    void handleTimeChange(
+                      selectedDate.getHours(),
+                      selectedDate.getMinutes(),
+                    );
                   }
                 }}
               />
             )}
 
             {Platform.OS === 'ios' && showPicker && (
-              <TouchableOpacity style={styles.doneButton} onPress={() => setShowPicker(false)} activeOpacity={0.85}>
+              <TouchableOpacity
+                style={styles.doneButton}
+                onPress={() => setShowPicker(false)}
+                activeOpacity={0.85}
+              >
                 <Text style={styles.doneButtonText}>Done</Text>
               </TouchableOpacity>
             )}
           </Animated.View>
         )}
 
-        <Animated.View entering={FadeInUp.delay(350).springify()} style={styles.infoWrap}>
+        <Animated.View
+          entering={FadeInUp.delay(350).springify()}
+          style={styles.infoWrap}
+        >
           <Text style={styles.infoText}>
-            Stories work best as a bedtime routine. Pick a time that works for your family! 💤
+            Stories work best as a bedtime routine. Pick a time that works for
+            your family! 💤
           </Text>
-          {isLoading && <Text style={styles.loadingText}>Loading your saved reminder…</Text>}
+          {isLoading && (
+            <Text style={styles.loadingText}>Loading your saved reminder…</Text>
+          )}
         </Animated.View>
 
         {/* Manual fallback controls are not needed because DateTimePicker is installed. */}
@@ -220,7 +283,10 @@ export default function NotificationSettingsScreen() {
   );
 }
 
-const createStyles = (C: ReturnType<typeof useTheme>['currentTheme']['colors'], isTablet: boolean) =>
+const createStyles = (
+  C: ReturnType<typeof useTheme>['currentTheme']['colors'],
+  isTablet: boolean,
+) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,

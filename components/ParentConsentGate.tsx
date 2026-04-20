@@ -56,16 +56,38 @@ function CheckRow({
         }}
       >
         {checked ? (
-          <View style={[styles.checkbox, styles.checkboxChecked, { width: boxSize, height: boxSize, backgroundColor: primaryColor }]}>
+          <View
+            style={[
+              styles.checkbox,
+              styles.checkboxChecked,
+              {
+                width: boxSize,
+                height: boxSize,
+                backgroundColor: primaryColor,
+              },
+            ]}
+          >
             <Check color="#FFFFFF" size={checkSize} />
           </View>
         ) : (
-          <View style={[styles.checkbox, { width: boxSize, height: boxSize, borderColor: mutedColor }]} />
+          <View
+            style={[
+              styles.checkbox,
+              { width: boxSize, height: boxSize, borderColor: mutedColor },
+            ]}
+          />
         )}
       </TouchableOpacity>
 
       <View style={styles.checkTextWrap}>
-        <Text style={[styles.checkLabel, { color: textColor, fontSize: isTablet ? 16 : 14 }]}>{label}</Text>
+        <Text
+          style={[
+            styles.checkLabel,
+            { color: textColor, fontSize: isTablet ? 16 : 14 },
+          ]}
+        >
+          {label}
+        </Text>
 
         {linkText && linkUrl ? (
           <TouchableOpacity
@@ -76,7 +98,14 @@ function CheckRow({
           >
             <View style={styles.linkRow}>
               <ExternalLink size={linkIconSize} color={primaryColor} />
-              <Text style={[styles.linkText, { color: primaryColor, fontSize: isTablet ? 15 : 13 }]}>{linkText}</Text>
+              <Text
+                style={[
+                  styles.linkText,
+                  { color: primaryColor, fontSize: isTablet ? 15 : 13 },
+                ]}
+              >
+                {linkText}
+              </Text>
             </View>
           </TouchableOpacity>
         ) : null}
@@ -122,13 +151,33 @@ function ParentConsentGate({ onContinue }: Readonly<ParentConsentGateProps>) {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(200).springify()}>
-        <Text style={[styles.title, { color: colors.text.primary, fontSize: isTablet ? 30 : 24 }]}>Before we begin...</Text>
-        <Text style={[styles.subtitle, { color: colors.text.secondary, fontSize: isTablet ? 16 : 14, maxWidth: isTablet ? 400 : 320 }]}>
-          Jahera is designed for parents to create stories for their children. Please confirm the following:
+        <Text
+          style={[
+            styles.title,
+            { color: colors.text.primary, fontSize: isTablet ? 30 : 24 },
+          ]}
+        >
+          Before we begin...
+        </Text>
+        <Text
+          style={[
+            styles.subtitle,
+            {
+              color: colors.text.secondary,
+              fontSize: isTablet ? 16 : 14,
+              maxWidth: isTablet ? 400 : 320,
+            },
+          ]}
+        >
+          Jahera is designed for parents to create stories for their children.
+          Please confirm the following:
         </Text>
       </Animated.View>
 
-      <Animated.View style={[styles.checkSection, { maxWidth: isTablet ? 500 : 400 }]} entering={FadeInDown.delay(350).springify()}>
+      <Animated.View
+        style={[styles.checkSection, { maxWidth: isTablet ? 500 : 400 }]}
+        entering={FadeInDown.delay(350).springify()}
+      >
         <CheckRow
           checked={isGuardianChecked}
           onToggle={() => setIsGuardianChecked((prev) => !prev)}
@@ -152,7 +201,10 @@ function ParentConsentGate({ onContinue }: Readonly<ParentConsentGateProps>) {
         />
       </Animated.View>
 
-      <Animated.View style={[styles.buttonSection, { maxWidth: isTablet ? 500 : 400 }]} entering={FadeInUp.delay(500).springify()}>
+      <Animated.View
+        style={[styles.buttonSection, { maxWidth: isTablet ? 500 : 400 }]}
+        entering={FadeInUp.delay(500).springify()}
+      >
         <TouchableOpacity
           disabled={!canContinue}
           style={{ opacity: canContinue ? 1 : 0.4 }}
@@ -167,9 +219,16 @@ function ParentConsentGate({ onContinue }: Readonly<ParentConsentGateProps>) {
             colors={[colors.primary, colors.primaryDark]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
-            style={[styles.continueGradient, { paddingVertical: isTablet ? 20 : 16 }]}
+            style={[
+              styles.continueGradient,
+              { paddingVertical: isTablet ? 20 : 16 },
+            ]}
           >
-            <Text style={[styles.continueText, { fontSize: isTablet ? 18 : 16 }]}>Continue</Text>
+            <Text
+              style={[styles.continueText, { fontSize: isTablet ? 18 : 16 }]}
+            >
+              Continue
+            </Text>
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>

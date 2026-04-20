@@ -35,11 +35,11 @@ const AnimatedSparkle: React.FC<{ sparkle: Sparkle }> = ({ sparkle }) => {
           withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) }),
           withTiming(0.7, { duration: 400, easing: Easing.inOut(Easing.ease) }),
           withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) }),
-          withTiming(0, { duration: 400, easing: Easing.in(Easing.ease) })
+          withTiming(0, { duration: 400, easing: Easing.in(Easing.ease) }),
         ),
         -1,
-        false
-      )
+        false,
+      ),
     );
 
     opacity.value = withDelay(
@@ -49,11 +49,11 @@ const AnimatedSparkle: React.FC<{ sparkle: Sparkle }> = ({ sparkle }) => {
           withTiming(0.9, { duration: 600, easing: Easing.out(Easing.ease) }),
           withTiming(0.6, { duration: 400, easing: Easing.inOut(Easing.ease) }),
           withTiming(0.9, { duration: 600, easing: Easing.out(Easing.ease) }),
-          withTiming(0, { duration: 400, easing: Easing.in(Easing.ease) })
+          withTiming(0, { duration: 400, easing: Easing.in(Easing.ease) }),
         ),
         -1,
-        false
-      )
+        false,
+      ),
     );
 
     // Gentle rotation
@@ -65,8 +65,8 @@ const AnimatedSparkle: React.FC<{ sparkle: Sparkle }> = ({ sparkle }) => {
           easing: Easing.linear,
         }),
         -1,
-        false
-      )
+        false,
+      ),
     );
   }, [sparkle.delay, scale, opacity, rotation]);
 
@@ -91,7 +91,12 @@ const AnimatedSparkle: React.FC<{ sparkle: Sparkle }> = ({ sparkle }) => {
         animatedStyle,
       ]}
     >
-      <Icon size={sparkle.size} color="#FFD700" fill="#FFD700" strokeWidth={0} />
+      <Icon
+        size={sparkle.size}
+        color="#FFD700"
+        fill="#FFD700"
+        strokeWidth={0}
+      />
     </Animated.View>
   );
 };

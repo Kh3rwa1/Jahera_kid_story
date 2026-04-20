@@ -1,10 +1,14 @@
 import { useApp } from '@/contexts/AppContext';
-import { RCOffering,RCPackage,revenueCatService } from '@/services/revenueCatServiceInternal';
+import {
+  RCOffering,
+  RCPackage,
+  revenueCatService,
+} from '@/services/revenueCatServiceInternal';
 import { subscriptionService } from '@/services/subscriptionService';
 import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { useRouter } from 'expo-router';
-import { useCallback,useEffect,useRef,useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
 export type PlanId = 'weekly' | 'monthly' | 'yearly' | 'family';
@@ -25,13 +29,21 @@ export function usePurchase() {
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('yearly');
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
-  const [offerings, setOfferings] = useState<RCOffering>({ weekly: null, monthly: null, yearly: null, family: null, raw: null });
+  const [offerings, setOfferings] = useState<RCOffering>({
+    weekly: null,
+    monthly: null,
+    yearly: null,
+    family: null,
+    raw: null,
+  });
   const [offeringsLoading, setOfferingsLoading] = useState(true);
   const isMounted = useRef(true);
 
   useEffect(() => {
     isMounted.current = true;
-    return () => { isMounted.current = false; };
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   const rcAvailable = revenueCatService.isAvailable();
@@ -42,22 +54,31 @@ export function usePurchase() {
     else router.replace('/(tabs)');
   }, [router]);
 
-  const syncAndCelebrate = useCallback(async (title: string, message: string) => {
-    if (!profile) return;
-    await subscriptionService.syncFromRevenueCat(profile.id);
-    await refreshSubscription();
-    hapticFeedback.success();
-    Alert.alert(title, message, [{ text: "Let's Go!", onPress: navigateHome }]);
-  }, [navigateHome, profile, refreshSubscription]);
+  const syncAndCelebrate = useCallback(
+    async (title: string, message: string) => {
+      if (!profile) return;
+      await subscriptionService.syncFromRevenueCat(profile.id);
+      await refreshSubscription();
+      hapticFeedback.success();
+      Alert.alert(title, message, [
+        { text: "Let's Go!", onPress: navigateHome },
+      ]);
+    },
+    [navigateHome, profile, refreshSubscription],
+  );
 
-  const fallbackActivatePlan = useCallback(async (plan: Plan) => {
-    if (!profile) return;
-    if (plan.id === 'family') await subscriptionService.upgradeToFamily(profile.id);
-    else await subscriptionService.startTrial(profile.id);
-    await refreshSubscription();
-    Alert.alert('Success', 'Your subscription is active.');
-    navigateHome();
-  }, [navigateHome, profile, refreshSubscription]);
+  const fallbackActivatePlan = useCallback(
+    async (plan: Plan) => {
+      if (!profile) return;
+      if (plan.id === 'family')
+        await subscriptionService.upgradeToFamily(profile.id);
+      else await subscriptionService.startTrial(profile.id);
+      await refreshSubscription();
+      Alert.alert('Success', 'Your subscription is active.');
+      navigateHome();
+    },
+    [navigateHome, profile, refreshSubscription],
+  );
 
   const handlePaywallResult = useCallback(async () => {
     const result = await revenueCatService.presentPaywall(offerings.raw);
@@ -67,23 +88,32 @@ export function usePurchase() {
       result.restored ? 'Purchases Restored' : 'Welcome to Pro!',
       result.restored
         ? 'Your subscription has been restored.'
-        : 'Your subscription is now active. Enjoy unlimited stories!'
+        : 'Your subscription is now active. Enjoy unlimited stories!',
     );
   }, [offerings.raw, syncAndCelebrate]);
 
-  const handlePackagePurchase = useCallback(async (plan: Plan) => {
-    if (!plan.rcPackage) return;
+  const handlePackagePurchase = useCallback(
+    async (plan: Plan) => {
+      if (!plan.rcPackage) return;
 
-    const result = await revenueCatService.purchasePackage(plan.rcPackage);
-    if (result.cancelled) return;
+      const result = await revenueCatService.purchasePackage(plan.rcPackage);
+      if (result.cancelled) return;
 
-    if (!result.success) {
-      Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
-      return;
-    }
+      if (!result.success) {
+        Alert.alert(
+          'Purchase Failed',
+          'Something went wrong. Please try again.',
+        );
+        return;
+      }
 
-    await syncAndCelebrate('Welcome to Pro!', 'Your subscription is now active. Enjoy unlimited stories!');
-  }, [syncAndCelebrate]);
+      await syncAndCelebrate(
+        'Welcome to Pro!',
+        'Your subscription is now active. Enjoy unlimited stories!',
+      );
+    },
+    [syncAndCelebrate],
+  );
 
   const fetchOfferings = useCallback(async () => {
     if (!rcAvailable) {
@@ -164,6 +194,6 @@ export function usePurchase() {
     offeringsLoading,
     handlePurchase,
     handleRestore,
-    rcAvailable
+    rcAvailable,
   };
 }

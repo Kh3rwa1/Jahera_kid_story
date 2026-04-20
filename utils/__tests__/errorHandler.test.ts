@@ -68,7 +68,7 @@ describe('handleError', () => {
     handleError(new Error('test'), 'MyComponent');
     expect(console.error).toHaveBeenCalledWith(
       'Error in MyComponent:',
-      expect.any(Error)
+      expect.any(Error),
     );
   });
 
@@ -76,7 +76,7 @@ describe('handleError', () => {
     handleError(new Error('test'));
     expect(console.error).toHaveBeenCalledWith(
       'Error in unknown context:',
-      expect.any(Error)
+      expect.any(Error),
     );
   });
 });
@@ -90,7 +90,8 @@ describe('retryWithBackoff', () => {
   });
 
   it('retries on failure and succeeds on second attempt', async () => {
-    const fn = jest.fn()
+    const fn = jest
+      .fn()
       .mockRejectedValueOnce(new Error('fail'))
       .mockResolvedValue('ok');
     const result = await retryWithBackoff(fn, 3, 10);
@@ -105,7 +106,8 @@ describe('retryWithBackoff', () => {
   });
 
   it('uses exponential backoff between retries', async () => {
-    const fn = jest.fn()
+    const fn = jest
+      .fn()
       .mockRejectedValueOnce(new Error('fail 1'))
       .mockRejectedValueOnce(new Error('fail 2'))
       .mockResolvedValue('ok');

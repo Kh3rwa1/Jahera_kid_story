@@ -1,4 +1,11 @@
-import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SHADOWS,SPACING } from '@/constants/theme';
+import {
+  BORDER_RADIUS,
+  COLORS,
+  FONT_SIZES,
+  FONT_WEIGHTS,
+  SHADOWS,
+  SPACING,
+} from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
@@ -9,11 +16,11 @@ import {
   TextStyle,
   ViewStyle,
 } from 'react-native';
-import Animated,{
-useAnimatedStyle,
-useSharedValue,
-withSpring,
-withTiming
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -161,7 +168,11 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
 
   const renderContent = () => (
     <>
-      {loading && <ActivityIndicator color={variant === 'primary' ? COLORS.text.inverse : COLORS.primary} />}
+      {loading && (
+        <ActivityIndicator
+          color={variant === 'primary' ? COLORS.text.inverse : COLORS.primary}
+        />
+      )}
       {!loading && icon}
       {!loading && <Text style={[getTextStyle(), textStyle]}>{title}</Text>}
     </>
@@ -198,7 +209,8 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   const outlineStyle: ViewStyle = {
     borderWidth: variant === 'outline' ? 2 : 0,
     borderColor: COLORS.primary,
-    backgroundColor: variant === 'ghost' ? 'transparent' : COLORS.cardBackground,
+    backgroundColor:
+      variant === 'ghost' ? 'transparent' : COLORS.cardBackground,
   };
 
   return (

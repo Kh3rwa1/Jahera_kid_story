@@ -1,14 +1,18 @@
 import { FloatingTabBar } from '@/components/FloatingTabBar';
 import { useUI } from '@/contexts/UIContext';
 import { hapticFeedback } from '@/utils/haptics';
-import { Tabs,usePathname,useRouter } from 'expo-router';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { StyleSheet, View, Pressable } from 'react-native';
-import { Gesture,GestureDetector,GestureHandlerRootView } from 'react-native-gesture-handler';
-import { runOnJS,useSharedValue } from 'react-native-reanimated';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
+import { runOnJS, useSharedValue } from 'react-native-reanimated';
 
 const TAB_ORDER = ['index', 'history', 'profile', 'settings'] as const;
-type TabName = typeof TAB_ORDER[number];
+type TabName = (typeof TAB_ORDER)[number];
 
 const TAB_ROUTES: Record<string, string> = {
   index: '/(tabs)/',
@@ -50,16 +54,19 @@ export default function TabLayout() {
       wakeUI();
       router.push(route as Parameters<typeof router.push>[0]);
     },
-    [router, wakeUI]
+    [router, wakeUI],
   );
 
-  const navigateToTab = useCallback((tabName: string) => {
-    const route = TAB_ROUTES[tabName];
-    if (route) {
-      hapticFeedback.selection();
-      router.push(route as Parameters<typeof router.push>[0]);
-    }
-  }, [router]);
+  const navigateToTab = useCallback(
+    (tabName: string) => {
+      const route = TAB_ROUTES[tabName];
+      if (route) {
+        hapticFeedback.selection();
+        router.push(route as Parameters<typeof router.push>[0]);
+      }
+    },
+    [router],
+  );
 
   const swipeGesture = Gesture.Pan()
     .activeOffsetX([-20, 20])
@@ -92,27 +99,28 @@ export default function TabLayout() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-        <Pressable 
-          onPress={wakeUI}
-          style={styles.container}
-          android_ripple={null}
-        >
-          <GestureDetector gesture={swipeGesture}>
-            <View style={styles.container}>
-              <Tabs
-                tabBar={EmptyTabBar}
-                screenOptions={{
-                  headerShown: false,
-                }}>
-                <Tabs.Screen name="index" />
-                <Tabs.Screen name="history" />
-                <Tabs.Screen name="profile" />
-                <Tabs.Screen name="settings" />
-              </Tabs>
-            </View>
-          </GestureDetector>
-          <FloatingTabBar activeTab={activeTab} onTabPress={handleTabPress} />
-        </Pressable>
+      <Pressable
+        onPress={wakeUI}
+        style={styles.container}
+        android_ripple={null}
+      >
+        <GestureDetector gesture={swipeGesture}>
+          <View style={styles.container}>
+            <Tabs
+              tabBar={EmptyTabBar}
+              screenOptions={{
+                headerShown: false,
+              }}
+            >
+              <Tabs.Screen name="index" />
+              <Tabs.Screen name="history" />
+              <Tabs.Screen name="profile" />
+              <Tabs.Screen name="settings" />
+            </Tabs>
+          </View>
+        </GestureDetector>
+        <FloatingTabBar activeTab={activeTab} onTabPress={handleTabPress} />
+      </Pressable>
     </GestureHandlerRootView>
   );
 }

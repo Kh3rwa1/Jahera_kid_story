@@ -82,9 +82,14 @@ class AchievementService {
     }
   }
 
-  async unlockAchievement(achievementId: string, onUnlock?: (achievement: Achievement) => void): Promise<boolean> {
+  async unlockAchievement(
+    achievementId: string,
+    onUnlock?: (achievement: Achievement) => void,
+  ): Promise<boolean> {
     try {
-      const achievement = ACHIEVEMENT_DEFINITIONS.find((a) => a.id === achievementId);
+      const achievement = ACHIEVEMENT_DEFINITIONS.find(
+        (a) => a.id === achievementId,
+      );
       if (!achievement) return false;
 
       const existing = this.achievements.find((a) => a.id === achievementId);
@@ -95,8 +100,14 @@ class AchievementService {
         unlockedAt: new Date().toISOString(),
       };
 
-      this.achievements = [...this.achievements.filter((a) => a.id !== achievementId), unlocked];
-      await AsyncStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(this.achievements));
+      this.achievements = [
+        ...this.achievements.filter((a) => a.id !== achievementId),
+        unlocked,
+      ];
+      await AsyncStorage.setItem(
+        ACHIEVEMENTS_KEY,
+        JSON.stringify(this.achievements),
+      );
 
       // Celebration feedback
       await hapticFeedback.celebrate();
@@ -112,10 +123,12 @@ class AchievementService {
   async updateProgress(
     achievementId: string,
     progress: number,
-    onComplete?: (achievement: Achievement) => void
+    onComplete?: (achievement: Achievement) => void,
   ): Promise<void> {
     try {
-      const definition = ACHIEVEMENT_DEFINITIONS.find((a) => a.id === achievementId);
+      const definition = ACHIEVEMENT_DEFINITIONS.find(
+        (a) => a.id === achievementId,
+      );
       if (!definition?.maxProgress) return;
 
       let achievement = this.achievements.find((a) => a.id === achievementId);
@@ -125,7 +138,10 @@ class AchievementService {
 
       achievement.progress = Math.min(progress, definition.maxProgress);
 
-      this.achievements = [...this.achievements.filter((a) => a.id !== achievementId), achievement];
+      this.achievements = [
+        ...this.achievements.filter((a) => a.id !== achievementId),
+        achievement,
+      ];
 
       if (achievement.progress >= definition.maxProgress) {
         achievement.unlockedAt = new Date().toISOString();
@@ -133,7 +149,10 @@ class AchievementService {
         onComplete?.(achievement);
       }
 
-      await AsyncStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(this.achievements));
+      await AsyncStorage.setItem(
+        ACHIEVEMENTS_KEY,
+        JSON.stringify(this.achievements),
+      );
     } catch (error) {
       console.error('Failed to update achievement progress:', error);
     }
@@ -150,7 +169,9 @@ class AchievementService {
     if (this.achievements.length === 0) {
       await this.loadAchievements();
     }
-    return this.achievements.filter((a) => !a.unlockedAt && a.progress !== undefined);
+    return this.achievements.filter(
+      (a) => !a.unlockedAt && a.progress !== undefined,
+    );
   }
 
   async getAchievementStats() {
@@ -158,7 +179,9 @@ class AchievementService {
     return {
       total: ACHIEVEMENT_DEFINITIONS.length,
       unlocked: unlocked.length,
-      percentage: Math.round((unlocked.length / ACHIEVEMENT_DEFINITIONS.length) * 100),
+      percentage: Math.round(
+        (unlocked.length / ACHIEVEMENT_DEFINITIONS.length) * 100,
+      ),
     };
   }
 }

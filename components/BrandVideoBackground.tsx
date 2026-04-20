@@ -1,7 +1,11 @@
-import { APPWRITE_ENDPOINT,APPWRITE_PROJECT_ID,STORAGE_BUCKETS } from '@/lib/appwrite';
+import {
+  APPWRITE_ENDPOINT,
+  APPWRITE_PROJECT_ID,
+  STORAGE_BUCKETS,
+} from '@/lib/appwrite';
 import { logger } from '@/utils/logger';
-import { useVideoPlayer,VideoView } from 'expo-video';
-import { useEffect,useState } from 'react';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useEffect, useState } from 'react';
 import {
   Dimensions,
   Platform,
@@ -58,11 +62,15 @@ function useResolvedVideoSource(videoId: string, fallbackSource: any) {
             if (size > 20_000) {
               setResolvedSource(url);
               setIsResolving(false);
-              logger.debug(`[VideoBackground] Appwrite video ready (${(size / 1024).toFixed(1)}KB)`);
+              logger.debug(
+                `[VideoBackground] Appwrite video ready (${(size / 1024).toFixed(1)}KB)`,
+              );
               return;
             }
           }
-        } catch { /* Silent fail to fallback */ }
+        } catch {
+          /* Silent fail to fallback */
+        }
       }
 
       // 2. Resolve bundled fallback asset
@@ -90,7 +98,9 @@ function useResolvedVideoSource(videoId: string, fallbackSource: any) {
     };
 
     resolve();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [videoId, fallbackSource]);
 
   return { resolvedSource, isResolving };
@@ -100,10 +110,15 @@ function useResolvedVideoSource(videoId: string, fallbackSource: any) {
  * Inner component — only mounts once we have a valid source URI.
  * This guarantees `useVideoPlayer` always gets a real string.
  */
-function VideoPlayerInner({ source, width, height, overlayOpacity }: Readonly<{ 
-  source: string; 
-  width: number; 
-  height: number; 
+function VideoPlayerInner({
+  source,
+  width,
+  height,
+  overlayOpacity,
+}: Readonly<{
+  source: string;
+  width: number;
+  height: number;
   overlayOpacity: number;
 }>) {
   const player = useVideoPlayer(source, (p) => {
@@ -138,18 +153,33 @@ function VideoPlayerInner({ source, width, height, overlayOpacity }: Readonly<{
         {...(Platform.OS === 'android' ? { surfaceType: 'textureView' } : {})}
       />
       {overlayOpacity > 0 && (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: `rgba(0,0,0,${overlayOpacity})` }]} />
+        <View
+          style={[
+            StyleSheet.absoluteFillObject,
+            { backgroundColor: `rgba(0,0,0,${overlayOpacity})` },
+          ]}
+        />
       )}
     </>
   );
 }
 
-export function BrandVideoBackground({ videoId, fallbackSource, style, overlayOpacity = 0.3 }: Readonly<BrandVideoBackgroundProps>) {
+export function BrandVideoBackground({
+  videoId,
+  fallbackSource,
+  style,
+  overlayOpacity = 0.3,
+}: Readonly<BrandVideoBackgroundProps>) {
   const { width, height } = Dimensions.get('screen');
-  const { resolvedSource, isResolving } = useResolvedVideoSource(videoId, fallbackSource);
+  const { resolvedSource, isResolving } = useResolvedVideoSource(
+    videoId,
+    fallbackSource,
+  );
 
   if (isResolving || !resolvedSource) {
-    return <View style={[styles.container, style, { backgroundColor: '#0F172A' }]} />;
+    return (
+      <View style={[styles.container, style, { backgroundColor: '#0F172A' }]} />
+    );
   }
 
   return (

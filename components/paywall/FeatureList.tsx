@@ -1,6 +1,12 @@
-import { FONTS,SPACING } from '@/constants/theme';
+import { FONTS, SPACING } from '@/constants/theme';
 import { ThemeColors } from '@/types/theme';
-import { BookOpen,Clock,Headphones,Sparkles,Users } from 'lucide-react-native';
+import {
+  BookOpen,
+  Clock,
+  Headphones,
+  Sparkles,
+  Users,
+} from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -49,14 +55,21 @@ export function FeatureList({ colors }: Readonly<{ colors: ThemeColors }>) {
     <View style={styles.container}>
       {PREMIUM_FEATURES.map((feature) => (
         <View key={feature.title} style={styles.featureItem}>
-          <View style={[styles.iconContainer, { backgroundColor: feature.color + '15' }]}>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: feature.color + '15' },
+            ]}
+          >
             <feature.icon size={22} color={feature.color} strokeWidth={2.5} />
           </View>
           <View style={styles.textContainer}>
             <Text style={[styles.featureTitle, { color: colors.text.primary }]}>
               {feature.title}
             </Text>
-            <Text style={[styles.featureDescription, { color: colors.text.light }]}>
+            <Text
+              style={[styles.featureDescription, { color: colors.text.light }]}
+            >
               {feature.description}
             </Text>
           </View>

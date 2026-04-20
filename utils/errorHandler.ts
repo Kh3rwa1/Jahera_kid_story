@@ -76,7 +76,7 @@ export const showErrorAlert = (error: AppError, title: string = 'Error') => {
 export const retryWithBackoff = async <T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
-  baseDelay: number = 1000
+  baseDelay: number = 1000,
 ): Promise<T> => {
   let lastError: Error = new Error('No retries attempted');
 
@@ -87,7 +87,7 @@ export const retryWithBackoff = async <T>(
       lastError = error as Error;
       if (i < maxRetries - 1) {
         const delay = baseDelay * Math.pow(2, i);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }

@@ -1,14 +1,14 @@
-import { BORDER_RADIUS,SPACING } from '@/constants/theme';
+import { BORDER_RADIUS, SPACING } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import React,{ useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
-import Animated,{
-Easing,
-interpolate,
-useAnimatedStyle,
-useSharedValue,
-withRepeat,
-withTiming,
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from 'react-native-reanimated';
 
 interface SkeletonProps {
@@ -20,22 +20,25 @@ interface SkeletonProps {
   shimmerColor?: string;
 }
 
-export const Skeleton = ({ 
-  width = '100%', 
-  height = 20, 
-  borderRadius = 8, 
+export const Skeleton = ({
+  width = '100%',
+  height = 20,
+  borderRadius = 8,
   style,
   color = '#E8E8E8',
-  shimmerColor = 'rgba(255, 255, 255, 0.5)'
+  shimmerColor = 'rgba(255, 255, 255, 0.5)',
 }: Readonly<SkeletonProps>) => {
   const { width: winWidth } = useWindowDimensions();
   const shimmerProgress = useSharedValue(-1);
 
   useEffect(() => {
     shimmerProgress.value = withRepeat(
-      withTiming(1, { duration: 1800, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }),
+      withTiming(1, {
+        duration: 1800,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      }),
       -1,
-      false
+      false,
     );
   }, []);
 
@@ -43,7 +46,13 @@ export const Skeleton = ({
     'worklet';
     return {
       transform: [
-        { translateX: interpolate(shimmerProgress.value, [-1, 1], [-winWidth * 0.5, winWidth * 0.8]) },
+        {
+          translateX: interpolate(
+            shimmerProgress.value,
+            [-1, 1],
+            [-winWidth * 0.5, winWidth * 0.8],
+          ),
+        },
       ],
     };
   });
@@ -61,7 +70,9 @@ export const Skeleton = ({
         style,
       ]}
     >
-      <Animated.View style={[StyleSheet.absoluteFill, shimmerStyle, { width: '150%' }]}>
+      <Animated.View
+        style={[StyleSheet.absoluteFill, shimmerStyle, { width: '150%' }]}
+      >
         <LinearGradient
           colors={['transparent', shimmerColor, 'transparent']}
           start={{ x: 0, y: 0 }}
@@ -73,22 +84,58 @@ export const Skeleton = ({
   );
 };
 
-export const StoryCardSkeleton = ({ horizontal = true }: { horizontal?: boolean }) => (
+export const StoryCardSkeleton = ({
+  horizontal = true,
+}: {
+  horizontal?: boolean;
+}) => (
   <View style={[styles.storyCard, !horizontal && styles.gridStoryCard]}>
-    <Skeleton width="100%" height={horizontal ? 180 : 160} borderRadius={BORDER_RADIUS.xl} color="rgba(0,0,0,0.05)" />
+    <Skeleton
+      width="100%"
+      height={horizontal ? 180 : 160}
+      borderRadius={BORDER_RADIUS.xl}
+      color="rgba(0,0,0,0.05)"
+    />
     <View style={styles.storyCardContent}>
-      <Skeleton width="90%" height={16} borderRadius={4} style={{ marginBottom: SPACING.sm }} color="rgba(0,0,0,0.08)" />
-      <Skeleton width="60%" height={12} borderRadius={4} color="rgba(0,0,0,0.04)" />
+      <Skeleton
+        width="90%"
+        height={16}
+        borderRadius={4}
+        style={{ marginBottom: SPACING.sm }}
+        color="rgba(0,0,0,0.08)"
+      />
+      <Skeleton
+        width="60%"
+        height={12}
+        borderRadius={4}
+        color="rgba(0,0,0,0.04)"
+      />
     </View>
   </View>
 );
 
 export const ListItemSkeleton = () => (
   <View style={styles.listItem}>
-    <Skeleton width={80} height={80} borderRadius={BORDER_RADIUS.lg} color="rgba(0,0,0,0.06)" />
+    <Skeleton
+      width={80}
+      height={80}
+      borderRadius={BORDER_RADIUS.lg}
+      color="rgba(0,0,0,0.06)"
+    />
     <View style={styles.listItemContent}>
-      <Skeleton width="75%" height={16} borderRadius={4} style={{ marginBottom: SPACING.xs }} color="rgba(0,0,0,0.08)" />
-      <Skeleton width="45%" height={12} borderRadius={4} color="rgba(0,0,0,0.04)" />
+      <Skeleton
+        width="75%"
+        height={16}
+        borderRadius={4}
+        style={{ marginBottom: SPACING.xs }}
+        color="rgba(0,0,0,0.08)"
+      />
+      <Skeleton
+        width="45%"
+        height={12}
+        borderRadius={4}
+        color="rgba(0,0,0,0.04)"
+      />
     </View>
   </View>
 );
@@ -96,57 +143,131 @@ export const ListItemSkeleton = () => (
 export const HeroSkeleton = () => (
   <View style={styles.heroSkeleton}>
     <View style={styles.heroTop}>
-      <Skeleton width={100} height={100} borderRadius={50} color="rgba(0,0,0,0.08)" />
+      <Skeleton
+        width={100}
+        height={100}
+        borderRadius={50}
+        color="rgba(0,0,0,0.08)"
+      />
       <View style={{ flex: 1, gap: 12 }}>
-         <Skeleton width="90%" height={32} borderRadius={8} color="rgba(0,0,0,0.1)" />
-         <Skeleton width="50%" height={24} borderRadius={12} color="rgba(0,0,0,0.06)" />
+        <Skeleton
+          width="90%"
+          height={32}
+          borderRadius={8}
+          color="rgba(0,0,0,0.1)"
+        />
+        <Skeleton
+          width="50%"
+          height={24}
+          borderRadius={12}
+          color="rgba(0,0,0,0.06)"
+        />
       </View>
     </View>
     <View style={styles.heroStatsRow}>
-      <Skeleton width="28%" height={60} borderRadius={16} color="rgba(0,0,0,0.05)" />
-      <Skeleton width="28%" height={60} borderRadius={16} color="rgba(0,0,0,0.05)" />
-      <Skeleton width="28%" height={60} borderRadius={16} color="rgba(0,0,0,0.05)" />
+      <Skeleton
+        width="28%"
+        height={60}
+        borderRadius={16}
+        color="rgba(0,0,0,0.05)"
+      />
+      <Skeleton
+        width="28%"
+        height={60}
+        borderRadius={16}
+        color="rgba(0,0,0,0.05)"
+      />
+      <Skeleton
+        width="28%"
+        height={60}
+        borderRadius={16}
+        color="rgba(0,0,0,0.05)"
+      />
     </View>
   </View>
 );
 
 export const QuickActionSkeleton = () => (
   <View style={styles.quickActionRow}>
-    <Skeleton width="48%" height={80} borderRadius={20} color="rgba(0,0,0,0.05)" />
-    <Skeleton width="48%" height={80} borderRadius={20} color="rgba(0,0,0,0.05)" />
+    <Skeleton
+      width="48%"
+      height={80}
+      borderRadius={20}
+      color="rgba(0,0,0,0.05)"
+    />
+    <Skeleton
+      width="48%"
+      height={80}
+      borderRadius={20}
+      color="rgba(0,0,0,0.05)"
+    />
   </View>
 );
 
 export const StatCardSkeleton = () => (
   <View style={styles.statCard}>
-    <Skeleton width={44} height={44} borderRadius={22} style={{ marginBottom: 12 }} color="rgba(0,0,0,0.08)" />
-    <Skeleton width={60} height={24} style={{ marginBottom: 4 }} color="rgba(0,0,0,0.1)" />
+    <Skeleton
+      width={44}
+      height={44}
+      borderRadius={22}
+      style={{ marginBottom: 12 }}
+      color="rgba(0,0,0,0.08)"
+    />
+    <Skeleton
+      width={60}
+      height={24}
+      style={{ marginBottom: 4 }}
+      color="rgba(0,0,0,0.1)"
+    />
     <Skeleton width={40} height={12} color="rgba(0,0,0,0.05)" />
   </View>
 );
 
 interface LoadingSkeletonProps {
-  type?: 'card' | 'list' | 'profile' | 'hero' | 'grid' | 'quick-actions' | 'stats';
+  type?:
+    | 'card'
+    | 'list'
+    | 'profile'
+    | 'hero'
+    | 'grid'
+    | 'quick-actions'
+    | 'stats';
   count?: number;
 }
 
-export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'card', count = 3 }) => {
+export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
+  type = 'card',
+  count = 3,
+}) => {
   const renderItem = () => {
     switch (type) {
-      case 'list': return <ListItemSkeleton />;
-      case 'hero': return <HeroSkeleton />;
-      case 'quick-actions': return <QuickActionSkeleton />;
-      case 'stats': return <StatCardSkeleton />;
-      case 'grid': return <StoryCardSkeleton horizontal={false} />;
+      case 'list':
+        return <ListItemSkeleton />;
+      case 'hero':
+        return <HeroSkeleton />;
+      case 'quick-actions':
+        return <QuickActionSkeleton />;
+      case 'stats':
+        return <StatCardSkeleton />;
+      case 'grid':
+        return <StoryCardSkeleton horizontal={false} />;
       case 'card':
-      default: return <StoryCardSkeleton />;
+      default:
+        return <StoryCardSkeleton />;
     }
   };
 
   return (
-    <View style={type === 'grid' || type === 'stats' ? styles.gridRow : styles.column}>
+    <View
+      style={
+        type === 'grid' || type === 'stats' ? styles.gridRow : styles.column
+      }
+    >
       {Array.from({ length: count }).map((_, index) => (
-        <View key={`${type}-${index}`} style={type === 'grid' ? { width: '48%', marginBottom: 16 } : null}>
+        <View
+          key={`${type}-${index}`}
+          style={type === 'grid' ? { width: '48%', marginBottom: 16 } : null}
+        >
           {renderItem()}
         </View>
       ))}
@@ -156,11 +277,11 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'card',
 
 const styles = StyleSheet.create({
   column: { width: '100%' },
-  gridRow: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
+  gridRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    width: '100%' 
+    width: '100%',
   },
   storyCard: {
     width: 220,

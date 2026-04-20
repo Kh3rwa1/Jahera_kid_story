@@ -5,6 +5,7 @@ Jahera is a React Native + Expo app that creates personalized, multilingual bedt
 ## ✨ Features
 
 ### 🧠 Smart Story Engine
+
 - **Behavior-Driven Stories**: 12 learning goals (confidence, sharing, kindness, courage, discipline, etc.) backed by bibliotherapy research
 - **Parent Control Panel**: Choose behavior goal → theme → mood → duration → voice
 - **Voice Presets**: Mom, Dad, Grandma, Fun Narrator, Hindi Dadi personas via ElevenLabs
@@ -15,12 +16,14 @@ Jahera is a React Native + Expo app that creates personalized, multilingual bedt
 - **Prompt Security**: Input sanitization against prompt injection
 
 ### 📖 Core Product Highlights
+
 - AI-generated adventure stories tailored to child profile context
 - Interactive quiz generation for comprehension
 - Multilingual narration and reading playback
 - Story history and replay
 
 ## 🛠️ Tech Stack
+
 - **Frontend**: React Native 0.81, Expo SDK 54, Expo Router, TypeScript 5.9
 - **Backend**: Appwrite (Database, Auth, Cloud Functions)
 - **AI**: Google Gemini 2.0 Flash via OpenRouter
@@ -78,6 +81,7 @@ jahera/
 ```
 
 ## Privacy & Compliance
+
 - **No GPS data collected** — location is manually entered by parents
 - **Parent-first architecture** — parent is the sole account holder
 - **Consent gate** — verifiable parental consent at onboarding
@@ -86,10 +90,12 @@ jahera/
 - **COPPA (US) and DPDP (India) considerations** built into the design
 
 ## 🤝 Contributing
+
 1. Fork the repository
 2. Create a feature branch
 3. Commit your changes
 4. Push and open a pull request
 
 ## 📄 License
+
 MIT

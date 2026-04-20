@@ -23,7 +23,7 @@ export const talkative = {
       Speech.speak(cleanText, {
         language: languageCode,
         pitch: 1.15, // Slightly higher pitch for a kid-friendly vibe
-        rate: 0.95,  // Slightly slower for better comprehension
+        rate: 0.95, // Slightly slower for better comprehension
       });
     } catch (err) {
       console.warn('[talkative] Speech failed:', err);
@@ -40,28 +40,31 @@ export const talkative = {
       console.warn('[talkative] Stop failed:', err);
     }
   },
-  
+
   /**
    * Child-friendly reaction phrases
    */
   reactions: {
-    correct: (name: string) => [
-      `Yeah! Correct! Great job, ${name}!`,
-      `Awesome! You got it right!`,
-      `Perfect score on that one, ${name}!`,
-      `Bingo! You're so smart!`,
-    ][Math.floor(Math.random() * 4)],
+    correct: (name: string) =>
+      [
+        `Yeah! Correct! Great job, ${name}!`,
+        `Awesome! You got it right!`,
+        `Perfect score on that one, ${name}!`,
+        `Bingo! You're so smart!`,
+      ][Math.floor(Math.random() * 4)],
 
-    incorrect: (name: string) => [
-      `Not quite, ${name}. But keep trying!`,
-      `Oops! Let's try another one.`,
-      `Almost! You'll get it next time, ${name}!`,
-      `A good try! Learning is fun, let's go again!`,
-    ][Math.floor(Math.random() * 4)],
-    
-    welcome: (name: string) => `Welcome back, ${name}! Ready for a new adventure?`,
-    
-    finished: (score: number, total: number) => 
-      `All done! You got ${score} out of ${total} right. I'm so proud of you!`
-  }
+    incorrect: (name: string) =>
+      [
+        `Not quite, ${name}. But keep trying!`,
+        `Oops! Let's try another one.`,
+        `Almost! You'll get it next time, ${name}!`,
+        `A good try! Learning is fun, let's go again!`,
+      ][Math.floor(Math.random() * 4)],
+
+    welcome: (name: string) =>
+      `Welcome back, ${name}! Ready for a new adventure?`,
+
+    finished: (score: number, total: number) =>
+      `All done! You got ${score} out of ${total} right. I'm so proud of you!`,
+  },
 };

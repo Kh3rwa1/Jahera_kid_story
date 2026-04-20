@@ -1,7 +1,10 @@
 import { BORDER_RADIUS, FONTS, SHADOWS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { analytics } from '@/services/analyticsService';
-import { BehaviorProgressItem, computeBehaviorProgress } from '@/utils/behaviorProgress';
+import {
+  BehaviorProgressItem,
+  computeBehaviorProgress,
+} from '@/utils/behaviorProgress';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef, useMemo } from 'react';
 import {
@@ -11,18 +14,18 @@ import {
   View,
   Platform,
 } from 'react-native';
-import Animated, { 
-  FadeInDown, 
-  FadeInRight, 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withTiming, 
+import Animated, {
+  FadeInDown,
+  FadeInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
   withDelay,
-  Easing
+  Easing,
 } from 'react-native-reanimated';
 
 interface BehaviorProgressCardProps {
-  stories?: { behavior_goal?: string | null; created_at?: string | null }[] ;
+  stories?: { behavior_goal?: string | null; created_at?: string | null }[];
   progress?: BehaviorProgressItem[];
   compact?: boolean;
 }
@@ -59,11 +62,14 @@ function ProgressRow({
   useEffect(() => {
     barWidth.value = withDelay(
       300 + index * 100,
-      withTiming(percentage, { duration: 1200, easing: Easing.out(Easing.exp) })
+      withTiming(percentage, {
+        duration: 1200,
+        easing: Easing.out(Easing.exp),
+      }),
     );
     glowOpacity.value = withDelay(
       1500 + index * 100,
-      withTiming(1, { duration: 800 })
+      withTiming(1, { duration: 800 }),
     );
   }, [percentage, barWidth, glowOpacity, index]);
 
@@ -76,20 +82,48 @@ function ProgressRow({
   }));
 
   return (
-    <Animated.View entering={FadeInRight.delay(100 + index * 60).springify().damping(14)}>
+    <Animated.View
+      entering={FadeInRight.delay(100 + index * 60)
+        .springify()
+        .damping(14)}
+    >
       <View style={[styles.row, index > -1 && styles.rowSpacing]}>
         <View style={styles.emojiContainer}>
-          <Text style={[styles.emoji, { fontSize: isTablet ? 24 : 18 }]}>{emoji}</Text>
+          <Text style={[styles.emoji, { fontSize: isTablet ? 24 : 18 }]}>
+            {emoji}
+          </Text>
         </View>
 
         <View style={styles.middle}>
           <View style={styles.rowTop}>
-            <Text style={[styles.label, { fontSize: isTablet ? 15 : 13, color: colors.text.primary }]}>{label}</Text>
-            <Text style={[styles.count, { color: mutedTextColor, fontSize: isTablet ? 12 : 11 }]}>{count} levels</Text>
+            <Text
+              style={[
+                styles.label,
+                { fontSize: isTablet ? 15 : 13, color: colors.text.primary },
+              ]}
+            >
+              {label}
+            </Text>
+            <Text
+              style={[
+                styles.count,
+                { color: mutedTextColor, fontSize: isTablet ? 12 : 11 },
+              ]}
+            >
+              {count} levels
+            </Text>
           </View>
 
-          <View style={[styles.progressOuter, { backgroundColor: barTrackColor }]}>
-            <Animated.View style={[styles.progressInner, { backgroundColor: primaryColor }, animatedBarStyle]}>
+          <View
+            style={[styles.progressOuter, { backgroundColor: barTrackColor }]}
+          >
+            <Animated.View
+              style={[
+                styles.progressInner,
+                { backgroundColor: primaryColor },
+                animatedBarStyle,
+              ]}
+            >
               <LinearGradient
                 colors={['rgba(255,255,255,0.4)', 'transparent']}
                 start={{ x: 0, y: 0 }}
@@ -102,7 +136,12 @@ function ProgressRow({
         </View>
 
         <View style={styles.percentContainer}>
-          <Text style={[styles.percentage, { color: primaryColor, fontSize: isTablet ? 14 : 12 }]}>
+          <Text
+            style={[
+              styles.percentage,
+              { color: primaryColor, fontSize: isTablet ? 14 : 12 },
+            ]}
+          >
             {percentage}%
           </Text>
         </View>
@@ -111,10 +150,10 @@ function ProgressRow({
   );
 }
 
-export function BehaviorProgressCard({ 
-  stories = [], 
+export function BehaviorProgressCard({
+  stories = [],
   progress: progressProp,
-  compact = false 
+  compact = false,
 }: Readonly<BehaviorProgressCardProps>): React.ReactElement {
   const { currentTheme } = useTheme();
   const { width } = useWindowDimensions();
@@ -122,7 +161,7 @@ export function BehaviorProgressCard({
 
   const progress: BehaviorProgressItem[] = useMemo(
     () => progressProp ?? computeBehaviorProgress(stories as never, 30),
-    [progressProp, stories]
+    [progressProp, stories],
   );
 
   const colors = currentTheme.colors;
@@ -135,7 +174,10 @@ export function BehaviorProgressCard({
   useEffect(() => {
     if (progress.length > 0 && !hasTrackedRef.current) {
       hasTrackedRef.current = true;
-      analytics.trackBehaviorProgressViewed(progress.length, progress[0]?.label || null);
+      analytics.trackBehaviorProgressViewed(
+        progress.length,
+        progress[0]?.label || null,
+      );
     }
   }, [progress]);
 
@@ -146,15 +188,32 @@ export function BehaviorProgressCard({
       {!compact && (
         <Animated.View entering={FadeInDown.delay(50).springify()}>
           <View style={styles.headerRow}>
-             <View style={styles.headerIconWrap}>
-                <LinearGradient colors={[primaryColor, colors.primaryDark]} style={styles.headerIcon}>
-                    <Text style={{ fontSize: 14 }}>📈</Text>
-                </LinearGradient>
-             </View>
-             <View>
-                <Text style={[styles.headerTitle, { fontSize: isTablet ? 20 : 17, color: colors.text.primary }]}>Growth Journey</Text>
-                <Text style={[styles.headerSubtitle, { fontSize: isTablet ? 13 : 12, color: mutedTextColor }]}>Tracking character development</Text>
-             </View>
+            <View style={styles.headerIconWrap}>
+              <LinearGradient
+                colors={[primaryColor, colors.primaryDark]}
+                style={styles.headerIcon}
+              >
+                <Text style={{ fontSize: 14 }}>📈</Text>
+              </LinearGradient>
+            </View>
+            <View>
+              <Text
+                style={[
+                  styles.headerTitle,
+                  { fontSize: isTablet ? 20 : 17, color: colors.text.primary },
+                ]}
+              >
+                Growth Journey
+              </Text>
+              <Text
+                style={[
+                  styles.headerSubtitle,
+                  { fontSize: isTablet ? 13 : 12, color: mutedTextColor },
+                ]}
+              >
+                Tracking character development
+              </Text>
+            </View>
           </View>
         </Animated.View>
       )}
@@ -162,10 +221,18 @@ export function BehaviorProgressCard({
       {progress.length === 0 ? (
         <Animated.View
           entering={FadeInDown.delay(100).springify()}
-          style={[styles.emptyCard, { backgroundColor: cardBackground, borderColor: colors.text.light + '20' }]}
+          style={[
+            styles.emptyCard,
+            {
+              backgroundColor: cardBackground,
+              borderColor: colors.text.light + '20',
+            },
+          ]}
         >
           <Text style={{ fontSize: isTablet ? 52 : 40 }}>🌱</Text>
-          <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>Your Journey Starts Here</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
+            Your Journey Starts Here
+          </Text>
           <Text style={[styles.emptySubtitle, { color: mutedTextColor }]}>
             Generate stories to see how your hero's nature grows over time.
           </Text>
@@ -175,16 +242,25 @@ export function BehaviorProgressCard({
           style={[
             styles.filledCard,
             {
-              backgroundColor: cardBackground + (Platform.OS === 'ios' ? 'CC' : 'FF'),
+              backgroundColor:
+                cardBackground + (Platform.OS === 'ios' ? 'CC' : 'FF'),
               padding: isTablet ? SPACING.xl : SPACING.lg,
               borderColor: colors.text.light + '15',
             },
           ]}
         >
           {Platform.OS === 'ios' && (
-             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: BORDER_RADIUS.xxl }]} />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: 'rgba(255,255,255,0.4)',
+                  borderRadius: BORDER_RADIUS.xxl,
+                },
+              ]}
+            />
           )}
-          
+
           <LinearGradient
             colors={[`${primaryColor}15`, `${primaryColor}00`]}
             start={{ x: 0, y: 0 }}
@@ -193,7 +269,12 @@ export function BehaviorProgressCard({
           />
 
           {progress.slice(0, compact ? 4 : 10).map((item, index) => (
-            <View key={item.goalId} style={index < progress.length - 1 ? styles.rowSpacing : undefined}>
+            <View
+              key={item.goalId}
+              style={
+                index < progress.length - 1 ? styles.rowSpacing : undefined
+              }
+            >
               <ProgressRow
                 goalId={item.goalId}
                 label={item.label}

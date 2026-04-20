@@ -1,10 +1,10 @@
 import { type ReactNode } from 'react';
 import { StyleProp, TouchableOpacity, ViewStyle } from 'react-native';
-import Animated,{
-useAnimatedStyle,
-useSharedValue,
-withSequence,
-withSpring,
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
 } from 'react-native-reanimated';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -50,7 +50,7 @@ export function AnimatedPressable({
       onPressOut={() => {
         scale.value = withSequence(
           withSpring(1.02, { damping: 10, stiffness: 300 }),
-          withSpring(1, { damping: 12, stiffness: 200 })
+          withSpring(1, { damping: 12, stiffness: 200 }),
         );
       }}
     >
@@ -83,7 +83,7 @@ export function AnimatedBounce({
         scale.value = withSequence(
           withSpring(0.9, { damping: 6, stiffness: 400 }),
           withSpring(1.05, { damping: 8, stiffness: 300 }),
-          withSpring(1, { damping: 10, stiffness: 200 })
+          withSpring(1, { damping: 10, stiffness: 200 }),
         );
         onPress?.();
       }}

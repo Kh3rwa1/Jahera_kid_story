@@ -1,14 +1,14 @@
-import { BORDER_RADIUS,COLORS,SHADOWS,SPACING } from '@/constants/theme';
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
-import Animated,{
-interpolate,
-useAnimatedStyle,
-useSharedValue,
-withSpring
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);

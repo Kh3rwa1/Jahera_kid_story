@@ -11,30 +11,30 @@ import { logger } from '@/utils/logger';
 import { scheduleBedtimeReminder } from '@/services/notificationService';
 import { videoCacheService } from '@/services/videoCacheServiceInternal';
 import {
-AtkinsonHyperlegible_400Regular,
-AtkinsonHyperlegible_700Bold,
+  AtkinsonHyperlegible_400Regular,
+  AtkinsonHyperlegible_700Bold,
 } from '@expo-google-fonts/atkinson-hyperlegible';
 import {
-Baloo2_400Regular,
-Baloo2_500Medium,
-Baloo2_600SemiBold,
-Baloo2_700Bold,
-Baloo2_800ExtraBold,
+  Baloo2_400Regular,
+  Baloo2_500Medium,
+  Baloo2_600SemiBold,
+  Baloo2_700Bold,
+  Baloo2_800ExtraBold,
 } from '@expo-google-fonts/baloo-2';
 import {
-ComicNeue_400Regular,
-ComicNeue_700Bold,
+  ComicNeue_400Regular,
+  ComicNeue_700Bold,
 } from '@expo-google-fonts/comic-neue';
 import {
-Merriweather_400Regular,
-Merriweather_700Bold,
+  Merriweather_400Regular,
+  Merriweather_700Bold,
 } from '@expo-google-fonts/merriweather';
 import {
-Nunito_400Regular,
-Nunito_500Medium,
-Nunito_600SemiBold,
-Nunito_700Bold,
-Nunito_800ExtraBold,
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
 } from '@expo-google-fonts/nunito';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -54,7 +54,10 @@ export default function RootLayout() {
       try {
         await revenueCatService.configure();
       } catch (err) {
-        logger.warn('[RootLayout] RevenueCat init failed (Bridge may be missing):', err);
+        logger.warn(
+          '[RootLayout] RevenueCat init failed (Bridge may be missing):',
+          err,
+        );
       }
 
       // 2. Video Caching (Non-critical, run background)
@@ -71,7 +74,9 @@ export default function RootLayout() {
           const data = JSON.parse(raw);
           if (data?.enabled) {
             setTimeout(() => {
-              scheduleBedtimeReminder(data.hour ?? 20, data.minute ?? 30).catch(() => {});
+              scheduleBedtimeReminder(data.hour ?? 20, data.minute ?? 30).catch(
+                () => {},
+              );
             }, 3000);
           }
         }
@@ -120,34 +125,73 @@ export default function RootLayout() {
     <ErrorBoundary>
       <ThemeProvider>
         <UIProvider>
-        <ReadingPreferencesProvider>
-        <AuthProvider>
-          <AppProvider>
-            <AudioProvider>
-            <Stack screenOptions={{
-              headerShown: false,
-              animation: 'slide_from_right',
-              animationDuration: 300,
-              gestureEnabled: true,
-              fullScreenGestureEnabled: true,
-              gestureDirection: 'horizontal',
-            }}>
-              <Stack.Screen name="index" options={{ animation: 'fade', animationDuration: 200 }} />
-              <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 250 }} />
-            <Stack.Screen name="paywall" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: 350 }} />
-            <Stack.Screen name="parent-dashboard" />
-              <Stack.Screen name="auth/login" options={{ animation: 'fade', animationDuration: 280 }} />
-              <Stack.Screen name="auth/register" options={{ animation: 'fade', animationDuration: 280 }} />
-              <Stack.Screen name="story/generate" options={{ animation: 'fade_from_bottom', animationDuration: 320 }} />
-              <Stack.Screen name="story/playback" options={{ animation: 'fade_from_bottom', animationDuration: 320 }} />
-              <Stack.Screen name="story/quiz" options={{ animation: 'slide_from_right', animationDuration: 300 }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-            <StatusBar style="auto" />
-            </AudioProvider>
-          </AppProvider>
-        </AuthProvider>
-        </ReadingPreferencesProvider>
+          <ReadingPreferencesProvider>
+            <AuthProvider>
+              <AppProvider>
+                <AudioProvider>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      animation: 'slide_from_right',
+                      animationDuration: 300,
+                      gestureEnabled: true,
+                      fullScreenGestureEnabled: true,
+                      gestureDirection: 'horizontal',
+                    }}
+                  >
+                    <Stack.Screen
+                      name="index"
+                      options={{ animation: 'fade', animationDuration: 200 }}
+                    />
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{ animation: 'fade', animationDuration: 250 }}
+                    />
+                    <Stack.Screen
+                      name="paywall"
+                      options={{
+                        presentation: 'modal',
+                        animation: 'slide_from_bottom',
+                        animationDuration: 350,
+                      }}
+                    />
+                    <Stack.Screen name="parent-dashboard" />
+                    <Stack.Screen
+                      name="auth/login"
+                      options={{ animation: 'fade', animationDuration: 280 }}
+                    />
+                    <Stack.Screen
+                      name="auth/register"
+                      options={{ animation: 'fade', animationDuration: 280 }}
+                    />
+                    <Stack.Screen
+                      name="story/generate"
+                      options={{
+                        animation: 'fade_from_bottom',
+                        animationDuration: 320,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="story/playback"
+                      options={{
+                        animation: 'fade_from_bottom',
+                        animationDuration: 320,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="story/quiz"
+                      options={{
+                        animation: 'slide_from_right',
+                        animationDuration: 300,
+                      }}
+                    />
+                    <Stack.Screen name="+not-found" />
+                  </Stack>
+                  <StatusBar style="auto" />
+                </AudioProvider>
+              </AppProvider>
+            </AuthProvider>
+          </ReadingPreferencesProvider>
         </UIProvider>
       </ThemeProvider>
     </ErrorBoundary>

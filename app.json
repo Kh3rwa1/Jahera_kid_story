@@ -28,9 +28,7 @@
         "NSMicrophoneUsageDescription": "Jahera uses microphone access to enable voice input features for story creation.",
         "ITSAppUsesNonExemptEncryption": false,
         "NSUserNotificationUsageDescription": "Jahera sends reminders for your family's story time schedule.",
-        "UIBackgroundModes": [
-          "audio"
-        ]
+        "UIBackgroundModes": ["audio"]
       },
       "privacyManifests": {
         "NSPrivacyCollectedDataTypes": [
@@ -77,9 +75,7 @@
         }
       ],
       "expo-video",
-      [
-        "expo-notifications"
-      ],
+      ["expo-notifications"],
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

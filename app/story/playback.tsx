@@ -1,5 +1,14 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Award, BookOpen, Pause, Play, RefreshCw, SkipBack, SkipForward, Sparkles } from 'lucide-react-native';
+import {
+  Award,
+  BookOpen,
+  Pause,
+  Play,
+  RefreshCw,
+  SkipBack,
+  SkipForward,
+  Sparkles,
+} from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -9,8 +18,25 @@ import {
   Text,
   View,
 } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeInUp, SlideInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming, Easing, interpolate, cancelAnimation } from 'react-native-reanimated';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+  SlideInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+  Easing,
+  interpolate,
+  cancelAnimation,
+} from 'react-native-reanimated';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { useEffect } from 'react';
 
 import { AnimatedPressable } from '@/components/AnimatedPressable';
@@ -22,7 +48,10 @@ import { useWordHighlighting } from '@/hooks/useWordHighlighting';
 
 import { CinematicIntro } from '@/components/story/Playback/CinematicIntro';
 import { PlaybackHeader } from '@/components/story/Playback/PlaybackHeader';
-import { PlaybackProgress, formatTime } from '@/components/story/Playback/PlaybackProgress';
+import {
+  PlaybackProgress,
+  formatTime,
+} from '@/components/story/Playback/PlaybackProgress';
 import { ReadingSettings } from '@/components/story/Playback/ReadingSettings';
 import { ReadingView } from '@/components/story/Playback/ReadingView';
 import { THEMES } from '@/constants/storyOptions';
@@ -37,27 +66,47 @@ export default function StoryPlaybackScreen() {
   const insets = useSafeAreaInsets();
 
   const {
-    story, isLoading, hasQuiz, tab, setTab,
-    showCinematicIntro, introOpacity, dismissCinematicIntro,
-    handleBack, handleGoToQuiz, handleNewStory, retryAudio
+    story,
+    isLoading,
+    hasQuiz,
+    tab,
+    setTab,
+    showCinematicIntro,
+    introOpacity,
+    dismissCinematicIntro,
+    handleBack,
+    handleGoToQuiz,
+    handleNewStory,
+    retryAudio,
   } = usePlayback();
 
-  const { isPlaying, isBuffering, audioPolling, audioError, isDeviceTTS, sound, playPause, seek } = useAudio();
+  const {
+    isPlaying,
+    isBuffering,
+    audioPolling,
+    audioError,
+    isDeviceTTS,
+    sound,
+    playPause,
+    seek,
+  } = useAudio();
   const { position, duration } = useAudioProgress();
   const { prefs } = useReadingPreferences();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const {
-    paragraphs,
-    allWords,
-    activeWordIndex,
-    activeParaIndex
-  } = useWordHighlighting(story?.content ?? '', position, duration);
+  const { paragraphs, allWords, activeWordIndex, activeParaIndex } =
+    useWordHighlighting(story?.content ?? '', position, duration);
 
   const themeObj = THEMES.find((t) => t.id === story?.theme);
-  const accentColor = useMemo(() => themeObj?.gradient[0] || colors.primary, [themeObj, colors.primary]);
-  const accentColorDark = useMemo(() => themeObj?.gradient[1] || colors.primaryDark, [themeObj, colors.primaryDark]);
+  const accentColor = useMemo(
+    () => themeObj?.gradient[0] || colors.primary,
+    [themeObj, colors.primary],
+  );
+  const accentColorDark = useMemo(
+    () => themeObj?.gradient[1] || colors.primaryDark,
+    [themeObj, colors.primaryDark],
+  );
 
   // Vinyl rotation
   const vinylRotation = useSharedValue(0);
@@ -65,7 +114,12 @@ export default function StoryPlaybackScreen() {
   useEffect(() => {
     if (isPlaying) {
       vinylRotation.value = withRepeat(
-        withTiming(vinylRotation.value + 360, { duration: 8000, easing: Easing.linear }), -1, false
+        withTiming(vinylRotation.value + 360, {
+          duration: 8000,
+          easing: Easing.linear,
+        }),
+        -1,
+        false,
       );
     } else {
       cancelAnimation(vinylRotation);
@@ -83,12 +137,17 @@ export default function StoryPlaybackScreen() {
   }));
 
   const handlePlayPause = () => {
-    playScale.value = withSequence(withSpring(0.85, { damping: 8 }), withSpring(1, { damping: 10 }));
+    playScale.value = withSequence(
+      withSpring(0.85, { damping: 8 }),
+      withSpring(1, { damping: 10 }),
+    );
     playPause();
   };
 
   const handleSkipBack = () => seek(Math.max(0, position - 10000));
-  const handleSkipForward = () => { if (duration) seek(Math.min(duration, position + 15000)); };
+  const handleSkipForward = () => {
+    if (duration) seek(Math.min(duration, position + 15000));
+  };
 
   const { icon: ThemeIcon, size: themeIconSize } = getThemeIcon(story?.theme);
 
@@ -97,24 +156,98 @@ export default function StoryPlaybackScreen() {
       <View style={[styles.fill, { backgroundColor: colors.background }]}>
         <SafeAreaView edges={['top']} style={styles.fill}>
           <View style={styles.skeletonHeader}>
-            <View style={[styles.skeletonCircle, { backgroundColor: colors.text.light + '18' }]} />
+            <View
+              style={[
+                styles.skeletonCircle,
+                { backgroundColor: colors.text.light + '18' },
+              ]}
+            />
             <View style={styles.skeletonHeaderCenter}>
-              <View style={[styles.skeletonPill, { backgroundColor: colors.text.light + '18', width: 120 }]} />
-              <View style={[styles.skeletonPill, { backgroundColor: colors.text.light + '12', width: 180, marginTop: 6 }]} />
+              <View
+                style={[
+                  styles.skeletonPill,
+                  { backgroundColor: colors.text.light + '18', width: 120 },
+                ]}
+              />
+              <View
+                style={[
+                  styles.skeletonPill,
+                  {
+                    backgroundColor: colors.text.light + '12',
+                    width: 180,
+                    marginTop: 6,
+                  },
+                ]}
+              />
             </View>
-            <View style={[styles.skeletonCircle, { backgroundColor: colors.text.light + '18' }]} />
+            <View
+              style={[
+                styles.skeletonCircle,
+                { backgroundColor: colors.text.light + '18' },
+              ]}
+            />
           </View>
           <View style={styles.skeletonAudio}>
-            <View style={[styles.skeletonAlbumArt, { backgroundColor: colors.text.light + '12' }]} />
-            <View style={[styles.skeletonPill, { backgroundColor: colors.text.light + '18', width: '60%', height: 20, marginTop: SPACING.xl }]} />
-            <View style={[styles.skeletonPill, { backgroundColor: colors.text.light + '12', width: '40%', height: 14, marginTop: 8 }]} />
+            <View
+              style={[
+                styles.skeletonAlbumArt,
+                { backgroundColor: colors.text.light + '12' },
+              ]}
+            />
+            <View
+              style={[
+                styles.skeletonPill,
+                {
+                  backgroundColor: colors.text.light + '18',
+                  width: '60%',
+                  height: 20,
+                  marginTop: SPACING.xl,
+                },
+              ]}
+            />
+            <View
+              style={[
+                styles.skeletonPill,
+                {
+                  backgroundColor: colors.text.light + '12',
+                  width: '40%',
+                  height: 14,
+                  marginTop: 8,
+                },
+              ]}
+            />
           </View>
-          <View style={[styles.skeletonControls, { backgroundColor: colors.cardBackground }]}>
-            <View style={[styles.skeletonBar, { backgroundColor: colors.text.light + '15' }]} />
+          <View
+            style={[
+              styles.skeletonControls,
+              { backgroundColor: colors.cardBackground },
+            ]}
+          >
+            <View
+              style={[
+                styles.skeletonBar,
+                { backgroundColor: colors.text.light + '15' },
+              ]}
+            />
             <View style={styles.skeletonControlRow}>
-              <View style={[styles.skeletonCircleSmall, { backgroundColor: colors.text.light + '18' }]} />
-              <View style={[styles.skeletonCircleLarge, { backgroundColor: colors.primary + '25' }]} />
-              <View style={[styles.skeletonCircleSmall, { backgroundColor: colors.text.light + '18' }]} />
+              <View
+                style={[
+                  styles.skeletonCircleSmall,
+                  { backgroundColor: colors.text.light + '18' },
+                ]}
+              />
+              <View
+                style={[
+                  styles.skeletonCircleLarge,
+                  { backgroundColor: colors.primary + '25' },
+                ]}
+              />
+              <View
+                style={[
+                  styles.skeletonCircleSmall,
+                  { backgroundColor: colors.text.light + '18' },
+                ]}
+              />
             </View>
           </View>
         </SafeAreaView>
@@ -126,7 +259,12 @@ export default function StoryPlaybackScreen() {
     <View style={styles.fill}>
       <StatusBar barStyle="light-content" />
       <LinearGradient
-        colors={[accentColorDark, accentColor + 'CC', accentColor + '44', colors.background]}
+        colors={[
+          accentColorDark,
+          accentColor + 'CC',
+          accentColor + '44',
+          colors.background,
+        ]}
         locations={[0, 0.3, 0.6, 1]}
         style={StyleSheet.absoluteFill}
       />
@@ -144,7 +282,10 @@ export default function StoryPlaybackScreen() {
 
       <View style={styles.audioContent}>
         {/* Story Title + Meta */}
-        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.titleSection}>
+        <Animated.View
+          entering={FadeInDown.delay(200).springify()}
+          style={styles.titleSection}
+        >
           <Text style={styles.storyTitle} numberOfLines={2}>
             {story?.title ?? 'Your Story'}
           </Text>
@@ -152,11 +293,18 @@ export default function StoryPlaybackScreen() {
             {story?.theme && (
               <View style={styles.metaBadge}>
                 <ThemeIcon size={12} color="#FFF" />
-                <Text style={styles.metaBadgeText}>{themeObj?.label ?? story.theme}</Text>
+                <Text style={styles.metaBadgeText}>
+                  {themeObj?.label ?? story.theme}
+                </Text>
               </View>
             )}
             {story?.mood && (
-              <View style={[styles.metaBadge, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+              <View
+                style={[
+                  styles.metaBadge,
+                  { backgroundColor: 'rgba(255,255,255,0.12)' },
+                ]}
+              >
                 <Text style={styles.metaBadgeText}>{story.mood}</Text>
               </View>
             )}
@@ -164,7 +312,10 @@ export default function StoryPlaybackScreen() {
         </Animated.View>
 
         {/* Album Art */}
-        <Animated.View entering={FadeIn.delay(300).duration(600)} style={styles.albumSection}>
+        <Animated.View
+          entering={FadeIn.delay(300).duration(600)}
+          style={styles.albumSection}
+        >
           {/* Outer glow ring */}
           <View style={[styles.albumGlow, { shadowColor: accentColor }]}>
             <Animated.View style={[styles.albumOuter, vinylStyle]}>
@@ -175,11 +326,30 @@ export default function StoryPlaybackScreen() {
                 end={{ x: 0.8, y: 1 }}
               >
                 {/* Decorative rings */}
-                <View style={[styles.albumRingOuter, { borderColor: 'rgba(255,255,255,0.08)' }]} />
-                <View style={[styles.albumRingMid, { borderColor: 'rgba(255,255,255,0.12)' }]} />
+                <View
+                  style={[
+                    styles.albumRingOuter,
+                    { borderColor: 'rgba(255,255,255,0.08)' },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.albumRingMid,
+                    { borderColor: 'rgba(255,255,255,0.12)' },
+                  ]}
+                />
                 <View style={styles.albumCore}>
-                  <View style={[styles.albumCoreInner, { backgroundColor: accentColor + '60' }]}>
-                    <ThemeIcon size={32} color="rgba(255,255,255,0.95)" strokeWidth={1.5} />
+                  <View
+                    style={[
+                      styles.albumCoreInner,
+                      { backgroundColor: accentColor + '60' },
+                    ]}
+                  >
+                    <ThemeIcon
+                      size={32}
+                      color="rgba(255,255,255,0.95)"
+                      strokeWidth={1.5}
+                    />
                   </View>
                 </View>
               </LinearGradient>
@@ -190,18 +360,35 @@ export default function StoryPlaybackScreen() {
         {/* Controls */}
         <Animated.View
           entering={SlideInDown.springify().damping(18)}
-          style={[styles.playerSheet, { backgroundColor: colors.cardBackground, paddingBottom: insets.bottom + 20 }]}
+          style={[
+            styles.playerSheet,
+            {
+              backgroundColor: colors.cardBackground,
+              paddingBottom: insets.bottom + 20,
+            },
+          ]}
         >
           <View style={styles.sheetHandle} />
 
           {/* Progress */}
-          <PlaybackProgress accentColor={accentColor} colors={colors} isDeviceTTS={isDeviceTTS} />
+          <PlaybackProgress
+            accentColor={accentColor}
+            colors={colors}
+            isDeviceTTS={isDeviceTTS}
+          />
 
           {/* Transport Controls */}
           <View style={styles.controlsRow}>
-            <AnimatedPressable onPress={handleSkipBack} disabled={!sound || isDeviceTTS} scaleDown={0.9} style={styles.skipBtn}>
+            <AnimatedPressable
+              onPress={handleSkipBack}
+              disabled={!sound || isDeviceTTS}
+              scaleDown={0.9}
+              style={styles.skipBtn}
+            >
               <SkipBack size={24} color={colors.text.primary} strokeWidth={2} />
-              <Text style={[styles.skipLabel, { color: colors.text.light }]}>10</Text>
+              <Text style={[styles.skipLabel, { color: colors.text.light }]}>
+                10
+              </Text>
             </AnimatedPressable>
 
             <Animated.View style={playBtnStyle}>
@@ -212,7 +399,11 @@ export default function StoryPlaybackScreen() {
                 style={[styles.playBtnShadow, { shadowColor: accentColor }]}
               >
                 <LinearGradient
-                  colors={sound || isDeviceTTS ? [accentColor, accentColorDark] : ['#999', '#777']}
+                  colors={
+                    sound || isDeviceTTS
+                      ? [accentColor, accentColorDark]
+                      : ['#999', '#777']
+                  }
                   style={styles.playBtn}
                 >
                   {isBuffering ? (
@@ -220,40 +411,102 @@ export default function StoryPlaybackScreen() {
                   ) : isPlaying ? (
                     <Pause size={30} color="#FFF" fill="#FFF" />
                   ) : (
-                    <Play size={30} color="#FFF" fill="#FFF" style={{ marginLeft: 3 }} />
+                    <Play
+                      size={30}
+                      color="#FFF"
+                      fill="#FFF"
+                      style={{ marginLeft: 3 }}
+                    />
                   )}
                 </LinearGradient>
               </AnimatedPressable>
             </Animated.View>
 
-            <AnimatedPressable onPress={handleSkipForward} disabled={!sound || isDeviceTTS} scaleDown={0.9} style={styles.skipBtn}>
-              <SkipForward size={24} color={colors.text.primary} strokeWidth={2} />
-              <Text style={[styles.skipLabel, { color: colors.text.light }]}>15</Text>
+            <AnimatedPressable
+              onPress={handleSkipForward}
+              disabled={!sound || isDeviceTTS}
+              scaleDown={0.9}
+              style={styles.skipBtn}
+            >
+              <SkipForward
+                size={24}
+                color={colors.text.primary}
+                strokeWidth={2}
+              />
+              <Text style={[styles.skipLabel, { color: colors.text.light }]}>
+                15
+              </Text>
             </AnimatedPressable>
           </View>
 
           {/* Stats */}
-          <View style={[styles.statsRow, { borderTopColor: colors.text.light + '10' }]}>
-            <StatItem value={story?.word_count ?? allWords.length} label="words" colors={colors} />
-            <View style={[styles.statDivider, { backgroundColor: colors.text.light + '15' }]} />
-            <StatItem value={formatTime(duration)} label="length" colors={colors} />
-            <View style={[styles.statDivider, { backgroundColor: colors.text.light + '15' }]} />
-            <StatItem value={story?.language_code?.toUpperCase() ?? 'EN'} label="lang" colors={colors} />
+          <View
+            style={[
+              styles.statsRow,
+              { borderTopColor: colors.text.light + '10' },
+            ]}
+          >
+            <StatItem
+              value={story?.word_count ?? allWords.length}
+              label="words"
+              colors={colors}
+            />
+            <View
+              style={[
+                styles.statDivider,
+                { backgroundColor: colors.text.light + '15' },
+              ]}
+            />
+            <StatItem
+              value={formatTime(duration)}
+              label="length"
+              colors={colors}
+            />
+            <View
+              style={[
+                styles.statDivider,
+                { backgroundColor: colors.text.light + '15' },
+              ]}
+            />
+            <StatItem
+              value={story?.language_code?.toUpperCase() ?? 'EN'}
+              label="lang"
+              colors={colors}
+            />
           </View>
 
           {/* Action Buttons */}
           <View style={styles.actionStack}>
             {hasQuiz && (
               <AnimatedPressable onPress={handleGoToQuiz} scaleDown={0.97}>
-                <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.quizBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                <LinearGradient
+                  colors={['#F59E0B', '#D97706']}
+                  style={styles.quizBtn}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
                   <Award size={18} color="#FFF" fill="#FFF" />
                   <Text style={styles.quizBtnText}>Take the Quiz</Text>
                 </LinearGradient>
               </AnimatedPressable>
             )}
-            <AnimatedPressable onPress={handleNewStory} scaleDown={0.97} style={[styles.outlineBtn, { borderColor: colors.text.light + '25' }]}>
+            <AnimatedPressable
+              onPress={handleNewStory}
+              scaleDown={0.97}
+              style={[
+                styles.outlineBtn,
+                { borderColor: colors.text.light + '25' },
+              ]}
+            >
               <RefreshCw size={16} color={colors.text.secondary} />
-              <Text style={[styles.outlineBtnText, { color: colors.text.secondary }]}>New Story</Text>
+              <Text
+                style={[
+                  styles.outlineBtnText,
+                  { color: colors.text.secondary },
+                ]}
+              >
+                New Story
+              </Text>
             </AnimatedPressable>
           </View>
         </Animated.View>
@@ -264,9 +517,21 @@ export default function StoryPlaybackScreen() {
         <View style={[styles.errorBanner, { bottom: insets.bottom + 16 }]}>
           <View style={styles.errorContent}>
             <Text style={styles.errorText}>Audio failed</Text>
-            <AnimatedPressable onPress={retryAudio} scaleDown={0.95} style={styles.retryChip}>
+            <AnimatedPressable
+              onPress={retryAudio}
+              scaleDown={0.95}
+              style={styles.retryChip}
+            >
               <RefreshCw size={12} color={accentColor} />
-              <Text style={{ color: accentColor, fontFamily: FONTS.bold, fontSize: 13 }}>Retry</Text>
+              <Text
+                style={{
+                  color: accentColor,
+                  fontFamily: FONTS.bold,
+                  fontSize: 13,
+                }}
+              >
+                Retry
+              </Text>
             </AnimatedPressable>
           </View>
         </View>
@@ -289,7 +554,9 @@ export default function StoryPlaybackScreen() {
         colors={colors}
         accentColor={accentColor}
       />
-      {isSettingsOpen && <ReadingSettings colors={colors} accentColor={accentColor} />}
+      {isSettingsOpen && (
+        <ReadingSettings colors={colors} accentColor={accentColor} />
+      )}
       <ReadingView
         content={story?.content ?? ''}
         paragraphs={paragraphs}
@@ -321,11 +588,19 @@ export default function StoryPlaybackScreen() {
   );
 }
 
-function StatItem({ value, label, colors }: Readonly<{ value: string | number; label: string; colors: ThemeColors }>) {
+function StatItem({
+  value,
+  label,
+  colors,
+}: Readonly<{ value: string | number; label: string; colors: ThemeColors }>) {
   return (
     <View style={styles.statItem}>
-      <Text style={[styles.statValue, { color: colors.text.primary }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: colors.text.light }]}>{label}</Text>
+      <Text style={[styles.statValue, { color: colors.text.primary }]}>
+        {value}
+      </Text>
+      <Text style={[styles.statLabel, { color: colors.text.light }]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -382,11 +657,13 @@ const styles = StyleSheet.create({
   },
   albumGlow: {
     borderRadius: 110,
-    ...(Platform.OS === 'ios' ? {
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.6,
-      shadowRadius: 40,
-    } : { elevation: Platform.OS === 'android' ? 0 : 20 }),
+    ...(Platform.OS === 'ios'
+      ? {
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.6,
+          shadowRadius: 40,
+        }
+      : { elevation: Platform.OS === 'android' ? 0 : 20 }),
   },
   albumOuter: {
     width: 200,
@@ -495,7 +772,13 @@ const styles = StyleSheet.create({
   },
   statItem: { alignItems: 'center', flex: 1 },
   statValue: { fontSize: 18, fontFamily: FONTS.display, letterSpacing: -0.3 },
-  statLabel: { fontSize: 10, fontFamily: FONTS.extrabold, textTransform: 'uppercase', letterSpacing: 1, marginTop: 2 },
+  statLabel: {
+    fontSize: 10,
+    fontFamily: FONTS.extrabold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 2,
+  },
   statDivider: { width: 1, height: 28, borderRadius: 0.5 },
 
   // --- Actions ---
@@ -531,7 +814,11 @@ const styles = StyleSheet.create({
     padding: 12,
     ...SHADOWS.sm,
   },
-  errorContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  errorContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   errorText: { color: '#B91C1C', fontSize: 14, fontFamily: FONTS.medium },
   retryChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 

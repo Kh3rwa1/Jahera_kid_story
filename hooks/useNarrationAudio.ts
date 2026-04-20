@@ -1,6 +1,6 @@
 import { generateAudio } from '@/services/audioService';
 import { Audio } from 'expo-av';
-import { useCallback,useEffect,useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export function useNarrationAudio(screenTag: string) {
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -29,13 +29,16 @@ export function useNarrationAudio(screenTag: string) {
         const url = await generateAudio(text, lang);
         if (!url) return;
 
-        const { sound } = await Audio.Sound.createAsync({ uri: url }, { shouldPlay: true });
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: url },
+          { shouldPlay: true },
+        );
         soundRef.current = sound;
       } catch (err) {
         console.error(`TTS Error (${screenTag}):`, err);
       }
     },
-    [screenTag, stopCurrent]
+    [screenTag, stopCurrent],
   );
 
   useEffect(() => {

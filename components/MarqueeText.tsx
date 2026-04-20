@@ -1,4 +1,4 @@
-import { useEffect,useRef,useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -72,13 +72,13 @@ export function MarqueeText({
   return (
     <View
       style={[styles.container, containerStyle]}
-      onLayout={e => setContainerWidth(e.nativeEvent.layout.width)}
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
       pointerEvents="none"
     >
       <Animated.Text
         style={[style, needsScroll && { transform: [{ translateX }] }]}
         numberOfLines={1}
-        onLayout={e => setTextWidth(e.nativeEvent.layout.width)}
+        onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
       >
         {text}
       </Animated.Text>

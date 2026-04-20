@@ -1,13 +1,21 @@
 import { FONTS } from '@/constants/theme';
-import { useAudio,useAudioProgress } from '@/contexts/AudioContext';
+import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUI } from '@/contexts/UIContext';
 import { hapticFeedback } from '@/utils/haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Award,Disc,House,Library,Pause,Play,Settings } from 'lucide-react-native';
-import React,{ useEffect } from 'react';
+import {
+  Award,
+  Disc,
+  House,
+  Library,
+  Pause,
+  Play,
+  Settings,
+} from 'lucide-react-native';
+import React, { useEffect } from 'react';
 import {
   Platform,
   Pressable,
@@ -16,7 +24,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import Animated,{
+import Animated, {
   Easing,
   interpolate,
   useAnimatedStyle,
@@ -30,10 +38,20 @@ import Animated,{
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TABS = [
-  { name: 'index',    icon: House,   label: 'Home',     route: '/(tabs)/' },
-  { name: 'history',  icon: Library, label: 'Library',  route: '/(tabs)/history' },
-  { name: 'profile',  icon: Award,   label: 'Progress', route: '/(tabs)/profile' },
-  { name: 'settings', icon: Settings, label: 'Settings', route: '/(tabs)/settings' },
+  { name: 'index', icon: House, label: 'Home', route: '/(tabs)/' },
+  {
+    name: 'history',
+    icon: Library,
+    label: 'Library',
+    route: '/(tabs)/history',
+  },
+  { name: 'profile', icon: Award, label: 'Progress', route: '/(tabs)/profile' },
+  {
+    name: 'settings',
+    icon: Settings,
+    label: 'Settings',
+    route: '/(tabs)/settings',
+  },
 ];
 
 function TabItem({
@@ -91,7 +109,11 @@ function TabItem({
             {tab.label}
           </Animated.Text>
         )}
-        {!focused && <Animated.View style={[styles.activeDot, { backgroundColor: 'transparent' }]} />}
+        {!focused && (
+          <Animated.View
+            style={[styles.activeDot, { backgroundColor: 'transparent' }]}
+          />
+        )}
       </Animated.View>
     </Pressable>
   );
@@ -104,14 +126,30 @@ function AnimatedEQBars({ color }: { color: string }) {
   const bar4 = useSharedValue(8);
 
   React.useEffect(() => {
-    const animateBar = (sv: { value: number }, min: number, max: number, dur: number, delay: number) => {
-      sv.value = withDelay(delay, withRepeat(
-        withSequence(
-          withTiming(max, { duration: dur, easing: Easing.inOut(Easing.ease) }),
-          withTiming(min, { duration: dur, easing: Easing.inOut(Easing.ease) })
+    const animateBar = (
+      sv: { value: number },
+      min: number,
+      max: number,
+      dur: number,
+      delay: number,
+    ) => {
+      sv.value = withDelay(
+        delay,
+        withRepeat(
+          withSequence(
+            withTiming(max, {
+              duration: dur,
+              easing: Easing.inOut(Easing.ease),
+            }),
+            withTiming(min, {
+              duration: dur,
+              easing: Easing.inOut(Easing.ease),
+            }),
+          ),
+          -1,
+          true,
         ),
-        -1, true
-      ));
+      );
     };
     animateBar(bar1, 4, 16, 400, 0);
     animateBar(bar2, 6, 14, 500, 100);
@@ -148,14 +186,15 @@ export function FloatingTabBar({
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const { activeStory, isPlaying, playPause, isBuffering, audioPolling } = useAudio();
+  const { activeStory, isPlaying, playPause, isBuffering, audioPolling } =
+    useAudio();
   const { isUIDormant, wakeUI } = useUI();
   const { position } = useAudioProgress();
 
   const hasStarted = isPlaying || isBuffering || audioPolling || position > 0;
   const showPlayer = isUIDormant && activeStory !== null && hasStarted;
 
-  const BAR_WIDTH = Math.min(winWidth - 40, 360); 
+  const BAR_WIDTH = Math.min(winWidth - 40, 360);
   const TAB_WIDTH = BAR_WIDTH / TABS.length;
   const PILL_WIDTH = TAB_WIDTH - 8;
   const PILL_HEIGHT = 50;
@@ -175,7 +214,7 @@ export function FloatingTabBar({
     onTabPress(route);
   };
 
-  const activeIndex = TABS.findIndex(t => t.name === activeTab);
+  const activeIndex = TABS.findIndex((t) => t.name === activeTab);
   const safeActiveIndex = activeIndex === -1 ? 0 : activeIndex;
 
   const pillX = useSharedValue(safeActiveIndex * TAB_WIDTH + 4);
@@ -190,8 +229,16 @@ export function FloatingTabBar({
 
   const pillStyle = useAnimatedStyle(() => {
     // When in player mode, the pill expands to fill the entire bar
-    const width = interpolate(modeProgress.value, [0, 1], [PILL_WIDTH, BAR_WIDTH - 8]);
-    const translateX = interpolate(modeProgress.value, [0, 1], [pillX.value, 4]);
+    const width = interpolate(
+      modeProgress.value,
+      [0, 1],
+      [PILL_WIDTH, BAR_WIDTH - 8],
+    );
+    const translateX = interpolate(
+      modeProgress.value,
+      [0, 1],
+      [pillX.value, 4],
+    );
 
     return {
       transform: [{ translateX }],
@@ -203,7 +250,7 @@ export function FloatingTabBar({
     opacity: interpolate(modeProgress.value, [0, 0.5], [1, 0]),
     transform: [
       { scale: interpolate(modeProgress.value, [0, 0.5], [1, 0.9]) },
-      { translateY: interpolate(modeProgress.value, [0, 0.5], [0, 10]) }
+      { translateY: interpolate(modeProgress.value, [0, 0.5], [0, 10]) },
     ],
   }));
 
@@ -211,7 +258,7 @@ export function FloatingTabBar({
     opacity: interpolate(modeProgress.value, [0.5, 1], [0, 1]),
     transform: [
       { scale: interpolate(modeProgress.value, [0.5, 1], [0.9, 1]) },
-      { translateY: interpolate(modeProgress.value, [0.5, 1], [-10, 0]) }
+      { translateY: interpolate(modeProgress.value, [0.5, 1], [-10, 0]) },
     ],
   }));
 
@@ -220,13 +267,17 @@ export function FloatingTabBar({
   const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
   const bgColor = isDark ? 'rgba(12,12,18,0.95)' : 'rgba(255,255,255,0.92)';
 
-
   return (
     <View
       style={[styles.wrapper, { bottom: bottomOffset }]}
       pointerEvents="box-none"
     >
-      <View style={[styles.glowHalo, { backgroundColor: glowColor, width: HALO_SIZE }]} />
+      <View
+        style={[
+          styles.glowHalo,
+          { backgroundColor: glowColor, width: HALO_SIZE },
+        ]}
+      />
 
       <Pressable
         onPress={() => {
@@ -253,14 +304,12 @@ export function FloatingTabBar({
         )}
 
         <Animated.View
-          style={[
-            styles.activePill,
-            { height: PILL_HEIGHT },
-            pillStyle,
-          ]}
+          style={[styles.activePill, { height: PILL_HEIGHT }, pillStyle]}
         >
           <LinearGradient
-            colors={[COLORS.primary + '20', COLORS.primary + '05'] as [string, string]}
+            colors={
+              [COLORS.primary + '20', COLORS.primary + '05'] as [string, string]
+            }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[StyleSheet.absoluteFillObject, { borderRadius: 25 }]}
@@ -268,9 +317,13 @@ export function FloatingTabBar({
         </Animated.View>
 
         {/* TABS MODE */}
-        <Animated.View 
+        <Animated.View
           pointerEvents={showPlayer ? 'none' : 'auto'}
-          style={[StyleSheet.absoluteFill, tabsContainerStyle, { justifyContent: 'center' }]}
+          style={[
+            StyleSheet.absoluteFill,
+            tabsContainerStyle,
+            { justifyContent: 'center' },
+          ]}
         >
           <View style={styles.tabsRow}>
             {TABS.map((tab) => (
@@ -280,24 +333,40 @@ export function FloatingTabBar({
                 focused={activeTab === tab.name}
                 onPress={() => handleTabPress(tab.route)}
                 activeColor={COLORS.primary}
-                inactiveColor={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(30,30,40,0.35)'}
+                inactiveColor={
+                  isDark ? 'rgba(255,255,255,0.35)' : 'rgba(30,30,40,0.35)'
+                }
               />
             ))}
           </View>
         </Animated.View>
 
         {/* PLAYER MODE */}
-        <Animated.View 
+        <Animated.View
           pointerEvents={showPlayer ? 'auto' : 'none'}
-          style={[StyleSheet.absoluteFill, playerContainerStyle, styles.playerRow]}
+          style={[
+            StyleSheet.absoluteFill,
+            playerContainerStyle,
+            styles.playerRow,
+          ]}
         >
-          <Pressable 
-            style={styles.playerInfo} 
-            onPress={() => router.push({ pathname: '/story/playback', params: { storyId: activeStory?.id } })}
+          <Pressable
+            style={styles.playerInfo}
+            onPress={() =>
+              router.push({
+                pathname: '/story/playback',
+                params: { storyId: activeStory?.id },
+              })
+            }
             accessibilityRole="button"
             accessibilityLabel={`Now playing: ${activeStory?.title || 'Story'}. Tap to open.`}
           >
-            <View style={[styles.discIconBg, { backgroundColor: COLORS.primary + '15' }]}>
+            <View
+              style={[
+                styles.discIconBg,
+                { backgroundColor: COLORS.primary + '15' },
+              ]}
+            >
               {isPlaying ? (
                 <AnimatedEQBars color={COLORS.primary} />
               ) : (
@@ -305,26 +374,29 @@ export function FloatingTabBar({
               )}
             </View>
             <View style={styles.playerTextCol}>
-              <Text style={[styles.playerTitle, { color: COLORS.text.primary }]} numberOfLines={1}>
+              <Text
+                style={[styles.playerTitle, { color: COLORS.text.primary }]}
+                numberOfLines={1}
+              >
                 {activeStory?.title || 'Loading Story...'}
               </Text>
-              <Text style={[styles.playerSub, { color: COLORS.text.secondary }]} numberOfLines={1}>
+              <Text
+                style={[styles.playerSub, { color: COLORS.text.secondary }]}
+                numberOfLines={1}
+              >
                 {activeStory?.theme || 'Custom'} Concept
               </Text>
             </View>
           </Pressable>
 
-          <Pressable 
-            style={styles.playerBtn}
-            onPress={playPause}
-          >
+          <Pressable style={styles.playerBtn} onPress={playPause}>
             {isPlaying ? (
               <Pause size={24} color={COLORS.primary} fill={COLORS.primary} />
             ) : (
               <Play size={24} color={COLORS.primary} fill={COLORS.primary} />
             )}
           </Pressable>
-          
+
           {/* Mini progress bar at the bottom */}
           <MiniProgressBar color={COLORS.primary} />
         </Animated.View>
@@ -338,7 +410,7 @@ const MiniProgressBar = React.memo(({ color }: { color: string }) => {
   const progress = useSharedValue(0);
 
   useEffect(() => {
-    const pct = duration > 0 ? (position / duration) : 0;
+    const pct = duration > 0 ? position / duration : 0;
     progress.value = withTiming(pct, { duration: 250 }); // smooth transition between 200ms updates
   }, [position, duration]);
 
@@ -348,7 +420,13 @@ const MiniProgressBar = React.memo(({ color }: { color: string }) => {
 
   return (
     <View style={styles.miniProgressBarContainer}>
-      <Animated.View style={[styles.miniProgressBar, { backgroundColor: color }, animatedStyle]} />
+      <Animated.View
+        style={[
+          styles.miniProgressBar,
+          { backgroundColor: color },
+          animatedStyle,
+        ]}
+      />
     </View>
   );
 });
@@ -377,13 +455,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     position: 'relative',
     height: 66,
-    ...(Platform.OS !== 'web' ? {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.15,
-      shadowRadius: 20,
-      elevation: Platform.OS === 'android' ? 0 : 10,
-    } : {}),
+    ...(Platform.OS !== 'web'
+      ? {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.15,
+          shadowRadius: 20,
+          elevation: Platform.OS === 'android' ? 0 : 10,
+        }
+      : {}),
   },
   activePill: {
     position: 'absolute',
@@ -481,5 +561,5 @@ const styles = StyleSheet.create({
   miniProgressBar: {
     height: '100%',
     borderRadius: 1,
-  }
+  },
 });

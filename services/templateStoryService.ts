@@ -1,4 +1,4 @@
-import { COLLECTIONS,DATABASE_ID,databases,Query } from '@/lib/appwrite';
+import { COLLECTIONS, DATABASE_ID, databases, Query } from '@/lib/appwrite';
 import { GeneratedStory, QuizQuestion } from '@/services/aiService';
 import { HydratedTemplate, StoryTemplate } from '@/types/storyTemplate';
 import { ProfileWithRelations } from '@/types/database';
@@ -31,7 +31,10 @@ function parsePlaceholderFields(value: unknown): string[] {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) ? parsed.map(String) : [];
   } catch {
-    return value.split(',').map((field) => field.trim()).filter(Boolean);
+    return value
+      .split(',')
+      .map((field) => field.trim())
+      .filter(Boolean);
   }
 }
 
@@ -56,9 +59,12 @@ function humanize(value: string): string {
 function makeQuestion(
   question: string,
   correctAnswer: string,
-  distractors: string[]
+  distractors: string[],
 ): QuizQuestion {
-  const choices = shuffle([correctAnswer, ...distractors.filter(Boolean)]).slice(0, 3);
+  const choices = shuffle([
+    correctAnswer,
+    ...distractors.filter(Boolean),
+  ]).slice(0, 3);
   while (choices.length < 3) {
     choices.push('Something else');
   }
@@ -70,7 +76,8 @@ function makeQuestion(
   };
 
   const correctIndex = choices.indexOf(correctAnswer);
-  const correctAnswerKey: 'A' | 'B' | 'C' = (['A', 'B', 'C'][correctIndex] ?? 'A') as 'A' | 'B' | 'C';
+  const correctAnswerKey: 'A' | 'B' | 'C' = (['A', 'B', 'C'][correctIndex] ??
+    'A') as 'A' | 'B' | 'C';
 
   return {
     question,
@@ -81,29 +88,50 @@ function makeQuestion(
 
 async function getRecentTemplateIds(profileId: string): Promise<string[]> {
   try {
-    const raw = await AsyncStorage.getItem(`${RECENT_TEMPLATE_KEY_PREFIX}${profileId}`);
+    const raw = await AsyncStorage.getItem(
+      `${RECENT_TEMPLATE_KEY_PREFIX}${profileId}`,
+    );
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((id): id is string => typeof id === 'string')
+      : [];
   } catch {
     return [];
   }
 }
 
-async function rememberTemplateId(profileId: string, templateId: string): Promise<void> {
+async function rememberTemplateId(
+  profileId: string,
+  templateId: string,
+): Promise<void> {
   try {
     const recent = await getRecentTemplateIds(profileId);
-    const next = [templateId, ...recent.filter((id) => id !== templateId)].slice(0, RECENT_TEMPLATE_LIMIT);
-    await AsyncStorage.setItem(`${RECENT_TEMPLATE_KEY_PREFIX}${profileId}`, JSON.stringify(next));
+    const next = [
+      templateId,
+      ...recent.filter((id) => id !== templateId),
+    ].slice(0, RECENT_TEMPLATE_LIMIT);
+    await AsyncStorage.setItem(
+      `${RECENT_TEMPLATE_KEY_PREFIX}${profileId}`,
+      JSON.stringify(next),
+    );
   } catch (error) {
-    logger.warn('[templateStoryService] Failed to persist recent template id:', error);
+    logger.warn(
+      '[templateStoryService] Failed to persist recent template id:',
+      error,
+    );
   }
 }
 
-function replacePlaceholders(template: string, profile: ProfileWithRelations): string {
+function replacePlaceholders(
+  template: string,
+  profile: ProfileWithRelations,
+): string {
   const childName = sanitizeName(profile.kid_name || '') || 'little hero';
-  const friendName = sanitizeName(profile.friends?.[0]?.name || '') || 'best friend';
-  const familyMember = sanitizeName(profile.family_members?.[0]?.name || '') || 'family';
+  const friendName =
+    sanitizeName(profile.friends?.[0]?.name || '') || 'best friend';
+  const familyMember =
+    sanitizeName(profile.family_members?.[0]?.name || '') || 'family';
   const city = sanitizeCity(profile.city || '') || 'their hometown';
 
   return template
@@ -117,27 +145,41 @@ function buildTemplateQuiz(template: HydratedTemplate): QuizQuestion[] {
   const lesson = humanize(template.behavior_goal);
   const theme = humanize(template.theme);
   const mood = humanize(template.mood);
-  const distractorLessons = ['sharing', 'courage', 'calmness', 'kindness', 'curiosity', 'honesty'];
+  const distractorLessons = [
+    'sharing',
+    'courage',
+    'calmness',
+    'kindness',
+    'curiosity',
+    'honesty',
+  ];
   return [
     makeQuestion(
       'What lesson was this story helping us practice?',
       lesson,
-      distractorLessons.filter((item) => item !== lesson).slice(0, 2)
+      distractorLessons.filter((item) => item !== lesson).slice(0, 2),
     ),
     makeQuestion(
       'Which kind of adventure did this story feel like?',
       theme,
-      ['bedtime', 'forest', 'space', 'ocean'].filter((item) => item !== theme).slice(0, 2)
+      ['bedtime', 'forest', 'space', 'ocean']
+        .filter((item) => item !== theme)
+        .slice(0, 2),
     ),
     makeQuestion(
       'How did this story feel?',
       mood,
-      ['exciting', 'quiet', 'serious', 'silly'].filter((item) => item !== mood).slice(0, 2)
+      ['exciting', 'quiet', 'serious', 'silly']
+        .filter((item) => item !== mood)
+        .slice(0, 2),
     ),
   ];
 }
 
-export function hydrateTemplate(template: StoryTemplate, profile: ProfileWithRelations): HydratedTemplate {
+export function hydrateTemplate(
+  template: StoryTemplate,
+  profile: ProfileWithRelations,
+): HydratedTemplate {
   const content = replacePlaceholders(template.content_template, profile);
   return {
     id: template.id,
@@ -146,7 +188,8 @@ export function hydrateTemplate(template: StoryTemplate, profile: ProfileWithRel
     behavior_goal: template.behavior_goal,
     theme: template.theme,
     mood: template.mood,
-    word_count: content.split(/\s+/).filter(Boolean).length || template.word_count,
+    word_count:
+      content.split(/\s+/).filter(Boolean).length || template.word_count,
   };
 }
 
@@ -154,7 +197,7 @@ export const templateStoryService = {
   async getMatchingTemplate(
     profile: ProfileWithRelations,
     behaviorGoal: string | null | undefined,
-    languageCode: string
+    languageCode: string,
   ): Promise<HydratedTemplate | null> {
     const filters = [
       Query.equal('language_code', languageCode),
@@ -166,26 +209,41 @@ export const templateStoryService = {
     }
 
     try {
-      let response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORY_TEMPLATES, filters);
+      let response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.STORY_TEMPLATES,
+        filters,
+      );
 
       if (response.documents.length === 0 && languageCode !== 'en') {
-        response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORY_TEMPLATES, [
-          ...(behaviorGoal ? [Query.equal('behavior_goal', behaviorGoal)] : []),
-          Query.equal('language_code', 'en'),
-          Query.limit(50),
-        ]);
+        response = await databases.listDocuments(
+          DATABASE_ID,
+          COLLECTIONS.STORY_TEMPLATES,
+          [
+            ...(behaviorGoal
+              ? [Query.equal('behavior_goal', behaviorGoal)]
+              : []),
+            Query.equal('language_code', 'en'),
+            Query.limit(50),
+          ],
+        );
       }
 
       if (response.documents.length === 0) {
-        response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.STORY_TEMPLATES, [
-          Query.limit(50),
-        ]);
+        response = await databases.listDocuments(
+          DATABASE_ID,
+          COLLECTIONS.STORY_TEMPLATES,
+          [Query.limit(50)],
+        );
       }
 
       const templates = response.documents.map((doc) => mapTemplateDoc(doc));
       const recentIds = await getRecentTemplateIds(profile.id);
-      const unseenTemplates = templates.filter((template) => !recentIds.includes(template.id));
-      const selectedPool = unseenTemplates.length > 0 ? unseenTemplates : templates;
+      const unseenTemplates = templates.filter(
+        (template) => !recentIds.includes(template.id),
+      );
+      const selectedPool =
+        unseenTemplates.length > 0 ? unseenTemplates : templates;
       const selected = pickRandom(selectedPool);
       return selected ? hydrateTemplate(selected, profile) : null;
     } catch (error) {
@@ -197,9 +255,13 @@ export const templateStoryService = {
   async generateTemplateStory(
     profile: ProfileWithRelations,
     behaviorGoal: string | null | undefined,
-    languageCode: string
+    languageCode: string,
   ): Promise<GeneratedStory | null> {
-    const template = await this.getMatchingTemplate(profile, behaviorGoal, languageCode);
+    const template = await this.getMatchingTemplate(
+      profile,
+      behaviorGoal,
+      languageCode,
+    );
     if (!template) return null;
     await rememberTemplateId(profile.id, template.id);
 

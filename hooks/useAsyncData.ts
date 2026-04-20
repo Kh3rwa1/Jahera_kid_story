@@ -1,5 +1,5 @@
-import { AppError,handleError } from '@/utils/errorHandler';
-import { useCallback,useEffect,useState } from 'react';
+import { AppError, handleError } from '@/utils/errorHandler';
+import { useCallback, useEffect, useState } from 'react';
 
 interface UseAsyncDataOptions<T> {
   fetchFn: () => Promise<T>;
