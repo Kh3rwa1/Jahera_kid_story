@@ -15,6 +15,7 @@ import {
   Streak,
   SubscriptionStatus,
 } from '@/types/database';
+import { offlineStoryService } from '@/services/offlineStoryService';
 import { handleError } from '@/utils/errorHandler';
 import { personalizeStories } from '@/utils/nameSubstitution';
 import React, {
@@ -100,9 +101,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           streakService.getStreak(data.id),
         ]);
 
-      setStories(
-        personalizeStories(storiesData || [], data.kid_name, data.city),
+      const personalizedStories = personalizeStories(
+        storiesData || [],
+        data.kid_name,
+        data.city,
       );
+      setStories(personalizedStories);
+
+      // Background-cache all stories with audio for offline use
+      personalizedStories
+        .filter((s) => s.audio_url)
+        .forEach((s) =>
+          offlineStoryService.autoSaveIfOnline(s).catch(() => {}),
+        );
+
       setQuizAttempts(attemptsData || []);
       setSubscription(subData);
       setStreak(streakData);
@@ -164,9 +176,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!profile) return;
     try {
       const data = await storyService.getAll();
-      setStories(
-        personalizeStories(data || [], profile.kid_name, profile.city),
+      const personalized = personalizeStories(
+        data || [],
+        profile.kid_name,
+        profile.city,
       );
+      setStories(personalized);
+
+      // Background-cache stories with audio for offline use
+      personalized
+        .filter((s) => s.audio_url)
+        .forEach((s) =>
+          offlineStoryService.autoSaveIfOnline(s).catch(() => {}),
+        );
     } catch (err) {
       handleError(err, 'AppContext.refreshStories');
     }
