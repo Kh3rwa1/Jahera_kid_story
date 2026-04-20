@@ -9,12 +9,12 @@ import { useRouter } from 'expo-router';
 import { Award,Disc,House,Library,Pause,Play,Settings } from 'lucide-react-native';
 import React,{ useEffect } from 'react';
 import {
-Platform,
-Pressable,
-StyleSheet,
-Text,
-useWindowDimensions,
-View,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import Animated,{
   Easing,
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
       shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.15,
       shadowRadius: 20,
-      elevation: 10,
+      elevation: Platform.OS === 'android' ? 0 : 10,
     } : {}),
   },
   activePill: {

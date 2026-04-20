@@ -1,7 +1,13 @@
 import { BORDER_RADIUS,COLORS,FONT_SIZES,FONT_WEIGHTS,SPACING } from '@/constants/theme';
 import { AlertCircle } from 'lucide-react-native';
 import React,{ Component,ReactNode } from 'react';
-import { StyleSheet,Text,TouchableOpacity,View } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Platform,
+} from 'react-native';
 
 interface Props {
   children: ReactNode;
@@ -114,7 +120,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: Platform.OS === 'android' ? 0 : 5,
   },
   buttonText: {
     color: '#FFFFFF',

@@ -11,14 +11,14 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft,Camera,Globe,Image as ImageIcon,Plus,Save,Trash2,UserPlus,Users,X } from 'lucide-react-native';
 import React,{ useCallback,useState } from 'react';
 import {
-Modal,
-Platform,
-ScrollView,
-StyleSheet,
-Text,
-TextInput,
-TouchableOpacity,
-View,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
 import { EdgeInsets,SafeAreaView,useSafeAreaInsets } from 'react-native-safe-area-context';

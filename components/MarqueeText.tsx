@@ -1,5 +1,13 @@
 import { useEffect,useRef,useState } from 'react';
-import { Animated,Easing,StyleProp,StyleSheet,TextStyle,View,ViewStyle } from 'react-native';
+import {
+  Animated,
+  Easing,
+  StyleProp,
+  StyleSheet,
+  TextStyle,
+  View,
+  ViewStyle,
+} from 'react-native';
 
 interface MarqueeTextProps {
   text: string;

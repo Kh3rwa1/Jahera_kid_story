@@ -6,11 +6,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BookOpen,Pause,Play,SkipBack,SkipForward } from 'lucide-react-native';
 import { useEffect } from 'react';
 import {
-ActivityIndicator,
-StyleSheet,
-Text,
-TouchableOpacity,
-View,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Platform,
 } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 20 },
     shadowOpacity: 0.5,
     shadowRadius: 30,
-    elevation: 20,
+    elevation: Platform.OS === 'android' ? 0 : 20,
   },
   albumInner: {
     flex: 1,
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.38,
     shadowRadius: 20,
-    elevation: 12,
+    elevation: Platform.OS === 'android' ? 0 : 12,
   },
   playBtn: {
     width: 90,

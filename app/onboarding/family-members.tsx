@@ -9,16 +9,16 @@ import LottieView from 'lottie-react-native';
 import { ArrowLeft,ChevronRight,Heart,Plus,Users,X } from 'lucide-react-native';
 import { useEffect,useMemo,useState } from 'react';
 import {
-KeyboardAvoidingView,
-Platform,
-ScrollView,
-StatusBar,
-StyleSheet,
-Text,
-TextInput,
-TouchableOpacity,
-View,
-useWindowDimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
 } from 'react-native';
 import Animated,{
 FadeInDown,

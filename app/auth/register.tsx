@@ -7,17 +7,17 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft,ArrowRight,Eye,EyeOff,Lock,Mail,User } from 'lucide-react-native';
 import { useState } from 'react';
 import {
-ActivityIndicator,
-Image,
-KeyboardAvoidingView,
-Platform,
-ScrollView,
-StatusBar,
-StyleSheet,
-Text,
-TextInput,
-TouchableOpacity,
-View,
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Animated,{ FadeInDown,FadeInUp } from 'react-native-reanimated';
 
@@ -238,7 +238,7 @@ const useStyles = () => {
       shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.35,
       shadowRadius: 20,
-      elevation: 14,
+      elevation: Platform.OS === 'android' ? 0 : 14,
     },
     iconGradient: {
       flex: 1,

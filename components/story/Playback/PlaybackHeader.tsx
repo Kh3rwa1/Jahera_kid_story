@@ -4,12 +4,7 @@ import { TabMode } from '@/hooks/usePlayback';
 import { ThemeColors } from '@/types/theme';
 import { hapticFeedback } from '@/utils/haptics';
 import { ArrowLeft,BookMarked,Headphones,Share2,Type } from 'lucide-react-native';
-import {
-StyleSheet,
-Text,
-TouchableOpacity,
-View
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface PlaybackHeaderProps {

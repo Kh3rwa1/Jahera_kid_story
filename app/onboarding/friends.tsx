@@ -12,17 +12,17 @@ import LottieView from 'lottie-react-native';
 import { ArrowLeft,Plus,Sparkles,Star,UserPlus,X } from 'lucide-react-native';
 import { useEffect,useMemo,useState } from 'react';
 import {
-ActivityIndicator,
-KeyboardAvoidingView,
-Platform,
-ScrollView,
-StatusBar,
-StyleSheet,
-Text,
-TextInput,
-TouchableOpacity,
-View,
-useWindowDimensions,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
 } from 'react-native';
 import Animated,{
 FadeInDown,

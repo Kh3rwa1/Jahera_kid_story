@@ -1,7 +1,7 @@
 import { COLORS } from '@/constants/theme';
 import { randomBool,randomChoice,randomFloat } from '@/utils/secureRandom';
 import { useEffect,useMemo } from 'react';
-import { StyleSheet,useWindowDimensions,View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated,{
 Easing,
 interpolate,

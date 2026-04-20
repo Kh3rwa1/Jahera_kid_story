@@ -2,13 +2,13 @@ import { BORDER_RADIUS,FONTS,SHADOWS } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import React,{ useEffect } from 'react';
 import {
-ActivityIndicator,
-StyleSheet,
-Text,
-TextStyle,
-TouchableOpacity,
-View,
-ViewStyle,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import Animated,{
 Easing,

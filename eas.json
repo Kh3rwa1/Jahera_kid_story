@@ -36,16 +36,16 @@
       "ios": {
         "resourceClass": "default"
       },
-      "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease"
-      },
       "env": {
         "NODE_ENV": "production",
         "EXPO_PUBLIC_APPWRITE_ENDPOINT": "https://sfo.cloud.appwrite.io/v1",
         "EXPO_PUBLIC_APPWRITE_PROJECT_ID": "69b5657c000d2c28a436",
         "EXPO_PUBLIC_APPWRITE_DATABASE_ID": "jahera_db",
         "EXPO_PUBLIC_APPWRITE_PLATFORM": "com.hindi.harp"
+      },
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle"
       }
     },
     "production-store": {

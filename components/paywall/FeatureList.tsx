@@ -2,11 +2,7 @@ import { FONTS,SPACING } from '@/constants/theme';
 import { ThemeColors } from '@/types/theme';
 import { BookOpen,Clock,Headphones,Sparkles,Users } from 'lucide-react-native';
 import React from 'react';
-import {
-StyleSheet,
-Text,
-View,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface Feature {
   icon: React.ElementType;

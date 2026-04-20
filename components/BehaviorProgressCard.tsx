@@ -4,7 +4,13 @@ import { analytics } from '@/services/analyticsService';
 import { BehaviorProgressItem, computeBehaviorProgress } from '@/utils/behaviorProgress';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef, useMemo } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View, Platform } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+  Platform,
+} from 'react-native';
 import Animated, { 
   FadeInDown, 
   FadeInRight, 

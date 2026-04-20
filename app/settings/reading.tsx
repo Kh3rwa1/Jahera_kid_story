@@ -12,7 +12,14 @@ import { hapticFeedback } from '@/utils/haptics';
 import { useRouter } from 'expo-router';
 import { ArrowLeft,Check,RotateCcw } from 'lucide-react-native';
 import React from 'react';
-import { ScrollView,StyleSheet,Text,TouchableOpacity,View,useWindowDimensions } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { EdgeInsets,useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ColorScheme } from '@/constants/themeSchemes';
 

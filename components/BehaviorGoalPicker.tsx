@@ -1,5 +1,14 @@
 import React, { useMemo, useState, useEffect, useRef, memo } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View, Platform, ScrollView } from 'react-native';
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';

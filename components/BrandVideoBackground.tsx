@@ -2,7 +2,13 @@ import { APPWRITE_ENDPOINT,APPWRITE_PROJECT_ID,STORAGE_BUCKETS } from '@/lib/app
 import { logger } from '@/utils/logger';
 import { useVideoPlayer,VideoView } from 'expo-video';
 import { useEffect,useState } from 'react';
-import { Dimensions,Platform,StyleSheet,View,ViewStyle } from 'react-native';
+import {
+  Dimensions,
+  Platform,
+  StyleSheet,
+  View,
+  ViewStyle,
+} from 'react-native';
 
 interface BrandVideoBackgroundProps {
   /** The ID of the file in the app_assets bucket (e.g., 'onboarding_video') */

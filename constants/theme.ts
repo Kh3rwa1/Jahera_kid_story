@@ -83,6 +83,9 @@ export const FONTS = {
 
 // Helper function to create dynamic shadows based on theme colors
 export function createShadows(primaryColor: string) {
+  const isAndroid = Platform.OS === 'android';
+  // Android elevation renders ugly grey rectangles — use minimal values
+  // iOS uses shadowColor/shadowOffset/shadowOpacity/shadowRadius properly
   return {
     none: {
       shadowColor: 'transparent',
@@ -96,88 +99,85 @@ export function createShadows(primaryColor: string) {
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.06,
       shadowRadius: 3,
-      elevation: 2,
+      elevation: isAndroid ? 0 : 2,
     },
     sm: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.08,
       shadowRadius: 6,
-      elevation: 3,
+      elevation: isAndroid ? 0 : 3,
     },
-    // Use this for top-most cards to prevent shadow bleed on Android
     topCard: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.08,
       shadowRadius: 12,
-      elevation: 4,
+      elevation: isAndroid ? 0 : 4,
     },
     md: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 5 },
       shadowOpacity: 0.1,
       shadowRadius: 12,
-      elevation: 5,
+      elevation: isAndroid ? 0 : 5,
     },
     lg: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.16,
+      shadowOpacity: 0.12,
       shadowRadius: 24,
-      elevation: 8,
+      elevation: isAndroid ? 0 : 8,
     },
     xl: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 16 },
-      shadowOpacity: 0.12,
+      shadowOpacity: 0.10,
       shadowRadius: 32,
-      elevation: 10,
+      elevation: isAndroid ? 0 : 10,
     },
     xxl: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 24 },
-      shadowOpacity: 0.15,
+      shadowOpacity: 0.12,
       shadowRadius: 48,
-      elevation: 12,
+      elevation: isAndroid ? 0 : 12,
     },
-    // Colored shadows for premium effect
     colored: {
       shadowColor: primaryColor,
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.25,
+      shadowOpacity: 0.20,
       shadowRadius: 16,
-      elevation: 8,
+      elevation: isAndroid ? 0 : 8,
     },
     coloredLight: {
       shadowColor: primaryColor,
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
+      shadowOpacity: 0.12,
       shadowRadius: 12,
-      elevation: 4,
+      elevation: isAndroid ? 0 : 4,
     },
     purple: {
       shadowColor: '#C7CEEA',
       shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.35,
+      shadowOpacity: 0.25,
       shadowRadius: 14,
-      elevation: 6,
+      elevation: isAndroid ? 0 : 6,
     },
     blue: {
       shadowColor: '#85C1E2',
       shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.35,
+      shadowOpacity: 0.25,
       shadowRadius: 14,
-      elevation: 6,
+      elevation: isAndroid ? 0 : 6,
     },
     green: {
       shadowColor: '#7FD8BE',
       shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.35,
+      shadowOpacity: 0.25,
       shadowRadius: 14,
-      elevation: 6,
+      elevation: isAndroid ? 0 : 6,
     },
-    // Inner shadow effect (simulated with opacity)
     inner: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -2 },

@@ -1,7 +1,7 @@
 import { BORDER_RADIUS,SPACING } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import React,{ useEffect } from 'react';
-import { StyleSheet,useWindowDimensions,View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated,{
 Easing,
 interpolate,

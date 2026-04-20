@@ -8,12 +8,13 @@ import { useRouter } from 'expo-router';
 import { AppWindow,ArrowLeft,Check,Palette,Pipette,Sparkles,Wand as Wand2 } from 'lucide-react-native';
 import React,{ useCallback,useState } from 'react';
 import {
-ScrollView,
-StyleSheet,
-Text,
-TouchableOpacity,
-useWindowDimensions,
-View
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+  Platform,
 } from 'react-native';
 import Animated,{
 Extrapolation,
@@ -597,7 +598,7 @@ const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets) => {
       shadowOffset: { width: 0, height: 12 },
       shadowOpacity: 0.5,
       shadowRadius: 24,
-      elevation: 20,
+      elevation: Platform.OS === 'android' ? 0 : 20,
     },
     themeCard: {
       borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', backgroundColor: C.cardBackground,
