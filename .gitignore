@@ -44,3 +44,9 @@ android/
 *.aab
 credentials/
 credentials.json
+
+# Logs
+*.log
+logs.txt
+build_log*.txt
+out.log
