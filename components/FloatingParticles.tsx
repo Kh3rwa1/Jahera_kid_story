@@ -24,7 +24,11 @@ interface Particle {
   colors: readonly [string, string, ...string[]];
 }
 
-const FloatingParticle: React.FC<{ particle: Particle; winHeight: number; isFocused: boolean }> = React.memo(({ particle, winHeight, isFocused }) => {
+const FloatingParticle: React.FC<{
+  particle: Particle;
+  winHeight: number;
+  isFocused: boolean;
+}> = React.memo(({ particle, winHeight, isFocused }) => {
   const translateY = useSharedValue(particle.startY);
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(0);
@@ -42,32 +46,46 @@ const FloatingParticle: React.FC<{ particle: Particle; winHeight: number; isFocu
 
     opacity.value = withDelay(
       particle.delay,
-      withTiming(0.6, { duration: 800, easing: Easing.out(Easing.ease) })
+      withTiming(0.6, { duration: 800, easing: Easing.out(Easing.ease) }),
     );
     scale.value = withDelay(
       particle.delay,
-      withTiming(1, { duration: 800, easing: Easing.out(Easing.back(1.2)) })
+      withTiming(1, { duration: 800, easing: Easing.out(Easing.back(1.2)) }),
     );
 
     translateY.value = withDelay(
       particle.delay,
       withRepeat(
         withSequence(
-          withTiming(-winHeight * 0.15, { duration: particle.duration, easing: Easing.inOut(Easing.ease) }),
-          withTiming(particle.startY, { duration: particle.duration, easing: Easing.inOut(Easing.ease) })
+          withTiming(-winHeight * 0.15, {
+            duration: particle.duration,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          withTiming(particle.startY, {
+            duration: particle.duration,
+            easing: Easing.inOut(Easing.ease),
+          }),
         ),
-        -1, true
-      )
+        -1,
+        true,
+      ),
     );
     translateX.value = withDelay(
       particle.delay,
       withRepeat(
         withSequence(
-          withTiming(20, { duration: particle.duration * 0.7, easing: Easing.inOut(Easing.ease) }),
-          withTiming(-20, { duration: particle.duration * 0.7, easing: Easing.inOut(Easing.ease) })
+          withTiming(20, {
+            duration: particle.duration * 0.7,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          withTiming(-20, {
+            duration: particle.duration * 0.7,
+            easing: Easing.inOut(Easing.ease),
+          }),
         ),
-        -1, true
-      )
+        -1,
+        true,
+      ),
     );
   }, [isFocused]);
 
@@ -81,7 +99,17 @@ const FloatingParticle: React.FC<{ particle: Particle; winHeight: number; isFocu
   }));
 
   return (
-    <Animated.View style={[styles.particle, { width: particle.size, height: particle.size, borderRadius: particle.size / 2 }, style]}>
+    <Animated.View
+      style={[
+        styles.particle,
+        {
+          width: particle.size,
+          height: particle.size,
+          borderRadius: particle.size / 2,
+        },
+        style,
+      ]}
+    >
       <LinearGradient
         colors={particle.colors}
         start={{ x: 0, y: 0 }}
@@ -105,37 +133,38 @@ interface FloatingParticlesProps {
   count?: number;
 }
 
-export const FloatingParticles: React.FC<FloatingParticlesProps> = React.memo(({ count = 5 }) => {
-  const { width, height } = useWindowDimensions();
-  let isFocused = true;
-  try {
-    isFocused = useIsFocused();
-  } catch (_e) {
-    isFocused = true;
-  }
+export const FloatingParticles: React.FC<FloatingParticlesProps> = React.memo(
+  ({ count = 5 }) => {
+    const isFocused = useIsFocused();
 
-  const particles = React.useMemo<Particle[]>(() => {
-    return Array.from({ length: count }, (_, i) => ({
-      id: i,
-      size: randomFloat(4, 10),
-      startX: randomFloat(0, width),
-      startY: randomFloat(0, height),
-      delay: i * 200,
-      duration: randomFloat(4000, 7000),
-      colors: randomChoice(PARTICLE_GRADIENTS),
-    }));
-  }, [count, width, height]);
+    const particles = React.useMemo<Particle[]>(() => {
+      return Array.from({ length: count }, (_, i) => ({
+        id: i,
+        size: randomFloat(4, 10),
+        startX: randomFloat(0, width),
+        startY: randomFloat(0, height),
+        delay: i * 200,
+        duration: randomFloat(4000, 7000),
+        colors: randomChoice(PARTICLE_GRADIENTS),
+      }));
+    }, [count, width, height]);
 
-  if (!isFocused) return null;
+    if (!isFocused) return null;
 
-  return (
-    <View style={styles.container} pointerEvents="none">
-      {particles.map(p => (
-        <FloatingParticle key={p.id} particle={p} winHeight={height} isFocused={isFocused} />
-      ))}
-    </View>
-  );
-});
+    return (
+      <View style={styles.container} pointerEvents="none">
+        {particles.map((p) => (
+          <FloatingParticle
+            key={p.id}
+            particle={p}
+            winHeight={height}
+            isFocused={isFocused}
+          />
+        ))}
+      </View>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   container: {
