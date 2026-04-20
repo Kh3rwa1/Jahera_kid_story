@@ -1,5 +1,29 @@
+// Mock appwrite client before any imports touch it
 import { act, renderHook } from '@testing-library/react-native';
 import { usePlayback } from '../usePlayback';
+
+jest.mock('@/lib/appwrite', () => ({
+  databases: {
+    createDocument: jest.fn(),
+    listDocuments: jest.fn(),
+    getDocument: jest.fn(),
+  },
+  DATABASE_ID: 'test-db',
+  COLLECTIONS: {
+    STORIES: 'stories',
+    QUIZ_QUESTIONS: 'quiz',
+    CONFIG: 'config',
+    PROFILES: 'profiles',
+    USER_LANGUAGES: 'langs',
+    FAMILY_MEMBERS: 'fam',
+    FRIENDS: 'friends',
+    QUIZ_ANSWERS: 'qa',
+    QUIZ_ATTEMPTS: 'qatt',
+  },
+  ID: { unique: () => 'unique-id' },
+  Query: { equal: jest.fn(), limit: jest.fn(), orderDesc: jest.fn() },
+  account: { get: jest.fn(), createEmailPasswordSession: jest.fn() },
+}));
 
 // Mock dependencies
 jest.mock('@/contexts/AudioContext', () => ({
