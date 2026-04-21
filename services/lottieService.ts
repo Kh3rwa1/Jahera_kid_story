@@ -9,6 +9,10 @@ const IS_EXPO_GO = Constants.appOwnership === 'expo';
 
 const memoryCache = new Map<string, any>();
 
+/** Tracks URLs that recently failed so we don't retry them every render */
+const failedCache = new Map<string, number>();
+const FAIL_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
 export function getAppwriteLottieUrl(behaviorId: string): string {
   const endpoint =
     process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
@@ -27,37 +31,37 @@ export function getAppwriteLottieUrl(behaviorId: string): string {
   );
 }
 
+function isFailCooldownActive(behaviorId: string): boolean {
+  const failedAt = failedCache.get(behaviorId);
+  if (!failedAt) return false;
+  if (Date.now() - failedAt > FAIL_COOLDOWN_MS) {
+    failedCache.delete(behaviorId);
+    return false;
+  }
+  return true;
+}
+
 async function fetchJsonFallback(
   sourceUrl: string,
   behaviorId: string,
 ): Promise<any | null> {
   try {
-    logger.debug('[LottieService] Fetch fallback for ' + behaviorId);
     const response = await fetch(sourceUrl);
-    logger.debug(
-      '[LottieService] Fetch status ' + behaviorId + ': ' + response.status,
-    );
+    if (response.status !== 200) {
+      logger.warn(
+        '[LottieService] HTTP ' + response.status + ' for ' + behaviorId,
+      );
+      failedCache.set(behaviorId, Date.now());
+      return null;
+    }
     const text = await response.text();
-    logger.debug(
-      '[LottieService] Response ' +
-        behaviorId +
-        ' len=' +
-        text.length +
-        ' first50=' +
-        text.substring(0, 50),
-    );
     if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-      logger.debug('[LottieService] Valid JSON for ' + behaviorId);
       const parsed = JSON.parse(text);
       memoryCache.set(behaviorId, parsed);
       return parsed;
     }
-    logger.warn(
-      '[LottieService] Non-JSON for ' +
-        behaviorId +
-        ' first80=' +
-        text.substring(0, 80),
-    );
+    logger.warn('[LottieService] Non-JSON response for ' + behaviorId);
+    failedCache.set(behaviorId, Date.now());
     return null;
   } catch (err: any) {
     logger.warn(
@@ -66,6 +70,7 @@ async function fetchJsonFallback(
         ': ' +
         (err?.message || err),
     );
+    failedCache.set(behaviorId, Date.now());
     return null;
   }
 }
@@ -81,14 +86,16 @@ export async function ensureLottieAsset(
       return cached;
     }
 
+    // Skip if this URL recently failed (prevents retry storms)
+    if (isFailCooldownActive(behaviorId)) {
+      return null;
+    }
+
     if (Platform.OS === 'web') {
       return await fetchJsonFallback(sourceUrl, behaviorId);
     }
 
     if (IS_EXPO_GO) {
-      logger.debug(
-        '[LottieService] Expo Go detected, using fetch for ' + behaviorId,
-      );
       return await fetchJsonFallback(sourceUrl, behaviorId);
     }
 

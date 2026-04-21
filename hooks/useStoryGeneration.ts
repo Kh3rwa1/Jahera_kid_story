@@ -10,6 +10,7 @@ import { templateStoryService } from '@/services/templateStoryService';
 import { getCurrentContext } from '@/utils/contextUtils';
 import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
+import { checkStorySafety, getFallbackStory } from '@/utils/storySafetyFilter';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -124,7 +125,7 @@ export function useStoryGeneration() {
       const context = getCurrentContext();
       setStatus('Choosing a bedtime template...');
       setProgress(30);
-      const aiStory = await templateStoryService.generateTemplateStory(
+      let aiStory = await templateStoryService.generateTemplateStory(
         profileData,
         selectedBehaviorGoal,
         selectedLanguage,
@@ -132,6 +133,47 @@ export function useStoryGeneration() {
 
       if (!aiStory) return markError('Could not generate a story.');
       if (!isMountedRef.current) return;
+
+      // ── AI Output Safety Filter ──────────────────────────────
+      const safetyResult = checkStorySafety(aiStory.title, aiStory.content);
+      if (!safetyResult.safe) {
+        logger.warn(
+          '[StoryGen] Safety filter blocked story, using fallback',
+          safetyResult.flags,
+        );
+        const fallback = getFallbackStory();
+        aiStory = {
+          title: fallback.title,
+          content: fallback.content,
+          word_count: fallback.content.split(/\s+/).filter(Boolean).length,
+          quiz: [
+            {
+              question: 'What was the story about?',
+              options: {
+                A: 'A magical adventure',
+                B: 'A cooking recipe',
+                C: 'A math lesson',
+              },
+              correct_answer: 'A' as const,
+            },
+            {
+              question: 'How did the story end?',
+              options: { A: 'Sadly', B: 'Happily', C: 'It did not end' },
+              correct_answer: 'B' as const,
+            },
+            {
+              question: 'What did the character learn?',
+              options: {
+                A: 'Nothing',
+                B: 'Something negative',
+                C: 'Something positive',
+              },
+              correct_answer: 'C' as const,
+            },
+          ],
+        };
+      }
+
       completeStep('story');
       setStatus('Creating quiz questions...');
       setProgress(50);

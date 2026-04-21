@@ -109,6 +109,65 @@ export async function generateAdventureStory(
 
     const story = data.story as GeneratedStory;
     const wordCount = story.content.split(/\s+/).filter(Boolean).length;
+
+    // ── AI Output Safety Filter ──────────────────────────────────
+    const safetyResult = checkStorySafety(story.title, story.content);
+    if (!safetyResult.safe) {
+      analytics.track('story_safety_blocked', {
+        score: safetyResult.score,
+        flags: safetyResult.flags,
+        title: story.title,
+      });
+
+      // Retry with stricter prompt
+      const retryPayload = JSON.stringify({
+        profile: { ...profile, kid_name: sanitizeName(profile.kid_name || '') },
+        languageCode,
+        context,
+        options: {
+          ...options,
+          mood: 'calming',
+          theme: options?.theme || 'nature',
+        },
+      });
+      const retryResponse = await functions.createExecution({
+        functionId: 'generate-story',
+        body: retryPayload,
+        async: false,
+      });
+
+      let retryData: any = {};
+      try {
+        retryData = JSON.parse(retryResponse.responseBody);
+      } catch {}
+
+      if (retryData?.story) {
+        const retryStory = retryData.story as GeneratedStory;
+        const retrySafety = checkStorySafety(
+          retryStory.title,
+          retryStory.content,
+        );
+        if (retrySafety.safe) {
+          const retryWordCount = retryStory.content
+            .split(/\s+/)
+            .filter(Boolean).length;
+          return { ...retryStory, word_count: retryWordCount };
+        }
+      }
+
+      // Both attempts failed — use pre-approved fallback
+      analytics.track('story_safety_fallback_used', {
+        originalTitle: story.title,
+      });
+      const fallback = getFallbackStory();
+      return {
+        title: fallback.title,
+        content: fallback.content,
+        word_count: fallback.content.split(/\s+/).filter(Boolean).length,
+        quiz: [],
+      };
+    }
+
     return { ...story, word_count: wordCount };
   } catch (error) {
     if (error instanceof QuotaExceededError || error instanceof Error)

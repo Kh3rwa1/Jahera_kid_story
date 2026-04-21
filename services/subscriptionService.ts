@@ -43,6 +43,7 @@ interface SubscriptionPayload {
   profile_id: string;
   plan: string;
   stories_limit: number;
+  stories_used_this_month: number;
   is_active: boolean;
   trial_ends_at?: string;
 }
@@ -64,16 +65,19 @@ async function upsertSubscription(
       profile_id: profileId,
       plan,
       stories_limit: storiesLimit,
+      stories_used_this_month: 0,
       is_active: true,
     };
     if (trialEndsAt) payload.trial_ends_at = trialEndsAt;
 
     if (response.documents.length > 0) {
+      // Don't overwrite stories_used_this_month on update
+      const { stories_used_this_month: _, ...updatePayload } = payload;
       await databases.updateDocument(
         DATABASE_ID,
         COLLECTIONS.SUBSCRIPTIONS,
         response.documents[0].$id,
-        payload,
+        updatePayload,
       );
     } else {
       await databases.createDocument(

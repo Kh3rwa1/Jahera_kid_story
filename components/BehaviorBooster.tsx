@@ -55,7 +55,7 @@ const BoosterCard = memo(
       async function resolveAsset() {
         // 1. Try Appwrite first
         const appwriteUrl = getAppwriteLottieUrl(goal.id);
-        let source = await ensureLottieAsset(appwriteUrl, goal.id, true);
+        let source = await ensureLottieAsset(appwriteUrl, goal.id, false);
 
         // 2. Fallback to static lottieUrl if Appwrite fails or returns invalid data
         if (!source && goal.lottieUrl) {
