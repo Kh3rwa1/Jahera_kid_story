@@ -38,6 +38,8 @@ class OfflineStoryService {
   private _isOnline = true;
   private _listeners: ConnectionListener[] = [];
   private _unsubscribeNetInfo: (() => void) | null = null;
+  /** Tracks story IDs currently being saved to prevent concurrent duplicate writes */
+  private _savingIds = new Set<string>();
 
   // ── Network monitoring ──────────────────────────────────────
 
@@ -127,8 +129,18 @@ class OfflineStoryService {
     story: Story,
     quizQuestions?: StoryWithQuiz['quiz_questions'] | null,
   ): Promise<boolean> {
+    // Prevent concurrent saves for the same story
+    if (this._savingIds.has(story.id)) return true;
+    this._savingIds.add(story.id);
+
     try {
       const index = await this.getIndex();
+
+      // Skip if story is already cached with the same audio URL
+      const existing = index[story.id];
+      if (existing && existing.story.audio_url === story.audio_url) {
+        return true;
+      }
 
       // Download audio if available
       let audioLocalUri: string | null = null;
@@ -160,6 +172,8 @@ class OfflineStoryService {
     } catch (err) {
       logger.error('[Offline] Failed to save story:', err);
       return false;
+    } finally {
+      this._savingIds.delete(story.id);
     }
   }
 
