@@ -42,6 +42,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { i18n } from '@/lib/i18n';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -235,7 +236,9 @@ export default function Welcome() {
           style={styles.badgeInner}
         >
           <BookOpen size={12} color={C.primaryDark} strokeWidth={2.5} />
-          <Text style={styles.badgeText}>100+ Stories</Text>
+          <Text style={styles.badgeText}>
+            {i18n.t('welcome.badges.stories')}
+          </Text>
         </Animated.View>
       </Animated.View>
 
@@ -245,14 +248,14 @@ export default function Welcome() {
           style={styles.badgeInner}
         >
           <Mic2 size={12} color={C.primaryDark} strokeWidth={2.5} />
-          <Text style={styles.badgeText}>AI Voice</Text>
+          <Text style={styles.badgeText}>{i18n.t('welcome.badges.voice')}</Text>
         </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.floatingBadge, styles.badge3, badge3Style]}>
         <Animated.View entering={FadeIn.delay(1700)} style={styles.badgeInner}>
           <Zap size={12} color={C.primaryDark} strokeWidth={2.5} />
-          <Text style={styles.badgeText}>Daily Magic</Text>
+          <Text style={styles.badgeText}>{i18n.t('welcome.badges.magic')}</Text>
         </Animated.View>
       </Animated.View>
 
@@ -312,7 +315,7 @@ export default function Welcome() {
             <Text
               style={[styles.appName, { fontSize: Math.min(width * 0.2, 82) }]}
             >
-              Jahera
+              {i18n.t('welcome.title')}
             </Text>
             <Animated.View style={[styles.shimmerStripe, shimmerStyle]}>
               <LinearGradient
@@ -324,9 +327,7 @@ export default function Welcome() {
             </Animated.View>
           </View>
 
-          <Text style={styles.tagline}>
-            Create stories where your child{'\n'}is the hero of the adventure
-          </Text>
+          <Text style={styles.tagline}>{i18n.t('welcome.tagline')}</Text>
         </Animated.View>
 
         {/* Premium Divider */}
@@ -350,16 +351,24 @@ export default function Welcome() {
           style={styles.pillRow}
         >
           {[
-            { emoji: '✨', label: 'Magic' },
-            { emoji: '🌙', label: 'Dreams' },
-            { emoji: '🧩', label: 'Learning' },
+            { emoji: '✨', label: i18n.t('welcome.pills.magic'), id: 'magic' },
+            {
+              emoji: '🌙',
+              label: i18n.t('welcome.pills.dreams'),
+              id: 'dreams',
+            },
+            {
+              emoji: '🧩',
+              label: i18n.t('welcome.pills.learning'),
+              id: 'learning',
+            },
           ].map((item) => (
-            <View key={item.label} style={styles.pill}>
-              {item.emoji === '✨' && (
+            <View key={item.id} style={styles.pill}>
+              {item.id === 'magic' && (
                 <Sparkles size={14} color={C.primaryDark} />
               )}
-              {item.emoji === '🌙' && <Moon size={14} color={C.primaryDark} />}
-              {item.emoji === '📚' && (
+              {item.id === 'dreams' && <Moon size={14} color={C.primaryDark} />}
+              {item.id === 'learning' && (
                 <BookOpen size={14} color={C.primaryDark} />
               )}
               <Text style={styles.pillText}>{item.label}</Text>
@@ -391,7 +400,7 @@ export default function Welcome() {
             style={styles.ctaButton}
           >
             <View style={styles.ctaInner}>
-              <Text style={styles.ctaText}>Start New Adventure</Text>
+              <Text style={styles.ctaText}>{i18n.t('welcome.cta')}</Text>
               <View style={styles.ctaArrow}>
                 <ChevronRight size={20} color={C.primaryDark} strokeWidth={3} />
               </View>
@@ -400,7 +409,9 @@ export default function Welcome() {
         </View>
 
         <View style={styles.signInRow}>
-          <Text style={styles.signInLabel}>Already playing?</Text>
+          <Text style={styles.signInLabel}>
+            {i18n.t('welcome.login.label')}
+          </Text>
           <Pressable
             onPress={(e) => {
               e.stopPropagation?.();
@@ -419,7 +430,7 @@ export default function Welcome() {
                 },
               ]}
             >
-              Log In
+              {i18n.t('welcome.login.action')}
             </Text>
           </Pressable>
         </View>

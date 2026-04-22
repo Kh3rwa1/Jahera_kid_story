@@ -1,0 +1,21 @@
+{
+  "welcome": {
+    "title": "Jahera",
+    "tagline": "Create stories where your child\nis the hero of the adventure",
+    "badges": {
+      "stories": "100+ Stories",
+      "voice": "AI Voice",
+      "magic": "Daily Magic"
+    },
+    "pills": {
+      "magic": "Magic",
+      "dreams": "Dreams",
+      "learning": "Learning"
+    },
+    "cta": "Start New Adventure",
+    "login": {
+      "label": "Already playing?",
+      "action": "Log In"
+    }
+  }
+}

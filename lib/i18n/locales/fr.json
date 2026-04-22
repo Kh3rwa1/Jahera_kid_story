@@ -1,0 +1,21 @@
+{
+  "welcome": {
+    "title": "Jahera",
+    "tagline": "Créez des histoires où votre enfant\nest le héros de l'aventure",
+    "badges": {
+      "stories": "+100 Histoires",
+      "voice": "Voix IA",
+      "magic": "Magie du Jour"
+    },
+    "pills": {
+      "magic": "Magie",
+      "dreams": "Rêves",
+      "learning": "Apprentissage"
+    },
+    "cta": "Nouvelle Aventure",
+    "login": {
+      "label": "Déjà membre ?",
+      "action": "Se connecter"
+    }
+  }
+}
