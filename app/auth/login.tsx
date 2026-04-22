@@ -6,9 +6,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
+import { Image } from 'expo-image';
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -112,7 +112,7 @@ export default function Login() {
                     borderWidth: 3,
                     borderColor: '#FFFFFF',
                   }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
               </LinearGradient>
             </View>
