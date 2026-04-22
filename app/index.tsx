@@ -17,8 +17,8 @@ import {
 } from 'lucide-react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo, useRef } from 'react';
+import { Image } from 'expo-image';
 import {
-  Image,
   Platform,
   Pressable,
   StatusBar,
@@ -287,7 +287,7 @@ export default function Welcome() {
               <Image
                 source={require('@/assets/images/icon.png')}
                 style={styles.logoImage}
-                resizeMode="contain"
+                contentFit="contain"
               />
               <View style={styles.orbReflection} />
             </LinearGradient>

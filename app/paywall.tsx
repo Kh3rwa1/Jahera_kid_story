@@ -2,8 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { RotateCcw, X } from 'lucide-react-native';
 import { useMemo } from 'react';
+import { Image } from 'expo-image';
 import {
-  Image,
   Platform,
   ScrollView,
   StyleSheet,
@@ -247,7 +247,8 @@ export default function PaywallScreen() {
           renderIcon={() => (
             <Image
               source={require('@/assets/images/icon.png')}
-              style={{ width: 22, height: 22, tintColor: '#FFFFFF' }}
+              style={{ width: 22, height: 22 }}
+              tintColor="#FFFFFF"
             />
           )}
         />

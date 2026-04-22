@@ -2,9 +2,9 @@ import { SHADOWS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Camera } from 'lucide-react-native';
+import { Image } from 'expo-image';
 import {
   ActivityIndicator,
-  Image,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -74,13 +74,13 @@ export function ProfileAvatar({
             <Image
               source={{ uri: avatarUrl }}
               style={[
-                styles.image,
                 {
                   width: dims.container,
                   height: dims.container,
                   borderRadius: radius,
                 },
               ]}
+              contentFit="cover"
             />
           ) : (
             <LinearGradient
@@ -101,7 +101,7 @@ export function ProfileAvatar({
                   width: dims.container,
                   height: dims.container,
                 }}
-                resizeMode="cover"
+                contentFit="cover"
               />
             </LinearGradient>
           )}
@@ -163,9 +163,6 @@ const styles = StyleSheet.create({
   container: {
     overflow: 'visible',
     position: 'relative',
-  },
-  image: {
-    resizeMode: 'cover',
   },
   fallback: {
     alignItems: 'center',

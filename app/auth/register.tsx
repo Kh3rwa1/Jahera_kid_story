@@ -14,9 +14,9 @@ import {
   User,
 } from 'lucide-react-native';
 import { useState } from 'react';
+import { Image } from 'expo-image';
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -134,7 +134,7 @@ export default function Register() {
                     borderWidth: 3,
                     borderColor: '#FFFFFF',
                   }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
               </LinearGradient>
             </View>
