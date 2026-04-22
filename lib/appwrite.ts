@@ -32,7 +32,7 @@ if (Platform.OS !== 'web') {
   const platform = process.env.EXPO_PUBLIC_APPWRITE_PLATFORM;
   if (!platform) {
     throw new Error(
-      '[Jahera] EXPO_PUBLIC_APPWRITE_PLATFORM must be set for native builds. Set it to your app package id (example: com.celestial.spire) in .env, then rebuild the native app.',
+      '[Jahera] EXPO_PUBLIC_APPWRITE_PLATFORM must be set for native builds. Set it to your app package id (example: com.hindi.harp) in .env, then rebuild the native app.',
     );
   }
   clientBuilder.setPlatform(platform);
