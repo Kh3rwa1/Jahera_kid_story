@@ -1,8 +1,8 @@
-# DreamTales - Production Architecture
+# Jahera - Production Architecture
 
 ## Overview
 
-DreamTales is a production-ready React Native app built with Expo that generates personalized stories for children with multilingual support and interactive quizzes.
+Jahera is a production-ready React Native app built with Expo that generates personalized, AI-powered stories for children with multilingual voice narration, behavior-driven learning goals, and interactive quizzes.
 
 ## Architecture Improvements
 
