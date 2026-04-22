@@ -112,7 +112,7 @@ Required variables in `.env`:
 EXPO_PUBLIC_APPWRITE_ENDPOINT=https://sfo.cloud.appwrite.io/v1
 EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_appwrite_project_id
 EXPO_PUBLIC_APPWRITE_DATABASE_ID=jahera_db
-EXPO_PUBLIC_APPWRITE_PLATFORM=com.hindi.harp
+EXPO_PUBLIC_APPWRITE_PLATFORM=com.celestial.spire
 EXPO_PUBLIC_OPENROUTER_API_KEY=your_openrouter_key
 EXPO_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_key
 ```
