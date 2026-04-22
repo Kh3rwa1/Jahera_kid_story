@@ -36,7 +36,7 @@ Required variables:
 - `EXPO_PUBLIC_APPWRITE_ENDPOINT`: Your Appwrite project endpoint
 - `EXPO_PUBLIC_APPWRITE_PROJECT_ID`: Your Appwrite project ID
 - `EXPO_PUBLIC_APPWRITE_DATABASE_ID`: Your Appwrite database ID (e.g., jahera_db)
-- `EXPO_PUBLIC_APPWRITE_PLATFORM`: Your app bundle ID (e.g., com.hindi.harp)
+- `EXPO_PUBLIC_APPWRITE_PLATFORM`: Your app bundle ID (e.g., com.celestial.spire)
 
 ### 2. Update App Version
 
