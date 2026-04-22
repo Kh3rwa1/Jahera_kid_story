@@ -40,7 +40,7 @@
 <!-- Use https://shots.so or https://app-mockup.com to create device mockups -->
 
 <div align="center">
-  <em>Coming soon — see the app in action on <a href="https://play.google.com/store/apps/details?id=com.jahera.kidstory">Google Play</a></em>
+  <em>Coming soon — see the app in action on <a href="https://play.google.com/store/apps/details?id=com.hindi.harp">Google Play</a></em>
 </div>
 
 ## 🏛️ Architecture
@@ -113,7 +113,7 @@ npm run dev
 EXPO_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
 EXPO_PUBLIC_APPWRITE_DATABASE_ID=your_database_id
-EXPO_PUBLIC_APPWRITE_PLATFORM=com.jahera.kidstory
+EXPO_PUBLIC_APPWRITE_PLATFORM=com.hindi.harp
 
 # AI & Voice
 EXPO_PUBLIC_OPENROUTER_API_KEY=your_openrouter_key
