@@ -18,7 +18,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.celestial.spire",
+      "bundleIdentifier": "com.hindi.harp",
       "buildNumber": "1.0.0",
       "requireFullScreen": false,
       "config": {
@@ -44,7 +44,7 @@
       }
     },
     "android": {
-      "package": "com.celestial.spire",
+      "package": "com.hindi.harp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#FFF8E7"
@@ -57,7 +57,7 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
-      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.celestial.spire"
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.hindi.harp"
     },
     "web": {
       "bundler": "metro",
