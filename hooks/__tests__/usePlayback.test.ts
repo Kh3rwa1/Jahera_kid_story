@@ -66,6 +66,27 @@ jest.mock('@/services/videoCacheServiceInternal', () => ({
   },
 }));
 
+jest.mock('@/utils/nameSubstitution', () => ({
+  personalizeStory: jest.fn((story: unknown) => story),
+  personalizeStories: jest.fn((stories) => stories),
+}));
+
+jest.mock('@/services/offlineStoryService', () => ({
+  offlineStoryService: {
+    getOfflineStory: jest.fn().mockResolvedValue(null),
+    autoSaveIfOnline: jest.fn().mockResolvedValue(undefined),
+    saveStoryOffline: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
+jest.mock('@/utils/haptics', () => ({
+  hapticFeedback: {
+    light: jest.fn(),
+    medium: jest.fn(),
+    success: jest.fn(),
+  },
+}));
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({
     push: jest.fn(),
@@ -77,29 +98,29 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('react-native-reanimated', () => ({
-  default: { call: () => {}, createAnimatedComponent: (c: any) => c },
-  useSharedValue: jest.fn((v: any) => ({ value: v })),
+  default: { call: () => {}, createAnimatedComponent: (c: unknown) => c },
+  useSharedValue: jest.fn((v: unknown) => ({ value: v })),
   useAnimatedStyle: jest.fn(() => ({})),
-  withTiming: jest.fn((v: any) => v),
-  withSpring: jest.fn((v: any) => v),
-  withDelay: jest.fn((_: any, v: any) => v),
-  withSequence: jest.fn((...args: any[]) => args[args.length - 1]),
-  withRepeat: jest.fn((v: any) => v),
+  withTiming: jest.fn((v: unknown) => v),
+  withSpring: jest.fn((v: unknown) => v),
+  withDelay: jest.fn((_: unknown, v: unknown) => v),
+  withSequence: jest.fn((...args: unknown[]) => args[args.length - 1]),
+  withRepeat: jest.fn((v: unknown) => v),
   cancelAnimation: jest.fn(),
   Easing: {
     bezier: jest.fn(),
     linear: jest.fn(),
-    inOut: jest.fn((e: any) => e),
-    in: jest.fn((e: any) => e),
-    out: jest.fn((e: any) => e),
+    inOut: jest.fn((e: unknown) => e),
+    in: jest.fn((e: unknown) => e),
+    out: jest.fn((e: unknown) => e),
   },
   FadeIn: { duration: jest.fn().mockReturnThis() },
   FadeOut: { duration: jest.fn().mockReturnThis() },
   SlideInRight: { duration: jest.fn().mockReturnThis() },
   SlideOutLeft: { duration: jest.fn().mockReturnThis() },
   Layout: { duration: jest.fn().mockReturnThis() },
-  runOnJS: jest.fn((fn: any) => fn),
-  runOnUI: jest.fn((fn: any) => fn),
+  runOnJS: jest.fn((fn: unknown) => fn),
+  runOnUI: jest.fn((fn: unknown) => fn),
   interpolate: jest.fn(),
   Extrapolation: { CLAMP: 'clamp' },
 }));
@@ -111,7 +132,7 @@ jest.mock('@/utils/logger', () => ({
 }));
 
 describe('usePlayback hook', () => {
-  it.skip('initializes with default values and loads story', async () => {
+  it('initializes with default values and loads story', async () => {
     const { result } = renderHook(() => usePlayback());
 
     // Initial state before loadStory completes
@@ -124,7 +145,9 @@ describe('usePlayback hook', () => {
     });
 
     // Story may be null if personalizeStory or profile context isn't fully mocked
-    expect(result.current.story?.id ?? result.current.isLoading).toBeTruthy();
+    expect(result.current.story).not.toBeNull();
+    expect(result.current.story?.id).toBe('story-123');
+    expect(result.current.isLoading).toBe(false);
   });
 
   it('toggles tab mode correctly', () => {
