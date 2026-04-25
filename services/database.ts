@@ -112,11 +112,9 @@ export const profileService = {
   },
 
   async getWithRelations(id: string): Promise<ProfileWithRelations | null> {
-    const [profile, languages, familyMembers, friends] = await Promise.all([
+    const [profile, languages] = await Promise.all([
       this.getById(id),
       languageService.getByProfileId(id),
-      familyMemberService.getByProfileId(id),
-      friendService.getByProfileId(id),
     ]);
 
     if (!profile) return null;
@@ -124,8 +122,8 @@ export const profileService = {
     return {
       ...profile,
       languages: languages || [],
-      family_members: familyMembers || [],
-      friends: friends || [],
+      family_members: [],
+      friends: [],
       interests: [],
     };
   },

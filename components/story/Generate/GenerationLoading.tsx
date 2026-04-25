@@ -7,10 +7,11 @@ import {
   LocationContext,
 } from '@/services/locationService';
 import { ThemeColors } from '@/types/theme';
+import { logger } from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import { Check, MapPin, Sparkles } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -23,6 +24,9 @@ import Animated, {
   withTiming,
   ZoomIn,
 } from 'react-native-reanimated';
+
+const GENERATION_LOTTIE_URL =
+  'https://lottie.host/505437a6-0683-431c-99d8-9c5957096752/Q5W4n5W5nG.json';
 
 interface GenerationLoadingProps {
   colors: ThemeColors;
@@ -44,8 +48,28 @@ export function GenerationLoading({
   profile: _profile,
 }: Readonly<GenerationLoadingProps>) {
   const [funFactIndex, setFunFactIndex] = useState(0);
+  const [lottieSource, setLottieSource] = useState<any | null>(null);
   const pulseScale = useSharedValue(1);
   const orbRotate = useSharedValue(0);
+  const lottieRef = useRef(false);
+
+  // Pre-fetch and parse the Lottie animation JSON for reliable Android rendering
+  useEffect(() => {
+    if (lottieRef.current) return;
+    lottieRef.current = true;
+
+    (async () => {
+      try {
+        const res = await fetch(GENERATION_LOTTIE_URL);
+        if (res.ok) {
+          const json = await res.json();
+          setLottieSource(json);
+        }
+      } catch (e) {
+        logger.warn('[GenerationLoading] Failed to fetch Lottie animation:', e);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -129,14 +153,16 @@ export function GenerationLoading({
               colors={['#FF8C42', '#FF5C00']}
               style={styles.iconCircle}
             >
-              <LottieView
-                source={{
-                  uri: 'https://lottie.host/505437a6-0683-431c-99d8-9c5957096752/Q5W4n5W5nG.json',
-                }}
-                autoPlay
-                loop
-                style={{ width: 80, height: 80 }}
-              />
+              {lottieSource ? (
+                <LottieView
+                  source={lottieSource}
+                  autoPlay
+                  loop
+                  style={{ width: 80, height: 80 }}
+                />
+              ) : (
+                <Sparkles size={40} color="#FFF" strokeWidth={1.5} />
+              )}
             </LinearGradient>
           </Animated.View>
         </Animated.View>

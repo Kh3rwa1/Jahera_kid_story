@@ -6,27 +6,45 @@
       "$id": "generate-story",
       "name": "generate-story",
       "runtime": "node-18.0",
-      "execute": ["users"],
+      "execute": [
+        "users",
+        "any",
+        "guests"
+      ],
       "events": [],
       "schedule": "",
-      "timeout": 300,
+      "timeout": 120,
       "entrypoint": "index.js",
       "commands": "npm install",
-      "ignore": ["node_modules", ".npm"],
-      "path": "appwrite/functions/generate-story"
+      "ignore": [
+        "node_modules",
+        ".npm"
+      ],
+      "path": "appwrite/functions/generate-story",
+      "enabled": true,
+      "logging": true
     },
     {
       "$id": "generate-audio",
       "name": "generate-audio",
       "runtime": "node-18.0",
-      "execute": ["users"],
+      "execute": [
+        "users",
+        "any",
+        "guests"
+      ],
       "events": [],
       "schedule": "",
-      "timeout": 300,
+      "timeout": 120,
       "entrypoint": "index.js",
       "commands": "npm install",
-      "ignore": ["node_modules", ".npm"],
-      "path": "appwrite/functions/generate-audio"
+      "ignore": [
+        "node_modules",
+        ".npm"
+      ],
+      "path": "appwrite/functions/generate-audio",
+      "enabled": true,
+      "logging": true
     }
   ],
   "tablesDB": [],

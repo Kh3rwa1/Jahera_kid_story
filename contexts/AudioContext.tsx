@@ -10,6 +10,7 @@ import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio, AVPlaybackStatus } from 'expo-av';
+import { analytics } from '@/services/analyticsService';
 import React, {
   createContext,
   useCallback,
@@ -155,6 +156,14 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       setIsPlaying(status.isPlaying);
       setIsBuffering(status.isBuffering || false);
       if (status.didJustFinish) {
+        // Track story listened to completion
+        if (activeStory?.id) {
+          analytics.track('story_listen_completed', {
+            storyId: activeStory.id,
+            duration: status.durationMillis || 0,
+            platform: 'mobile',
+          });
+        }
         lastPositionRef.current = 0;
         setPosition(0);
         setIsPlaying(false);
@@ -166,6 +175,14 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       setIsPlaying(false);
     }
   };
+
+  // Stable ref for playback status callback - avoids stale closures
+  const onPlaybackStatusUpdateRef = useRef(onPlaybackStatusUpdate);
+  onPlaybackStatusUpdateRef.current = onPlaybackStatusUpdate;
+
+  const stableStatusCallback = useCallback((status: AVPlaybackStatus) => {
+    onPlaybackStatusUpdateRef.current(status);
+  }, []);
 
   const loadAudioFromUrl = async (
     audioPath: string,
@@ -186,16 +203,24 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
       const startPosition = 0; // Always start from beginning
 
+      // Ensure audio mode is set correctly before creating sound (critical for Android)
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+
       const { sound: audioSound } = await Audio.Sound.createAsync(
         { uri: audioPath },
         {
           shouldPlay: false,
           positionMillis: startPosition,
           progressUpdateIntervalMillis: 200,
-          volume: 0,
+          volume: 1.0,
           isLooping: false,
         },
-        onPlaybackStatusUpdate,
+        stableStatusCallback,
       );
 
       if (!isMountedRef.current) {
@@ -212,15 +237,9 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       lastPositionRef.current = startPosition;
       setPosition(startPosition);
 
-      // Smooth volume fade-in
+      // Start playback at full volume (no fade-in - the zero-volume pattern breaks Android)
       await audioSound.playAsync();
       setIsPlaying(true);
-      // Fade in over 400ms
-      await audioSound.setVolumeAsync(0.5);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      await audioSound.setVolumeAsync(0.8);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      await audioSound.setVolumeAsync(1.0);
     } catch (err) {
       logger.error('[AudioContext] Failed to load audio:', err);
       // Auto-retry up to 2 times with exponential backoff

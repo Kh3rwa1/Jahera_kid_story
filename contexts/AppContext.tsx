@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { storage } from '@/utils/storage';
 import { profileService, quizService, storyService } from '@/services/database';
 import {
   PlanType,
@@ -78,28 +79,65 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       setError(null);
 
-      await revenueCatService.identify(user.$id);
+      // 1. Fast path: load from cache immediately
+      const [cachedProfile, cachedSub, cachedStreak, offlineStories] = await Promise.all([
+        storage.getItem<ProfileWithRelations>('app_profile'),
+        storage.getItem<SubscriptionStatus>('app_subscription'),
+        storage.getItem<Streak>('app_streak'),
+        offlineStoryService.getAllOfflineStories(),
+      ]);
+
+      if (cachedProfile) {
+        setProfile(cachedProfile);
+        profileIdRef.current = cachedProfile.id;
+        
+        if (offlineStories && offlineStories.length > 0) {
+          const stories = offlineStories.map(s => s.story);
+          const personalizedStories = personalizeStories(
+            stories,
+            cachedProfile.kid_name,
+            cachedProfile.city,
+          );
+          setStories(personalizedStories);
+        }
+        
+        setSubscription(cachedSub || null);
+        setStreak(cachedStreak || null);
+        
+        // Unblock UI immediately
+        setIsLoading(false);
+      }
+
+      // 2. Background sync (or slow path if no cache)
+      revenueCatService.identify(user.$id).catch(() => {});
 
       const data = await profileService.getWithRelationsByUserId(user.$id);
       if (!data) {
-        setProfile(null);
-        setStories([]);
-        setSubscription(null);
-        setStreak(null);
-        setQuizAttempts([]);
+        if (!cachedProfile) {
+          setProfile(null);
+          setStories([]);
+          setSubscription(null);
+          setStreak(null);
+          setQuizAttempts([]);
+          setIsLoading(false);
+        }
         return;
       }
 
       setProfile(data);
       profileIdRef.current = data.id;
+      storage.setItem('app_profile', data).catch(() => {});
 
       const [storiesData, attemptsData, subData, streakData] =
         await Promise.all([
-          storyService.getAll(),
+          storyService.getByProfileId(data.id),
           quizService.getAttemptsByProfileId(data.id),
           subscriptionService.getStatus(data.id),
           streakService.getStreak(data.id),
         ]);
+
+      storage.setItem('app_subscription', subData).catch(() => {});
+      storage.setItem('app_streak', streakData).catch(() => {});
 
       const personalizedStories = personalizeStories(
         storiesData || [],
@@ -108,7 +146,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       );
       setStories(personalizedStories);
 
-      // Background-cache all stories with audio for offline use
       personalizedStories
         .filter((s) => s.audio_url)
         .forEach((s) =>
@@ -135,16 +172,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
               ]);
               setSubscription(newSubData);
               setStreak(newStreakData);
-            } catch {
-              // ignore background sync errors
-            }
+            } catch {}
           })();
         },
       );
     } catch (err) {
+      console.debug('AppContext background fetch failed, relying on cache', err);
       const appError = handleError(err, 'AppContext.loadProfile');
-      setError(appError.message);
-      setProfile(null);
+      if (!profileIdRef.current) {
+        setError(appError.message);
+        setProfile(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -175,7 +213,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const refreshStories = useCallback(async () => {
     if (!profile) return;
     try {
-      const data = await storyService.getAll();
+      const data = await storyService.getByProfileId(profile.id);
       const personalized = personalizeStories(
         data || [],
         profile.kid_name,
@@ -190,7 +228,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           offlineStoryService.autoSaveIfOnline(s).catch(() => {}),
         );
     } catch (err) {
-      handleError(err, 'AppContext.refreshStories');
+      // Fallback to offline stories
+      try {
+        const offlineStories = await offlineStoryService.getAllOfflineStories();
+        if (offlineStories && offlineStories.length > 0) {
+          const stories = offlineStories.map(s => s.story);
+          const personalized = personalizeStories(
+            stories,
+            profile.kid_name,
+            profile.city,
+          );
+          setStories(personalized);
+        }
+      } catch {
+        handleError(err, 'AppContext.refreshStories');
+      }
     }
   }, [profile]);
 
