@@ -6,11 +6,9 @@ import {
 } from '@/constants/languages';
 import { FONTS, SHADOWS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
-import { analytics } from '@/services/analyticsService';
 import { useNarrationAudio } from '@/hooks/useNarrationAudio';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CityOption, POPULAR_CITIES } from '@/constants/indianCities';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import {
@@ -72,12 +70,8 @@ export default function LanguageSelection() {
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [nearbyLanguageCodes] = useState<string[]>(['en', 'hi']);
-  const [useOtherCity, setUseOtherCity] = useState(false);
 
   const btnScale = useSharedValue(1);
-  const [cityInput, setCityInput] = useState('');
-  const [selectedCityOption, setSelectedCityOption] =
-    useState<CityOption | null>(null);
 
   // Welcome narration
   useEffect(() => {
@@ -109,7 +103,6 @@ export default function LanguageSelection() {
       }
       const newSelection = [...selectedLanguages, language];
       setSelectedLanguages(newSelection);
-      // Satisfying success haptic on first language selection
       if (newSelection.length === 1 && Platform.OS !== 'web') {
         await Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success,
@@ -143,9 +136,6 @@ export default function LanguageSelection() {
         pathname: '/onboarding/kid-name',
         params: {
           languages: languageParams,
-          city: cityInput.trim(),
-          region: selectedCityOption?.region ?? '',
-          country: selectedCityOption?.country ?? 'India',
           consentGivenAt: params.consentGivenAt as string,
         },
       });
@@ -154,11 +144,9 @@ export default function LanguageSelection() {
 
   const canContinue = selectedLanguages.length > 0;
 
-  // ── Filter & sort languages ─────────────────────────────────────────────
   const sortedLanguages = useMemo(() => {
     let list = [...SUPPORTED_LANGUAGES];
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(
@@ -169,7 +157,6 @@ export default function LanguageSelection() {
       );
     }
 
-    // Sort: nearby languages first, then the rest alphabetically
     if (nearbyLanguageCodes.length > 0) {
       list.sort((a, b) => {
         const aIdx = nearbyLanguageCodes.indexOf(a.code);
@@ -177,10 +164,10 @@ export default function LanguageSelection() {
         const aIsNearby = aIdx >= 0;
         const bIsNearby = bIdx >= 0;
 
-        if (aIsNearby && bIsNearby) return aIdx - bIdx; // preserve order from mapping
+        if (aIsNearby && bIsNearby) return aIdx - bIdx;
         if (aIsNearby) return -1;
         if (bIsNearby) return 1;
-        return 0; // keep original order for the rest
+        return 0;
       });
     }
 
@@ -222,11 +209,11 @@ export default function LanguageSelection() {
                   entering={FadeInDown.delay(200)}
                   style={[
                     styles.progressFill,
-                    { width: '25%', backgroundColor: '#FFFFFF' },
+                    { width: '50%', backgroundColor: '#FFFFFF' },
                   ]}
                 />
               </View>
-              <Text style={styles.progressText}>JOURNEY START</Text>
+              <Text style={styles.progressText}>Step 1 of 2</Text>
             </View>
           </View>
 
@@ -282,7 +269,7 @@ export default function LanguageSelection() {
           </Animated.View>
         </View>
 
-        {/* ── Search Bar ─────────────────────────────────────────────── */}
+        {/*  Search Bar  */}
         <Animated.View
           entering={FadeInDown.delay(550).springify()}
           style={styles.searchSection}
@@ -307,100 +294,16 @@ export default function LanguageSelection() {
               </TouchableOpacity>
             )}
           </View>
-
-          {/* City input */}
-          <Animated.View
-            entering={FadeIn.duration(300)}
-            style={styles.locationChip}
-          >
-            <MapPin size={12} color="#34D399" strokeWidth={2.5} />
-            <Text style={styles.locationChipText}>Where do you live?</Text>
-          </Animated.View>
-          <Text style={styles.locationChipText}>
-            This makes stories feel local and personal ✨
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8, marginTop: 10 }}
-          >
-            {POPULAR_CITIES.map((cityOption) => (
-              <TouchableOpacity
-                key={cityOption.city}
-                onPress={() => {
-                  setUseOtherCity(false);
-                  setSelectedCityOption(cityOption);
-                  setCityInput(cityOption.city);
-                  analytics.trackCitySelectedOnboarding(
-                    cityOption.city,
-                    'chip',
-                  );
-                }}
-                style={[
-                  styles.locationChip,
-                  {
-                    borderColor:
-                      cityInput === cityOption.city
-                        ? '#34D399'
-                        : 'rgba(255,255,255,0.3)',
-                  },
-                ]}
-              >
-                <Text style={styles.locationChipText}>{cityOption.city}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              onPress={() => {
-                setUseOtherCity(true);
-                setSelectedCityOption(null);
-                setCityInput('');
-              }}
-              style={[
-                styles.locationChip,
-                {
-                  borderColor: useOtherCity
-                    ? '#34D399'
-                    : 'rgba(255,255,255,0.3)',
-                },
-              ]}
-            >
-              <Text style={styles.locationChipText}>Other ✏️</Text>
-            </TouchableOpacity>
-          </ScrollView>
-          {useOtherCity ? (
-            <TextInput
-              style={[
-                styles.searchInput,
-                {
-                  marginTop: 10,
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  borderRadius: 10,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                },
-              ]}
-              placeholder="Enter city/town"
-              placeholderTextColor="rgba(255,255,255,0.5)"
-              value={cityInput}
-              onChangeText={setCityInput}
-              onEndEditing={() => {
-                const value = cityInput.trim();
-                if (value.length > 0) {
-                  analytics.trackCitySelectedOnboarding(value, 'custom');
-                }
-              }}
-            />
-          ) : null}
         </Animated.View>
 
-        {/* ── Language List ───────────────────────────────────────────── */}
+        {/*  Language List  */}
         <View style={styles.listSection}>
           {sortedLanguages.length === 0 ? (
             <Animated.View
               entering={FadeIn.duration(300)}
               style={styles.emptySearch}
             >
-              <Text style={styles.emptySearchEmoji}>🔍</Text>
+              <Text style={styles.emptySearchEmoji}></Text>
               <Text style={styles.emptySearchText}>
                 No languages match "{searchQuery}"
               </Text>
@@ -648,8 +551,6 @@ const useStyles = (C: ColorScheme['colors']) => {
           height: 8,
           borderRadius: 4,
         },
-
-        // ── Search ──────────────────────────────────────────────────
         searchSection: {
           paddingHorizontal: SPACING.xl,
           paddingTop: SPACING.lg,
@@ -681,27 +582,6 @@ const useStyles = (C: ColorScheme['colors']) => {
           alignItems: 'center',
           justifyContent: 'center',
         },
-        locationChip: {
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 6,
-          alignSelf: 'flex-start',
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          borderRadius: 20,
-          backgroundColor: 'rgba(255,255,255,0.1)',
-        },
-        locationChipText: {
-          fontSize: 12,
-          fontFamily: FONTS.medium,
-          color: 'rgba(255,255,255,0.65)',
-        },
-        locationChipBold: {
-          fontFamily: FONTS.extrabold,
-          color: 'rgba(255,255,255,0.85)',
-        },
-
-        // ── Empty search ────────────────────────────────────────────
         emptySearch: {
           alignItems: 'center',
           paddingVertical: 48,
@@ -723,8 +603,6 @@ const useStyles = (C: ColorScheme['colors']) => {
           color: '#60A5FA',
           marginTop: 4,
         },
-
-        // ── Language Cards ──────────────────────────────────────────
         listSection: {
           paddingHorizontal: SPACING.xl,
           paddingTop: SPACING.lg,
@@ -812,8 +690,6 @@ const useStyles = (C: ColorScheme['colors']) => {
           borderWidth: 2,
           borderColor: '#E2E8F0',
         },
-
-        // ── Footer ──────────────────────────────────────────────────
         footer: {
           position: 'absolute',
           bottom: 0,

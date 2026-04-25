@@ -1,4 +1,5 @@
 import { account, ID } from '@/lib/appwrite';
+import { storage } from '@/utils/storage';
 import React, {
   createContext,
   ReactNode,
@@ -33,14 +34,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const [u, s] = await Promise.all([
+        // 1. Fast path: load from cache immediately
+        const cachedUser = await storage.getItem<Models.User<Models.Preferences>>('authUser');
+        const cachedSession = await storage.getItem<Models.Session>('authSession');
+        
+        if (cachedUser && cachedSession) {
+          setUser(cachedUser);
+          setSession(cachedSession);
+          setIsLoading(false); // Unblock UI immediately
+          
+          // 2. Background sync
+          Promise.all([
+            account.get(),
+            account.getSession('current'),
+          ]).then(([u, s]) => {
+            setUser(u);
+            setSession(s);
+            storage.setItem('authUser', u).catch(() => {});
+            storage.setItem('authSession', s).catch(() => {});
+          }).catch((err) => {
+            console.debug('Auth background sync failed, keeping cached session', err);
+          });
+          return;
+        }
+
+        // 3. Slow path: No cache, wait for network (with timeout)
+        const fetchPromise = Promise.all([
           account.get(),
           account.getSession('current'),
         ]);
+        
+        const timeoutPromise = new Promise<[any, any]>((_, reject) => 
+          setTimeout(() => reject(new Error('Network timeout fetching session')), 8000)
+        );
+
+        const [u, s] = await Promise.race([fetchPromise, timeoutPromise]);
+        
         setUser(u);
         setSession(s);
+        storage.setItem('authUser', u).catch(() => {});
+        storage.setItem('authSession', s).catch(() => {});
       } catch (error) {
-        console.debug('Auth init: no active session', error);
+        console.debug('Auth init failed', error);
         setUser(null);
         setSession(null);
       } finally {
@@ -54,8 +89,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const u = await account.get();
       setUser(u);
+      storage.setItem('authUser', u).catch(() => {});
     } catch {
-      setUser(null);
+      // Don't nullify user on refresh failure (might be offline)
     }
   }, []);
 
@@ -69,6 +105,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userRes = await account.get();
       setSession(sessionRes);
       setUser(userRes);
+      storage.setItem('authUser', userRes).catch(() => {});
+      storage.setItem('authSession', sessionRes).catch(() => {});
     },
     [],
   );
@@ -81,6 +119,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userRes = await account.get();
     setSession(sessionRes);
     setUser(userRes);
+    storage.setItem('authUser', userRes).catch(() => {});
+    storage.setItem('authSession', sessionRes).catch(() => {});
   }, []);
 
   const signOut = useCallback(async () => {
@@ -91,6 +131,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setUser(null);
     setSession(null);
+    storage.removeItem('authUser').catch(() => {});
+    storage.removeItem('authSession').catch(() => {});
   }, []);
 
   const value = useMemo(

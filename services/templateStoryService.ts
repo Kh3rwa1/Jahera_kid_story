@@ -265,6 +265,35 @@ export const templateStoryService = {
     if (!template) return null;
     await rememberTemplateId(profile.id, template.id);
 
+    // If language isn't English, translate the hydrated template
+    if (languageCode !== 'en') {
+      try {
+        const { functions } = await import('@/lib/appwrite');
+        const execution = await functions.createExecution({
+          functionId: 'generate-story',
+          body: JSON.stringify({
+            action: 'translate',
+            title: template.title,
+            content: template.content,
+            targetLanguage: languageCode,
+          }),
+          async: false,
+        });
+        if (execution.responseBody) {
+          const parsed = JSON.parse(execution.responseBody);
+          if (parsed.title && parsed.content) {
+            template.title = parsed.title;
+            template.content = parsed.content;
+            template.word_count = parsed.content.split(/\s+/).filter(Boolean).length;
+          }
+        }
+      } catch (e) {
+        // Translation failed — fall back to English
+        const { logger } = await import('@/utils/logger');
+        logger.warn('[templateStoryService] Translation failed, using English:', e);
+      }
+    }
+
     return {
       title: template.title,
       content: template.content,

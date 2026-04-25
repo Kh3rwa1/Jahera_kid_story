@@ -1,7 +1,10 @@
 import { BrandVideoBackground } from '@/components/BrandVideoBackground';
-import { BORDER_RADIUS, FONTS, SHADOWS, SPACING } from '@/constants/theme';
+import { FONTS, SHADOWS, SPACING } from '@/constants/theme';
+import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNarrationAudio } from '@/hooks/useNarrationAudio';
+import { profileService, languageService } from '@/services/database';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -10,12 +13,11 @@ import {
   ArrowLeft,
   Check,
   ChevronRight,
-  MapPin,
   Sparkles,
-  X,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -36,7 +38,6 @@ import Animated, {
   ZoomIn,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CityOption, POPULAR_CITIES } from '@/constants/indianCities';
 import { ColorScheme } from '@/constants/themeSchemes';
 
 export default function KidName() {
@@ -47,16 +48,16 @@ export default function KidName() {
   const C = currentTheme.colors;
   const styles = useStyles(C);
   const { speak } = useNarrationAudio('kid-name');
+  const { user } = useAuth();
+  const { loadProfile } = useApp();
   const [name, setName] = useState('');
-  const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
-  const [customCity, setCustomCity] = useState<string>('');
-  const [showCityInput, setShowCityInput] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
 
   const cardScale = useSharedValue(1);
 
   useEffect(() => {
-    // Greeting narration
     const timer = setTimeout(() => {
       let lang = 'en';
       try {
@@ -81,19 +82,64 @@ export default function KidName() {
       cardScale.value = withSequence(withSpring(1.05), withSpring(1));
       return;
     }
-    if (Platform.OS !== 'web')
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    router.push({
-      pathname: '/onboarding/family-members',
-      params: {
-        languages: params.languages as string,
-        kidName: trimmedName,
-        city: selectedCity?.city || null,
-        region: selectedCity?.region || null,
-        country: selectedCity?.country || 'India',
-        consentGivenAt: params.consentGivenAt as string,
-      },
-    });
+
+    if (!user) {
+      setErrorMsg('You must be signed in to create a profile.');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg(null);
+
+    try {
+      if (Platform.OS !== 'web')
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+      if (!params.languages) {
+        setErrorMsg('Session expired. Please restart onboarding.');
+        setIsLoading(false);
+        return;
+      }
+
+      const languages = JSON.parse(params.languages as string);
+      const primaryLanguage = languages[0]?.code || 'en';
+
+      const profile = await profileService.create(
+        user.$id,
+        trimmedName,
+        primaryLanguage,
+        {
+          consent_given_at: (params.consentGivenAt as string) || null,
+        },
+      );
+
+      if (!profile) {
+        setErrorMsg('Failed to create profile. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      await Promise.all(
+        languages.map((lang: { code: string; name: string }) =>
+          languageService.add(profile.id, lang.code, lang.name),
+        ),
+      );
+
+      await loadProfile();
+
+      if (Platform.OS !== 'web')
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+
+      router.replace('/(tabs)');
+    } catch {
+      if (Platform.OS !== 'web')
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setErrorMsg('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBack = async () => {
@@ -148,18 +194,22 @@ export default function KidName() {
             style={[styles.header, { paddingTop: insets.top + SPACING.md }]}
           >
             <View style={styles.topRow}>
-              <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <TouchableOpacity
+                onPress={handleBack}
+                style={styles.backButton}
+                disabled={isLoading}
+              >
                 <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
               </TouchableOpacity>
               <View style={styles.progressLineOuter}>
                 <View
                   style={[
                     styles.progressFill,
-                    { width: '50%', backgroundColor: '#FFFFFF' },
+                    { width: '100%', backgroundColor: '#FFFFFF' },
                   ]}
                 />
               </View>
-              <Text style={styles.stepLabel}>Step 2 of 4</Text>
+              <Text style={styles.stepLabel}>Final Step!</Text>
             </View>
 
             <View style={styles.characterContainer}>
@@ -209,6 +259,7 @@ export default function KidName() {
                 autoFocus
                 autoCapitalize="words"
                 selectionColor={C.primary}
+                editable={!isLoading}
               />
               <Animated.View style={[styles.inputGlow, inputGlowStyle]} />
               {canContinue ? (
@@ -229,194 +280,18 @@ export default function KidName() {
                 style={styles.errorHint}
               >
                 Almost there... {charsNeeded} more letter
-                {charsNeeded > 1 ? 's' : ''} ✨
+                {charsNeeded > 1 ? 's' : ''} 
               </Animated.Text>
             )}
 
-            {/* City Selection - Optional */}
-            <Animated.View
-              entering={FadeInDown.delay(200).springify()}
-              style={{ marginTop: SPACING.lg }}
-            >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginBottom: SPACING.md,
-                }}
+            {errorMsg && (
+              <Animated.Text
+                entering={FadeInDown.springify()}
+                style={styles.errorText}
               >
-                <MapPin size={18} color={C.primary} />
-                <Text
-                  style={{
-                    fontFamily: FONTS.semibold,
-                    fontSize: 16,
-                    color: '#FFFFFF',
-                    marginLeft: SPACING.sm,
-                  }}
-                >
-                  Where do you live?
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: FONTS.regular,
-                    fontSize: 13,
-                    color: 'rgba(255,255,255,0.75)',
-                    marginLeft: SPACING.sm,
-                  }}
-                >
-                  (Optional)
-                </Text>
-              </View>
-
-              <Text
-                style={{
-                  fontFamily: FONTS.regular,
-                  fontSize: 13,
-                  color: 'rgba(255,255,255,0.75)',
-                  marginBottom: SPACING.md,
-                }}
-              >
-                Stories will mention your city to make them feel real ✨
-              </Text>
-
-              {selectedCity && (
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: C.primary + '30',
-                    paddingHorizontal: SPACING.md,
-                    paddingVertical: SPACING.sm,
-                    borderRadius: BORDER_RADIUS.lg,
-                    marginBottom: SPACING.md,
-                  }}
-                >
-                  <MapPin size={16} color={'#FFFFFF'} />
-                  <Text
-                    style={{
-                      fontFamily: FONTS.medium,
-                      fontSize: 14,
-                      color: '#FFFFFF',
-                      marginLeft: SPACING.sm,
-                      flex: 1,
-                    }}
-                  >
-                    {selectedCity.city}
-                    {selectedCity.region ? `, ${selectedCity.region}` : ''}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSelectedCity(null);
-                      void Haptics.impactAsync(
-                        Haptics.ImpactFeedbackStyle.Light,
-                      );
-                    }}
-                  >
-                    <X size={16} color={'#FFFFFF'} />
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {!selectedCity && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingBottom: SPACING.sm, gap: 8 }}
-                >
-                  {POPULAR_CITIES.map((cityOption) => (
-                    <TouchableOpacity
-                      key={cityOption.city}
-                      onPress={() => {
-                        setSelectedCity(cityOption);
-                        setCustomCity('');
-                        setShowCityInput(false);
-                        void Haptics.impactAsync(
-                          Haptics.ImpactFeedbackStyle.Light,
-                        );
-                      }}
-                      style={{
-                        paddingHorizontal: 14,
-                        paddingVertical: 8,
-                        borderRadius: 20,
-                        backgroundColor: 'rgba(255,255,255,0.12)',
-                        borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.3)',
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontFamily: FONTS.medium,
-                          fontSize: 13,
-                          color: '#FFFFFF',
-                        }}
-                      >
-                        {cityOption.city}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowCityInput(true);
-                      setSelectedCity(null);
-                      void Haptics.impactAsync(
-                        Haptics.ImpactFeedbackStyle.Light,
-                      );
-                    }}
-                    style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 8,
-                      borderRadius: 20,
-                      backgroundColor: C.primary + '40',
-                      borderWidth: 1,
-                      borderColor: C.primary + 'AA',
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontFamily: FONTS.medium,
-                        fontSize: 13,
-                        color: '#FFFFFF',
-                      }}
-                    >
-                      Other ✏️
-                    </Text>
-                  </TouchableOpacity>
-                </ScrollView>
-              )}
-
-              {showCityInput && !selectedCity && (
-                <TextInput
-                  value={customCity}
-                  onChangeText={(text) => {
-                    setCustomCity(text);
-                    if (text.length >= 2) {
-                      setSelectedCity({
-                        city: text.trim(),
-                        region: '',
-                        country: 'India',
-                      });
-                    }
-                  }}
-                  placeholder="Type your city or town name..."
-                  placeholderTextColor={'rgba(255,255,255,0.5)'}
-                  style={{
-                    fontFamily: FONTS.regular,
-                    fontSize: 15,
-                    color: '#FFFFFF',
-                    backgroundColor: 'rgba(255,255,255,0.12)',
-                    borderWidth: 1,
-                    borderColor: 'rgba(255,255,255,0.3)',
-                    borderRadius: BORDER_RADIUS.lg,
-                    paddingHorizontal: SPACING.md,
-                    paddingVertical: SPACING.md,
-                    marginTop: SPACING.sm,
-                  }}
-                  autoFocus
-                  maxLength={50}
-                />
-              )}
-            </Animated.View>
+                {errorMsg}
+              </Animated.Text>
+            )}
 
             <Animated.View
               entering={FadeInUp.delay(700).springify()}
@@ -440,7 +315,7 @@ export default function KidName() {
           />
           <TouchableOpacity
             onPress={handleContinue}
-            disabled={!canContinue}
+            disabled={!canContinue || isLoading}
             activeOpacity={0.9}
           >
             <LinearGradient
@@ -453,18 +328,28 @@ export default function KidName() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Text
-                style={[
-                  styles.ctaText,
-                  { color: canContinue ? C.primaryDark : '#CBD5E1' },
-                ]}
-              >
-                {canContinue ? 'Continue Adventure' : 'Enter Your Name'}
-              </Text>
-              {canContinue && (
-                <View style={styles.ctaArrow}>
-                  <ChevronRight size={22} color="#FFFFFF" strokeWidth={3} />
-                </View>
+              {isLoading ? (
+                <ActivityIndicator color={C.primaryDark} size="small" />
+              ) : (
+                <>
+                  <Text
+                    style={[
+                      styles.ctaText,
+                      { color: canContinue ? C.primaryDark : '#CBD5E1' },
+                    ]}
+                  >
+                    {canContinue ? 'Create Magic!' : 'Enter Your Name'}
+                  </Text>
+                  {canContinue && (
+                    <View style={styles.ctaArrow}>
+                      <Sparkles
+                        size={22}
+                        color={C.primaryDark}
+                        strokeWidth={3}
+                      />
+                    </View>
+                  )}
+                </>
               )}
             </LinearGradient>
           </TouchableOpacity>
@@ -487,24 +372,6 @@ const useStyles = (C: ColorScheme['colors']) => {
           paddingBottom: SPACING.xxxl,
           alignItems: 'center',
           overflow: 'hidden',
-        },
-        headerMesh1: {
-          position: 'absolute',
-          top: -50,
-          right: -50,
-          width: 200,
-          height: 200,
-          borderRadius: 100,
-          backgroundColor: 'rgba(255,255,255,0.1)',
-        },
-        headerMesh2: {
-          position: 'absolute',
-          bottom: -30,
-          left: -40,
-          width: 150,
-          height: 150,
-          borderRadius: 75,
-          backgroundColor: 'rgba(255,255,255,0.05)',
         },
         topRow: {
           width: '100%',
@@ -639,6 +506,13 @@ const useStyles = (C: ColorScheme['colors']) => {
           color: '#F59E0B',
           marginBottom: 16,
           letterSpacing: 0.3,
+        },
+        errorText: {
+          fontSize: 14,
+          fontFamily: FONTS.bold,
+          color: '#FF6B6B',
+          marginBottom: 16,
+          textAlign: 'center',
         },
         tipCard: {
           flexDirection: 'row',

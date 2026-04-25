@@ -56,6 +56,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { ColorScheme } from '@/constants/themeSchemes';
+import { analytics } from '@/services/analyticsService';
 
 // ─── Animated bounce star ───────────────────────────────────────────────
 function BounceStar({ delay = 0, color }: { delay?: number; color: string }) {
@@ -325,6 +326,11 @@ export default function QuizScreen() {
           story.id,
           computed,
           questions.length,
+        );
+        analytics.trackQuizCompletion(
+          computed,
+          questions.length,
+          story.id,
         );
         await refreshQuizAttempts();
       }

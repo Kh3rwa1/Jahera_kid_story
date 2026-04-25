@@ -573,6 +573,77 @@ function parseStoryJson(raw) {
   return { ...story, quiz: validQuiz };
 }
 
+
+async function translateStoryHandler({ req, res, log, error }) {
+  try {
+    let body = {};
+    if (req.body) {
+      try { body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body; } catch { body = {}; }
+    }
+
+    const { title, content, targetLanguage } = body;
+    if (!title || !content || !targetLanguage) {
+      return res.json({ error: 'Missing title, content, or targetLanguage' }, 400);
+    }
+
+    const LANGUAGE_MAP = {
+      en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
+      pt: 'Portuguese', ru: 'Russian', zh: 'Chinese', ja: 'Japanese', ko: 'Korean',
+      ar: 'Arabic', hi: 'Hindi', bn: 'Bengali', sat: 'Santali (Ol Chiki)',
+      tr: 'Turkish', pl: 'Polish', nl: 'Dutch', sv: 'Swedish', no: 'Norwegian',
+      da: 'Danish', fi: 'Finnish', el: 'Greek',
+    };
+    const langName = LANGUAGE_MAP[targetLanguage] || targetLanguage;
+
+    const prompt = `Translate this children's story to ${langName}. Keep the same tone, emotion, and structure. Return ONLY valid JSON with "title" and "content" keys. No markdown fences.
+
+Title: ${title}
+
+Story:
+${content}`;
+
+    const openrouterKey = process.env.OPENROUTER_API_KEY;
+    if (!openrouterKey) {
+      return res.json({ error: 'No API key configured' }, 500);
+    }
+
+    const result = await httpsPost(
+      OPENROUTER_BASE,
+      '/api/v1/chat/completions',
+      {
+        'Authorization': 'Bearer ' + openrouterKey,
+        'HTTP-Referer': 'https://jahera.app',
+        'X-Title': 'Jahera Kids Stories',
+      },
+      {
+        model: OPENROUTER_MODEL,
+        messages: [
+          { role: 'system', content: 'You are a professional translator specializing in children\'s content. Return ONLY valid JSON.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 4000,
+      },
+    );
+
+    if (result.status === 200) {
+      const data = JSON.parse(result.body);
+      const text = data.choices?.[0]?.message?.content;
+      if (text) {
+        const parsed = parseStoryJson(text);
+        log('✅ Translation to ' + langName + ' successful');
+        return res.json({ title: parsed.title, content: parsed.content });
+      }
+    }
+
+    log('Translation failed, status: ' + result.status);
+    return res.json({ error: 'Translation failed' }, 500);
+  } catch (err) {
+    error('translate error: ' + err.message);
+    return res.json({ error: err.message }, 500);
+  }
+}
+
 async function generateStoryHandler({ req, res, log, error }) {
   try {
     let body = {};
@@ -939,4 +1010,14 @@ async function generateStoryHandler({ req, res, log, error }) {
   }
 }
 
-module.exports = generateStoryHandler;
+module.exports = async (context) => {
+  let body = {};
+  try {
+    body = typeof context.req.body === 'string' ? JSON.parse(context.req.body) : (context.req.body || {});
+  } catch {}
+
+  if (body.action === 'translate') {
+    return translateStoryHandler(context);
+  }
+  return generateStoryHandler(context);
+};

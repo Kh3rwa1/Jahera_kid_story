@@ -109,15 +109,34 @@ export async function ensureLottieAsset(
       const filename = behaviorId + '.json';
       const localUri = LOTTIE_CACHE_DIR + filename;
       const fileInfo = await ExpoFileSystem.getInfoAsync(localUri);
+
       if (fileInfo.exists && !forceRefresh) {
-        return { uri: localUri };
+        // Read cached file and return parsed JSON (not file URI).
+        // LottieView on Android release builds does NOT reliably
+        // resolve { uri: filePath } sources, but always works
+        // with a parsed JSON object.
+        try {
+          const content = await ExpoFileSystem.readAsStringAsync(localUri);
+          const parsed = JSON.parse(content);
+          memoryCache.set(behaviorId, parsed);
+          return parsed;
+        } catch (parseErr) {
+          // Cached file is corrupt — delete and re-download
+          logger.warn('[LottieService] Corrupt cache for ' + behaviorId + ', re-downloading');
+          await ExpoFileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {});
+        }
       }
+
       logger.debug('[LottieService] Downloading ' + behaviorId);
       const result = await ExpoFileSystem.downloadAsync(sourceUrl, localUri);
       if (result.status !== 200) {
         throw new Error('Download status ' + result.status);
       }
-      return { uri: result.uri };
+      // Read the downloaded file and return parsed JSON
+      const content = await ExpoFileSystem.readAsStringAsync(result.uri);
+      const parsed = JSON.parse(content);
+      memoryCache.set(behaviorId, parsed);
+      return parsed;
     } catch (fsError: any) {
       logger.warn(
         '[LottieService] FS error ' +
@@ -138,7 +157,12 @@ export async function ensureLottieAsset(
       try {
         const localUri = LOTTIE_CACHE_DIR + behaviorId + '.json';
         const fileInfo = await ExpoFileSystem.getInfoAsync(localUri);
-        if (fileInfo.exists) return { uri: localUri };
+        if (fileInfo.exists) {
+          const content = await ExpoFileSystem.readAsStringAsync(localUri);
+          const parsed = JSON.parse(content);
+          memoryCache.set(behaviorId, parsed);
+          return parsed;
+        }
       } catch (_e) {}
     }
     return null;

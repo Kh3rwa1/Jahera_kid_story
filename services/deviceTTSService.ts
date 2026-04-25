@@ -37,11 +37,19 @@ export const deviceTTSService = {
   },
 
   async pause(): Promise<void> {
-    await Speech.pause();
+    // Speech.pause() is iOS-only; on Android, stop instead
+    if (require('react-native').Platform.OS === 'ios') {
+      await Speech.pause();
+    } else {
+      await Speech.stop();
+    }
   },
 
   async resume(): Promise<void> {
-    await Speech.resume();
+    // Speech.resume() is iOS-only; on Android this is a no-op
+    if (require('react-native').Platform.OS === 'ios') {
+      await Speech.resume();
+    }
   },
 
   async stop(): Promise<void> {
