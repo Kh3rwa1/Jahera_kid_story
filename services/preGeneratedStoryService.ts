@@ -17,6 +17,80 @@ export interface StoryTemplate {
   word_count: number;
 }
 
+function humanize(value: string): string {
+  return value.replace(/[-_]/g, ' ').trim();
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function makeQuestion(
+  question: string,
+  correctAnswer: string,
+  distractors: string[],
+): StoryTemplate['quiz'][number] {
+  const choices = shuffle([
+    correctAnswer,
+    ...distractors.filter(Boolean),
+  ]).slice(0, 3);
+
+  while (choices.length < 3) {
+    choices.push('Something else');
+  }
+
+  const options = {
+    A: choices[0],
+    B: choices[1],
+    C: choices[2],
+  };
+
+  const correctIndex = choices.indexOf(correctAnswer);
+  const correct_answer = (['A', 'B', 'C'][correctIndex] ?? 'A') as
+    | 'A'
+    | 'B'
+    | 'C';
+
+  return { question, options, correct_answer };
+}
+
+function buildTemplateQuiz(
+  template: Pick<StoryTemplate, 'behavior_goal' | 'theme' | 'mood'>,
+): StoryTemplate['quiz'] {
+  const lesson = humanize(template.behavior_goal);
+  const theme = humanize(template.theme);
+  const mood = humanize(template.mood);
+
+  return [
+    makeQuestion(
+      'What lesson was this story helping us practice?',
+      lesson,
+      ['sharing', 'courage', 'kindness', 'curiosity', 'honesty']
+        .filter((item) => item !== lesson)
+        .slice(0, 2),
+    ),
+    makeQuestion(
+      'Which kind of adventure did this story feel like?',
+      theme,
+      ['bedtime', 'forest', 'space', 'ocean']
+        .filter((item) => item !== theme)
+        .slice(0, 2),
+    ),
+    makeQuestion(
+      'How did this story feel?',
+      mood,
+      ['exciting', 'quiet', 'serious', 'silly']
+        .filter((item) => item !== mood)
+        .slice(0, 2),
+    ),
+  ];
+}
+
 /**
  * Replace placeholder names with real user data
  */
@@ -35,13 +109,13 @@ function personalizeTemplate(
 
   // Name replacements
   const replacements: [string, string][] = [
-    ['{{CHILD}}', kidName],
-    ['{{FRIEND1}}', friends[0] || 'Alex'],
-    ['{{FRIEND2}}', friends[1] || 'Sam'],
-    ['{{FRIEND3}}', friends[2] || 'Jordan'],
-    ['{{FAMILY1}}', familyMembers[0] || 'Mom'],
-    ['{{FAMILY2}}', familyMembers[1] || 'Dad'],
-    ['{{CITY}}', city || 'their town'],
+    ['{CHILD_NAME}', kidName],
+    ['{FRIEND1}', friends[0] || 'Alex'],
+    ['{FRIEND2}', friends[1] || 'Sam'],
+    ['{FRIEND3}', friends[2] || 'Jordan'],
+    ['{FAMILY1}', familyMembers[0] || 'Mom'],
+    ['{FAMILY2}', familyMembers[1] || 'Dad'],
+    ['{CITY}', city || 'their town'],
   ];
 
   for (const [placeholder, value] of replacements) {
@@ -98,9 +172,13 @@ async function findTemplate(
         behavior_goal: doc.behavior_goal,
         mood: doc.mood,
         language_code: doc.language_code,
-        title: doc.title,
-        content: doc.content,
-        quiz: JSON.parse(doc.quiz_json),
+        title: doc.title_template,
+        content: doc.content_template,
+        quiz: buildTemplateQuiz({
+          behavior_goal: doc.behavior_goal,
+          theme: doc.theme,
+          mood: doc.mood,
+        }),
         word_count: doc.word_count,
       } as StoryTemplate;
     }
