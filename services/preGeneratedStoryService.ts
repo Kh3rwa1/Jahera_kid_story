@@ -110,9 +110,11 @@ function personalizeTemplate(
   // Name replacements
   const replacements: [string, string][] = [
     ['{CHILD_NAME}', kidName],
+    ['CHILD_NAME', kidName], // without braces variant
+    ['{FRIEND_NAME}', friends[0] || 'Alex'],
     ['{FRIEND1}', friends[0] || 'Alex'],
     ['{FRIEND2}', friends[1] || 'Sam'],
-    ['{FRIEND3}', friends[2] || 'Jordan'],
+    ['{FAMILY_MEMBER}', familyMembers[0] || 'Mom'],
     ['{FAMILY1}', familyMembers[0] || 'Mom'],
     ['{FAMILY2}', familyMembers[1] || 'Dad'],
     ['{CITY}', city || 'their town'],
