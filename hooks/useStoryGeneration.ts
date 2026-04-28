@@ -10,6 +10,7 @@ import { templateStoryService } from '@/services/templateStoryService';
 import { getCurrentContext } from '@/utils/contextUtils';
 import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
+import { preGeneratedStoryService } from '@/services/preGeneratedStoryService';
 import { checkStorySafety, getFallbackStory } from '@/utils/storySafetyFilter';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -79,7 +80,16 @@ export function useStoryGeneration() {
   }, []);
 
   const createQuizQuestions = useCallback(
-    async (storyId: string, aiStory: any) => {
+    async (
+      storyId: string,
+      aiStory: {
+        quiz: {
+          question: string;
+          options: { A: string; B: string; C: string };
+          correct_answer: string;
+        }[];
+      },
+    ) => {
       for (let i = 0; i < aiStory.quiz.length; i++) {
         const q = aiStory.quiz[i];
         const question = await quizService.createQuestion(
@@ -125,11 +135,33 @@ export function useStoryGeneration() {
       const context = getCurrentContext();
       setStatus('Choosing a bedtime template...');
       setProgress(30);
-      let aiStory = await templateStoryService.generateTemplateStory(
-        profileData,
-        selectedBehaviorGoal,
-        selectedLanguage,
+      // ── TRY PRE-GENERATED TEMPLATE FIRST (zero cost) ──
+      const familyNames = (profileData.family_members || []).map(
+        (m: { name: string }) => m.name,
       );
+      const friendNames = (profileData.friends || []).map(
+        (f: { name: string }) => f.name,
+      );
+
+      let aiStory = await preGeneratedStoryService.getPreGeneratedStory(
+        selectedTheme,
+        selectedBehaviorGoal || 'confidence',
+        selectedLanguage,
+        profileData.kid_name,
+        familyNames,
+        friendNames,
+        profileData.city,
+        selectedMood,
+      );
+
+      // ── FALLBACK TO AI GENERATION IF NO TEMPLATE ──
+      if (!aiStory) {
+        aiStory = await templateStoryService.generateTemplateStory(
+          profileData,
+          selectedBehaviorGoal,
+          selectedLanguage,
+        );
+      }
 
       if (!aiStory) return markError('Could not generate a story.');
       if (!isMountedRef.current) return;
