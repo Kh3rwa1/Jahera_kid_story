@@ -58,6 +58,18 @@ const RECOMMENDED_VOICES = [
     description: 'Gentle, soothing, & motherly',
     gender: 'Female',
   },
+  {
+    id: 'EMuO6fFLrXKOryHzij6K',
+    name: 'Grandma Clo',
+    description: 'Warm grandma storyteller',
+    gender: 'Female',
+  },
+  {
+    id: '8FsOrsZSELg9otqX9nPu',
+    name: 'Reva (Dadi)',
+    description: 'Hindi Dadi, familiar & warm',
+    gender: 'Female',
+  },
 ];
 
 const MODELS = [
