@@ -25,6 +25,8 @@ const ELEVENLABS_VOICES = {
   storytelling: 'EXAVITQu4vr4xnSDxMaL',
   childFriendly: 'FGY2WhTYpPnrIDTdsKH5', // Laura — gentle, soothing
   energetic: 'TX3LPaxmHKxFdv7VOQHJ',     // Liam — upbeat, fun
+  grandma: 'EMuO6fFLrXKOryHzij6K',       // Grandma Clo — warm grandma storyteller
+  hindiDadi: '8FsOrsZSELg9otqX9nPu',     // Reva (Dadi) — familiar Hindi grandmother
 };
 
 // ElevenLabs model: multilingual v2 handles 29+ languages with ONE voice
