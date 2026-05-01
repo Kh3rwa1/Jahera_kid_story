@@ -18,8 +18,8 @@ interface ShimmerEffectProps {
 }
 
 export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
-  width = '100%',
-  height = '100%',
+  width: _width = '100%',
+  height: _height = '100%',
   colors = [
     'rgba(255, 255, 255, 0)',
     'rgba(255, 255, 255, 0.5)',
@@ -38,7 +38,7 @@ export const ShimmerEffect: React.FC<ShimmerEffectProps> = ({
       -1,
       false,
     );
-  }, [duration]);
+  }, [duration, shimmerTranslate]);
 
   const shimmerStyle = useAnimatedStyle(() => {
     'worklet';

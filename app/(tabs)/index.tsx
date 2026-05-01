@@ -25,7 +25,7 @@ import { useUI } from '@/contexts/UIContext';
 import { useAudio } from '@/contexts/AudioContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useReadingPreferences } from '@/contexts/ReadingPreferencesContext';
-import { BREAKPOINTS, SPACING, FONTS } from '@/constants/theme';
+import { BREAKPOINTS, SPACING } from '@/constants/theme';
 
 // Components
 import { FloatingParticles } from '@/components/FloatingParticles';
@@ -166,7 +166,7 @@ export default function HomeScreen() {
         } else {
           setContinueStory(null);
         }
-      } catch (_e) {
+      } catch {
         // Silent fail for progress check to avoid UI noise
       }
     };
@@ -194,6 +194,7 @@ export default function HomeScreen() {
       return () => clearTimeout(timer);
     }
   }, [
+    profile,
     profile?.id,
     profile?.kid_name,
     profile?.primary_language,
