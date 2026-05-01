@@ -10,7 +10,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { revenueCatService } from '@/services/revenueCatServiceInternal';
 import { subscriptionService } from '@/services/subscriptionService';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import {
   ArrowLeft,
   BookOpen,
@@ -259,7 +259,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               key={item.id}
               style={styles.settingCard}
-              onPress={() => router.push(item.route as any)}
+              onPress={() => router.push(item.route as Href)}
               activeOpacity={0.7}
             >
               <LinearGradient
@@ -463,6 +463,6 @@ const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets) => {
         },
         infoText: { fontSize: FONT_SIZES.sm, color: C.text.secondary },
       }),
-    [C],
+    [C, insets.top],
   );
 };
