@@ -199,9 +199,11 @@ class CacheService {
     this.memoryCache.clear();
     this.lastCleanupAt = 0;
     try {
-      const keys = await AsyncStorage.getAllKeys();
+      const keys = (await AsyncStorage.getAllKeys()) ?? [];
       const cacheKeys = keys.filter((key) => key.startsWith('cache_'));
-      await AsyncStorage.multiRemove(cacheKeys);
+      if (cacheKeys.length > 0) {
+        await AsyncStorage.multiRemove(cacheKeys);
+      }
     } catch (error) {
       console.error('Failed to clear cache:', error);
     }
@@ -236,9 +238,11 @@ class CacheService {
     this.memoryCache = new Map(kept);
 
     try {
-      const keys = await AsyncStorage.getAllKeys();
+      const keys = (await AsyncStorage.getAllKeys()) ?? [];
       const cacheKeys = keys.filter((key) => key.startsWith(`cache_${prefix}`));
-      await AsyncStorage.multiRemove(cacheKeys);
+      if (cacheKeys.length > 0) {
+        await AsyncStorage.multiRemove(cacheKeys);
+      }
     } catch (error) {
       console.error('Failed to invalidate cache by prefix:', error);
     }
