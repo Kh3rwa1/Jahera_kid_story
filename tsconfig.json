@@ -16,5 +16,5 @@
     "expo-env.d.ts",
     "nativewind-env.d.ts"
   ],
-  "exclude": []
+  "exclude": ["node_modules", ".expo", "dist", "build", "web-admin"]
 }
