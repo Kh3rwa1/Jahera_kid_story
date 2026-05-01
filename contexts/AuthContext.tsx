@@ -12,7 +12,6 @@ import React, {
 import { Models, OAuthProvider } from 'react-native-appwrite';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
-import { Platform } from 'react-native';
 
 interface AuthContextType {
   user: Models.User<Models.Preferences> | null;
@@ -34,28 +33,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
   const [session, setSession] = useState<Models.Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Handle deep link callback from OAuth
-  useEffect(() => {
-    const handleDeepLink = async () => {
-      try {
-        const u = await account.get();
-        const s = await account.getSession('current');
-        setUser(u);
-        setSession(s);
-        storage.setItem('authUser', u).catch(() => {});
-        storage.setItem('authSession', s).catch(() => {});
-      } catch {
-        // Not authenticated yet
-      }
-    };
-
-    const subscription = Linking.addEventListener('url', () => {
-      handleDeepLink();
-    });
-
-    return () => subscription.remove();
-  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -123,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(u);
       storage.setItem('authUser', u).catch(() => {});
     } catch {
-      // Don\u0027t nullify user on refresh failure (might be offline)
+      // Don't nullify user on refresh failure (might be offline)
     }
   }, []);
 
@@ -157,35 +134,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = useCallback(async () => {
     try {
-      // Build redirect URLs using the app scheme
-      const redirectUrl = Linking.createURL('/');
+      // Build the deep link URL for redirect
+      const deepLink = Linking.createURL('/');
 
-      // Create OAuth2 session with Appwrite
-      // On native, this opens the browser; on web, it redirects
-      const response = account.createOAuth2Session(
+      // Use createOAuth2Token — returns userId & secret as query params
+      // instead of createOAuth2Session which tries to set cookies
+      const url = account.createOAuth2Token(
         OAuthProvider.Google,
-        redirectUrl, // success redirect
-        redirectUrl, // failure redirect
+        deepLink,
+        deepLink,
       );
 
-      if (Platform.OS !== 'web') {
-        // On native, open the OAuth URL in system browser
-        if (response && typeof response === 'object' && 'href' in response) {
-          await WebBrowser.openBrowserAsync(
-            String((response as { href: string }).href),
-          );
-        } else if (typeof response === 'string') {
-          await WebBrowser.openBrowserAsync(response);
-        }
+      // url is either void (auto-opened) or a URL object
+      if (!url) {
+        throw new Error('Failed to create OAuth URL');
       }
 
-      // After redirect back, fetch the session
-      const u = await account.get();
-      const s = await account.getSession('current');
-      setUser(u);
-      setSession(s);
-      storage.setItem('authUser', u).catch(() => {});
-      storage.setItem('authSession', s).catch(() => {});
+      const urlString = url instanceof URL ? url.toString() : String(url);
+
+      // Open the OAuth URL in an in-app browser
+      const result = await WebBrowser.openAuthSessionAsync(urlString, deepLink);
+
+      if (result.type !== 'success' || !result.url) {
+        throw new Error('Google sign-in was cancelled');
+      }
+
+      // Parse the callback URL for userId and secret
+      const callbackUrl = new URL(result.url);
+      const userId = callbackUrl.searchParams.get('userId');
+      const secret = callbackUrl.searchParams.get('secret');
+
+      if (!userId || !secret) {
+        throw new Error('Missing userId or secret from OAuth callback');
+      }
+
+      // Create a session using the token
+      const sessionRes = await account.createSession(userId, secret);
+      const userRes = await account.get();
+
+      setSession(sessionRes);
+      setUser(userRes);
+      storage.setItem('authUser', userRes).catch(() => {});
+      storage.setItem('authSession', sessionRes).catch(() => {});
     } catch (error: unknown) {
       console.error('Google sign-in error:', error);
       const msg =
