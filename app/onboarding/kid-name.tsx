@@ -9,12 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import {
-  ArrowLeft,
-  Check,
-  ChevronRight,
-  Sparkles,
-} from 'lucide-react-native';
+import { ArrowLeft, Check, Sparkles } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -280,7 +275,7 @@ export default function KidName() {
                 style={styles.errorHint}
               >
                 Almost there... {charsNeeded} more letter
-                {charsNeeded > 1 ? 's' : ''} 
+                {charsNeeded > 1 ? 's' : ''}
               </Animated.Text>
             )}
 

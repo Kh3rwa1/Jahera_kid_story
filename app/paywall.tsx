@@ -4,7 +4,6 @@ import { RotateCcw, X } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { Image } from 'expo-image';
 import {
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -260,7 +259,7 @@ export default function PaywallScreen() {
   );
 }
 
-const useStyles = (colors: ThemeColors, insets: EdgeInsets, width: number) =>
+const useStyles = (colors: ThemeColors, insets: EdgeInsets, _width: number) =>
   StyleSheet.create({
     root: {
       flex: 1,

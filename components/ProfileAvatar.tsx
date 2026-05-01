@@ -28,7 +28,6 @@ const SIZE_MAP = {
 
 export function ProfileAvatar({
   avatarUrl,
-  name,
   size = 'medium',
   editable = false,
   onPress,
