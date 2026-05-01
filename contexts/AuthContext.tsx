@@ -135,7 +135,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = useCallback(async () => {
     try {
       // Build the deep link URL for redirect
+      // In dev builds / production, use the app scheme
+      // In Expo Go, Linking.createURL uses exp:// which works for redirect detection
       const deepLink = Linking.createURL('/');
+      console.log('[OAuth] Redirect URL:', deepLink);
 
       // Use createOAuth2Token — returns userId & secret as query params
       // instead of createOAuth2Session which tries to set cookies
@@ -155,14 +158,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Open the OAuth URL in an in-app browser
       const result = await WebBrowser.openAuthSessionAsync(urlString, deepLink);
 
-      if (result.type !== 'success' || !result.url) {
+      let userId: string | null = null;
+      let secret: string | null = null;
+
+      if (result.type === 'success' && result.url) {
+        // Normal flow — browser detected the redirect
+        const callbackUrl = new URL(result.url);
+        userId = callbackUrl.searchParams.get('userId');
+        secret = callbackUrl.searchParams.get('secret');
+      } else if (result.type === 'cancel' || result.type === 'dismiss') {
+        // User might have been redirected but browser didn't auto-close
+        // Check if a session was already created by the OAuth flow
+        try {
+          const existingUser = await account.get();
+          const existingSession = await account.getSession('current');
+          setUser(existingUser);
+          setSession(existingSession);
+          storage.setItem('authUser', existingUser).catch(() => {});
+          storage.setItem('authSession', existingSession).catch(() => {});
+          console.log('[OAuth] Session found after browser dismiss');
+          return;
+        } catch {
+          throw new Error('Google sign-in was cancelled');
+        }
+      } else {
         throw new Error('Google sign-in was cancelled');
       }
-
-      // Parse the callback URL for userId and secret
-      const callbackUrl = new URL(result.url);
-      const userId = callbackUrl.searchParams.get('userId');
-      const secret = callbackUrl.searchParams.get('secret');
 
       if (!userId || !secret) {
         throw new Error('Missing userId or secret from OAuth callback');
