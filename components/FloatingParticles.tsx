@@ -87,7 +87,17 @@ const FloatingParticle: React.FC<{
         true,
       ),
     );
-  }, [isFocused]);
+  }, [
+    isFocused,
+    opacity,
+    particle.delay,
+    particle.duration,
+    particle.startY,
+    scale,
+    translateX,
+    translateY,
+    winHeight,
+  ]);
 
   const style = useAnimatedStyle(() => ({
     transform: [
@@ -119,6 +129,8 @@ const FloatingParticle: React.FC<{
     </Animated.View>
   );
 });
+
+FloatingParticle.displayName = 'FloatingParticle';
 
 const PARTICLE_GRADIENTS: readonly [string, string, ...string[]][] = [
   ['#FFD700', '#FFA500'],
@@ -166,6 +178,8 @@ export const FloatingParticles: React.FC<FloatingParticlesProps> = React.memo(
     );
   },
 );
+
+FloatingParticles.displayName = 'FloatingParticles';
 
 const styles = StyleSheet.create({
   container: {

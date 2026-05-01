@@ -47,7 +47,7 @@ const WaveBar = ({ color, index, isPlaying }: Readonly<WaveBarProps>) => {
         false,
       ),
     );
-  }, [isPlaying]);
+  }, [isPlaying, scaleY]);
 
   const animatedStyle = useAnimatedStyle(() => {
     'worklet';

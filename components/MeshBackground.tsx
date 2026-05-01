@@ -69,7 +69,15 @@ const FloatingOrb: React.FC<{ orb: Orb; isFocused: boolean }> = React.memo(
           true,
         ),
       );
-    }, [isFocused]);
+    }, [
+      isFocused,
+      orb.delay,
+      orb.duration,
+      orb.moveRange,
+      scale,
+      transX,
+      transY,
+    ]);
 
     const style = useAnimatedStyle(() => ({
       transform: [
@@ -95,6 +103,8 @@ const FloatingOrb: React.FC<{ orb: Orb; isFocused: boolean }> = React.memo(
     );
   },
 );
+
+FloatingOrb.displayName = 'FloatingOrb';
 
 interface MeshBackgroundProps {
   primaryColor: string;
@@ -152,6 +162,8 @@ export const MeshBackground: React.FC<MeshBackgroundProps> = React.memo(
     );
   },
 );
+
+MeshBackground.displayName = 'MeshBackground';
 
 const styles = StyleSheet.create({
   container: {
