@@ -30,6 +30,17 @@ interface BehaviorProgressCardProps {
   compact?: boolean;
 }
 
+type BehaviorProgressColors = {
+  primary: string;
+  primaryDark: string;
+  cardBackground?: string;
+  text: {
+    primary: string;
+    secondary: string;
+    light: string;
+  };
+};
+
 interface ProgressRowProps {
   goalId: string;
   label: string;
@@ -41,7 +52,7 @@ interface ProgressRowProps {
   isTablet: boolean;
   mutedTextColor: string;
   barTrackColor: string;
-  colors: any;
+  colors: BehaviorProgressColors;
 }
 
 function ProgressRow({
