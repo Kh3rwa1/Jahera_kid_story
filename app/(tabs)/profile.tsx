@@ -1,5 +1,5 @@
 import { BehaviorProgressCard } from '@/components/BehaviorProgressCard';
-import { Container } from '@/components/Container';
+import { SafeScreen, SafeScrollView } from '@/components/layout';
 import { QuizAttempt, Story } from '@/types/database';
 import { ErrorState } from '@/components/ErrorState';
 import { FloatingParticles } from '@/components/FloatingParticles';
@@ -13,17 +13,16 @@ import { MeshBackground } from '@/components/MeshBackground';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import {
   BORDER_RADIUS,
-  BREAKPOINTS,
   FONTS,
   LAYOUT,
   SHADOWS,
   SPACING,
 } from '@/constants/theme';
 import { useTabBarHeight } from '@/hooks/useTabBarHeight';
+import { useScreenClass } from '@/hooks/useScreenClass';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUI } from '@/contexts/UIContext';
-import { analytics } from '@/services/analyticsService';
 import {
   useEntranceSequence,
   useGlowPulse,
@@ -41,7 +40,7 @@ import {
   Flame,
   Moon,
 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Platform,
   RefreshControl,
@@ -50,7 +49,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import Animated, {
   FadeInDown,
@@ -59,7 +57,6 @@ import Animated, {
   ZoomIn,
 } from 'react-native-reanimated';
 import { ColorScheme } from '@/constants/themeSchemes';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface AchievementCardData {
   label: string;
@@ -633,11 +630,16 @@ export default function ProfileScreen() {
   const { profile, stories, quizAttempts, isLoading, error, refreshAll } =
     useApp();
   const { wakeUI } = useUI();
+  const screen = useScreenClass();
   const tabBarPadding = useTabBarHeight();
-  const { width: winWidth } = useWindowDimensions();
-  const isTablet = winWidth >= BREAKPOINTS.tablet;
-  const isDesktop = winWidth >= BREAKPOINTS.desktop;
-  const styles = useStyles(COLORS, isTablet, isDesktop, tabBarPadding);
+  const winWidth = screen.width;
+  const isTablet = screen.isTablet;
+  const isDesktop = winWidth >= 1024;
+  const tabBarBottomOffset = Math.max(
+    SPACING.xl,
+    tabBarPadding - screen.insets.bottom,
+  );
+  const styles = useStyles(COLORS, isTablet, isDesktop);
 
   const stats = useMemo(() => computeQuizStats(quizAttempts), [quizAttempts]);
   const streak = useMemo(() => computeStreak(stories), [stories]);
@@ -660,16 +662,18 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <Container
-        maxWidth
-        gradient
-        gradientColors={COLORS.backgroundGradient}
-        safeAreaEdges={['top']}
-        scroll
-        scrollProps={{
-          contentContainerStyle: styles.scroll,
-        }}
+      <SafeScrollView
+        backgroundColor={COLORS.background}
+        edges={['top', 'bottom']}
+        maxWidth={isDesktop ? 1040 : LAYOUT.maxWidth + 120}
+        padded={false}
+        bottomOffset={tabBarBottomOffset}
+        contentContainerStyle={styles.scroll}
       >
+        <LinearGradient
+          colors={COLORS.backgroundGradient}
+          style={StyleSheet.absoluteFill}
+        />
         <MeshBackground primaryColor={COLORS.primary} />
         <FloatingParticles count={5} />
 
@@ -709,15 +713,18 @@ export default function ProfileScreen() {
             color="rgba(0,0,0,0.05)"
           />
         </View>
-      </Container>
+      </SafeScrollView>
     );
   }
 
   if (error || !profile) {
     return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: COLORS.background }]}
-        edges={['top']}
+      <SafeScreen
+        backgroundColor={COLORS.background}
+        edges={['top', 'bottom']}
+        maxWidth={isDesktop ? 1040 : LAYOUT.maxWidth + 120}
+        padded={false}
+        contentStyle={styles.screenContent}
       >
         <LinearGradient
           colors={COLORS.backgroundGradient}
@@ -730,7 +737,7 @@ export default function ProfileScreen() {
           onRetry={refreshAll}
           onGoHome={() => router.replace('/')}
         />
-      </SafeAreaView>
+      </SafeScreen>
     );
   }
 
@@ -742,9 +749,21 @@ export default function ProfileScreen() {
   const textColor = COLORS.text.primary;
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: COLORS.background }]}
-      edges={['top']}
+    <SafeScrollView
+      backgroundColor={COLORS.background}
+      edges={['top', 'bottom']}
+      maxWidth={isDesktop ? 1040 : LAYOUT.maxWidth + 120}
+      padded={false}
+      bottomOffset={tabBarBottomOffset}
+      contentContainerStyle={styles.scroll}
+      onScrollBeginDrag={wakeUI}
+      refreshControl={
+        <RefreshControl
+          refreshing={false}
+          onRefresh={handleRefresh}
+          tintColor={COLORS.primary}
+        />
+      }
     >
       <LinearGradient
         colors={COLORS.backgroundGradient}
@@ -752,103 +771,89 @@ export default function ProfileScreen() {
       />
       <MeshBackground primaryColor={COLORS.primary} />
       <FloatingParticles count={5} />
+      <ProfileHero
+        profile={profile}
+        storiesCount={stories?.length || 0}
+        quizStats={stats}
+        streak={streak}
+        COLORS={COLORS}
+        styles={styles}
+      />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-        onScrollBeginDrag={wakeUI}
-        refreshControl={
-          <RefreshControl
-            refreshing={false}
-            onRefresh={handleRefresh}
-            tintColor={COLORS.primary}
-          />
-        }
+      <AchievementSection
+        stats={stats}
+        totalWords={totalWords}
+        COLORS={COLORS}
+        styles={styles}
+      />
+
+      <Animated.View entering={FadeInDown.delay(350).springify()}>
+        <BehaviorProgressCard progress={behaviorProgress} />
+      </Animated.View>
+
+      {recentQuizzes.length > 0 && (
+        <LearningCurve
+          recentQuizzes={recentQuizzes}
+          stories={stories || []}
+          COLORS={COLORS}
+          styles={styles}
+        />
+      )}
+
+      {(profile.languages?.length || 0) > 0 && (
+        <MasterySection
+          languages={profile.languages || []}
+          stories={stories || []}
+          COLORS={COLORS}
+          styles={styles}
+        />
+      )}
+
+      <XPBanner streak={streak} styles={styles} />
+
+      <Animated.View
+        entering={FadeInUp.delay(650).springify()}
+        style={styles.section}
       >
-        <ProfileHero
-          profile={profile}
-          storiesCount={stories?.length || 0}
-          quizStats={stats}
-          streak={streak}
-          COLORS={COLORS}
-          styles={styles}
-        />
-
-        <AchievementSection
-          stats={stats}
-          totalWords={totalWords}
-          COLORS={COLORS}
-          styles={styles}
-        />
-
-        <Animated.View entering={FadeInDown.delay(350).springify()}>
-          <BehaviorProgressCard progress={behaviorProgress} />
-        </Animated.View>
-
-        {recentQuizzes.length > 0 && (
-          <LearningCurve
-            recentQuizzes={recentQuizzes}
-            stories={stories || []}
-            COLORS={COLORS}
-            styles={styles}
-          />
-        )}
-
-        {(profile.languages?.length || 0) > 0 && (
-          <MasterySection
-            languages={profile.languages || []}
-            stories={stories || []}
-            COLORS={COLORS}
-            styles={styles}
-          />
-        )}
-
-        <XPBanner streak={streak} styles={styles} />
-
-        <Animated.View
-          entering={FadeInUp.delay(650).springify()}
-          style={styles.section}
+        <View style={styles.sectionHead}>
+          <Text style={styles.sectionEmoji}>🌙</Text>
+          <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>
+            Settings
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCard,
+            {
+              backgroundColor: COLORS.cardBackground,
+              borderColor: COLORS.text.light + '15',
+            },
+          ]}
         >
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionEmoji}>🌙</Text>
-            <Text style={[styles.sectionTitle, { color: COLORS.text.primary }]}>
-              Settings
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.listCard,
-              {
-                backgroundColor: COLORS.cardBackground,
-                borderColor: COLORS.text.light + '15',
-              },
-            ]}
+          <TouchableOpacity
+            onPress={() => router.push('/settings/notifications')}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: SPACING.md,
+              paddingHorizontal: SPACING.lg,
+            }}
           >
-            <TouchableOpacity
-              onPress={() => router.push('/settings/notifications')}
+            <Moon size={20} color={primaryColor} />
+            <Text
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingVertical: SPACING.md,
-                paddingHorizontal: SPACING.lg,
+                marginLeft: SPACING.md,
+                fontFamily: FONTS.medium,
+                fontSize: 15,
+                color: textColor,
               }}
             >
-              <Moon size={20} color={primaryColor} />
-              <Text
-                style={{
-                  marginLeft: SPACING.md,
-                  fontFamily: FONTS.medium,
-                  fontSize: 15,
-                  color: textColor,
-                }}
-              >
-                Bedtime Reminders
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </ScrollView>
-    </SafeAreaView>
+              Bedtime Reminders
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    </SafeScrollView>
   );
 }
 
@@ -856,15 +861,17 @@ const useStyles = (
   C: ColorScheme['colors'],
   isTablet: boolean,
   isDesktop: boolean,
-  tabBarPadding: number = 140,
 ) => {
   return StyleSheet.create({
     container: { flex: 1 },
+    screenContent: {
+      flex: 1,
+      paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
+    },
     loadingWrap: { padding: SPACING.xl },
     scroll: {
       paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
       paddingTop: SPACING.sm,
-      paddingBottom: tabBarPadding,
       gap: isTablet ? SPACING.xxl : SPACING.xl,
       width: '100%',
       maxWidth: isDesktop ? 1040 : LAYOUT.maxWidth + 120,
