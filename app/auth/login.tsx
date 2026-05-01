@@ -31,7 +31,7 @@ export default function Login() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const COLORS = currentTheme.colors;
   const styles = useStyles(COLORS, insets);
 
@@ -124,6 +124,50 @@ export default function Login() {
             </Text>
           </Animated.View>
 
+          {/* Google Sign In */}
+          <Animated.View entering={FadeInUp.delay(500).springify()}>
+            <TouchableOpacity
+              style={[styles.googleButton]}
+              onPress={async () => {
+                try {
+                  setIsLoading(true);
+                  setError('');
+                  await signInWithGoogle();
+                  router.replace('/(tabs)');
+                } catch (err: unknown) {
+                  setError(
+                    err instanceof Error
+                      ? err.message
+                      : 'Google sign-in failed',
+                  );
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              disabled={isLoading}
+            >
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                }}
+              >
+                <Text style={{ fontSize: 20 }}>G</Text>
+                <Text style={styles.googleButtonText}>
+                  Continue with Google
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           <Animated.View
             entering={FadeInDown.delay(200).springify()}
             style={styles.form}
@@ -178,7 +222,7 @@ export default function Login() {
             )}
 
             <TouchableOpacity
-              onPress={() => router.push('/auth/forgot-password' as any)}
+              onPress={() => router.push('/auth/forgot-password' as const)}
               style={styles.forgotLink}
             >
               <Text style={[styles.forgotText, { color: '#E2E8F0' }]}>
@@ -375,6 +419,40 @@ const useStyles = (COLORS: ThemeColors, insets: EdgeInsets) => {
           textShadowColor: 'rgba(0,0,0,0.5)',
           textShadowOffset: { width: 0, height: 2 },
           textShadowRadius: 6,
+        },
+        googleButton: {
+          backgroundColor: '#FFFFFF',
+          borderRadius: BORDER_RADIUS.pill,
+          paddingVertical: SPACING.lg,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: SPACING.xs,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 12,
+          elevation: 4,
+        },
+        googleButtonText: {
+          color: '#333333',
+          fontSize: FONT_SIZES.lg,
+          fontFamily: FONTS.bold,
+        },
+        dividerContainer: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginVertical: SPACING.md,
+        },
+        dividerLine: {
+          flex: 1,
+          height: 1,
+          backgroundColor: 'rgba(255,255,255,0.2)',
+        },
+        dividerText: {
+          color: 'rgba(255,255,255,0.5)',
+          marginHorizontal: SPACING.md,
+          fontSize: FONT_SIZES.sm,
+          fontFamily: FONTS.medium,
         },
       }),
     [COLORS, insets],
