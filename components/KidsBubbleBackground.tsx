@@ -151,6 +151,8 @@ const FloatingBubble: React.FC<{ bubble: Bubble; winHeight: number }> =
     );
   });
 
+FloatingBubble.displayName = 'FloatingBubble';
+
 const DriftingCloud: React.FC<{ cloud: Cloud; winWidth: number }> = React.memo(
   ({ cloud, winWidth }) => {
     const translateX = useSharedValue(cloud.startX);
@@ -221,6 +223,8 @@ const DriftingCloud: React.FC<{ cloud: Cloud; winWidth: number }> = React.memo(
   },
 );
 
+DriftingCloud.displayName = 'DriftingCloud';
+
 interface KidsBubbleBackgroundProps {
   bubbleCount?: number;
   cloudCount?: number;
@@ -279,6 +283,8 @@ export const KidsBubbleBackground: React.FC<KidsBubbleBackgroundProps> =
       </View>
     );
   });
+
+KidsBubbleBackground.displayName = 'KidsBubbleBackground';
 
 const styles = StyleSheet.create({
   container: {

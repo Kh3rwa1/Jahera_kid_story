@@ -225,7 +225,7 @@ export function FloatingTabBar({
       stiffness: 350,
       mass: 0.6,
     });
-  }, [safeActiveIndex, TAB_WIDTH]);
+  }, [safeActiveIndex, TAB_WIDTH, pillX]);
 
   const pillStyle = useAnimatedStyle(() => {
     // When in player mode, the pill expands to fill the entire bar
@@ -412,7 +412,7 @@ const MiniProgressBar = React.memo(({ color }: { color: string }) => {
   useEffect(() => {
     const pct = duration > 0 ? position / duration : 0;
     progress.value = withTiming(pct, { duration: 250 }); // smooth transition between 200ms updates
-  }, [position, duration]);
+  }, [position, duration, progress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
