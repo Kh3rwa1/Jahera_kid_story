@@ -9,7 +9,10 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { Models } from 'react-native-appwrite';
+import { Models, OAuthProvider } from 'react-native-appwrite';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
 
 interface AuthContextType {
   user: Models.User<Models.Preferences> | null;
@@ -18,6 +21,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   signUp: (email: string, password: string, name?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -31,45 +35,73 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Models.Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Handle deep link callback from OAuth
+  useEffect(() => {
+    const handleDeepLink = async () => {
+      try {
+        const u = await account.get();
+        const s = await account.getSession('current');
+        setUser(u);
+        setSession(s);
+        storage.setItem('authUser', u).catch(() => {});
+        storage.setItem('authSession', s).catch(() => {});
+      } catch {
+        // Not authenticated yet
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', () => {
+      handleDeepLink();
+    });
+
+    return () => subscription.remove();
+  }, []);
+
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // 1. Fast path: load from cache immediately
-        const cachedUser = await storage.getItem<Models.User<Models.Preferences>>('authUser');
-        const cachedSession = await storage.getItem<Models.Session>('authSession');
-        
+        const cachedUser =
+          await storage.getItem<Models.User<Models.Preferences>>('authUser');
+        const cachedSession =
+          await storage.getItem<Models.Session>('authSession');
+
         if (cachedUser && cachedSession) {
           setUser(cachedUser);
           setSession(cachedSession);
-          setIsLoading(false); // Unblock UI immediately
-          
-          // 2. Background sync
-          Promise.all([
-            account.get(),
-            account.getSession('current'),
-          ]).then(([u, s]) => {
-            setUser(u);
-            setSession(s);
-            storage.setItem('authUser', u).catch(() => {});
-            storage.setItem('authSession', s).catch(() => {});
-          }).catch((err) => {
-            console.debug('Auth background sync failed, keeping cached session', err);
-          });
+          setIsLoading(false);
+
+          Promise.all([account.get(), account.getSession('current')])
+            .then(([u, s]) => {
+              setUser(u);
+              setSession(s);
+              storage.setItem('authUser', u).catch(() => {});
+              storage.setItem('authSession', s).catch(() => {});
+            })
+            .catch((err) => {
+              console.debug(
+                'Auth background sync failed, keeping cached session',
+                err,
+              );
+            });
           return;
         }
 
-        // 3. Slow path: No cache, wait for network (with timeout)
         const fetchPromise = Promise.all([
           account.get(),
           account.getSession('current'),
         ]);
-        
-        const timeoutPromise = new Promise<[any, any]>((_, reject) => 
-          setTimeout(() => reject(new Error('Network timeout fetching session')), 8000)
+
+        const timeoutPromise = new Promise<
+          [Models.User<Models.Preferences>, Models.Session]
+        >((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Network timeout fetching session')),
+            8000,
+          ),
         );
 
         const [u, s] = await Promise.race([fetchPromise, timeoutPromise]);
-        
+
         setUser(u);
         setSession(s);
         storage.setItem('authUser', u).catch(() => {});
@@ -91,7 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(u);
       storage.setItem('authUser', u).catch(() => {});
     } catch {
-      // Don't nullify user on refresh failure (might be offline)
+      // Don\u0027t nullify user on refresh failure (might be offline)
     }
   }, []);
 
@@ -123,6 +155,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     storage.setItem('authSession', sessionRes).catch(() => {});
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    try {
+      // Build redirect URLs using the app scheme
+      const redirectUrl = Linking.createURL('/');
+
+      // Create OAuth2 session with Appwrite
+      // On native, this opens the browser; on web, it redirects
+      const response = account.createOAuth2Session(
+        OAuthProvider.Google,
+        redirectUrl, // success redirect
+        redirectUrl, // failure redirect
+      );
+
+      if (Platform.OS !== 'web') {
+        // On native, open the OAuth URL in system browser
+        if (response && typeof response === 'object' && 'href' in response) {
+          await WebBrowser.openBrowserAsync(
+            String((response as { href: string }).href),
+          );
+        } else if (typeof response === 'string') {
+          await WebBrowser.openBrowserAsync(response);
+        }
+      }
+
+      // After redirect back, fetch the session
+      const u = await account.get();
+      const s = await account.getSession('current');
+      setUser(u);
+      setSession(s);
+      storage.setItem('authUser', u).catch(() => {});
+      storage.setItem('authSession', s).catch(() => {});
+    } catch (error: unknown) {
+      console.error('Google sign-in error:', error);
+      const msg =
+        error instanceof Error ? error.message : 'Google sign-in failed';
+      throw new Error(msg);
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await account.deleteSession('current');
@@ -143,10 +214,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAuthenticated: !!user,
       signUp,
       signIn,
+      signInWithGoogle,
       signOut,
       refreshUser,
     }),
-    [user, session, isLoading, signUp, signIn, signOut, refreshUser],
+    [
+      user,
+      session,
+      isLoading,
+      signUp,
+      signIn,
+      signInWithGoogle,
+      signOut,
+      refreshUser,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
