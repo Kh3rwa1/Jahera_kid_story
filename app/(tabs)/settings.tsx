@@ -1,15 +1,17 @@
 import { FloatingParticles } from '@/components/FloatingParticles';
 import { MeshBackground } from '@/components/MeshBackground';
+import { SafeScrollView } from '@/components/layout';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import {
   BORDER_RADIUS,
-  BREAKPOINTS,
   FONTS,
   LAYOUT,
   SHADOWS,
   SPACING,
 } from '@/constants/theme';
 import { useApp } from '@/contexts/AppContext';
+import { useTabBarHeight } from '@/hooks/useTabBarHeight';
+import { useScreenClass } from '@/hooks/useScreenClass';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUI } from '@/contexts/UIContext';
@@ -38,11 +40,9 @@ import React, { useMemo, useState } from 'react';
 import {
   Alert,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import Animated, {
@@ -53,7 +53,6 @@ import Animated, {
   withSequence,
   withSpring,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SettingRow {
   id: string;
@@ -184,9 +183,15 @@ export default function SettingsTab() {
   const { clearProfile, profile, stories } = useApp();
   const { wakeUI } = useUI();
   const COLORS = currentTheme.colors;
-  const { width: winWidth } = useWindowDimensions();
-  const isTablet = winWidth >= BREAKPOINTS.tablet;
-  const isDesktop = winWidth >= BREAKPOINTS.desktop;
+  const screen = useScreenClass();
+  const tabBarPadding = useTabBarHeight();
+  const winWidth = screen.width;
+  const isTablet = screen.isTablet;
+  const isDesktop = winWidth >= 1024;
+  const tabBarBottomOffset = Math.max(
+    SPACING.xl,
+    tabBarPadding - screen.insets.bottom,
+  );
   const styles = useStyles(isTablet, isDesktop);
   const [signingOut, setSigningOut] = useState(false);
 
@@ -314,9 +319,15 @@ export default function SettingsTab() {
   ];
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: COLORS.background }]}
-      edges={['top']}
+    <SafeScrollView
+      backgroundColor={COLORS.background}
+      edges={['top', 'bottom']}
+      maxWidth={isDesktop ? 1040 : LAYOUT.maxWidth + 120}
+      padded={false}
+      bottomOffset={tabBarBottomOffset}
+      contentContainerStyle={styles.scroll}
+      onScroll={wakeUI}
+      scrollEventThrottle={16}
     >
       <LinearGradient
         colors={COLORS.backgroundGradient}
@@ -324,268 +335,252 @@ export default function SettingsTab() {
       />
       <MeshBackground primaryColor={COLORS.primary} />
       <FloatingParticles count={5} />
+      {/* ── Hero Glasmorphic Card ── */}
+      <Animated.View entering={FadeInDown.delay(200).springify()}>
+        <View
+          style={[
+            styles.heroGlass,
+            {
+              backgroundColor: COLORS.cardBackground + '99',
+              borderColor: COLORS.text.light + '20',
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={[COLORS.primary + '15', COLORS.primary + '05']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-        onScroll={wakeUI}
-        scrollEventThrottle={16}
-      >
-        {/* ── Hero Glasmorphic Card ── */}
-        <Animated.View entering={FadeInDown.delay(200).springify()}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroAvatarWrap}>
+              <ProfileAvatar
+                avatarUrl={profile?.avatar_url ?? null}
+                name={profile?.kid_name ?? user?.email ?? '?'}
+                size="medium"
+                editable={false}
+              />
+              <Animated.View
+                style={[
+                  styles.crownBadge,
+                  { backgroundColor: COLORS.primary },
+                  crownPulseStyle,
+                ]}
+              >
+                <Crown size={10} color="#FFFFFF" fill="#FFFFFF" />
+              </Animated.View>
+            </View>
+
+            <View style={styles.heroInfo}>
+              <Text
+                style={[styles.heroName, { color: COLORS.text.primary }]}
+                numberOfLines={1}
+              >
+                {profile?.kid_name || 'Your Profile'}
+              </Text>
+              <Text
+                style={[styles.heroEmail, { color: COLORS.text.secondary }]}
+                numberOfLines={1}
+              >
+                {user?.email || ''}
+              </Text>
+              <View
+                style={[
+                  styles.heroPlanPill,
+                  { backgroundColor: COLORS.primary + '15' },
+                ]}
+              >
+                <Zap size={10} color={COLORS.primary} fill={COLORS.primary} />
+                <Text style={[styles.heroPlanText, { color: COLORS.primary }]}>
+                  Explorer Plan
+                </Text>
+              </View>
+            </View>
+          </View>
+
           <View
             style={[
-              styles.heroGlass,
-              {
-                backgroundColor: COLORS.cardBackground + '99',
-                borderColor: COLORS.text.light + '20',
-              },
+              styles.heroStats,
+              { borderTopColor: COLORS.text.light + '15' },
             ]}
           >
-            <LinearGradient
-              colors={[COLORS.primary + '15', COLORS.primary + '05']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-
-            <View style={styles.heroTop}>
-              <View style={styles.heroAvatarWrap}>
-                <ProfileAvatar
-                  avatarUrl={profile?.avatar_url ?? null}
-                  name={profile?.kid_name ?? user?.email ?? '?'}
-                  size="medium"
-                  editable={false}
-                />
-                <Animated.View
-                  style={[
-                    styles.crownBadge,
-                    { backgroundColor: COLORS.primary },
-                    crownPulseStyle,
-                  ]}
-                >
-                  <Crown size={10} color="#FFFFFF" fill="#FFFFFF" />
-                </Animated.View>
-              </View>
-
-              <View style={styles.heroInfo}>
-                <Text
-                  style={[styles.heroName, { color: COLORS.text.primary }]}
-                  numberOfLines={1}
-                >
-                  {profile?.kid_name || 'Your Profile'}
-                </Text>
-                <Text
-                  style={[styles.heroEmail, { color: COLORS.text.secondary }]}
-                  numberOfLines={1}
-                >
-                  {user?.email || ''}
-                </Text>
-                <View
-                  style={[
-                    styles.heroPlanPill,
-                    { backgroundColor: COLORS.primary + '15' },
-                  ]}
-                >
-                  <Zap size={10} color={COLORS.primary} fill={COLORS.primary} />
-                  <Text
-                    style={[styles.heroPlanText, { color: COLORS.primary }]}
+            {[
+              {
+                icon: <BookOpen size={13} color={COLORS.primary} />,
+                value: String(stories.length),
+                label: 'Stories',
+              },
+              {
+                icon: <Star size={13} color={COLORS.primary} />,
+                value: String(profile?.languages?.length ?? 0),
+                label: 'Active',
+              },
+              {
+                icon: <Zap size={13} color={COLORS.primary} />,
+                value: 'Free',
+                label: 'Plan',
+              },
+            ].map((stat, i, arr) => (
+              <React.Fragment key={stat.label}>
+                <View style={styles.heroStat}>
+                  <View
+                    style={[
+                      styles.heroStatIcon,
+                      { backgroundColor: COLORS.primary + '12' },
+                    ]}
                   >
-                    Explorer Plan
+                    {stat.icon}
+                  </View>
+                  <Text
+                    style={[styles.heroStatVal, { color: COLORS.text.primary }]}
+                  >
+                    {stat.value}
+                  </Text>
+                  <Text
+                    style={[styles.heroStatLbl, { color: COLORS.text.light }]}
+                  >
+                    {stat.label}
                   </Text>
                 </View>
-              </View>
-            </View>
-
-            <View
-              style={[
-                styles.heroStats,
-                { borderTopColor: COLORS.text.light + '15' },
-              ]}
-            >
-              {[
-                {
-                  icon: <BookOpen size={13} color={COLORS.primary} />,
-                  value: String(stories.length),
-                  label: 'Stories',
-                },
-                {
-                  icon: <Star size={13} color={COLORS.primary} />,
-                  value: String(profile?.languages?.length ?? 0),
-                  label: 'Active',
-                },
-                {
-                  icon: <Zap size={13} color={COLORS.primary} />,
-                  value: 'Free',
-                  label: 'Plan',
-                },
-              ].map((stat, i, arr) => (
-                <React.Fragment key={stat.label}>
-                  <View style={styles.heroStat}>
-                    <View
-                      style={[
-                        styles.heroStatIcon,
-                        { backgroundColor: COLORS.primary + '12' },
-                      ]}
-                    >
-                      {stat.icon}
-                    </View>
-                    <Text
-                      style={[
-                        styles.heroStatVal,
-                        { color: COLORS.text.primary },
-                      ]}
-                    >
-                      {stat.value}
-                    </Text>
-                    <Text
-                      style={[styles.heroStatLbl, { color: COLORS.text.light }]}
-                    >
-                      {stat.label}
-                    </Text>
-                  </View>
-                  {i < arr.length - 1 && (
-                    <View
-                      style={[
-                        styles.heroStatDiv,
-                        { backgroundColor: 'rgba(0,0,0,0.08)' },
-                      ]}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
-            </View>
+                {i < arr.length - 1 && (
+                  <View
+                    style={[
+                      styles.heroStatDiv,
+                      { backgroundColor: 'rgba(0,0,0,0.08)' },
+                    ]}
+                  />
+                )}
+              </React.Fragment>
+            ))}
           </View>
-        </Animated.View>
+        </View>
+      </Animated.View>
 
-        {/* ── Upgrade Premium Card ── */}
-        <Animated.View entering={FadeInDown.delay(250).springify()}>
-          <TouchableOpacity
-            onPress={() => {
-              hapticFeedback.medium();
-              router.push('/paywall');
-            }}
-            activeOpacity={0.9}
+      {/* ── Upgrade Premium Card ── */}
+      <Animated.View entering={FadeInDown.delay(250).springify()}>
+        <TouchableOpacity
+          onPress={() => {
+            hapticFeedback.medium();
+            router.push('/paywall');
+          }}
+          activeOpacity={0.9}
+        >
+          <LinearGradient
+            colors={['#F59E0B', '#EF4444']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.premiumBanner}
           >
-            <LinearGradient
-              colors={['#F59E0B', '#EF4444']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.premiumBanner}
-            >
-              <View style={styles.premiumIconBox}>
-                <Crown size={24} color="#F59E0B" fill="#F59E0B" />
-              </View>
-              <View style={styles.premiumBody}>
-                <Text style={styles.premiumTitle}>Unlock Premium Magic</Text>
-                <Text style={styles.premiumDesc}>
-                  Unlimited worlds · High-fidelity voices
-                </Text>
-              </View>
-              <View style={styles.premiumAction}>
-                <Text style={styles.premiumActionText}>UPGRADE</Text>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* ── Setting groups ── */}
-        {groups.map((group, gIdx) => (
-          <Animated.View
-            key={group.title}
-            entering={FadeInDown.delay(350 + gIdx * 100).springify()}
-            style={styles.group}
-          >
-            <View style={styles.groupLabelRow}>
-              <Text style={styles.groupEmoji}>{group.emoji}</Text>
-              <Text style={[styles.groupLabel, { color: COLORS.text.light }]}>
-                {group.title.toUpperCase()}
+            <View style={styles.premiumIconBox}>
+              <Crown size={24} color="#F59E0B" fill="#F59E0B" />
+            </View>
+            <View style={styles.premiumBody}>
+              <Text style={styles.premiumTitle}>Unlock Premium Magic</Text>
+              <Text style={styles.premiumDesc}>
+                Unlimited worlds · High-fidelity voices
               </Text>
             </View>
-            <View
-              style={[
-                styles.groupCard,
-                {
-                  backgroundColor: COLORS.cardBackground,
-                  borderColor: COLORS.text.light + '15',
-                  borderWidth: 1,
-                },
-              ]}
-            >
-              {group.rows.map((row, rIdx) => (
-                <View key={row.id}>
-                  <RowItem
-                    row={row}
-                    COLORS={COLORS}
-                    styles={styles}
-                    onPress={
-                      row.onPress ?? (() => row.route && router.push(row.route))
-                    }
-                  />
-                  {rIdx < group.rows.length - 1 && (
-                    <View
-                      style={[
-                        styles.divider,
-                        { backgroundColor: 'rgba(0,0,0,0.05)' },
-                      ]}
-                    />
-                  )}
-                </View>
-              ))}
+            <View style={styles.premiumAction}>
+              <Text style={styles.premiumActionText}>UPGRADE</Text>
             </View>
-          </Animated.View>
-        ))}
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
 
-        {/* ── Wisdom Chip ── */}
+      {/* ── Setting groups ── */}
+      {groups.map((group, gIdx) => (
         <Animated.View
-          entering={FadeInDown.delay(550).springify()}
-          style={styles.wisdomCard}
+          key={group.title}
+          entering={FadeInDown.delay(350 + gIdx * 100).springify()}
+          style={styles.group}
         >
+          <View style={styles.groupLabelRow}>
+            <Text style={styles.groupEmoji}>{group.emoji}</Text>
+            <Text style={[styles.groupLabel, { color: COLORS.text.light }]}>
+              {group.title.toUpperCase()}
+            </Text>
+          </View>
           <View
             style={[
-              styles.wisdomBubble,
+              styles.groupCard,
               {
                 backgroundColor: COLORS.cardBackground,
-                borderColor: COLORS.text.light + '15',
-              },
-            ]}
-          >
-            <Heart size={20} color="#EF4444" fill="#EF4444" />
-            <Text style={[styles.wisdomText, { color: COLORS.text.secondary }]}>
-              "Daily reading for 15 minutes boosts vocabulary by 50% in
-              children."
-            </Text>
-          </View>
-          <View style={styles.wisdomAuthor}>
-            <Sparkles size={12} color="#F59E0B" />
-            <Text
-              style={[styles.wisdomAuthorText, { color: COLORS.text.light }]}
-            >
-              PARENTHOOD TIP
-            </Text>
-          </View>
-        </Animated.View>
-
-        {/* ── Footer ── */}
-        <Animated.View entering={FadeIn.delay(600)} style={styles.footer}>
-          <View
-            style={[
-              styles.footerPill,
-              {
-                backgroundColor: COLORS.cardBackground + '99',
                 borderColor: COLORS.text.light + '15',
                 borderWidth: 1,
               },
             ]}
           >
-            <Shield size={12} color={COLORS.text.light} />
-            <Text style={[styles.footerTxt, { color: COLORS.text.light }]}>
-              Jahera Kid Adventure · v1.0.0
-            </Text>
+            {group.rows.map((row, rIdx) => (
+              <View key={row.id}>
+                <RowItem
+                  row={row}
+                  COLORS={COLORS}
+                  styles={styles}
+                  onPress={
+                    row.onPress ?? (() => row.route && router.push(row.route))
+                  }
+                />
+                {rIdx < group.rows.length - 1 && (
+                  <View
+                    style={[
+                      styles.divider,
+                      { backgroundColor: 'rgba(0,0,0,0.05)' },
+                    ]}
+                  />
+                )}
+              </View>
+            ))}
           </View>
         </Animated.View>
-      </ScrollView>
-    </SafeAreaView>
+      ))}
+
+      {/* ── Wisdom Chip ── */}
+      <Animated.View
+        entering={FadeInDown.delay(550).springify()}
+        style={styles.wisdomCard}
+      >
+        <View
+          style={[
+            styles.wisdomBubble,
+            {
+              backgroundColor: COLORS.cardBackground,
+              borderColor: COLORS.text.light + '15',
+            },
+          ]}
+        >
+          <Heart size={20} color="#EF4444" fill="#EF4444" />
+          <Text style={[styles.wisdomText, { color: COLORS.text.secondary }]}>
+            "Daily reading for 15 minutes boosts vocabulary by 50% in children."
+          </Text>
+        </View>
+        <View style={styles.wisdomAuthor}>
+          <Sparkles size={12} color="#F59E0B" />
+          <Text style={[styles.wisdomAuthorText, { color: COLORS.text.light }]}>
+            PARENTHOOD TIP
+          </Text>
+        </View>
+      </Animated.View>
+
+      {/* ── Footer ── */}
+      <Animated.View entering={FadeIn.delay(600)} style={styles.footer}>
+        <View
+          style={[
+            styles.footerPill,
+            {
+              backgroundColor: COLORS.cardBackground + '99',
+              borderColor: COLORS.text.light + '15',
+              borderWidth: 1,
+            },
+          ]}
+        >
+          <Shield size={12} color={COLORS.text.light} />
+          <Text style={[styles.footerTxt, { color: COLORS.text.light }]}>
+            Jahera Kid Adventure · v1.0.0
+          </Text>
+        </View>
+      </Animated.View>
+    </SafeScrollView>
   );
 }
 
@@ -597,7 +592,6 @@ const useStyles = (isTablet: boolean, isDesktop: boolean) => {
         scroll: {
           paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
           paddingTop: SPACING.sm,
-          paddingBottom: 140,
           gap: isTablet ? SPACING.xxl : SPACING.xl,
           width: '100%',
           maxWidth: isDesktop ? 1040 : LAYOUT.maxWidth + 120,
