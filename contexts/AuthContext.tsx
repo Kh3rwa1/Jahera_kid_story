@@ -37,6 +37,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // Check for OAuth callback params in URL (web redirect flow)
+        const initialUrl = await Linking.getInitialURL();
+        if (initialUrl) {
+          try {
+            const url = new URL(initialUrl);
+            const oauthUserId = url.searchParams.get('userId');
+            const oauthSecret = url.searchParams.get('secret');
+            if (oauthUserId && oauthSecret) {
+              const sessionRes = await account.createSession(oauthUserId, oauthSecret);
+              const userRes = await account.get();
+              setSession(sessionRes);
+              setUser(userRes);
+              storage.setItem('authUser', userRes).catch(() => {});
+              storage.setItem('authSession', sessionRes).catch(() => {});
+              setIsLoading(false);
+              if (typeof window !== 'undefined' && window.history) {
+                window.history.replaceState({}, '', '/');
+              }
+              return;
+            }
+          } catch {
+            // URL parse failed, continue normal init
+          }
+        }
+
         const cachedUser =
           await storage.getItem<Models.User<Models.Preferences>>('authUser');
         const cachedSession =
