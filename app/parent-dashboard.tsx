@@ -1,6 +1,8 @@
 import { BORDER_RADIUS, FONTS, SHADOWS, SPACING } from '@/constants/theme';
+import { SafeScreen } from '@/components/layout';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useScreenClass } from '@/hooks/useScreenClass';
 import { profileService } from '@/services/database';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import {
@@ -32,14 +34,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
 
 const DEFAULT_PIN_HASH =
   '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // SHA-256 for '1234'
@@ -47,8 +44,9 @@ const limiter = new PinRateLimiter(5, 60_000);
 
 export default function ParentDashboard() {
   const router = useRouter();
-  const { width: winWidth } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
+  const screen = useScreenClass();
+  const winWidth = screen.width;
+  const isNarrow = winWidth < 400;
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
   const styles = useStyles();
@@ -163,9 +161,10 @@ export default function ParentDashboard() {
 
   if (!unlocked) {
     return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: COLORS.background }]}
+      <SafeScreen
+        backgroundColor={COLORS.background}
         edges={['top', 'bottom']}
+        padded={false}
       >
         <LinearGradient
           colors={COLORS.backgroundGradient}
@@ -177,7 +176,7 @@ export default function ParentDashboard() {
             styles.backBtn,
             {
               backgroundColor: COLORS.cardBackground,
-              top: insets.top + (SPACING.sm || 12),
+              top: SPACING.sm || 12,
             },
           ]}
           onPress={() => router.back()}
@@ -268,23 +267,22 @@ export default function ParentDashboard() {
             </Text>
           </Animated.View>
         </View>
-      </SafeAreaView>
+      </SafeScreen>
     );
   }
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: COLORS.background }]}
-      edges={['top']}
+    <SafeScreen
+      backgroundColor={COLORS.background}
+      edges={['top', 'bottom']}
+      padded={false}
     >
       <LinearGradient
         colors={COLORS.backgroundGradient}
         style={StyleSheet.absoluteFill}
       />
 
-      <View
-        style={[styles.header, { paddingTop: insets.top + (SPACING.sm || 12) }]}
-      >
+      <View style={[styles.header, { paddingTop: SPACING.sm || 12 }]}>
         <TouchableOpacity
           style={[
             styles.backBtnHeader,
@@ -355,17 +353,14 @@ export default function ParentDashboard() {
 
         <Animated.View
           entering={FadeInDown.delay(120).springify()}
-          style={[
-            styles.statsGrid,
-            { flexWrap: winWidth < 400 ? 'wrap' : 'nowrap' },
-          ]}
+          style={[styles.statsGrid, { flexWrap: isNarrow ? 'wrap' : 'nowrap' }]}
         >
           <View
             style={[
               styles.statCard,
               {
                 backgroundColor: COLORS.cardBackground,
-                minWidth: winWidth < 400 ? '46%' : 0,
+                minWidth: isNarrow ? '46%' : 0,
               },
             ]}
           >
@@ -786,7 +781,7 @@ export default function ParentDashboard() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }
 
