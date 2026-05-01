@@ -37,7 +37,7 @@ interface OptionsViewProps {
   onBack: () => void;
   isPremium: boolean;
   languageCode: string;
-  subscription: Record<string, any> | null;
+  subscription: { plan?: string | null } | null;
   profileId: string;
 }
 

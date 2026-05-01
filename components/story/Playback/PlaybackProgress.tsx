@@ -3,6 +3,7 @@ import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
 import { ThemeColors } from '@/types/theme';
 import React, { useCallback, useRef, useState } from 'react';
 import {
+  DimensionValue,
   GestureResponderEvent,
   LayoutChangeEvent,
   PanResponder,
@@ -47,6 +48,7 @@ export function PlaybackProgress({
   const progress = duration > 0 ? position / duration : 0;
   const displayProgress = isSeeking ? seekPosition : progress;
   const displayTime = isSeeking ? seekPosition * duration : position;
+  const progressPercent = `${displayProgress * 100}%` as DimensionValue;
 
   const onTrackLayout = useCallback((e: LayoutChangeEvent) => {
     trackWidthRef.current = e.nativeEvent.layout.width;
@@ -104,7 +106,7 @@ export function PlaybackProgress({
               styles.filled,
               {
                 backgroundColor: accentColor,
-                width: (displayProgress * 100 + '%') as any,
+                width: progressPercent,
               },
             ]}
           />
@@ -113,7 +115,7 @@ export function PlaybackProgress({
           style={[
             styles.thumb,
             {
-              left: (displayProgress * 100 + '%') as any,
+              left: progressPercent,
               backgroundColor: accentColor,
               borderColor: '#FFF',
               transform: [{ scale: isSeeking ? 1.3 : 1 }],
