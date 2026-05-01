@@ -1,20 +1,14 @@
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { getThemeIcon } from '@/utils/themeIcons';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { Container } from '@/components/Container';
+import { SafeScreen, SafeScrollView } from '@/components/layout';
 import { ErrorState } from '@/components/ErrorState';
 import { FloatingParticles } from '@/components/FloatingParticles';
 import { LoadingSkeleton, Skeleton } from '@/components/LoadingSkeleton';
 import { MeshBackground } from '@/components/MeshBackground';
-import {
-  BORDER_RADIUS,
-  BREAKPOINTS,
-  FONTS,
-  LAYOUT,
-  SHADOWS,
-  SPACING,
-} from '@/constants/theme';
+import { FONTS, LAYOUT, SHADOWS, SPACING } from '@/constants/theme';
 import { useTabBarHeight } from '@/hooks/useTabBarHeight';
+import { useScreenClass } from '@/hooks/useScreenClass';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUI } from '@/contexts/UIContext';
@@ -49,7 +43,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import Animated, {
@@ -62,10 +55,6 @@ import Animated, {
   withSpring,
   ZoomIn,
 } from 'react-native-reanimated';
-import {
-  useSafeAreaInsets,
-  type EdgeInsets,
-} from 'react-native-safe-area-context';
 
 // ... layout constants removed to use dynamic theme-aware values ...
 
@@ -309,7 +298,8 @@ export default function HistoryScreen() {
   const COLORS = currentTheme.colors;
   const { profile, stories, refreshStories, setStories } = useApp();
   const { wakeUI } = useUI();
-  const insets = useSafeAreaInsets();
+  const screen = useScreenClass();
+  const tabBarPadding = useTabBarHeight();
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -319,11 +309,14 @@ export default function HistoryScreen() {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const { isLoading, error, refreshAll } = useApp();
 
-  const { width: winWidth } = useWindowDimensions();
-  const isTablet = winWidth >= BREAKPOINTS.tablet;
-  const isDesktop = winWidth >= BREAKPOINTS.desktop;
+  const winWidth = screen.width;
+  const isTablet = screen.isTablet;
+  const tabBarBottomOffset = Math.max(
+    SPACING.xl,
+    tabBarPadding - screen.insets.bottom,
+  );
 
-  const styles = useStyles(COLORS, insets, isTablet, isDesktop, winWidth);
+  const styles = useStyles(COLORS, isTablet, winWidth);
 
   const featuredPulseStyle = usePulse(0.98, 1.02);
   const emptyFloatStyle = useFloat(6, 1500);
@@ -375,15 +368,13 @@ export default function HistoryScreen() {
 
   if (isLoading) {
     return (
-      <Container
-        maxWidth
-        gradient
-        gradientColors={COLORS.backgroundGradient}
-        safeAreaEdges={['top']}
-        scroll
-        scrollProps={{
-          contentContainerStyle: styles.scroll,
-        }}
+      <SafeScrollView
+        backgroundColor={COLORS.background}
+        edges={['top', 'bottom']}
+        maxWidth={LAYOUT.maxWidth}
+        padded={false}
+        bottomOffset={tabBarBottomOffset}
+        contentContainerStyle={styles.scroll}
       >
         <MeshBackground primaryColor={COLORS.primary} />
         <FloatingParticles count={5} />
@@ -466,17 +457,18 @@ export default function HistoryScreen() {
           type={viewMode === 'grid' ? 'grid' : 'list'}
           count={6}
         />
-      </Container>
+      </SafeScrollView>
     );
   }
 
   if (error) {
     return (
-      <Container
-        maxWidth
-        gradient
-        gradientColors={COLORS.backgroundGradient}
-        safeAreaEdges={['top']}
+      <SafeScreen
+        backgroundColor={COLORS.background}
+        edges={['top', 'bottom']}
+        maxWidth={LAYOUT.maxWidth}
+        padded={false}
+        contentStyle={styles.screenContent}
       >
         <MeshBackground primaryColor={COLORS.primary} />
         <ErrorState
@@ -486,30 +478,28 @@ export default function HistoryScreen() {
           onRetry={refreshAll}
           onGoHome={() => router.replace('/')}
         />
-      </Container>
+      </SafeScreen>
     );
   }
 
   return (
-    <Container
-      maxWidth
-      gradient
-      gradientColors={COLORS.backgroundGradient}
-      safeAreaEdges={['top']}
-      scroll
-      scrollProps={{
-        onScroll: wakeUI,
-        scrollEventThrottle: 16,
-        refreshControl: (
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={COLORS.primary}
-          />
-        ),
-        contentContainerStyle: styles.scroll,
-        stickyHeaderIndices: [3], // Mesh(0), Particles(1), HeroWrap(2), Controls(3)
-      }}
+    <SafeScrollView
+      backgroundColor={COLORS.background}
+      edges={['top', 'bottom']}
+      maxWidth={LAYOUT.maxWidth}
+      padded={false}
+      bottomOffset={tabBarBottomOffset}
+      onScroll={wakeUI}
+      scrollEventThrottle={16}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={handleRefresh}
+          tintColor={COLORS.primary}
+        />
+      }
+      contentContainerStyle={styles.scroll}
+      stickyHeaderIndices={[3]} // Mesh(0), Particles(1), HeroWrap(2), Controls(3)
     >
       <MeshBackground primaryColor={COLORS.primary} />
       <FloatingParticles count={5} />
@@ -1112,7 +1102,7 @@ export default function HistoryScreen() {
         onCancel={() => setDeleteId(null)}
         destructive
       />
-    </Container>
+    </SafeScrollView>
   );
 }
 
@@ -1120,10 +1110,13 @@ export default function HistoryScreen() {
 
 const buildLayoutStyles = (PADDING: number) => ({
   container: { flex: 1 } as const,
+  screenContent: {
+    flex: 1,
+    paddingHorizontal: PADDING,
+  },
   scroll: {
     paddingHorizontal: PADDING,
     paddingTop: SPACING.md,
-    paddingBottom: 140, // Will be overridden by useTabBarHeight at runtime
     gap: SPACING.xl,
   },
 });
@@ -1182,119 +1175,6 @@ const buildHeaderStyles = (isTablet: boolean) => ({
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     ...SHADOWS.sm,
-  },
-});
-
-const buildFeaturedContainerStyles = (isTablet: boolean) => ({
-  featuredWrap: {
-    borderRadius: isTablet ? 40 : 32,
-    overflow: 'hidden' as const,
-    ...SHADOWS.md,
-  },
-  featuredCard: {
-    minHeight: isTablet ? 260 : 180,
-    position: 'relative' as const,
-  },
-  featuredOverlay: {
-    flex: 1,
-    padding: isTablet ? SPACING.xxxl : SPACING.xl,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    justifyContent: 'center' as const,
-    gap: isTablet ? SPACING.md : 0,
-  },
-  featuredTop: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
-  },
-});
-
-const buildFeaturedContentStyles = (isTablet: boolean) => ({
-  featuredBadge: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: BORDER_RADIUS.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  featuredBadgeText: {
-    fontSize: 13,
-    fontFamily: FONTS.displayBold,
-    color: '#FFF',
-    letterSpacing: 0.8,
-  },
-  audioPill: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-  },
-  featuredContent: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: isTablet ? SPACING.xl : SPACING.lg,
-    marginTop: 12,
-  },
-  featuredIconContainer: {
-    width: isTablet ? 80 : 64,
-    height: isTablet ? 80 : 64,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  featuredSeasonIcon: { fontSize: isTablet ? 40 : 32 },
-  featuredTitle: {
-    fontSize: isTablet ? 32 : 24,
-    fontFamily: FONTS.displayBold,
-    color: '#FFF',
-    letterSpacing: -0.3,
-    lineHeight: isTablet ? 36 : 28,
-  },
-  featuredMetaLeft: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 6,
-    marginTop: 4,
-  },
-  featuredLangFlag: { fontSize: isTablet ? 22 : 18 },
-  featuredMetaText: {
-    fontSize: isTablet ? 15 : 13,
-    fontFamily: FONTS.displayMedium,
-    color: 'rgba(255,255,255,0.9)',
-  },
-  featuredFooter: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    marginTop: 16,
-  },
-  featuredPlayBtn: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 16,
-    ...SHADOWS.sm,
-  },
-  featuredPlayText: {
-    fontSize: 15,
-    fontFamily: FONTS.displayBold,
-  },
-});
-
-const buildFeaturedMetaStyles = (_isTablet: boolean) => ({
-  wordCountText: {
-    fontSize: 14,
-    fontFamily: FONTS.displayMedium,
-    color: 'rgba(255,255,255,0.9)',
   },
 });
 
@@ -1437,7 +1317,7 @@ const buildFeaturedStyles = (isTablet: boolean) => ({
   },
 });
 
-const buildControlStyles = (C: ThemeColors) => ({
+const buildControlStyles = (_C: ThemeColors) => ({
   controlsStickyWrapper: {
     gap: SPACING.md,
     zIndex: 10,
@@ -1733,13 +1613,7 @@ const buildEmptyStyles = () => ({
 
 /* ── Composed useStyles Hook ───────────────────────────────────────── */
 
-const useStyles = (
-  C: ThemeColors,
-  insets: EdgeInsets,
-  isTablet: boolean,
-  isDesktop: boolean,
-  winWidth: number,
-) => {
+const useStyles = (C: ThemeColors, isTablet: boolean, winWidth: number) => {
   return useMemo(() => {
     const PADDING = isTablet ? 32 : 20;
     const GAP = isTablet ? 16 : 12;
@@ -1760,5 +1634,5 @@ const useStyles = (
       ...buildListStyles(isTablet),
       ...buildEmptyStyles(),
     });
-  }, [C, isTablet, isDesktop, winWidth]);
+  }, [C, isTablet, winWidth]);
 };
