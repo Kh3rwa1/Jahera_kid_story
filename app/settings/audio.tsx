@@ -140,7 +140,7 @@ export default function AudioSettingsScreen() {
         updateProfile(updates);
         Alert.alert('Success', 'Audio settings saved successfully!');
       }
-    } catch (_error) {
+    } catch {
       Alert.alert('Error', 'Failed to save settings. Please try again.');
     } finally {
       setIsSaving(false);
@@ -699,6 +699,6 @@ const useStyles = (C: ThemeColors, insets: EdgeInsets) => {
           color: '#FFFFFF',
         },
       }),
-    [C],
+    [C, insets.top],
   );
 };

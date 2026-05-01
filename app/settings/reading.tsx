@@ -539,6 +539,6 @@ const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets) => {
           fontFamily: FONTS.semibold,
         },
       }),
-    [C],
+    [C, insets.top],
   );
 };
