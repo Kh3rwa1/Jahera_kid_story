@@ -9,7 +9,7 @@ import {
 import { ThemeColors } from '@/types/theme';
 import { logger } from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
-import LottieView from 'lottie-react-native';
+import LottieView, { type AnimationObject } from 'lottie-react-native';
 import { Check, MapPin, Sparkles } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -35,7 +35,6 @@ interface GenerationLoadingProps {
   steps: GenerationStep[];
   locationCtx: LocationContext | null;
   languageCode: string;
-  profile: any;
 }
 
 export function GenerationLoading({
@@ -45,10 +44,11 @@ export function GenerationLoading({
   steps,
   locationCtx,
   languageCode,
-  profile: _profile,
 }: Readonly<GenerationLoadingProps>) {
   const [funFactIndex, setFunFactIndex] = useState(0);
-  const [lottieSource, setLottieSource] = useState<any | null>(null);
+  const [lottieSource, setLottieSource] = useState<AnimationObject | null>(
+    null,
+  );
   const pulseScale = useSharedValue(1);
   const orbRotate = useSharedValue(0);
   const lottieRef = useRef(false);
@@ -62,7 +62,7 @@ export function GenerationLoading({
       try {
         const res = await fetch(GENERATION_LOTTIE_URL);
         if (res.ok) {
-          const json = await res.json();
+          const json = (await res.json()) as AnimationObject;
           setLottieSource(json);
         }
       } catch (e) {
