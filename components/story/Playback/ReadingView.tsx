@@ -1,3 +1,4 @@
+import { SafeScrollView } from '@/components/layout';
 import { BORDER_RADIUS, FONTS, SPACING } from '@/constants/theme';
 import {
   FONT_FAMILY_VALUES,
@@ -12,8 +13,8 @@ import {
 } from '@/hooks/useWordHighlighting';
 import { ThemeColors } from '@/types/theme';
 import { Sparkles } from 'lucide-react-native';
-import { useMemo, useRef } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface ReadingViewProps {
   content: string;
@@ -39,9 +40,6 @@ export function ReadingView({
   storyTheme,
   storyMood,
 }: Readonly<ReadingViewProps>) {
-  const scrollRef = useRef<ScrollView>(null);
-  const paraOffsets = useRef<number[]>([]);
-
   const lineHeight =
     prefs.fontSize * LINE_SPACING_VALUES[prefs.lineSpacing as LineSpacing];
   const activeFontDef =
@@ -78,9 +76,12 @@ export function ReadingView({
   let globalWordCounter = 0;
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={styles.fill}
+    <SafeScrollView
+      backgroundColor={colors.background}
+      edges={['bottom', 'left', 'right']}
+      padded={false}
+      maxWidth={false}
+      bottomOffset={SPACING.xxl}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
@@ -123,9 +124,6 @@ export function ReadingView({
         return (
           <Text
             key={`para-${para.slice(0, 24)}-${paraIdx}`}
-            onLayout={(e) => {
-              paraOffsets.current[paraIdx] = e.nativeEvent.layout.y;
-            }}
             style={[
               styles.paragraph,
               { marginBottom: prefs.fontSize * 1.2 },
@@ -156,13 +154,15 @@ export function ReadingView({
           </Text>
         );
       })}
-    </ScrollView>
+    </SafeScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  content: { padding: SPACING.xxl },
+  content: {
+    paddingHorizontal: SPACING.xxl,
+    paddingTop: SPACING.xxl,
+  },
   meta: {
     flexDirection: 'row',
     gap: SPACING.sm,
