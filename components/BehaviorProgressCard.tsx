@@ -161,6 +161,8 @@ function ProgressRow({
   );
 }
 
+let lastBehaviorProgressTrackKey: string | null = null;
+
 export function BehaviorProgressCard({
   stories = [],
   progress: progressProp,
@@ -183,13 +185,17 @@ export function BehaviorProgressCard({
 
   const hasTrackedRef = useRef(false);
   useEffect(() => {
-    if (progress.length > 0 && !hasTrackedRef.current) {
-      hasTrackedRef.current = true;
-      analytics.trackBehaviorProgressViewed(
-        progress.length,
-        progress[0]?.label || null,
-      );
-    }
+    if (progress.length === 0 || hasTrackedRef.current) return;
+
+    const trackKey = `${progress.length}:${progress[0]?.goalId ?? progress[0]?.label ?? 'none'}`;
+    if (lastBehaviorProgressTrackKey === trackKey) return;
+
+    hasTrackedRef.current = true;
+    lastBehaviorProgressTrackKey = trackKey;
+    analytics.trackBehaviorProgressViewed(
+      progress.length,
+      progress[0]?.label || null,
+    );
   }, [progress]);
 
   if (progress.length === 0 && compact) return <View />;
