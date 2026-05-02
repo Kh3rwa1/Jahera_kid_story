@@ -1,5 +1,6 @@
 import { useCallback, useRef, memo, useMemo } from 'react';
 import { View, Text } from 'react-native';
+import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
@@ -11,6 +12,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { BookOpen, Globe, Users } from 'lucide-react-native';
 
+type StatsTickerStyles = Record<string, StyleProp<ViewStyle & TextStyle>>;
+
 interface StatsTickerProps {
   stories: number;
   languages: number;
@@ -19,7 +22,7 @@ interface StatsTickerProps {
   cardBackground: string;
   textPrimary: string;
   textSecondary: string;
-  styles: any;
+  styles: StatsTickerStyles;
 }
 
 const StatIcon = ({
@@ -151,3 +154,5 @@ export const StatsTicker = memo((props: StatsTickerProps) => {
     </Animated.View>
   );
 });
+
+StatsTicker.displayName = 'StatsTicker';

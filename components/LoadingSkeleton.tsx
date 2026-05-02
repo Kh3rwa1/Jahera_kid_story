@@ -40,7 +40,7 @@ export const Skeleton = ({
       -1,
       false,
     );
-  }, []);
+  }, [shimmerProgress]);
 
   const shimmerStyle = useAnimatedStyle(() => {
     'worklet';

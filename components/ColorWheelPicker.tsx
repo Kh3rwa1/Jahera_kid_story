@@ -95,9 +95,7 @@ export function ColorWheelPicker({
   initialColor,
   onColorSelect,
   onReset,
-  textPrimary,
   textSecondary,
-  cardBg,
 }: Readonly<ColorWheelPickerProps>) {
   const { width: winWidth } = useWindowDimensions();
   const WHEEL_SIZE = Math.min(winWidth - 80, 280);

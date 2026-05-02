@@ -55,7 +55,7 @@ const ThemeCard = React.memo(
     index,
     winWidth,
     styles,
-    C,
+    C: _C,
   }: {
     scheme: (typeof COLOR_SCHEMES)[0];
     isSelected: boolean;
@@ -173,6 +173,8 @@ const ThemeCard = React.memo(
   },
 );
 
+ThemeCard.displayName = 'ThemeCard';
+
 const IconCard = React.memo(
   ({
     icon,
@@ -260,6 +262,8 @@ const IconCard = React.memo(
   },
 );
 
+IconCard.displayName = 'IconCard';
+
 function SectionLabel({
   icon: Icon,
   label,
@@ -267,7 +271,11 @@ function SectionLabel({
   delay = 0,
   styles,
 }: Readonly<{
-  icon: any;
+  icon: React.ComponentType<{
+    size?: number;
+    color?: string;
+    strokeWidth?: number;
+  }>;
   label: string;
   color: string;
   delay?: number;
@@ -979,6 +987,6 @@ const useStyles = (C: ColorScheme['colors'], insets: EdgeInsets) => {
           color: C.text.secondary,
         },
       }),
-    [C],
+    [C, insets.top],
   );
 };

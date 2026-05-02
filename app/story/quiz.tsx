@@ -1,4 +1,5 @@
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
+import { SafeScreen, SafeScrollView } from '@/components/layout';
 import { MeshBackground } from '@/components/MeshBackground';
 import {
   BORDER_RADIUS,
@@ -14,6 +15,7 @@ import { generateAudio } from '@/services/audioService';
 import { quizService, storyService } from '@/services/database';
 import { QuizQuestionWithAnswers, Story } from '@/types/database';
 import { hapticFeedback } from '@/utils/haptics';
+import { useScreenClass } from '@/hooks/useScreenClass';
 import { talkative } from '@/utils/talkative';
 import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -30,13 +32,7 @@ import {
   Zap,
 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   FadeInDown,
@@ -50,13 +46,9 @@ import Animated, {
   withTiming,
   ZoomIn,
 } from 'react-native-reanimated';
-import {
-  EdgeInsets,
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-import { ColorScheme } from '@/constants/themeSchemes';
 import { analytics } from '@/services/analyticsService';
+
+const FEEDBACK_SHEET_HIDDEN_OFFSET = 180;
 
 // ─── Animated bounce star ───────────────────────────────────────────────
 function BounceStar({ delay = 0, color }: { delay?: number; color: string }) {
@@ -115,15 +107,14 @@ function PulseRing({ color }: { color: string }) {
 }
 
 export default function QuizScreen() {
-  const { width: winWidth, height: winHeight } = useWindowDimensions();
+  const screen = useScreenClass();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const insets = useSafeAreaInsets();
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
   const { profile, refreshQuizAttempts } = useApp();
-  const isTablet = winWidth >= BREAKPOINTS.tablet;
-  const styles = useStyles(C, winWidth, winHeight, isTablet);
+  const isTablet = screen.width >= BREAKPOINTS.tablet;
+  const styles = useStyles(screen.height, isTablet, screen.insets.bottom);
 
   const [story, setStory] = useState<Story | null>(null);
   const [questions, setQuestions] = useState<QuizQuestionWithAnswers[]>([]);
@@ -151,7 +142,7 @@ export default function QuizScreen() {
   const questionSlide = useSharedValue(0);
   const scoreScale = useSharedValue(1);
   const progressWidth = useSharedValue(0);
-  const feedbackSlide = useSharedValue(120);
+  const feedbackSlide = useSharedValue(FEEDBACK_SHEET_HIDDEN_OFFSET);
   const cardScale = useSharedValue(1);
 
   const questionAnimStyle = useAnimatedStyle(() => ({
@@ -259,7 +250,7 @@ export default function QuizScreen() {
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [currentQuestionIndex, questions.length, showResult, isLoading]);
+  }, [currentQuestionIndex, questions, showResult, isLoading]);
 
   // Auto-play result
   useEffect(() => {
@@ -308,7 +299,9 @@ export default function QuizScreen() {
     }
     hapticFeedback.light();
     // Hide feedback sheet
-    feedbackSlide.value = withTiming(120, { duration: 200 });
+    feedbackSlide.value = withTiming(FEEDBACK_SHEET_HIDDEN_OFFSET, {
+      duration: 200,
+    });
 
     if (currentQuestionIndex < questions.length - 1) {
       animateTransition();
@@ -327,11 +320,7 @@ export default function QuizScreen() {
           computed,
           questions.length,
         );
-        analytics.trackQuizCompletion(
-          computed,
-          questions.length,
-          story.id,
-        );
+        analytics.trackQuizCompletion(computed, questions.length, story.id);
         await refreshQuizAttempts();
       }
       setShowCelebration(true);
@@ -411,7 +400,11 @@ export default function QuizScreen() {
   if (isLoading) {
     return (
       <LinearGradient colors={C.backgroundGradient} style={styles.fill}>
-        <SafeAreaView style={styles.centeredSafe}>
+        <SafeScreen
+          backgroundColor="transparent"
+          contentStyle={styles.centeredSafe}
+          padded={false}
+        >
           <Animated.View
             entering={ZoomIn.springify()}
             style={styles.loadingCircle}
@@ -436,7 +429,7 @@ export default function QuizScreen() {
           >
             Getting your quiz ready...
           </Text>
-        </SafeAreaView>
+        </SafeScreen>
       </LinearGradient>
     );
   }
@@ -446,7 +439,11 @@ export default function QuizScreen() {
     const msg = loadError || 'No quiz available for this story.';
     return (
       <LinearGradient colors={C.backgroundGradient} style={styles.fill}>
-        <SafeAreaView style={styles.centeredSafe}>
+        <SafeScreen
+          backgroundColor="transparent"
+          contentStyle={styles.centeredSafe}
+          padded={false}
+        >
           <Animated.View
             entering={FadeInDown.springify()}
             style={styles.errorCard}
@@ -486,7 +483,7 @@ export default function QuizScreen() {
               </LinearGradient>
             </Pressable>
           </Animated.View>
-        </SafeAreaView>
+        </SafeScreen>
       </LinearGradient>
     );
   }
@@ -516,7 +513,12 @@ export default function QuizScreen() {
     return (
       <LinearGradient colors={C.backgroundGradient} style={styles.fill}>
         <MeshBackground primaryColor={C.primary} />
-        <SafeAreaView style={[styles.fill, { paddingHorizontal: SPACING.xl }]}>
+        <SafeScrollView
+          backgroundColor="transparent"
+          contentContainerStyle={styles.resultContent}
+          maxWidth={false}
+          padded={false}
+        >
           {/* Trophy */}
           <Animated.View
             entering={ZoomIn.delay(100).springify()}
@@ -645,7 +647,7 @@ export default function QuizScreen() {
               </Text>
             </Pressable>
           </Animated.View>
-        </SafeAreaView>
+        </SafeScrollView>
       </LinearGradient>
     );
   }
@@ -656,7 +658,7 @@ export default function QuizScreen() {
   return (
     <LinearGradient colors={C.backgroundGradient} style={styles.fill}>
       <MeshBackground primaryColor={C.primary} />
-      <SafeAreaView style={[styles.fill]} edges={['top', 'bottom']}>
+      <SafeScreen backgroundColor="transparent" padded={false}>
         {showCelebration && <CelebrationOverlay />}
 
         {/* ── Header ── */}
@@ -1025,17 +1027,12 @@ export default function QuizScreen() {
             </Text>
           </View>
         </Animated.View>
-      </SafeAreaView>
+      </SafeScreen>
     </LinearGradient>
   );
 }
 
-function useStyles(
-  C: ColorScheme['colors'],
-  winWidth: number,
-  winHeight: number,
-  isTablet: boolean,
-) {
+function useStyles(winHeight: number, isTablet: boolean, bottomInset: number) {
   let qFontSize = 40;
   let qLineHeight = 52;
   if (isTablet) {
@@ -1265,7 +1262,7 @@ function useStyles(
           right: 0,
           paddingHorizontal: isTablet ? SPACING.xxl : SPACING.xl,
           paddingTop: SPACING.xl,
-          paddingBottom: SPACING.xxl,
+          paddingBottom: bottomInset + SPACING.xl,
           borderTopLeftRadius: 36,
           borderTopRightRadius: 36,
           ...SHADOWS.xl,
@@ -1318,6 +1315,11 @@ function useStyles(
         },
 
         // ── Result Screen ─────────────────────────────────────────────────
+        resultContent: {
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: SPACING.xl,
+        },
         resultTrophyWrap: {
           alignItems: 'center',
           justifyContent: 'center',
@@ -1376,7 +1378,6 @@ function useStyles(
           flexDirection: 'row',
           gap: SPACING.md,
           marginTop: SPACING.xl,
-          paddingBottom: SPACING.xl,
         },
         resultPrimaryBtn: {
           flex: 1,
@@ -1401,6 +1402,6 @@ function useStyles(
         },
         resultSecondaryBtnText: { fontSize: isTablet ? 18 : 16 },
       }),
-    [C, winWidth, winHeight, isTablet],
+    [isTablet, bottomInset, qFontSize, qLineHeight],
   );
 }

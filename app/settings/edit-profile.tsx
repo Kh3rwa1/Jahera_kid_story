@@ -37,11 +37,7 @@ import {
   View,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import {
-  EdgeInsets,
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ColorScheme } from '@/constants/themeSchemes';
 
 export default function EditProfileScreen() {
@@ -49,7 +45,6 @@ export default function EditProfileScreen() {
   const { currentTheme } = useTheme();
   const C = currentTheme.colors;
   const { profile, updateProfile } = useApp();
-  const insets = useSafeAreaInsets();
   const styles = useStyles(C);
 
   const [kidName, setKidName] = useState(profile?.kid_name || '');

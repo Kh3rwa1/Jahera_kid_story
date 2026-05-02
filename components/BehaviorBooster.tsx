@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useCallback } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,10 +24,20 @@ import {
   ensureLottieAsset,
   getAppwriteLottieUrl,
 } from '@/services/lottieService';
-import { logger } from '@/utils/logger';
+type BehaviorThemeColors = {
+  primary: string;
+  background: string;
+  cardBackground: string;
+  text: {
+    primary: string;
+    secondary: string;
+  };
+};
+
+type LottieSource = React.ComponentProps<typeof LottieView>['source'];
 
 interface BehaviorBoosterProps {
-  colors: Record<string, any>;
+  colors: BehaviorThemeColors;
   profileId?: string;
   languageCode?: string;
 }
@@ -40,11 +50,11 @@ const BoosterCard = memo(
     index,
   }: {
     goal: BehaviorGoal;
-    colors: Record<string, any>;
+    colors: BehaviorThemeColors;
     onPress: () => void;
     index: number;
   }) => {
-    const [lottieSource, setLottieSource] = useState<any | null>(null);
+    const [lottieSource, setLottieSource] = useState<LottieSource | null>(null);
     const [lottieError, setLottieError] = useState(false);
     const scale = useSharedValue(1);
 

@@ -18,7 +18,7 @@ interface BrandVideoBackgroundProps {
   /** The ID of the file in the app_assets bucket (e.g., 'onboarding_video') */
   videoId: string;
   /** A fallback local asset if the Appwrite fetch fails */
-  fallbackSource?: any;
+  fallbackSource?: number;
   /** Optional styling for the container */
   style?: ViewStyle;
   /** Overlay opacity (0 to 1). Default is 0.3 */
@@ -37,7 +37,7 @@ function getAppwriteVideoUrl(fileId: string): string {
  * Hook that returns the best video URI.
  * Priority: Appwrite server URL → bundled asset fallback
  */
-function useResolvedVideoSource(videoId: string, fallbackSource: any) {
+function useResolvedVideoSource(videoId: string, fallbackSource?: number) {
   const [resolvedSource, setResolvedSource] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(true);
 

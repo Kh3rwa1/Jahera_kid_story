@@ -8,6 +8,7 @@ import Animated, {
   FadeInUp,
   useAnimatedStyle,
 } from 'react-native-reanimated';
+import type { SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CinematicIntroProps {
@@ -15,7 +16,7 @@ interface CinematicIntroProps {
   audioPolling: boolean;
   isBuffering: boolean;
   onDismiss: () => void;
-  introOpacity: Record<string, any>; // SharedValue
+  introOpacity: SharedValue<number>;
 }
 
 export function CinematicIntro({

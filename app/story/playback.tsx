@@ -1,13 +1,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Award,
-  BookOpen,
   Pause,
   Play,
   RefreshCw,
   SkipBack,
   SkipForward,
-  Sparkles,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
@@ -21,7 +19,6 @@ import {
 import Animated, {
   FadeIn,
   FadeInDown,
-  FadeInUp,
   SlideInDown,
   useAnimatedStyle,
   useSharedValue,
@@ -30,20 +27,17 @@ import Animated, {
   withSpring,
   withTiming,
   Easing,
-  interpolate,
   cancelAnimation,
 } from 'react-native-reanimated';
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
 import { useEffect } from 'react';
 
 import { AnimatedPressable } from '@/components/AnimatedPressable';
+import { SafeScreen } from '@/components/layout';
 import { useAudio, useAudioProgress } from '@/contexts/AudioContext';
 import { useReadingPreferences } from '@/contexts/ReadingPreferencesContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePlayback } from '@/hooks/usePlayback';
+import { useScreenClass } from '@/hooks/useScreenClass';
 import { useWordHighlighting } from '@/hooks/useWordHighlighting';
 
 import { CinematicIntro } from '@/components/story/Playback/CinematicIntro';
@@ -63,7 +57,7 @@ import { ThemeColors } from '@/types/theme';
 export default function StoryPlaybackScreen() {
   const { currentTheme } = useTheme();
   const colors = currentTheme.colors;
-  const insets = useSafeAreaInsets();
+  const screen = useScreenClass();
 
   const {
     story,
@@ -124,7 +118,7 @@ export default function StoryPlaybackScreen() {
     } else {
       cancelAnimation(vinylRotation);
     }
-  }, [isPlaying]);
+  }, [isPlaying, vinylRotation]);
 
   const vinylStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${vinylRotation.value}deg` }],
@@ -149,60 +143,28 @@ export default function StoryPlaybackScreen() {
     if (duration) seek(Math.min(duration, position + 15000));
   };
 
-  const { icon: ThemeIcon, size: themeIconSize } = getThemeIcon(story?.theme);
+  const { icon: ThemeIcon } = getThemeIcon(story?.theme);
 
   if (isLoading && !story) {
     return (
-      <View style={[styles.fill, { backgroundColor: colors.background }]}>
-        <SafeAreaView edges={['top']} style={styles.fill}>
-          <View style={styles.skeletonHeader}>
-            <View
-              style={[
-                styles.skeletonCircle,
-                { backgroundColor: colors.text.light + '18' },
-              ]}
-            />
-            <View style={styles.skeletonHeaderCenter}>
-              <View
-                style={[
-                  styles.skeletonPill,
-                  { backgroundColor: colors.text.light + '18', width: 120 },
-                ]}
-              />
-              <View
-                style={[
-                  styles.skeletonPill,
-                  {
-                    backgroundColor: colors.text.light + '12',
-                    width: 180,
-                    marginTop: 6,
-                  },
-                ]}
-              />
-            </View>
-            <View
-              style={[
-                styles.skeletonCircle,
-                { backgroundColor: colors.text.light + '18' },
-              ]}
-            />
-          </View>
-          <View style={styles.skeletonAudio}>
-            <View
-              style={[
-                styles.skeletonAlbumArt,
-                { backgroundColor: colors.text.light + '12' },
-              ]}
-            />
+      <SafeScreen
+        backgroundColor={colors.background}
+        edges={['top', 'bottom', 'left', 'right']}
+        padded={false}
+        maxWidth={false}
+      >
+        <View style={styles.skeletonHeader}>
+          <View
+            style={[
+              styles.skeletonCircle,
+              { backgroundColor: colors.text.light + '18' },
+            ]}
+          />
+          <View style={styles.skeletonHeaderCenter}>
             <View
               style={[
                 styles.skeletonPill,
-                {
-                  backgroundColor: colors.text.light + '18',
-                  width: '60%',
-                  height: 20,
-                  marginTop: SPACING.xl,
-                },
+                { backgroundColor: colors.text.light + '18', width: 120 },
               ]}
             />
             <View
@@ -210,53 +172,96 @@ export default function StoryPlaybackScreen() {
                 styles.skeletonPill,
                 {
                   backgroundColor: colors.text.light + '12',
-                  width: '40%',
-                  height: 14,
-                  marginTop: 8,
+                  width: 180,
+                  marginTop: 6,
                 },
               ]}
             />
           </View>
           <View
             style={[
-              styles.skeletonControls,
-              { backgroundColor: colors.cardBackground },
+              styles.skeletonCircle,
+              { backgroundColor: colors.text.light + '18' },
             ]}
-          >
+          />
+        </View>
+        <View style={styles.skeletonAudio}>
+          <View
+            style={[
+              styles.skeletonAlbumArt,
+              { backgroundColor: colors.text.light + '12' },
+            ]}
+          />
+          <View
+            style={[
+              styles.skeletonPill,
+              {
+                backgroundColor: colors.text.light + '18',
+                width: '60%',
+                height: 20,
+                marginTop: SPACING.xl,
+              },
+            ]}
+          />
+          <View
+            style={[
+              styles.skeletonPill,
+              {
+                backgroundColor: colors.text.light + '12',
+                width: '40%',
+                height: 14,
+                marginTop: 8,
+              },
+            ]}
+          />
+        </View>
+        <View
+          style={[
+            styles.skeletonControls,
+            {
+              backgroundColor: colors.cardBackground,
+              paddingBottom: screen.insets.bottom + 40,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.skeletonBar,
+              { backgroundColor: colors.text.light + '15' },
+            ]}
+          />
+          <View style={styles.skeletonControlRow}>
             <View
               style={[
-                styles.skeletonBar,
-                { backgroundColor: colors.text.light + '15' },
+                styles.skeletonCircleSmall,
+                { backgroundColor: colors.text.light + '18' },
               ]}
             />
-            <View style={styles.skeletonControlRow}>
-              <View
-                style={[
-                  styles.skeletonCircleSmall,
-                  { backgroundColor: colors.text.light + '18' },
-                ]}
-              />
-              <View
-                style={[
-                  styles.skeletonCircleLarge,
-                  { backgroundColor: colors.primary + '25' },
-                ]}
-              />
-              <View
-                style={[
-                  styles.skeletonCircleSmall,
-                  { backgroundColor: colors.text.light + '18' },
-                ]}
-              />
-            </View>
+            <View
+              style={[
+                styles.skeletonCircleLarge,
+                { backgroundColor: colors.primary + '25' },
+              ]}
+            />
+            <View
+              style={[
+                styles.skeletonCircleSmall,
+                { backgroundColor: colors.text.light + '18' },
+              ]}
+            />
           </View>
-        </SafeAreaView>
-      </View>
+        </View>
+      </SafeScreen>
     );
   }
 
   const renderAudioTab = () => (
-    <View style={styles.fill}>
+    <SafeScreen
+      backgroundColor={colors.background}
+      edges={['left', 'right']}
+      padded={false}
+      maxWidth={false}
+    >
       <StatusBar barStyle="light-content" />
       <LinearGradient
         colors={[
@@ -364,7 +369,7 @@ export default function StoryPlaybackScreen() {
             styles.playerSheet,
             {
               backgroundColor: colors.cardBackground,
-              paddingBottom: insets.bottom + 20,
+              paddingBottom: screen.insets.bottom + 20,
             },
           ]}
         >
@@ -514,7 +519,9 @@ export default function StoryPlaybackScreen() {
 
       {/* Audio Error Banner */}
       {audioError && (
-        <View style={[styles.errorBanner, { bottom: insets.bottom + 16 }]}>
+        <View
+          style={[styles.errorBanner, { bottom: screen.insets.bottom + 16 }]}
+        >
           <View style={styles.errorContent}>
             <Text style={styles.errorText}>Audio failed</Text>
             <AnimatedPressable
@@ -536,11 +543,16 @@ export default function StoryPlaybackScreen() {
           </View>
         </View>
       )}
-    </View>
+    </SafeScreen>
   );
 
   const renderTextTab = () => (
-    <View style={[styles.fill, { backgroundColor: colors.background }]}>
+    <SafeScreen
+      backgroundColor={colors.background}
+      edges={['left', 'right']}
+      padded={false}
+      maxWidth={false}
+    >
       <StatusBar barStyle="dark-content" />
       <PlaybackHeader
         tab={tab}
@@ -569,7 +581,7 @@ export default function StoryPlaybackScreen() {
         storyTheme={story?.theme || undefined}
         storyMood={story?.mood || undefined}
       />
-    </View>
+    </SafeScreen>
   );
 
   return (

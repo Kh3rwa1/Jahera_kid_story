@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'react-native';
 
+import { SafeScreen } from '@/components/layout';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useStoryGeneration } from '@/hooks/useStoryGeneration';
@@ -10,8 +10,6 @@ import { formatLocationLabel } from '@/services/locationService';
 import { ErrorState } from '@/components/ErrorState';
 import { GenerationLoading } from '@/components/story/Generate/GenerationLoading';
 import { OptionsView } from '@/components/story/Generate/OptionsView';
-import { BORDER_RADIUS, FONTS, SHADOWS } from '@/constants/theme';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export default function GenerateStoryScreen() {
   const router = useRouter();
@@ -47,9 +45,7 @@ export default function GenerateStoryScreen() {
 
   if (error) {
     return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: colors.background }]}
-      >
+      <SafeScreen backgroundColor={colors.background} padded={false}>
         <ErrorState
           type="general"
           title="Generation Failed"
@@ -58,28 +54,27 @@ export default function GenerateStoryScreen() {
           onGoHome={() => router.back()}
           showDetails={false}
         />
-      </SafeAreaView>
+      </SafeScreen>
     );
   }
 
   if (phase === 'generating') {
     return (
-      <GenerationLoading
-        colors={colors}
-        status={status}
-        progress={progress}
-        steps={steps}
-        locationCtx={locationCtx}
-        languageCode={selectedLanguage}
-        profile={profile as any}
-      />
+      <SafeScreen backgroundColor={colors.background} padded={false}>
+        <GenerationLoading
+          colors={colors}
+          status={status}
+          progress={progress}
+          steps={steps}
+          locationCtx={locationCtx}
+          languageCode={selectedLanguage}
+        />
+      </SafeScreen>
     );
   }
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
+    <SafeScreen backgroundColor={colors.background} padded={false}>
       <StatusBar barStyle="dark-content" />
       <OptionsView
         colors={colors}
@@ -105,10 +100,6 @@ export default function GenerateStoryScreen() {
         subscription={subscription}
         profileId={(params.profileId as string) || profile?.id || ''}
       />
-    </SafeAreaView>
+    </SafeScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-});
