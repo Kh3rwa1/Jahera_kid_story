@@ -36,6 +36,17 @@ interface BehaviorGoalPickerProps {
 
 const LOOP_FACTOR = 3;
 
+type BehaviorPickerColors = {
+  primary: string;
+  cardBackground: string;
+  text: {
+    primary: string;
+    secondary: string;
+  };
+};
+
+type LottieSource = React.ComponentProps<typeof LottieView>['source'];
+
 const GoalCard = memo(
   ({
     goal,
@@ -48,11 +59,11 @@ const GoalCard = memo(
     goal: BehaviorGoal;
     isSelected: boolean;
     isLocked: boolean;
-    colors: Record<string, any>;
+    colors: BehaviorPickerColors;
     isTablet: boolean;
     onPress: () => void;
   }) => {
-    const [lottieSource, setLottieSource] = useState<any | null>(null);
+    const [lottieSource, setLottieSource] = useState<LottieSource | null>(null);
     const [lottieError, setLottieError] = useState(false);
 
     useEffect(() => {

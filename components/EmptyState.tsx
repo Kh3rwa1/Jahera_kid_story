@@ -24,13 +24,6 @@ interface EmptyStateProps {
   };
 }
 
-const getIconForType = (type: string = 'general') => {
-  if (type === 'stories') {
-    return BookOpen;
-  }
-  return Sparkles;
-};
-
 export const EmptyState = ({
   type = 'general',
   title,

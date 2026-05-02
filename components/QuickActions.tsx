@@ -1,10 +1,13 @@
 import { useMemo, memo, ReactNode } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Play, Sparkles, TrendingUp } from 'lucide-react-native';
 import { useEntranceSequence, useSpringPress } from '@/utils/animations';
 import { useTheme } from '@/contexts/ThemeContext';
+
+type QuickActionStyles = Record<string, StyleProp<ViewStyle & TextStyle>>;
 
 interface QuickActionItemProps {
   item: {
@@ -17,7 +20,7 @@ interface QuickActionItemProps {
     textSecondary: string;
   };
   index: number;
-  styles: any;
+  styles: QuickActionStyles;
 }
 
 const QuickActionItem = memo(
@@ -54,6 +57,8 @@ const QuickActionItem = memo(
   },
 );
 
+QuickActionItem.displayName = 'QuickActionItem';
+
 interface QuickActionsProps {
   handleLastStory: () => void;
   handleGenerateStory: () => void;
@@ -65,7 +70,7 @@ interface QuickActionsProps {
   activeStoryId?: string | null;
   isPlaying: boolean;
   playPause: () => Promise<void>;
-  styles: any;
+  styles: QuickActionStyles;
 }
 
 export const QuickActions = memo(
@@ -194,3 +199,5 @@ export const QuickActions = memo(
     );
   },
 );
+
+QuickActions.displayName = 'QuickActions';

@@ -1,6 +1,8 @@
 import { BORDER_RADIUS, FONTS, SHADOWS, SPACING } from '@/constants/theme';
+import { SafeScreen } from '@/components/layout';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useScreenClass } from '@/hooks/useScreenClass';
 import { profileService } from '@/services/database';
 import { getLanguageFlag } from '@/utils/languageUtils';
 import {
@@ -32,23 +34,17 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
 
-const DEFAULT_PIN_HASH =
-  '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // SHA-256 for '1234'
 const limiter = new PinRateLimiter(5, 60_000);
 
 export default function ParentDashboard() {
   const router = useRouter();
-  const { width: winWidth } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
+  const screen = useScreenClass();
+  const winWidth = screen.width;
+  const isNarrow = winWidth < 400;
   const { currentTheme } = useTheme();
   const COLORS = currentTheme.colors;
   const styles = useStyles();
@@ -62,9 +58,20 @@ export default function ParentDashboard() {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
 
-  const savedPin = profile?.parent_pin || DEFAULT_PIN_HASH;
+  const savedPin = profile?.parent_pin ?? null;
+  const hasParentPin = Boolean(savedPin);
 
   const handleUnlock = async () => {
+    if (!savedPin) {
+      setPinError('Create a parent PIN first to unlock the dashboard.');
+      return;
+    }
+
+    if (pin.length < 4) {
+      setPinError('Enter your 4–8 digit parent PIN.');
+      return;
+    }
+
     if (limiter.isLocked()) {
       setPinError(
         `Too many attempts. Try again in ${limiter.getRemainingLockoutSeconds()}s`,
@@ -90,10 +97,20 @@ export default function ParentDashboard() {
   };
 
   const handleSavePin = async () => {
-    if (newPin.length < 4) {
-      Alert.alert('PIN too short', 'PIN must be at least 4 digits.');
+    if (!/^\d{4,8}$/.test(newPin)) {
+      Alert.alert('Invalid PIN', 'PIN must be 4–8 digits.');
       return;
     }
+
+    const weakPins = new Set(['0000', '1111', '1234', '9999']);
+    if (weakPins.has(newPin)) {
+      Alert.alert(
+        'Choose a stronger PIN',
+        'Avoid obvious PINs like 1234 or repeated digits.',
+      );
+      return;
+    }
+
     if (newPin !== confirmPin) {
       Alert.alert(
         'PINs do not match',
@@ -101,11 +118,20 @@ export default function ParentDashboard() {
       );
       return;
     }
-    if (!profile) return;
+    if (!profile) {
+      Alert.alert(
+        'Profile unavailable',
+        'Please reload the app and try again.',
+      );
+      return;
+    }
 
     const hashed = await hashPin(newPin);
     await profileService.update(profile.id, { parent_pin: hashed });
+    setUnlocked(true);
     setIsSettingPin(false);
+    setPin('');
+    setPinError('');
     setNewPin('');
     setConfirmPin('');
     Alert.alert('PIN Updated', 'Your parent PIN has been saved securely.');
@@ -163,9 +189,10 @@ export default function ParentDashboard() {
 
   if (!unlocked) {
     return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: COLORS.background }]}
+      <SafeScreen
+        backgroundColor={COLORS.background}
         edges={['top', 'bottom']}
+        padded={false}
       >
         <LinearGradient
           colors={COLORS.backgroundGradient}
@@ -177,7 +204,7 @@ export default function ParentDashboard() {
             styles.backBtn,
             {
               backgroundColor: COLORS.cardBackground,
-              top: insets.top + (SPACING.sm || 12),
+              top: SPACING.sm || 12,
             },
           ]}
           onPress={() => router.back()}
@@ -208,83 +235,150 @@ export default function ParentDashboard() {
             <Text
               style={[styles.lockSubtitle, { color: COLORS.text.secondary }]}
             >
-              Enter your parent PIN to view detailed learning stats
+              {hasParentPin
+                ? 'Enter your parent PIN to view detailed learning stats'
+                : 'Create a parent PIN to protect detailed learning stats'}
             </Text>
 
-            <View
-              style={[
-                styles.pinInputWrap,
-                {
-                  backgroundColor: COLORS.cardBackground,
-                  borderColor: pinError
-                    ? COLORS.error
-                    : COLORS.text.light + '30',
-                },
-              ]}
-            >
-              <Lock size={18} color={COLORS.text.light} />
-              <TextInput
-                style={[styles.pinInput, { color: COLORS.text.primary }]}
-                placeholder="Enter PIN"
-                placeholderTextColor={COLORS.text.light}
-                value={pin}
-                onChangeText={setPin}
-                secureTextEntry={!showPin}
-                keyboardType="numeric"
-                maxLength={8}
-                onSubmitEditing={handleUnlock}
-              />
-              <TouchableOpacity onPress={() => setShowPin((v) => !v)}>
-                {showPin ? (
-                  <EyeOff size={18} color={COLORS.text.light} />
-                ) : (
-                  <Eye size={18} color={COLORS.text.light} />
-                )}
-              </TouchableOpacity>
-            </View>
+            {hasParentPin ? (
+              <>
+                <View
+                  style={[
+                    styles.pinInputWrap,
+                    {
+                      backgroundColor: COLORS.cardBackground,
+                      borderColor: pinError
+                        ? COLORS.error
+                        : COLORS.text.light + '30',
+                    },
+                  ]}
+                >
+                  <Lock size={18} color={COLORS.text.light} />
+                  <TextInput
+                    style={[styles.pinInput, { color: COLORS.text.primary }]}
+                    placeholder="Enter PIN"
+                    placeholderTextColor={COLORS.text.light}
+                    value={pin}
+                    onChangeText={setPin}
+                    secureTextEntry={!showPin}
+                    keyboardType="numeric"
+                    maxLength={8}
+                    onSubmitEditing={handleUnlock}
+                  />
+                  <TouchableOpacity onPress={() => setShowPin((v) => !v)}>
+                    {showPin ? (
+                      <EyeOff size={18} color={COLORS.text.light} />
+                    ) : (
+                      <Eye size={18} color={COLORS.text.light} />
+                    )}
+                  </TouchableOpacity>
+                </View>
 
-            {pinError ? (
-              <Text style={[styles.pinError, { color: COLORS.error }]}>
-                {pinError}
-              </Text>
-            ) : null}
+                {pinError ? (
+                  <Text style={[styles.pinError, { color: COLORS.error }]}>
+                    {pinError}
+                  </Text>
+                ) : null}
 
-            <TouchableOpacity onPress={handleUnlock} activeOpacity={0.9}>
-              <LinearGradient
-                colors={COLORS.gradients.primary}
-                style={[
-                  styles.unlockButton,
-                  { width: Math.min(winWidth * 0.8, 300) },
-                ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <Text style={styles.unlockButtonText}>Unlock</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <TouchableOpacity onPress={handleUnlock} activeOpacity={0.9}>
+                  <LinearGradient
+                    colors={COLORS.gradients.primary}
+                    style={[
+                      styles.unlockButton,
+                      { width: Math.min(winWidth * 0.8, 300) },
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={styles.unlockButtonText}>Unlock</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TextInput
+                  style={[
+                    styles.pinFormInput,
+                    {
+                      width: '100%',
+                      color: COLORS.text.primary,
+                      borderColor: COLORS.text.light + '40',
+                      backgroundColor: COLORS.cardBackground,
+                    },
+                  ]}
+                  placeholder="Create PIN (4–8 digits)"
+                  placeholderTextColor={COLORS.text.light}
+                  value={newPin}
+                  onChangeText={setNewPin}
+                  secureTextEntry
+                  keyboardType="numeric"
+                  maxLength={8}
+                />
 
-            <Text style={[styles.defaultPinHint, { color: COLORS.text.light }]}>
-              Default PIN: 1234
-            </Text>
+                <TextInput
+                  style={[
+                    styles.pinFormInput,
+                    {
+                      width: '100%',
+                      color: COLORS.text.primary,
+                      borderColor: COLORS.text.light + '40',
+                      backgroundColor: COLORS.cardBackground,
+                    },
+                  ]}
+                  placeholder="Confirm PIN"
+                  placeholderTextColor={COLORS.text.light}
+                  value={confirmPin}
+                  onChangeText={setConfirmPin}
+                  secureTextEntry
+                  keyboardType="numeric"
+                  maxLength={8}
+                />
+
+                {pinError ? (
+                  <Text style={[styles.pinError, { color: COLORS.error }]}>
+                    {pinError}
+                  </Text>
+                ) : null}
+
+                <TouchableOpacity onPress={handleSavePin} activeOpacity={0.9}>
+                  <LinearGradient
+                    colors={COLORS.gradients.primary}
+                    style={[
+                      styles.unlockButton,
+                      { width: Math.min(winWidth * 0.8, 300) },
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={styles.unlockButtonText}>Set Parent PIN</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <Text
+                  style={[styles.defaultPinHint, { color: COLORS.text.light }]}
+                >
+                  No default PIN is used. Choose a private PIN only you know.
+                </Text>
+              </>
+            )}
           </Animated.View>
         </View>
-      </SafeAreaView>
+      </SafeScreen>
     );
   }
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: COLORS.background }]}
-      edges={['top']}
+    <SafeScreen
+      backgroundColor={COLORS.background}
+      edges={['top', 'bottom']}
+      padded={false}
     >
       <LinearGradient
         colors={COLORS.backgroundGradient}
         style={StyleSheet.absoluteFill}
       />
 
-      <View
-        style={[styles.header, { paddingTop: insets.top + (SPACING.sm || 12) }]}
-      >
+      <View style={[styles.header, { paddingTop: SPACING.sm || 12 }]}>
         <TouchableOpacity
           style={[
             styles.backBtnHeader,
@@ -355,17 +449,14 @@ export default function ParentDashboard() {
 
         <Animated.View
           entering={FadeInDown.delay(120).springify()}
-          style={[
-            styles.statsGrid,
-            { flexWrap: winWidth < 400 ? 'wrap' : 'nowrap' },
-          ]}
+          style={[styles.statsGrid, { flexWrap: isNarrow ? 'wrap' : 'nowrap' }]}
         >
           <View
             style={[
               styles.statCard,
               {
                 backgroundColor: COLORS.cardBackground,
-                minWidth: winWidth < 400 ? '46%' : 0,
+                minWidth: isNarrow ? '46%' : 0,
               },
             ]}
           >
@@ -786,7 +877,7 @@ export default function ParentDashboard() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }
 

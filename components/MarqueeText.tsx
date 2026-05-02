@@ -67,7 +67,15 @@ export function MarqueeText({
       }
       translateX.setValue(0);
     };
-  }, [needsScroll, textWidth, containerWidth, speed, delay, pauseAfterScroll]);
+  }, [
+    needsScroll,
+    textWidth,
+    containerWidth,
+    speed,
+    delay,
+    pauseAfterScroll,
+    translateX,
+  ]);
 
   return (
     <View

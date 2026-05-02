@@ -47,7 +47,7 @@ import { i18n } from '@/lib/i18n';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function Welcome() {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { currentTheme, isLoading: themeLoading } = useTheme();
@@ -55,7 +55,14 @@ export default function Welcome() {
   const { profile, isLoading: profileLoading } = useApp();
 
   const C = currentTheme.colors;
-  const styles = useStyles(C, width);
+  const isCompact = height < 760;
+  const isTiny = height < 690;
+  const titleSize = Math.min(
+    width * (isCompact ? 0.17 : 0.2),
+    isCompact ? 66 : 82,
+  );
+
+  const styles = useStyles(C, width, isCompact, isTiny);
 
   const glowPulse = useSharedValue(0.3);
   const orbFloat = useSharedValue(0);
@@ -217,7 +224,7 @@ export default function Welcome() {
   }
 
   return (
-    <AnimatedPressable style={[styles.root, tapScaleStyle]} onPress={handleTap}>
+    <View style={styles.root}>
       <StatusBar
         barStyle="light-content"
         translucent
@@ -260,7 +267,12 @@ export default function Welcome() {
       </Animated.View>
 
       {/* Center content */}
-      <View style={[styles.center, { paddingTop: insets.top + 40 }]}>
+      <View
+        style={[
+          styles.center,
+          { paddingTop: insets.top + (isCompact ? 12 : 28) },
+        ]}
+      >
         {/* Cinematic Logo Area */}
         <Animated.View style={[styles.logoArea, logoStyle, orbStyle]}>
           <Animated.View style={[styles.halo, glowStyle]}>
@@ -313,7 +325,10 @@ export default function Welcome() {
         >
           <View style={styles.nameOverflow}>
             <Text
-              style={[styles.appName, { fontSize: Math.min(width * 0.2, 82) }]}
+              style={[
+                styles.appName,
+                { fontSize: titleSize, lineHeight: titleSize * 1.05 },
+              ]}
             >
               {i18n.t('welcome.title')}
             </Text>
@@ -382,10 +397,15 @@ export default function Welcome() {
         entering={FadeInUp.delay(1100).springify()}
         style={[
           styles.bottom,
-          { paddingBottom: Math.max(insets.bottom + 40, 56) },
+          {
+            paddingBottom: Math.max(insets.bottom + (isCompact ? 18 : 32), 28),
+          },
         ]}
       >
-        <View style={styles.ctaWrapper}>
+        <AnimatedPressable
+          style={[styles.ctaWrapper, tapScaleStyle]}
+          onPress={handleTap}
+        >
           <Animated.View style={[styles.ctaGlowHalo, ctaGlowStyle]}>
             <LinearGradient
               colors={[C.primary + '35', C.primary + '00']}
@@ -406,7 +426,7 @@ export default function Welcome() {
               </View>
             </View>
           </LinearGradient>
-        </View>
+        </AnimatedPressable>
 
         <View style={styles.signInRow}>
           <Text style={styles.signInLabel}>
@@ -435,11 +455,16 @@ export default function Welcome() {
           </Pressable>
         </View>
       </Animated.View>
-    </AnimatedPressable>
+    </View>
   );
 }
 
-const useStyles = (C: ThemeColors, width: number) => {
+const useStyles = (
+  C: ThemeColors,
+  width: number,
+  isCompact: boolean,
+  isTiny: boolean,
+) => {
   return useMemo(
     () =>
       StyleSheet.create({
@@ -527,15 +552,16 @@ const useStyles = (C: ThemeColors, width: number) => {
           right: 24,
         },
         badge3: {
+          display: isCompact ? 'none' : 'flex',
           top: '55%',
           left: 20,
         },
         badgeInner: {
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 8,
-          paddingHorizontal: 16,
-          paddingVertical: 10,
+          gap: isCompact ? 6 : 8,
+          paddingHorizontal: isCompact ? 12 : 16,
+          paddingVertical: isCompact ? 8 : 10,
           borderRadius: BORDER_RADIUS.pill,
           backgroundColor: 'rgba(255, 255, 255, 0.85)',
           borderWidth: 1,
@@ -546,7 +572,7 @@ const useStyles = (C: ThemeColors, width: number) => {
           shadowRadius: 10,
         },
         badgeText: {
-          fontSize: 12,
+          fontSize: isCompact ? 10.5 : 12,
           fontFamily: FONTS.extrabold,
           color: C.primaryDark,
           letterSpacing: 0.5,
@@ -556,17 +582,24 @@ const useStyles = (C: ThemeColors, width: number) => {
         center: {
           flex: 1,
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
           paddingHorizontal: SPACING.xl,
+          paddingBottom: isTiny ? 8 : 16,
         },
 
         // Logo orb
         logoArea: {
-          width: Math.min(width * 0.6, 280),
-          height: Math.min(width * 0.6, 280),
+          width: Math.min(
+            width * (isCompact ? 0.46 : 0.58),
+            isCompact ? 210 : 270,
+          ),
+          height: Math.min(
+            width * (isCompact ? 0.46 : 0.58),
+            isCompact ? 210 : 270,
+          ),
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: SPACING.xxl + 8,
+          marginBottom: isCompact ? 18 : SPACING.xxl,
         },
         halo: {
           position: 'absolute',
@@ -576,16 +609,22 @@ const useStyles = (C: ThemeColors, width: number) => {
         },
         glowRing: {
           position: 'absolute',
-          width: 230,
-          height: 230,
-          borderRadius: 115,
+          width: isCompact ? 185 : 230,
+          height: isCompact ? 185 : 230,
+          borderRadius: 999,
           borderWidth: 1.5,
           borderColor: C.primary + '25',
         },
         orbContainer: {
-          width: Math.min(width * 0.5, 240),
-          height: Math.min(width * 0.5, 240),
-          borderRadius: 120,
+          width: Math.min(
+            width * (isCompact ? 0.38 : 0.5),
+            isCompact ? 180 : 240,
+          ),
+          height: Math.min(
+            width * (isCompact ? 0.38 : 0.5),
+            isCompact ? 180 : 240,
+          ),
+          borderRadius: 999,
           alignItems: 'center',
           justifyContent: 'center',
           borderWidth: 2,
@@ -637,8 +676,8 @@ const useStyles = (C: ThemeColors, width: number) => {
         // App name
         nameContainer: {
           alignItems: 'center',
-          gap: SPACING.md,
-          marginBottom: SPACING.xl,
+          gap: isCompact ? 8 : SPACING.md,
+          marginBottom: isCompact ? 14 : SPACING.xl,
         },
         nameOverflow: {
           overflow: 'hidden',
@@ -649,7 +688,7 @@ const useStyles = (C: ThemeColors, width: number) => {
           color: '#FFFFFF',
           letterSpacing: -4,
           textAlign: 'center',
-          lineHeight: 88,
+
           textShadowColor: 'rgba(0,0,0,0.8)',
           textShadowOffset: { width: 0, height: 6 },
           textShadowRadius: 20,
@@ -662,11 +701,11 @@ const useStyles = (C: ThemeColors, width: number) => {
           width: 250,
         },
         tagline: {
-          fontSize: 17,
+          fontSize: isCompact ? 15 : 17,
           fontFamily: FONTS.medium,
           color: '#FFFFFF',
           textAlign: 'center',
-          lineHeight: 26,
+          lineHeight: isCompact ? 22 : 26,
           letterSpacing: 0.2,
           opacity: 0.9,
           textShadowColor: 'rgba(0,0,0,0.5)',
@@ -679,8 +718,9 @@ const useStyles = (C: ThemeColors, width: number) => {
           flexDirection: 'row',
           alignItems: 'center',
           width: '85%',
-          marginBottom: SPACING.xl,
+          marginBottom: isCompact ? 14 : SPACING.xl,
           gap: 12,
+          display: isTiny ? 'none' : 'flex',
         },
         dividerLine: {
           flex: 1,
@@ -694,18 +734,20 @@ const useStyles = (C: ThemeColors, width: number) => {
         // Feature pills
         pillRow: {
           flexDirection: 'row',
-          gap: SPACING.md,
+          gap: isCompact ? 8 : SPACING.md,
           justifyContent: 'center',
+          flexWrap: 'wrap',
+          display: isTiny ? 'none' : 'flex',
         },
         pill: {
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 6,
+          gap: isCompact ? 5 : 6,
           backgroundColor: 'rgba(255, 255, 255, 0.85)',
           borderWidth: 1,
           borderColor: 'rgba(255,255,255,0.5)',
-          paddingHorizontal: 16,
-          paddingVertical: 10,
+          paddingHorizontal: isCompact ? 12 : 16,
+          paddingVertical: isCompact ? 8 : 10,
           borderRadius: BORDER_RADIUS.pill,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 4 },
@@ -713,7 +755,7 @@ const useStyles = (C: ThemeColors, width: number) => {
           shadowRadius: 10,
         },
         pillText: {
-          fontSize: 13,
+          fontSize: isCompact ? 11.5 : 13,
           fontFamily: FONTS.extrabold,
           color: C.primaryDark,
           letterSpacing: 0.5,
@@ -723,7 +765,8 @@ const useStyles = (C: ThemeColors, width: number) => {
         bottom: {
           alignItems: 'center',
           paddingHorizontal: SPACING.xl,
-          gap: SPACING.xl,
+          gap: isCompact ? 16 : SPACING.xl,
+          paddingTop: isCompact ? 12 : 20,
         },
         ctaWrapper: {
           width: '100%',
@@ -752,20 +795,20 @@ const useStyles = (C: ThemeColors, width: number) => {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingLeft: 32,
+          paddingLeft: isCompact ? 24 : 32,
           paddingRight: 10,
-          paddingVertical: 10,
+          paddingVertical: isCompact ? 7 : 10,
         },
         ctaText: {
-          fontSize: 20,
+          fontSize: isCompact ? 17 : 20,
           fontFamily: FONTS.extrabold,
           color: C.primaryDark,
           letterSpacing: -0.2,
         },
         ctaArrow: {
-          width: 44,
-          height: 44,
-          borderRadius: 22,
+          width: isCompact ? 40 : 44,
+          height: isCompact ? 40 : 44,
+          borderRadius: 999,
           backgroundColor: C.primary + '15',
           alignItems: 'center',
           justifyContent: 'center',
@@ -774,6 +817,8 @@ const useStyles = (C: ThemeColors, width: number) => {
           flexDirection: 'row',
           alignItems: 'center',
           gap: 8,
+          minHeight: 44,
+          justifyContent: 'center',
         },
         signInLabel: {
           fontSize: 15,
@@ -794,6 +839,6 @@ const useStyles = (C: ThemeColors, width: number) => {
           textShadowRadius: 4,
         },
       }),
-    [C, width],
+    [C, width, isCompact, isTiny],
   );
 };

@@ -156,11 +156,21 @@ export function useStoryGeneration() {
 
       // ── FALLBACK TO AI GENERATION IF NO TEMPLATE ──
       if (!aiStory) {
-        aiStory = await templateStoryService.generateTemplateStory(
+        const generatedStory = await templateStoryService.generateTemplateStory(
           profileData,
           selectedBehaviorGoal,
           selectedLanguage,
         );
+
+        if (generatedStory) {
+          aiStory = {
+            ...generatedStory,
+            word_count:
+              generatedStory.word_count ??
+              generatedStory.content.split(/\s+/).filter(Boolean).length,
+            from_template: false,
+          };
+        }
       }
 
       if (!aiStory) return markError('Could not generate a story.');
@@ -178,6 +188,7 @@ export function useStoryGeneration() {
           title: fallback.title,
           content: fallback.content,
           word_count: fallback.content.split(/\s+/).filter(Boolean).length,
+          from_template: false,
           quiz: [
             {
               question: 'What was the story about?',
