@@ -97,7 +97,7 @@
     "react-test-renderer": "19.1.0",
     "ts-jest": "^29.4.9",
     "tsx": "^4.21.0",
-    "typescript": "~5.9.2"
+    "typescript": "~6.0.3"
   },
   "overrides": {
     "@xmldom/xmldom": "0.9.9",
