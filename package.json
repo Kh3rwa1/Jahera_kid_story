@@ -94,7 +94,7 @@
     "jest-expo": "~54.0.17",
     "lint-staged": "^16.4.0",
     "node-appwrite": "^23.1.0",
-    "react-test-renderer": "19.1.0",
+    "react-test-renderer": "19.2.5",
     "ts-jest": "^29.4.9",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2"
