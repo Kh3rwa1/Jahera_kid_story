@@ -29,13 +29,26 @@ const ELEVENLABS_VOICES = {
   hindiDadi: '8FsOrsZSELg9otqX9nPu',     // Reva (Dadi) — familiar Hindi grandmother
 };
 
-// ElevenLabs model: multilingual v2 handles 29+ languages with ONE voice
+// ElevenLabs model: multilingual v2 handles 29+ languages with ONE voice including Bengali via text
 const ELEVENLABS_MODEL = 'eleven_multilingual_v2';
 
-// Supported languages for Multilingual V2 on common tiers
-const ELEVENLABS_SUPPORTED_LANGS = [
-  'en', 'ja', 'zh', 'de', 'hi', 'fr', 'ko', 'pt', 'it', 'es', 'id', 'nl', 'tr', 'fil', 'pl', 'sv', 'bg', 'ro', 'ar', 'cs', 'el', 'fi', 'hr', 'ms', 'sk', 'da', 'ta', 'uk', 'ru'
+// Languages where the ElevenLabs API accepts an explicit language_code parameter
+const ELEVENLABS_NATIVE_LANGS = [
+  'en', 'ja', 'zh', 'de', 'hi', 'fr', 'ko', 'pt', 'it', 'es', 'id', 'nl',
+  'tr', 'fil', 'pl', 'sv', 'bg', 'ro', 'ar', 'cs', 'el', 'fi', 'hr', 'ms',
+  'sk', 'da', 'ta', 'uk', 'ru'
 ];
+
+// Languages where ElevenLabs can synthesize from text (auto-detect) but the API
+// rejects an explicit language_code. We still use ElevenLabs for these — just
+// omit the language_code and let the multilingual model detect from the text.
+const ELEVENLABS_AUTODETECT_LANGS = [
+  'bn', 'mr', 'gu', 'kn', 'ml', 'pa', 'ur', 'te', 'th', 'vi', 'he', 'hu',
+  'sr', 'lt', 'lv', 'et', 'sl', 'ka', 'az', 'mk', 'bs', 'sat'
+];
+
+// Combined: all languages we attempt with ElevenLabs before falling back to Edge TTS
+const ELEVENLABS_SUPPORTED_LANGS = [...ELEVENLABS_NATIVE_LANGS, ...ELEVENLABS_AUTODETECT_LANGS];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Edge TTS Fallback — High-quality Microsoft Edge neural voices per language
@@ -195,8 +208,9 @@ async function generateWithElevenLabs(text, lang, apiKey, options, log) {
         style: style ?? 0.35,
         use_speaker_boost: speakerBoost ?? true,
       },
-      // Language hint for multilingual model
-      language_code: lang,
+      // Only send language_code for natively supported languages;
+      // for auto-detect langs (Bengali, etc.) the model infers from text
+      ...(ELEVENLABS_NATIVE_LANGS.includes(lang) ? { language_code: lang } : {}),
     }),
   });
 
