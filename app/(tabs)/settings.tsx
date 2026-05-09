@@ -177,7 +177,7 @@ function RowItem({
 export default function SettingsTab() {
   const router = useRouter();
   const { currentTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
 
   const crownPulseStyle = usePulse(0.9, 1.1);
   const { clearProfile, profile, stories } = useApp();
@@ -304,12 +304,41 @@ export default function SettingsTab() {
           destructive: true,
           onPress: () => {
             hapticFeedback.warning();
+            if (Platform.OS === 'web') {
+              if (
+                globalThis.confirm(
+                  'This will permanently delete your account and all data. This action cannot be undone. Are you sure?',
+                )
+              ) {
+                void (async () => {
+                  try {
+                    await deleteAccount();
+                    router.replace('/');
+                  } catch {
+                    globalThis.alert('Failed to delete account');
+                  }
+                })();
+              }
+              return;
+            }
             Alert.alert(
               'Delete Account',
               'This will permanently delete your account and all data. This action cannot be undone.',
               [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete', style: 'destructive', onPress: () => {} },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      hapticFeedback.success();
+                      await deleteAccount();
+                      router.replace('/');
+                    } catch {
+                      Alert.alert('Error', 'Failed to delete account');
+                    }
+                  },
+                },
               ],
             );
           },

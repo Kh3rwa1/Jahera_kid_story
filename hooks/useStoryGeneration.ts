@@ -1,12 +1,11 @@
 import { useApp } from '@/contexts/AppContext';
 import { analytics } from '@/services/analyticsService';
 import { profileService, quizService, storyService } from '@/services/database';
-import { DEVICE_TTS_AUDIO_URL } from '@/services/deviceTTSService';
 import {
   getLocationFromProfile,
   LocationContext,
 } from '@/services/locationService';
-import { templateStoryService } from '@/services/templateStoryService';
+
 import { getCurrentContext } from '@/utils/contextUtils';
 import { hapticFeedback } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
@@ -14,6 +13,8 @@ import { preGeneratedStoryService } from '@/services/preGeneratedStoryService';
 import { checkStorySafety, getFallbackStory } from '@/utils/storySafetyFilter';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { generateAudio } from '@/services/audioService';
+import { generateAdventureStory } from '@/services/aiService';
 
 export type GenerationPhase = 'options' | 'generating';
 export interface GenerationStep {
@@ -156,10 +157,17 @@ export function useStoryGeneration() {
 
       // ── FALLBACK TO AI GENERATION IF NO TEMPLATE ──
       if (!aiStory) {
-        const generatedStory = await templateStoryService.generateTemplateStory(
+        const generatedStory = await generateAdventureStory(
           profileData,
-          selectedBehaviorGoal,
           selectedLanguage,
+          context,
+          {
+            theme: selectedTheme,
+            mood: selectedMood,
+            length: selectedLength,
+            locationContext: locationCtx,
+            behaviorGoal: selectedBehaviorGoal || undefined,
+          }
         );
 
         if (generatedStory) {
@@ -226,7 +234,7 @@ export function useStoryGeneration() {
         language_code: selectedLanguage,
         title: aiStory.title,
         content: aiStory.content,
-        audio_url: DEVICE_TTS_AUDIO_URL,
+        audio_url: null,
         season: context.season,
         time_of_day: context.timeOfDay,
         theme: selectedTheme,
@@ -260,6 +268,12 @@ export function useStoryGeneration() {
       setStatus('Story ready!');
       setProgress(100);
       hapticFeedback.success();
+      
+      // Trigger background audio generation with the selected ElevenLabs voice ID
+      generateAudio(aiStory.content, selectedLanguage, storyRecord.id, false, {
+        voiceId: selectedVoice,
+      }).catch(err => logger.error('[StoryGen] generateAudio background error:', err));
+
       await Promise.all([refreshSubscription(), refreshStories()]);
       if (isMountedRef.current)
         setTimeout(

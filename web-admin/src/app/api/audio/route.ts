@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/appwrite";
-import { Query, ID } from "node-appwrite";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminRequest } from '../../../lib/adminAuth';
+import { createAdminClient } from '@/lib/appwrite';
+import { Query, ID } from 'node-appwrite';
 
-const PLACEHOLDERS = ["CHILD_NAME", "FRIEND_NAME", "FAMILY_MEMBER", "CITY"];
+const PLACEHOLDERS = ['CHILD_NAME', 'FRIEND_NAME', 'FAMILY_MEMBER', 'CITY'];
 
 function splitSentences(text: string): string[] {
   return text
@@ -20,16 +21,26 @@ function getPlaceholders(sentence: string): string[] {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = requireAdminRequest(req);
+  if (unauthorized) return unauthorized;
+
   try {
     const { templateId } = await req.json();
     if (!templateId)
-      return NextResponse.json({ error: "Missing templateId" }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing templateId' },
+        { status: 400 },
+      );
 
     const { databases } = createAdminClient();
-    const db = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "jahera_db";
+    const db = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'jahera_db';
 
-    const template = await databases.getDocument(db, "story_templates", templateId);
-    const content = (template.content_template as string) || "";
+    const template = await databases.getDocument(
+      db,
+      'story_templates',
+      templateId,
+    );
+    const content = (template.content_template as string) || '';
     const sentences = splitSentences(content);
 
     let staticCount = 0;
@@ -41,13 +52,13 @@ export async function POST(req: NextRequest) {
       if (contains) placeholderCount++;
       else staticCount++;
 
-      await databases.createDocument(db, "audio_segments", ID.unique(), {
+      await databases.createDocument(db, 'audio_segments', ID.unique(), {
         template_id: templateId,
         segment_index: i,
         sentence_text: s.slice(0, 2000),
         contains_placeholder: contains,
-        placeholders_in_segment: contains ? getPlaceholders(s).join(",") : "",
-        status: "pending",
+        placeholders_in_segment: contains ? getPlaceholders(s).join(',') : '',
+        status: 'pending',
       });
     }
 
@@ -58,33 +69,42 @@ export async function POST(req: NextRequest) {
       placeholder: placeholderCount,
     });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Unknown error";
+    const msg = e instanceof Error ? e.message : 'Unknown error';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
 export async function DELETE(req: NextRequest) {
+  const unauthorized = requireAdminRequest(req);
+  if (unauthorized) return unauthorized;
+
   try {
     const { searchParams } = new URL(req.url);
-    const templateId = searchParams.get("templateId");
+    const templateId = searchParams.get('templateId');
     if (!templateId)
-      return NextResponse.json({ error: "Missing templateId" }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing templateId' },
+        { status: 400 },
+      );
 
     const { databases } = createAdminClient();
-    const db = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "jahera_db";
+    const db = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'jahera_db';
 
-    const segments = await databases.listDocuments(db, "audio_segments", [
-      Query.equal("template_id", templateId),
+    const segments = await databases.listDocuments(db, 'audio_segments', [
+      Query.equal('template_id', templateId),
       Query.limit(100),
     ]);
 
     for (const doc of segments.documents) {
-      await databases.deleteDocument(db, "audio_segments", doc.$id);
+      await databases.deleteDocument(db, 'audio_segments', doc.$id);
     }
 
-    return NextResponse.json({ success: true, deleted: segments.documents.length });
+    return NextResponse.json({
+      success: true,
+      deleted: segments.documents.length,
+    });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Unknown error";
+    const msg = e instanceof Error ? e.message : 'Unknown error';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
