@@ -1,5 +1,5 @@
 // Mock appwrite client before any imports touch it
-import { act, renderHook } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { usePlayback } from '../usePlayback';
 
 jest.mock('@/lib/appwrite', () => ({
@@ -139,10 +139,7 @@ describe('usePlayback hook', () => {
     expect(result.current.isLoading).toBe(true);
     expect(result.current.showCinematicIntro).toBe(true);
 
-    // Wait for useEffect (loadStory)
-    await act(async () => {
-      // Allow async effects to run
-    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     // Story may be null if personalizeStory or profile context isn't fully mocked
     expect(result.current.story).not.toBeNull();

@@ -1,6 +1,6 @@
-"use client";
-import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+'use client';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { motion } from 'motion/react';
 import {
   FileText,
   BookOpen,
@@ -11,10 +11,8 @@ import {
   Music,
   Database,
   Clock,
-} from "lucide-react";
+} from 'lucide-react';
 import {
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   PieChart,
@@ -24,9 +22,18 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-} from "recharts";
+} from 'recharts';
 
-const COLORS = ["#4F7CFF", "#8B5CF6", "#22D3EE", "#34D399", "#FB923C", "#F472B6", "#EF4444", "#FBBF24"];
+const COLORS = [
+  '#4F7CFF',
+  '#8B5CF6',
+  '#22D3EE',
+  '#34D399',
+  '#FB923C',
+  '#F472B6',
+  '#EF4444',
+  '#FBBF24',
+];
 
 function AnimatedNumber({ target }: { target: number }) {
   const [val, setVal] = useState(0);
@@ -46,33 +53,43 @@ function AnimatedNumber({ target }: { target: number }) {
 
 interface Stats {
   totals: Record<string, number>;
-  recentStories: Array<Record<string, unknown>>;
-  recentUsers: Array<Record<string, unknown>>;
-  langDist: Array<{ name: string; value: number }>;
-  goalDist: Array<{ name: string; value: number }>;
+  recentStories: Record<string, unknown>[];
+  recentUsers: Record<string, unknown>[];
+  langDist: { name: string; value: number }[];
+  goalDist: { name: string; value: number }[];
 }
 
 const CARD_ICONS: Record<string, React.ReactNode> = {
   Templates: <FileText className="w-4 h-4 text-[#4F7CFF]" />,
   Stories: <BookOpen className="w-4 h-4 text-[#8B5CF6]" />,
   Users: <Users className="w-4 h-4 text-[#22D3EE]" />,
-  "Quiz Questions": <HelpCircle className="w-4 h-4 text-[#34D399]" />,
+  'Quiz Questions': <HelpCircle className="w-4 h-4 text-[#34D399]" />,
   Subscriptions: <CreditCard className="w-4 h-4 text-[#FB923C]" />,
   Streaks: <Flame className="w-4 h-4 text-[#F472B6]" />,
-  "Audio Segments": <Music className="w-4 h-4 text-[#4F7CFF]" />,
-  "Audio Cache": <Database className="w-4 h-4 text-[#8B5CF6]" />,
+  'Audio Segments': <Music className="w-4 h-4 text-[#4F7CFF]" />,
+  'Audio Cache': <Database className="w-4 h-4 text-[#8B5CF6]" />,
 };
 
+function useClientReady() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
 export default function DashboardClient({ stats }: { stats: Stats }) {
+  const chartsReady = useClientReady();
+
   const CARDS = [
-    { label: "Templates", value: stats.totals.templates },
-    { label: "Stories", value: stats.totals.stories },
-    { label: "Users", value: stats.totals.profiles },
-    { label: "Quiz Questions", value: stats.totals.quizzes },
-    { label: "Subscriptions", value: stats.totals.subscriptions },
-    { label: "Streaks", value: stats.totals.streaks },
-    { label: "Audio Segments", value: stats.totals.segments },
-    { label: "Audio Cache", value: stats.totals.cache },
+    { label: 'Templates', value: stats.totals.templates },
+    { label: 'Stories', value: stats.totals.stories },
+    { label: 'Users', value: stats.totals.profiles },
+    { label: 'Quiz Questions', value: stats.totals.quizzes },
+    { label: 'Subscriptions', value: stats.totals.subscriptions },
+    { label: 'Streaks', value: stats.totals.streaks },
+    { label: 'Audio Segments', value: stats.totals.segments },
+    { label: 'Audio Cache', value: stats.totals.cache },
   ];
 
   return (
@@ -121,36 +138,41 @@ export default function DashboardClient({ stats }: { stats: Stats }) {
             Language Distribution
           </h3>
           <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={stats.langDist}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {stats.langDist.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: "rgba(15,25,60,0.9)",
-                    border: "1px solid rgba(100,140,255,0.2)",
-                    borderRadius: "8px",
-                    color: "#F0F4FF",
-                    fontSize: "12px",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {chartsReady && (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={stats.langDist}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {stats.langDist.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: 'rgba(15,25,60,0.9)',
+                      border: '1px solid rgba(100,140,255,0.2)',
+                      borderRadius: '8px',
+                      color: '#F0F4FF',
+                      fontSize: '12px',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
           <div className="flex flex-wrap gap-3 mt-2">
             {stats.langDist.map((l, i) => (
-              <div key={l.name} className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+              <div
+                key={l.name}
+                className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]"
+              >
                 <span
                   className="w-2.5 h-2.5 rounded-full inline-block"
                   style={{ background: COLORS[i % COLORS.length] }}
@@ -172,31 +194,33 @@ export default function DashboardClient({ stats }: { stats: Stats }) {
             Behavior Goals
           </h3>
           <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.goalDist} layout="vertical">
-                <XAxis type="number" hide />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={100}
-                  tick={{ fill: "#8B9CC7", fontSize: 11 }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "rgba(15,25,60,0.9)",
-                    border: "1px solid rgba(100,140,255,0.2)",
-                    borderRadius: "8px",
-                    color: "#F0F4FF",
-                    fontSize: "12px",
-                  }}
-                />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {stats.goalDist.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {chartsReady && (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.goalDist} layout="vertical">
+                  <XAxis type="number" hide />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={100}
+                    tick={{ fill: '#8B9CC7', fontSize: 11 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'rgba(15,25,60,0.9)',
+                      border: '1px solid rgba(100,140,255,0.2)',
+                      borderRadius: '8px',
+                      color: '#F0F4FF',
+                      fontSize: '12px',
+                    }}
+                  />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    {stats.goalDist.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </motion.div>
       </div>
@@ -232,7 +256,9 @@ export default function DashboardClient({ stats }: { stats: Stats }) {
                       {String(s.title)}
                     </td>
                     <td>
-                      <span className="badge badge-blue">{String(s.goal) || "—"}</span>
+                      <span className="badge badge-blue">
+                        {String(s.goal) || '—'}
+                      </span>
                     </td>
                     <td>
                       <span className="badge badge-cyan">{String(s.lang)}</span>
@@ -273,7 +299,8 @@ export default function DashboardClient({ stats }: { stats: Stats }) {
                     {String(u.name)}
                   </div>
                   <div className="text-xs text-[var(--text-muted)]">
-                    Age {String(u.age)} · {String(u.lang)}{u.city ? ` · ${String(u.city)}` : ""}
+                    Age {String(u.age)} · {String(u.lang)}
+                    {u.city ? ` · ${String(u.city)}` : ''}
                   </div>
                 </div>
               </div>

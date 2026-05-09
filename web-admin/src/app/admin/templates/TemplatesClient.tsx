@@ -1,8 +1,7 @@
-"use client";
-import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Search, Filter, FileText, ChevronDown, ChevronUp, Eye } from "lucide-react";
-import Link from "next/link";
+'use client';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Search, Filter, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Template {
   id: string;
@@ -25,29 +24,30 @@ interface Data {
 }
 
 const GOAL_COLORS: Record<string, string> = {
-  confidence: "badge-blue",
-  sharing: "badge-green",
-  kindness: "badge-pink",
-  discipline: "badge-orange",
-  courage: "badge-cyan",
-  honesty: "badge-purple",
-  empathy: "badge-pink",
-  calmness: "badge-blue",
-  gratitude: "badge-green",
-  teamwork: "badge-cyan",
-  curiosity: "badge-purple",
-  responsibility: "badge-orange",
-  less_screen: "badge-red",
+  confidence: 'badge-blue',
+  sharing: 'badge-green',
+  kindness: 'badge-pink',
+  discipline: 'badge-orange',
+  courage: 'badge-cyan',
+  honesty: 'badge-purple',
+  empathy: 'badge-pink',
+  calmness: 'badge-blue',
+  gratitude: 'badge-green',
+  teamwork: 'badge-cyan',
+  curiosity: 'badge-purple',
+  responsibility: 'badge-orange',
+  less_screen: 'badge-red',
 };
 
 export default function TemplatesClient({ data }: { data: Data }) {
-  const [search, setSearch] = useState("");
-  const [goalFilter, setGoalFilter] = useState("");
-  const [themeFilter, setThemeFilter] = useState("");
+  const [search, setSearch] = useState('');
+  const [goalFilter, setGoalFilter] = useState('');
+  const [themeFilter, setThemeFilter] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const filtered = data.templates.filter((t) => {
-    if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !t.title.toLowerCase().includes(search.toLowerCase()))
+      return false;
     if (goalFilter && t.goal !== goalFilter) return false;
     if (themeFilter && t.theme !== themeFilter) return false;
     return true;
@@ -57,9 +57,12 @@ export default function TemplatesClient({ data }: { data: Data }) {
     <div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Story Templates</h1>
+          <h1 className="text-3xl font-bold text-white mb-1">
+            Story Templates
+          </h1>
           <p className="text-sm text-[var(--text-muted)]">
-            {data.total} templates · {data.goals.length} goals · {data.themes.length} themes
+            {data.total} templates · {data.goals.length} goals ·{' '}
+            {data.themes.length} themes
           </p>
         </div>
       </div>
@@ -85,7 +88,9 @@ export default function TemplatesClient({ data }: { data: Data }) {
           >
             <option value="">All Goals</option>
             {data.goals.map((g) => (
-              <option key={g} value={g}>{g}</option>
+              <option key={g} value={g}>
+                {g}
+              </option>
             ))}
           </select>
         </div>
@@ -96,7 +101,9 @@ export default function TemplatesClient({ data }: { data: Data }) {
         >
           <option value="">All Themes</option>
           {data.themes.map((t) => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t} value={t}>
+              {t}
+            </option>
           ))}
         </select>
       </div>
@@ -125,12 +132,16 @@ export default function TemplatesClient({ data }: { data: Data }) {
                   {t.title}
                 </div>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  <span className={`badge ${GOAL_COLORS[t.goal] || "badge-blue"}`}>
+                  <span
+                    className={`badge ${GOAL_COLORS[t.goal] || 'badge-blue'}`}
+                  >
                     {t.goal}
                   </span>
                   <span className="badge badge-purple">{t.theme}</span>
                   <span className="badge badge-cyan">{t.lang}</span>
-                  {t.mood && <span className="badge badge-orange">{t.mood}</span>}
+                  {t.mood && (
+                    <span className="badge badge-orange">{t.mood}</span>
+                  )}
                 </div>
               </div>
               <span className="text-xs text-[var(--text-muted)] flex-shrink-0">
@@ -146,20 +157,27 @@ export default function TemplatesClient({ data }: { data: Data }) {
               {expanded === t.id && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
+                  animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="border-t border-[var(--border-glass)]"
                 >
                   <div className="p-4">
-                    <p className="text-xs text-[var(--text-muted)] mb-2 uppercase tracking-wider">Content Preview</p>
+                    <p className="text-xs text-[var(--text-muted)] mb-2 uppercase tracking-wider">
+                      Content Preview
+                    </p>
                     <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto">
-                      {t.content.slice(0, 500)}{t.content.length > 500 ? "..." : ""}
+                      {t.content.slice(0, 500)}
+                      {t.content.length > 500 ? '...' : ''}
                     </p>
                     {t.placeholders && (
                       <div className="mt-3">
-                        <p className="text-xs text-[var(--text-muted)] mb-1">Placeholders</p>
-                        <p className="text-xs text-[var(--accent-cyan)]">{t.placeholders}</p>
+                        <p className="text-xs text-[var(--text-muted)] mb-1">
+                          Placeholders
+                        </p>
+                        <p className="text-xs text-[var(--accent-cyan)]">
+                          {t.placeholders}
+                        </p>
                       </div>
                     )}
                   </div>
