@@ -15,6 +15,7 @@ export function usePlayback() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { loadAndPlayAudio, pauseAudio, stopAudio, retryAudio } = useAudio();
+  const loadAndPlayAudioRef = useRef(loadAndPlayAudio);
   const hasLoadedRef = useRef<string | null>(null);
   const { profile } = useApp();
 
@@ -25,7 +26,27 @@ export function usePlayback() {
   const [showCinematicIntro, setShowCinematicIntro] = useState(true);
 
   const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const introOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    loadAndPlayAudioRef.current = loadAndPlayAudio;
+  }, [loadAndPlayAudio]);
+
+  const dismissCinematicIntro = useCallback(() => {
+    if (introTimerRef.current) {
+      clearTimeout(introTimerRef.current);
+      introTimerRef.current = null;
+    }
+    introOpacity.value = withTiming(0, {
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
+    });
+    dismissTimerRef.current = setTimeout(() => {
+      setShowCinematicIntro(false);
+      dismissTimerRef.current = null;
+    }, 600);
+  }, [introOpacity]);
 
   const loadStory = useCallback(async () => {
     try {
@@ -72,7 +93,7 @@ export function usePlayback() {
       // Only load once per story ID - prevents re-render loop
       if (hasLoadedRef.current !== (params.storyId as string)) {
         hasLoadedRef.current = params.storyId as string;
-        loadAndPlayAudio(personalized);
+        loadAndPlayAudioRef.current(personalized);
       }
 
       setIsLoading(false);
@@ -91,25 +112,14 @@ export function usePlayback() {
       setIsLoading(false);
       setShowCinematicIntro(false);
     }
-  }, [params.storyId, profile]); // removed loadAndPlayAudio - causes infinite re-render loop
-
-  const dismissCinematicIntro = useCallback(() => {
-    if (introTimerRef.current) {
-      clearTimeout(introTimerRef.current);
-      introTimerRef.current = null;
-    }
-    introOpacity.value = withTiming(0, {
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-    });
-    setTimeout(() => setShowCinematicIntro(false), 600);
-  }, [introOpacity]);
+  }, [dismissCinematicIntro, params.storyId, profile]);
 
   useEffect(() => {
     loadStory();
     return () => {
       hasLoadedRef.current = null;
       if (introTimerRef.current) clearTimeout(introTimerRef.current);
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     };
   }, [loadStory]);
 

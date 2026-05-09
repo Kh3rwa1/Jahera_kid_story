@@ -1,4 +1,4 @@
-import { account, ID } from '@/lib/appwrite';
+import { APPWRITE_PROJECT_ID, account, ID } from '@/lib/appwrite';
 import { storage } from '@/utils/storage';
 import React, {
   createContext,
@@ -14,6 +14,44 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+
+type OAuthCallback = {
+  userId: string | null;
+  secret: string | null;
+  error?: string;
+};
+
+function getOAuthCallback(url: string | null | undefined): OAuthCallback {
+  if (!url) return { userId: null, secret: null };
+
+  const parsed = Linking.parse(url);
+  const userId = (parsed.queryParams?.userId as string | undefined) ?? null;
+  const secret = (parsed.queryParams?.secret as string | undefined) ?? null;
+  const error =
+    (parsed.queryParams?.error_description as string | undefined) ||
+    (parsed.queryParams?.error as string | undefined);
+
+  if (userId || secret || error) {
+    return { userId, secret, error };
+  }
+
+  const userIdMatch = url.match(/userId=([^&#]+)/);
+  const secretMatch = url.match(/secret=([^&#]+)/);
+  return {
+    userId: userIdMatch?.[1] ?? null,
+    secret: secretMatch?.[1] ?? null,
+  };
+}
+
+async function persistAuth(
+  sessionRes: Models.Session,
+  userRes: Models.User<Models.Preferences>,
+) {
+  await Promise.allSettled([
+    storage.setItem('authUser', userRes),
+    storage.setItem('authSession', sessionRes),
+  ]);
+}
 
 interface AuthContextType {
   user: Models.User<Models.Preferences> | null;
@@ -38,47 +76,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const createSessionFromCallback = async (
+      callback: OAuthCallback,
+      source: string,
+    ) => {
+      if (!callback.userId || !callback.secret) return false;
+
+      console.log(`[OAuth] Creating session from ${source} callback.`);
+      const sessionRes = await account.createSession(
+        callback.userId,
+        callback.secret,
+      );
+      const userRes = await account.get();
+
+      if (!isMounted) return true;
+      setSession(sessionRes);
+      setUser(userRes);
+      persistAuth(sessionRes, userRes).catch(() => {});
+
+      return true;
+    };
+
+    const urlSubscription = Linking.addEventListener('url', ({ url }) => {
+      const callback = getOAuthCallback(url);
+      if (!callback.userId || !callback.secret) return;
+
+      createSessionFromCallback(callback, 'deep-link').catch((err) => {
+        console.warn('[OAuth] Deep-link session creation failed:', err);
+      });
+    });
+
     const initAuth = async () => {
       try {
-        // Check for OAuth callback params in URL (web redirect / deep link flow)
-        let oauthUserId: string | null = null;
-        let oauthSecret: string | null = null;
+        let callback: OAuthCallback = { userId: null, secret: null };
 
-        // On web, directly check window.location which is the most reliable source
         if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          const params = new URLSearchParams(window.location.search);
-          oauthUserId = params.get('userId');
-          oauthSecret = params.get('secret');
+          callback = getOAuthCallback(window.location.href);
         }
 
-        // Fallback: check Linking.getInitialURL for native deep links
-        if (!oauthUserId || !oauthSecret) {
-          const initialUrl = await Linking.getInitialURL();
-          if (initialUrl) {
-            const userIdMatch = initialUrl.match(/userId=([^&#]+)/);
-            const secretMatch = initialUrl.match(/secret=([^&#]+)/);
-            oauthUserId = userIdMatch?.[1] ?? null;
-            oauthSecret = secretMatch?.[1] ?? null;
-          }
+        if (!callback.userId || !callback.secret) {
+          callback = getOAuthCallback(await Linking.getInitialURL());
         }
 
-        if (oauthUserId && oauthSecret) {
-          console.log('[OAuth] Found callback params, creating session...');
+        if (callback.userId && callback.secret) {
           try {
-            const sessionRes = await account.createSession(oauthUserId, oauthSecret);
-            const userRes = await account.get();
-            setSession(sessionRes);
-            setUser(userRes);
-            storage.setItem('authUser', userRes).catch(() => {});
-            storage.setItem('authSession', sessionRes).catch(() => {});
-            setIsLoading(false);
-            // Clean URL on web so params don't persist on refresh
+            await createSessionFromCallback(callback, 'initial-url');
+            if (isMounted) setIsLoading(false);
             if (typeof window !== 'undefined' && window.history) {
               window.history.replaceState({}, '', '/');
             }
             return;
           } catch (err) {
-            console.warn('[OAuth] Session creation from URL params failed:', err);
+            console.warn(
+              '[OAuth] Initial callback session creation failed:',
+              err,
+            );
             // Fall through to normal auth init
           }
         }
@@ -89,16 +143,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           await storage.getItem<Models.Session>('authSession');
 
         if (cachedUser && cachedSession) {
+          if (!isMounted) return;
           setUser(cachedUser);
           setSession(cachedSession);
           setIsLoading(false);
 
           Promise.all([account.get(), account.getSession('current')])
             .then(([u, s]) => {
+              if (!isMounted) return;
               setUser(u);
               setSession(s);
-              storage.setItem('authUser', u).catch(() => {});
-              storage.setItem('authSession', s).catch(() => {});
+              persistAuth(s, u).catch(() => {});
             })
             .catch((err) => {
               console.debug(
@@ -125,19 +180,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         const [u, s] = await Promise.race([fetchPromise, timeoutPromise]);
 
+        if (!isMounted) return;
         setUser(u);
         setSession(s);
-        storage.setItem('authUser', u).catch(() => {});
-        storage.setItem('authSession', s).catch(() => {});
+        persistAuth(s, u).catch(() => {});
       } catch (error) {
         console.debug('Auth init failed', error);
+        if (!isMounted) return;
         setUser(null);
         setSession(null);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
+
     initAuth();
+
+    return () => {
+      isMounted = false;
+      urlSubscription.remove();
+    };
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -180,15 +242,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = useCallback(async () => {
     try {
-      const projectId = '69b5657c000d2c28a436';
-      
       // Use standard Appwrite callback scheme for native builds.
       const isExpoGo = Constants.appOwnership === 'expo';
-      const deepLink = Platform.OS === 'web' 
-        ? window.location.origin 
-        : (isExpoGo ? Linking.createURL('/') : `appwrite-callback-${projectId}://`);
-        
-      console.log('[OAuth] Redirect URL:', deepLink);
+      const deepLink =
+        Platform.OS === 'web'
+          ? window.location.origin
+          : isExpoGo
+            ? Linking.createURL('/')
+            : `appwrite-callback-${APPWRITE_PROJECT_ID}://`;
+
+      console.log('[OAuth] Starting Google sign-in.');
 
       // Use createOAuth2Token — returns userId & secret as query params
       const url = account.createOAuth2Token(
@@ -205,8 +268,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // ── WEB: Direct page redirect (most reliable) ──
       // Popups are blocked by browsers and often fail to capture the redirect.
-      // Instead, redirect the current page to Google, then when Appwrite 
-      // redirects back to localhost?userId=xxx&secret=yyy, the initAuth 
+      // Instead, redirect the current page to Google, then when Appwrite
+      // redirects back to localhost?userId=xxx&secret=yyy, the initAuth
       // handler in useEffect catches the tokens automatically.
       if (Platform.OS === 'web') {
         window.location.href = urlString;
@@ -222,7 +285,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             resolve(event.url);
           }
         });
-        setTimeout(() => { sub.remove(); }, 60000);
+        setTimeout(() => {
+          sub.remove();
+        }, 60000);
       });
 
       const result = await WebBrowser.openAuthSessionAsync(urlString, deepLink);
@@ -231,16 +296,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let secret: string | null = null;
 
       if (result.type === 'success' && result.url) {
-        console.log('[OAuth] Success URL:', result.url);
+        console.log('[OAuth] Browser returned OAuth callback.');
         linkingUrl = result.url;
       } else if (result.type === 'cancel' || result.type === 'dismiss') {
-        console.log('[OAuth] Browser returned:', result.type, '- checking Linking fallback...');
-        
+        console.log(
+          '[OAuth] Browser returned:',
+          result.type,
+          '- checking Linking fallback...',
+        );
+
         linkingUrl = await Promise.race([
           linkingPromise,
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
         ]);
-        
+
         if (!linkingUrl) {
           try {
             const existingUser = await account.get();
@@ -260,46 +329,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (linkingUrl) {
-        console.log('[OAuth] Processing callback URL:', linkingUrl);
-        const parsed = Linking.parse(linkingUrl);
-        
-        // If Appwrite returned an error (e.g. unregistered platform URL)
-        if (parsed.queryParams?.error) {
-           const errorMsg = parsed.queryParams?.error_description || parsed.queryParams?.error;
-           throw new Error(`Appwrite OAuth Error: ${errorMsg}`);
-        }
-        
-        userId = (parsed.queryParams?.userId as string) || null;
-        secret = (parsed.queryParams?.secret as string) || null;
-
-        // Fallback regex matching in case Linking.parse failed to extract query params
-        if (!userId || !secret) {
-          const userIdMatch = linkingUrl.match(/userId=([^&#]+)/);
-          const secretMatch = linkingUrl.match(/secret=([^&#]+)/);
-          userId = userIdMatch ? userIdMatch[1] : null;
-          secret = secretMatch ? secretMatch[1] : null;
-        }
+        const callback = getOAuthCallback(linkingUrl);
+        if (callback.error)
+          throw new Error(`Appwrite OAuth Error: ${callback.error}`);
+        userId = callback.userId;
+        secret = callback.secret;
       }
 
       if (!userId || !secret) {
-        console.warn('[OAuth] Missing tokens. URL was:', linkingUrl);
-        
+        console.warn('[OAuth] Missing userId or secret in callback.');
+
         // Detailed error to help the user understand WHY it failed
         if (isExpoGo) {
-          throw new Error('Google Sign-In requires the built APK to work correctly. It cannot complete in Expo Go because the callback URL is not registered.');
+          throw new Error(
+            'Google Sign-In requires the built APK to work correctly. It cannot complete in Expo Go because the callback URL is not registered.',
+          );
         }
-        
+
         throw new Error(`Missing userId or secret from OAuth callback.`);
       }
 
-      console.log('[OAuth] Creating session with token...');
+      console.log('[OAuth] Creating session with callback token.');
       const sessionRes = await account.createSession(userId, secret);
       const userRes = await account.get();
 
       setSession(sessionRes);
       setUser(userRes);
-      storage.setItem('authUser', userRes).catch(() => {});
-      storage.setItem('authSession', sessionRes).catch(() => {});
+      persistAuth(sessionRes, userRes).catch(() => {});
       console.log('[OAuth] Sign-in successful!');
     } catch (error: unknown) {
       console.error('Google sign-in error:', error);
@@ -323,19 +379,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteAccount = useCallback(async () => {
     try {
-      // Appwrite client SDK doesn't allow hard delete. 
+      // Appwrite client SDK doesn't allow hard delete.
       // updateStatus() blocks the account permanently.
       await account.updateStatus();
     } catch (e) {
       console.error('Delete account error:', e);
     }
-    
+
     try {
       await account.deleteSession('current');
-    } catch (e) {
+    } catch {
       // Ignore
     }
-    
+
     setUser(null);
     setSession(null);
     storage.removeItem('authUser').catch(() => {});

@@ -305,12 +305,16 @@ export default function SettingsTab() {
           onPress: () => {
             hapticFeedback.warning();
             if (Platform.OS === 'web') {
-              if (globalThis.confirm('This will permanently delete your account and all data. This action cannot be undone. Are you sure?')) {
+              if (
+                globalThis.confirm(
+                  'This will permanently delete your account and all data. This action cannot be undone. Are you sure?',
+                )
+              ) {
                 void (async () => {
                   try {
                     await deleteAccount();
                     router.replace('/');
-                  } catch (e) {
+                  } catch {
                     globalThis.alert('Failed to delete account');
                   }
                 })();
@@ -330,7 +334,7 @@ export default function SettingsTab() {
                       hapticFeedback.success();
                       await deleteAccount();
                       router.replace('/');
-                    } catch (e) {
+                    } catch {
                       Alert.alert('Error', 'Failed to delete account');
                     }
                   },
