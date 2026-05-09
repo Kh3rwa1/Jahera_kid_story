@@ -25,34 +25,47 @@ yarn-error.*
 
 # macos
 .DS_Store
-*.pem
 
 # local env files
 .env*.local
 .env
+.env.seed
 
 # typescript
 *.tsbuildinfo
 coverage/
 
-# project specific
-lint_output*.txt
-modified_lint.txt
-android/
-.vscode/
+# ─── Build Artifacts ────────────────────────────────────
 *.apk
 *.aab
+*.ipa
+android/
+ios/
+
+# ─── Credentials & Secrets ─────────────────────────────
+*.pem
+*.keystore
 credentials/
 credentials.json
 
-# Logs
+# ─── Logs & Debug Output ───────────────────────────────
 *.log
 logs.txt
-build_log*.txt
 out.log
+build_log*.txt
+lint_output*.txt
+modified_lint.txt
+executions.txt
+expo_live.log
 
-# Logs
-*.log
-logs.txt
-build_log*.txt
-out.log
+# ─── IDE & Editor ──────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── Temporary & Junk Files ───────────────────────────
+*.tmp
+.gitignore.tmp
+Terminal
+{

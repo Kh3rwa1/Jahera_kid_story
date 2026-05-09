@@ -136,6 +136,18 @@ export default function HomeScreen() {
     progress: number;
   } | null>(null);
   const hasGreeted = React.useRef(false);
+  const lastRefreshRef = React.useRef(0);
+
+  // Auto-refresh data when tab comes into focus (debounced to 5s)
+  useEffect(() => {
+    if (isFocused && profile && !isLoading) {
+      const now = Date.now();
+      if (now - lastRefreshRef.current > 5000) {
+        lastRefreshRef.current = now;
+        refreshAll();
+      }
+    }
+  }, [isFocused, profile, isLoading, refreshAll]);
 
   // Fetch continue story metadata
   useEffect(() => {

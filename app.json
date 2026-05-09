@@ -2,10 +2,10 @@
   "expo": {
     "name": "Jahera",
     "slug": "jahera",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "jahera",
+    "scheme": ["jahera", "appwrite-callback-69b5657c000d2c28a436"],
     "userInterfaceStyle": "light",
     "jsEngine": "hermes",
     "description": "Jahera - AI-powered personalized story platform for families. Create magical, educational stories tailored to your family's values, interests, and goals with multilingual narration.",
@@ -44,6 +44,7 @@
       }
     },
     "android": {
+      "versionCode": 23,
       "package": "com.hindi.harp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",

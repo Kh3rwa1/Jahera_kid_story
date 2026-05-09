@@ -55,6 +55,7 @@ import Animated, {
   withSpring,
   ZoomIn,
 } from 'react-native-reanimated';
+import { useIsFocused } from '@react-navigation/native';
 
 // ... layout constants removed to use dynamic theme-aware values ...
 
@@ -300,6 +301,8 @@ export default function HistoryScreen() {
   const { wakeUI } = useUI();
   const screen = useScreenClass();
   const tabBarPadding = useTabBarHeight();
+  const isFocused = useIsFocused();
+  const lastRefreshRef = React.useRef(0);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -320,6 +323,17 @@ export default function HistoryScreen() {
 
   const featuredPulseStyle = usePulse(0.98, 1.02);
   const emptyFloatStyle = useFloat(6, 1500);
+
+  // Auto-refresh stories when tab comes into focus (debounced to 5s)
+  useEffect(() => {
+    if (isFocused && profile) {
+      const now = Date.now();
+      if (now - lastRefreshRef.current > 5000) {
+        lastRefreshRef.current = now;
+        refreshStories();
+      }
+    }
+  }, [isFocused, profile, refreshStories]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);

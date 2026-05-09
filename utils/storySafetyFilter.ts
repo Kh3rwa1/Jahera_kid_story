@@ -457,7 +457,7 @@ const FALLBACK_STORIES = [
   {
     title: 'The Laugh Factory',
     content:
-      'Hidden behind the tallest building in town was a tiny factory that bottled laughter. Giggles went into blue bottles, belly laughs into red ones, and the rarest of all — snort-laughs — went into golden bottles. A child discovered the factory and was given a job: testing the laughs to make sure they were genuine. It was the best job in the world. Every bottle they tested filled the factory with joy, and the child realized that laughter is the one thing that gets bigger the more you give it away.',
+      'Hidden behind the tallest building in town was a tiny factory that bottled laughter. Giggles went into blue bottles, belly laughs into red ones, and the rarest of all — giggle-laughs — went into golden bottles. A child discovered the factory and was given a job: testing the laughs to make sure they were genuine. It was the best job in the world. Every bottle they tested filled the factory with joy, and the child realized that laughter is the one thing that gets bigger the more you give it away.',
   },
   {
     title: 'The Dream Weaver',

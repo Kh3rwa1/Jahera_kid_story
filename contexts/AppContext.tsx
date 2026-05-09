@@ -271,8 +271,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [profile]);
 
   const refreshAll = useCallback(async () => {
-    await loadProfile();
-  }, [loadProfile]);
+    if (!profile) return;
+    try {
+      await Promise.all([
+        refreshStories(),
+        refreshQuizAttempts(),
+        refreshSubscription(),
+      ]);
+    } catch {
+      // Silently fail — individual refreshers handle their own errors
+    }
+  }, [profile, refreshStories, refreshQuizAttempts, refreshSubscription]);
 
   useEffect(() => {
     if (!authLoading) {

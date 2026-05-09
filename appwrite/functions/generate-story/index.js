@@ -603,40 +603,80 @@ Story:
 ${content}`;
 
     const openrouterKey = process.env.OPENROUTER_API_KEY;
-    if (!openrouterKey) {
-      return res.json({ error: 'No API key configured' }, 500);
-    }
+    const geminiKey = process.env.GEMINI_API_KEY;
 
-    const result = await httpsPost(
-      OPENROUTER_BASE,
-      '/api/v1/chat/completions',
-      {
-        'Authorization': 'Bearer ' + openrouterKey,
-        'HTTP-Referer': 'https://jahera.app',
-        'X-Title': 'Jahera Kids Stories',
-      },
-      {
-        model: OPENROUTER_MODEL,
-        messages: [
-          { role: 'system', content: 'You are a professional translator specializing in children\'s content. Return ONLY valid JSON.' },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 4000,
-      },
-    );
+    let text;
+    let translationSuccess = false;
 
-    if (result.status === 200) {
-      const data = JSON.parse(result.body);
-      const text = data.choices?.[0]?.message?.content;
-      if (text) {
-        const parsed = parseStoryJson(text);
-        log('✅ Translation to ' + langName + ' successful');
-        return res.json({ title: parsed.title, content: parsed.content });
+    // 1. Try OpenRouter
+    if (openrouterKey) {
+      log('Attempting translation via OpenRouter...');
+      const result = await httpsPost(
+        OPENROUTER_BASE,
+        '/api/v1/chat/completions',
+        {
+          'Authorization': 'Bearer ' + openrouterKey,
+          'HTTP-Referer': 'https://jahera.app',
+          'X-Title': 'Jahera Kids Stories',
+        },
+        {
+          model: OPENROUTER_MODEL,
+          messages: [
+            { role: 'system', content: 'You are a professional translator specializing in children\'s content. Return ONLY valid JSON.' },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.3,
+          max_tokens: 4000,
+        },
+      );
+
+      if (result.status === 200) {
+        const data = JSON.parse(result.body);
+        text = data.choices?.[0]?.message?.content;
+        translationSuccess = !!text;
+      } else {
+        log('OpenRouter translation failed: ' + result.status);
       }
     }
 
-    log('Translation failed, status: ' + result.status);
+    // 2. Try Gemini Fallback
+    if (!translationSuccess && geminiKey) {
+      log('Attempting translation via Gemini fallback...');
+      const result = await httpsPost(
+        GEMINI_BASE,
+        `/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey}`,
+        {},
+        {
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `System: You are a professional translator specializing in children's content. Return ONLY valid JSON.\n\n${prompt}` }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 4000,
+            responseMimeType: 'application/json',
+          },
+        },
+      );
+      
+      if (result.status === 200) {
+        const data = JSON.parse(result.body);
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        translationSuccess = !!text;
+      } else {
+        log('Gemini translation failed: ' + result.status);
+      }
+    }
+
+    if (translationSuccess && text) {
+      const parsed = parseStoryJson(text);
+      log('✅ Translation to ' + langName + ' successful');
+      return res.json({ title: parsed.title, content: parsed.content });
+    }
+
+    log('Translation failed across all configured providers.');
     return res.json({ error: 'Translation failed' }, 500);
   } catch (err) {
     error('translate error: ' + err.message);

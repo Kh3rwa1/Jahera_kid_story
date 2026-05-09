@@ -40,7 +40,7 @@ import {
   Flame,
   Moon,
 } from 'lucide-react-native';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Platform,
   RefreshControl,
@@ -57,6 +57,7 @@ import Animated, {
   ZoomIn,
 } from 'react-native-reanimated';
 import { ColorScheme } from '@/constants/themeSchemes';
+import { useIsFocused } from '@react-navigation/native';
 
 interface AchievementCardData {
   label: string;
@@ -632,6 +633,8 @@ export default function ProfileScreen() {
   const { wakeUI } = useUI();
   const screen = useScreenClass();
   const tabBarPadding = useTabBarHeight();
+  const isFocused = useIsFocused();
+  const lastRefreshRef = useRef(0);
   const winWidth = screen.width;
   const isTablet = screen.isTablet;
   const isDesktop = winWidth >= 1024;
@@ -640,6 +643,17 @@ export default function ProfileScreen() {
     tabBarPadding - screen.insets.bottom,
   );
   const styles = useStyles(COLORS, isTablet, isDesktop);
+
+  // Auto-refresh data when tab comes into focus (debounced to 5s)
+  useEffect(() => {
+    if (isFocused && profile) {
+      const now = Date.now();
+      if (now - lastRefreshRef.current > 5000) {
+        lastRefreshRef.current = now;
+        refreshAll();
+      }
+    }
+  }, [isFocused, profile, refreshAll]);
 
   const stats = useMemo(() => computeQuizStats(quizAttempts), [quizAttempts]);
   const streak = useMemo(() => computeStreak(stories), [stories]);
