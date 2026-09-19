@@ -1,4 +1,5 @@
 import { COLLECTIONS, DATABASE_ID, databases, functions } from '@/lib/appwrite';
+import { logger } from '@/utils/logger';
 
 export interface AudioSettings {
   voiceId?: string | null;
@@ -30,13 +31,13 @@ export async function generateAudio(
   settings?: AudioSettings,
 ): Promise<string | null> {
   if (!text || text.trim().length < 5) {
-    console.warn('[audioService] Skipping generation: Text too short or empty');
+    logger.warn('[audioService] Skipping generation: Text too short or empty');
     return null;
   }
 
   try {
     const isNarration = !storyId;
-    console.log(
+    logger.debug(
       `[audioService] Triggering audio generation. storyId: ${storyId}, lang: ${languageCode}, isNarration: ${isNarration}`,
     );
 
@@ -64,13 +65,13 @@ export async function generateAudio(
           return `data:audio/mpeg;base64,${body.base64}`;
         }
       } catch (e) {
-        console.error('[audioService] Failed to parse narration response:', e);
+        logger.error('[audioService] Failed to parse narration response:', e);
       }
     }
 
     // Fallback polling for narrations if sync failed or returned empty
     if (isNarration) {
-      console.log(
+      logger.debug(
         '[audioService] Narration: sync response empty, falling back to delay',
       );
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -79,14 +80,14 @@ export async function generateAudio(
 
     // For stories: poll the story document for audio_url
     if (storyId && !noStore) {
-      console.log(`[audioService] Story: polling DB for audio_url...`);
+      logger.debug(`[audioService] Story: polling DB for audio_url...`);
       const audioUrl = await pollStoryForAudioUrl(storyId, 90_000);
       if (audioUrl) return audioUrl;
     }
 
     return null;
   } catch (error) {
-    console.error(
+    logger.error(
       '[audioService] CRITICAL: Failed to trigger generate-audio:',
       error,
     );
@@ -105,7 +106,7 @@ async function pollStoryForAudioUrl(
   const pollInterval = 3000;
   const maxPolls = Math.floor(maxWaitMs / pollInterval);
 
-  console.log(
+  logger.debug(
     `[audioService] Polling for story ${storyId}. Max wait: ${maxWaitMs / 1000}s (${maxPolls} attempts)`,
   );
 
@@ -119,22 +120,22 @@ async function pollStoryForAudioUrl(
       );
       const audioUrl = doc?.audio_url;
 
-      console.log(
+      logger.debug(
         `[audioService] Poll ${i + 1}/${maxPolls}: audio_url=${audioUrl ? 'FOUND' : 'pending...'}`,
       );
 
       if (audioUrl) {
-        console.log(
+        logger.debug(
           `[audioService] SUCCESS: audio_url found in ${((i + 1) * pollInterval) / 1000}s`,
         );
         return audioUrl;
       }
     } catch (err) {
-      console.warn(`[audioService] Poll ${i + 1} error:`, err);
+      logger.warn(`[audioService] Poll ${i + 1} error:`, err);
     }
   }
 
-  console.error(
+  logger.error(
     `[audioService] TIMEOUT: Could not find audio_url after ${maxWaitMs / 1000}s. Check Appwrite Function logs.`,
   );
   return null;
@@ -147,7 +148,7 @@ export async function deleteAudio(audioPath: string): Promise<boolean> {
     }
     return true;
   } catch (error) {
-    console.error('Error deleting audio:', error);
+    logger.error('Error deleting audio:', error);
     return false;
   }
 }

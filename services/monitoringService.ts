@@ -3,6 +3,8 @@
  * Tracks app health, performance, and errors
  */
 
+import { logger } from '@/utils/logger';
+
 interface PerformanceMetric {
   name: string;
   duration: number;
@@ -12,7 +14,7 @@ interface PerformanceMetric {
 interface ErrorLog {
   message: string;
   stack?: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   timestamp: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
 }
@@ -35,7 +37,7 @@ class MonitoringService {
   endTimer(name: string) {
     const startTime = this.timers.get(name);
     if (!startTime) {
-      console.warn(`Timer "${name}" was not started`);
+      logger.warn(`Timer "${name}" was not started`);
       return 0;
     }
 
@@ -50,9 +52,7 @@ class MonitoringService {
 
     this.performanceMetrics.push(metric);
 
-    if (__DEV__) {
-      console.log(`⚡ Performance: ${name} took ${duration}ms`);
-    }
+    logger.debug(`Performance: ${name} took ${duration}ms`);
 
     // Keep only last 100 metrics
     if (this.performanceMetrics.length > 100) {
@@ -68,7 +68,7 @@ class MonitoringService {
   logError(
     error: Error | string,
     severity: ErrorLog['severity'] = 'medium',
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ) {
     const errorLog: ErrorLog = {
       message: typeof error === 'string' ? error : error.message,
@@ -80,10 +80,8 @@ class MonitoringService {
 
     this.errorLogs.push(errorLog);
 
-    // Log to console in development
-    if (__DEV__) {
-      console.error('🔴 Error:', errorLog);
-    }
+    // Log in development (silenced in production builds)
+    logger.error('Error:', errorLog);
 
     // Keep only last 50 errors
     if (this.errorLogs.length > 50) {

@@ -1,4 +1,5 @@
 import { hapticFeedback } from '@/utils/haptics';
+import { logger } from '@/utils/logger';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface Achievement {
@@ -77,7 +78,7 @@ class AchievementService {
       this.achievements = stored ? JSON.parse(stored) : [];
       return this.achievements;
     } catch (error) {
-      console.error('Failed to load achievements:', error);
+      logger.error('Failed to load achievements:', error);
       return [];
     }
   }
@@ -115,7 +116,7 @@ class AchievementService {
       onUnlock?.(unlocked);
       return true;
     } catch (error) {
-      console.error('Failed to unlock achievement:', error);
+      logger.error('Failed to unlock achievement:', error);
       return false;
     }
   }
@@ -154,7 +155,7 @@ class AchievementService {
         JSON.stringify(this.achievements),
       );
     } catch (error) {
-      console.error('Failed to update achievement progress:', error);
+      logger.error('Failed to update achievement progress:', error);
     }
   }
 

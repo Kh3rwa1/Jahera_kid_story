@@ -109,16 +109,19 @@ npm run dev
 ### Environment Variables
 
 ```bash
-# Appwrite Configuration
+# App Configuration (safe to be public — bundled into the app)
 EXPO_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
 EXPO_PUBLIC_APPWRITE_DATABASE_ID=your_database_id
 EXPO_PUBLIC_APPWRITE_PLATFORM=com.hindi.harp
 
-# AI & Voice
-EXPO_PUBLIC_OPENROUTER_API_KEY=your_openrouter_key
-EXPO_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_key
+# AI & Voice keys are SERVER-SIDE ONLY (never use EXPO_PUBLIC_ for secrets)
+# Set them as Appwrite Function environment variables:
+#   Functions → generate-story / generate-audio → Settings → Variables
+#   OPENROUTER_API_KEY, CLAUDE_API_KEY, GEMINI_API_KEY, ELEVENLABS_API_KEY
 ```
+
+> ⚠️ **Never** put provider API keys in `EXPO_PUBLIC_*` variables — they get bundled into the app binary. See [docs/API_KEYS_SETUP.md](docs/API_KEYS_SETUP.md).
 
 > See [docs/API_KEYS_SETUP.md](docs/API_KEYS_SETUP.md) for detailed setup instructions.
 

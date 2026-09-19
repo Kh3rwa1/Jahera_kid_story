@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import * as Speech from 'expo-speech';
 
 /**
@@ -26,7 +27,7 @@ export const talkative = {
         rate: 0.95, // Slightly slower for better comprehension
       });
     } catch (err) {
-      console.warn('[talkative] Speech failed:', err);
+      logger.warn('[talkative] Speech failed:', err);
     }
   },
 
@@ -37,7 +38,7 @@ export const talkative = {
     try {
       await Speech.stop();
     } catch (err) {
-      console.warn('[talkative] Stop failed:', err);
+      logger.warn('[talkative] Stop failed:', err);
     }
   },
 

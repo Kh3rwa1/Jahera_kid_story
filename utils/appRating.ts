@@ -1,4 +1,5 @@
 import { analytics } from '@/services/analyticsService';
+import { logger } from '@/utils/logger';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Linking, Platform } from 'react-native';
 
@@ -35,7 +36,7 @@ class AppRatingService {
       }
       return this.ratingData!;
     } catch (error) {
-      console.error('Failed to load rating data:', error);
+      logger.error('Failed to load rating data:', error);
       return {
         hasRated: false,
         firstLaunchDate: new Date().toISOString(),
@@ -54,7 +55,7 @@ class AppRatingService {
         );
       }
     } catch (error) {
-      console.error('Failed to save rating data:', error);
+      logger.error('Failed to save rating data:', error);
     }
   }
 
@@ -164,7 +165,7 @@ class AppRatingService {
         await Linking.openURL(storeUrl);
         analytics.track('rating_prompt_accepted');
       } catch (error) {
-        console.error('Failed to open app store:', error);
+        logger.error('Failed to open app store:', error);
       }
     }
   }

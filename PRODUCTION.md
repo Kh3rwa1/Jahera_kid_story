@@ -113,8 +113,9 @@ EXPO_PUBLIC_APPWRITE_ENDPOINT=https://sfo.cloud.appwrite.io/v1
 EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_appwrite_project_id
 EXPO_PUBLIC_APPWRITE_DATABASE_ID=jahera_db
 EXPO_PUBLIC_APPWRITE_PLATFORM=com.hindi.harp
-EXPO_PUBLIC_OPENROUTER_API_KEY=your_openrouter_key
-EXPO_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_key
+
+# AI & voice keys are server-side Appwrite Function variables — NOT client env vars
+# (OPENROUTER_API_KEY, CLAUDE_API_KEY, GEMINI_API_KEY, ELEVENLABS_API_KEY)
 ```
 
 ### App Configuration

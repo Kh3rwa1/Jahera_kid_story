@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logger } from '@/utils/logger';
 
 type EvictionStrategy = 'lru' | 'oldest-first';
 
@@ -71,7 +72,7 @@ class CacheService {
     try {
       await AsyncStorage.multiRemove(expiredKeys.map((key) => `cache_${key}`));
     } catch (error) {
-      console.error('[CacheService] Cleanup error:', error);
+      logger.error('[CacheService] Cleanup error:', error);
     }
   }
 
@@ -105,7 +106,7 @@ class CacheService {
     try {
       await AsyncStorage.multiRemove(evictedKeys.map((key) => `cache_${key}`));
     } catch (error) {
-      console.error('[CacheService] Eviction error:', error);
+      logger.error('[CacheService] Eviction error:', error);
     }
   }
 
@@ -134,7 +135,7 @@ class CacheService {
     try {
       await AsyncStorage.setItem(`cache_${key}`, JSON.stringify(entry));
     } catch (error) {
-      console.error('Failed to cache data:', error);
+      logger.error('Failed to cache data:', error);
     }
   }
 
@@ -157,7 +158,7 @@ class CacheService {
           }
         }
       } catch (error) {
-        console.error('Failed to retrieve cached data:', error);
+        logger.error('Failed to retrieve cached data:', error);
         return null;
       }
     }
@@ -188,7 +189,7 @@ class CacheService {
     try {
       await AsyncStorage.removeItem(`cache_${key}`);
     } catch (error) {
-      console.error('Failed to delete cache:', error);
+      logger.error('Failed to delete cache:', error);
     }
   }
 
@@ -205,7 +206,7 @@ class CacheService {
         await AsyncStorage.multiRemove(cacheKeys);
       }
     } catch (error) {
-      console.error('Failed to clear cache:', error);
+      logger.error('Failed to clear cache:', error);
     }
   }
 
@@ -244,7 +245,7 @@ class CacheService {
         await AsyncStorage.multiRemove(cacheKeys);
       }
     } catch (error) {
-      console.error('Failed to invalidate cache by prefix:', error);
+      logger.error('Failed to invalidate cache by prefix:', error);
     }
   }
 }

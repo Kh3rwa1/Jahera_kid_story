@@ -3,6 +3,8 @@
  * Production-ready with privacy-first approach
  */
 
+import { logger } from '@/utils/logger';
+
 /**
  * SMART STORY ENGINE ANALYTICS EVENTS
  *
@@ -19,7 +21,7 @@
 
 interface AnalyticsEvent {
   name: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   timestamp: string;
 }
 
@@ -30,7 +32,7 @@ class AnalyticsService {
   /**
    * Track a custom event
    */
-  track(eventName: string, properties?: Record<string, any>) {
+  track(eventName: string, properties?: Record<string, unknown>) {
     if (!this.isEnabled) return;
 
     const event: AnalyticsEvent = {
@@ -49,7 +51,7 @@ class AnalyticsService {
   /**
    * Track screen views
    */
-  screen(screenName: string, properties?: Record<string, any>) {
+  screen(screenName: string, properties?: Record<string, unknown>) {
     this.track('screen_view', {
       screen_name: screenName,
       ...properties,
@@ -80,7 +82,7 @@ class AnalyticsService {
       | 'achievement_unlocked'
       | 'achievement_shared'
       | 'app_shared',
-    properties?: Record<string, any>,
+    properties?: Record<string, unknown>,
   ) {
     this.track('user_engagement', {
       action,
@@ -88,7 +90,7 @@ class AnalyticsService {
     });
   }
 
-  trackError(error: Error, context?: Record<string, any>) {
+  trackError(error: Error, context?: Record<string, unknown>) {
     this.track('error', {
       error_message: error.message,
       error_stack: error.stack,
@@ -166,18 +168,16 @@ class AnalyticsService {
 
   setEnabled(enabled: boolean) {
     this.isEnabled = enabled;
-    console.log(`Analytics ${enabled ? 'enabled' : 'disabled'}`);
+    logger.debug(`Analytics ${enabled ? 'enabled' : 'disabled'}`);
   }
 
   private logEvent(event: AnalyticsEvent) {
-    if (__DEV__) {
-      console.log('📊 Analytics:', event.name, event.properties);
-    }
+    logger.debug('Analytics:', event.name, event.properties);
   }
 
   async flush() {
     if (this.queue.length === 0) return;
-    console.log(`Flushing ${this.queue.length} analytics events`);
+    logger.debug(`Flushing ${this.queue.length} analytics events`);
     this.queue = [];
   }
 }

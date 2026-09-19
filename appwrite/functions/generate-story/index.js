@@ -231,11 +231,18 @@ const BLOCKED_PHRASES = [
   'you deserve pain',
 ];
 
-function serverSafetyCheck(title, content) {
+/**
+ * Server-side safety check. Uses the default lists unless overridden via
+ * configs.blockedWords / configs.blockedPhrases (loaded from the config
+ * collection and merged with the defaults).
+ */
+function serverSafetyCheck(title, content, configs) {
+  const blockedWords = (configs && configs.blockedWords) || BLOCKED_WORDS;
+  const blockedPhrases = (configs && configs.blockedPhrases) || BLOCKED_PHRASES;
   const text = ((title || '') + ' ' + (content || '')).toLowerCase();
   const flags = [];
 
-  for (const word of BLOCKED_WORDS) {
+  for (const word of blockedWords) {
     const regex = new RegExp(
       '\\b' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b',
       'i',
@@ -245,7 +252,7 @@ function serverSafetyCheck(title, content) {
     }
   }
 
-  for (const phrase of BLOCKED_PHRASES) {
+  for (const phrase of blockedPhrases) {
     if (text.includes(phrase.toLowerCase())) {
       flags.push({ type: 'blocked_phrase', value: phrase });
     }
@@ -363,6 +370,13 @@ async function fetchAllConfigs(databases, log) {
     moodPrompts: DEFAULT_MOOD_PROMPTS,
     lengthConfigs: DEFAULT_LENGTH_CONFIGS,
     behaviorGoals: DEFAULT_BEHAVIOR_GOALS,
+    // Safety lists can be overridden at runtime via the 'config' collection:
+    //   key = 'blocked_words'  value = JSON array of strings
+    //   key = 'blocked_phrases' value = JSON array of strings
+    // This keeps client (utils/storySafetyFilter.ts) and server lists in sync
+    // from a single source of truth. Falls back to the built-in lists below.
+    blockedWords: BLOCKED_WORDS,
+    blockedPhrases: BLOCKED_PHRASES,
   };
 
   try {
@@ -374,6 +388,8 @@ async function fetchAllConfigs(databases, log) {
         'mood_prompts',
         'length_configs',
         'behavior_goals',
+        'blocked_words',
+        'blocked_phrases',
       ]),
       Query.limit(10),
     ]);
@@ -420,6 +436,31 @@ async function fetchAllConfigs(databases, log) {
         'behavior_goals',
         log,
       );
+    }
+    if (docMap['blocked_words']) {
+      const parsed = safeJsonParse(
+        docMap['blocked_words'],
+        BLOCKED_WORDS,
+        'blocked_words',
+        log,
+      );
+      if (Array.isArray(parsed) && parsed.every((w) => typeof w === 'string')) {
+        // Merge with defaults so DB overrides extend (never shrink) protection
+        configs.blockedWords = [...new Set([...BLOCKED_WORDS, ...parsed])];
+        log('✅ Loaded blocked_words from database (merged with defaults).');
+      }
+    }
+    if (docMap['blocked_phrases']) {
+      const parsed = safeJsonParse(
+        docMap['blocked_phrases'],
+        BLOCKED_PHRASES,
+        'blocked_phrases',
+        log,
+      );
+      if (Array.isArray(parsed) && parsed.every((w) => typeof w === 'string')) {
+        configs.blockedPhrases = [...new Set([...BLOCKED_PHRASES, ...parsed])];
+        log('✅ Loaded blocked_phrases from database (merged with defaults).');
+      }
     }
   } catch (err) {
     log(
@@ -573,25 +614,48 @@ function parseStoryJson(raw) {
   return { ...story, quiz: validQuiz };
 }
 
-
 async function translateStoryHandler({ req, res, log, error }) {
   try {
     let body = {};
     if (req.body) {
-      try { body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body; } catch { body = {}; }
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch {
+        body = {};
+      }
     }
 
     const { title, content, targetLanguage } = body;
     if (!title || !content || !targetLanguage) {
-      return res.json({ error: 'Missing title, content, or targetLanguage' }, 400);
+      return res.json(
+        { error: 'Missing title, content, or targetLanguage' },
+        400,
+      );
     }
 
     const LANGUAGE_MAP = {
-      en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
-      pt: 'Portuguese', ru: 'Russian', zh: 'Chinese', ja: 'Japanese', ko: 'Korean',
-      ar: 'Arabic', hi: 'Hindi', bn: 'Bengali', sat: 'Santali (Ol Chiki)',
-      tr: 'Turkish', pl: 'Polish', nl: 'Dutch', sv: 'Swedish', no: 'Norwegian',
-      da: 'Danish', fi: 'Finnish', el: 'Greek',
+      en: 'English',
+      es: 'Spanish',
+      fr: 'French',
+      de: 'German',
+      it: 'Italian',
+      pt: 'Portuguese',
+      ru: 'Russian',
+      zh: 'Chinese',
+      ja: 'Japanese',
+      ko: 'Korean',
+      ar: 'Arabic',
+      hi: 'Hindi',
+      bn: 'Bengali',
+      sat: 'Santali (Ol Chiki)',
+      tr: 'Turkish',
+      pl: 'Polish',
+      nl: 'Dutch',
+      sv: 'Swedish',
+      no: 'Norwegian',
+      da: 'Danish',
+      fi: 'Finnish',
+      el: 'Greek',
     };
     const langName = LANGUAGE_MAP[targetLanguage] || targetLanguage;
 
@@ -615,14 +679,18 @@ ${content}`;
         OPENROUTER_BASE,
         '/api/v1/chat/completions',
         {
-          'Authorization': 'Bearer ' + openrouterKey,
+          Authorization: 'Bearer ' + openrouterKey,
           'HTTP-Referer': 'https://jahera.app',
           'X-Title': 'Jahera Kids Stories',
         },
         {
           model: OPENROUTER_MODEL,
           messages: [
-            { role: 'system', content: 'You are a professional translator specializing in children\'s content. Return ONLY valid JSON.' },
+            {
+              role: 'system',
+              content:
+                "You are a professional translator specializing in children's content. Return ONLY valid JSON.",
+            },
             { role: 'user', content: prompt },
           ],
           temperature: 0.3,
@@ -650,7 +718,11 @@ ${content}`;
           contents: [
             {
               role: 'user',
-              parts: [{ text: `System: You are a professional translator specializing in children's content. Return ONLY valid JSON.\n\n${prompt}` }],
+              parts: [
+                {
+                  text: `System: You are a professional translator specializing in children's content. Return ONLY valid JSON.\n\n${prompt}`,
+                },
+              ],
             },
           ],
           generationConfig: {
@@ -660,7 +732,7 @@ ${content}`;
           },
         },
       );
-      
+
       if (result.status === 200) {
         const data = JSON.parse(result.body);
         text = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -958,6 +1030,7 @@ async function generateStoryHandler({ req, res, log, error }) {
       const safety = serverSafetyCheck(
         successfulStory.title,
         successfulStory.content,
+        configs,
       );
       if (!safety.safe) {
         log(
@@ -1009,6 +1082,7 @@ async function generateStoryHandler({ req, res, log, error }) {
                   const retrySafety = serverSafetyCheck(
                     retryStory.title,
                     retryStory.content,
+                    configs,
                   );
                   if (retrySafety.safe) {
                     log('✅ Retry passed safety check via ' + provider.id);
@@ -1053,7 +1127,10 @@ async function generateStoryHandler({ req, res, log, error }) {
 module.exports = async (context) => {
   let body = {};
   try {
-    body = typeof context.req.body === 'string' ? JSON.parse(context.req.body) : (context.req.body || {});
+    body =
+      typeof context.req.body === 'string'
+        ? JSON.parse(context.req.body)
+        : context.req.body || {};
   } catch {}
 
   if (body.action === 'translate') {

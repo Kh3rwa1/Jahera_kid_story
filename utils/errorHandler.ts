@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { Alert } from 'react-native';
 
 export interface AppError {
@@ -28,7 +29,7 @@ export class DatabaseError extends Error {
 }
 
 export const handleError = (error: unknown, context?: string): AppError => {
-  console.error(`Error in ${context || 'unknown context'}:`, error);
+  logger.error(`Error in ${context || 'unknown context'}:`, error);
 
   if (error instanceof ValidationError) {
     return {

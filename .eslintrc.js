@@ -18,7 +18,28 @@ module.exports = {
     'react-hooks/preserve-manual-memoization': 'off',
     'no-undef': 'off',
     'prefer-const': 'warn',
+    // Route all logging through utils/logger (production-safe)
+    'no-console': 'warn',
   },
+  overrides: [
+    {
+      files: [
+        'utils/logger.ts',
+        'jest.setup.js',
+        'jest.config.js',
+        'babel.config.js',
+        'metro.config.js',
+        'commitlint.config.js',
+        'scripts/**',
+        'infrastructure-scripts/**',
+        'appwrite/**',
+        'scripts/archive/**',
+      ],
+      rules: {
+        'no-console': 'off',
+      },
+    },
+  ],
   env: {
     node: true,
     browser: true,
@@ -33,5 +54,7 @@ module.exports = {
     'metro.config.js',
     'app.config.ts',
     '*.d.ts',
+    // web-admin has its own ESLint 9 flat config and is linted separately in CI
+    'web-admin/',
   ],
 };

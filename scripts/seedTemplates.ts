@@ -34,8 +34,7 @@ const API_KEY = process.env.APPWRITE_API_KEY; // SERVER key, not client
 const DATABASE_ID =
   process.env.APPWRITE_DATABASE_ID ||
   process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID;
-const OPENROUTER_KEY =
-  process.env.OPENROUTER_API_KEY || process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY; // server-side only, never EXPO_PUBLIC_*
 const COLLECTION_ID = 'story_templates';
 
 if (!ENDPOINT || !PROJECT_ID || !API_KEY || !DATABASE_ID || !OPENROUTER_KEY) {
@@ -163,8 +162,9 @@ CRITICAL: output exactly this JSON and nothing else:
     }
 
     return parsed;
-  } catch (err: any) {
-    console.error(`   ⚠️  Gemini error: ${err.message}`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`   ⚠️  Gemini error: ${message}`);
     return null;
   }
 }
@@ -225,8 +225,9 @@ async function uploadTemplate(
       word_count: story.content.split(/\s+/).filter(Boolean).length,
     });
     return true;
-  } catch (err: any) {
-    console.error(`   ❌ Appwrite upload error: ${err.message}`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`   ❌ Appwrite upload error: ${message}`);
     return false;
   }
 }

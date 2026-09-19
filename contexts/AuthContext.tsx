@@ -1,4 +1,5 @@
 import { APPWRITE_PROJECT_ID, account, ID } from '@/lib/appwrite';
+import { logger } from '@/utils/logger';
 import { storage } from '@/utils/storage';
 import React, {
   createContext,
@@ -84,7 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     ) => {
       if (!callback.userId || !callback.secret) return false;
 
-      console.log(`[OAuth] Creating session from ${source} callback.`);
+      logger.debug(`[OAuth] Creating session from ${source} callback.`);
       const sessionRes = await account.createSession(
         callback.userId,
         callback.secret,
@@ -104,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!callback.userId || !callback.secret) return;
 
       createSessionFromCallback(callback, 'deep-link').catch((err) => {
-        console.warn('[OAuth] Deep-link session creation failed:', err);
+        logger.warn('[OAuth] Deep-link session creation failed:', err);
       });
     });
 
@@ -129,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             return;
           } catch (err) {
-            console.warn(
+            logger.warn(
               '[OAuth] Initial callback session creation failed:',
               err,
             );
@@ -156,7 +157,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               persistAuth(s, u).catch(() => {});
             })
             .catch((err) => {
-              console.debug(
+              logger.debug(
                 'Auth background sync failed, keeping cached session',
                 err,
               );
@@ -185,7 +186,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(s);
         persistAuth(s, u).catch(() => {});
       } catch (error) {
-        console.debug('Auth init failed', error);
+        logger.debug('Auth init failed', error);
         if (!isMounted) return;
         setUser(null);
         setSession(null);
@@ -251,7 +252,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             ? Linking.createURL('/')
             : `appwrite-callback-${APPWRITE_PROJECT_ID}://`;
 
-      console.log('[OAuth] Starting Google sign-in.');
+      logger.debug('[OAuth] Starting Google sign-in.');
 
       // Use createOAuth2Token — returns userId & secret as query params
       const url = account.createOAuth2Token(
@@ -296,10 +297,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let secret: string | null = null;
 
       if (result.type === 'success' && result.url) {
-        console.log('[OAuth] Browser returned OAuth callback.');
+        logger.debug('[OAuth] Browser returned OAuth callback.');
         linkingUrl = result.url;
       } else if (result.type === 'cancel' || result.type === 'dismiss') {
-        console.log(
+        logger.debug(
           '[OAuth] Browser returned:',
           result.type,
           '- checking Linking fallback...',
@@ -318,7 +319,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setSession(existingSession);
             storage.setItem('authUser', existingUser).catch(() => {});
             storage.setItem('authSession', existingSession).catch(() => {});
-            console.log('[OAuth] Session found after browser dismiss');
+            logger.debug('[OAuth] Session found after browser dismiss');
             return;
           } catch {
             throw new Error('Google sign-in was cancelled');
@@ -337,7 +338,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (!userId || !secret) {
-        console.warn('[OAuth] Missing userId or secret in callback.');
+        logger.warn('[OAuth] Missing userId or secret in callback.');
 
         // Detailed error to help the user understand WHY it failed
         if (isExpoGo) {
@@ -349,16 +350,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(`Missing userId or secret from OAuth callback.`);
       }
 
-      console.log('[OAuth] Creating session with callback token.');
+      logger.debug('[OAuth] Creating session with callback token.');
       const sessionRes = await account.createSession(userId, secret);
       const userRes = await account.get();
 
       setSession(sessionRes);
       setUser(userRes);
       persistAuth(sessionRes, userRes).catch(() => {});
-      console.log('[OAuth] Sign-in successful!');
+      logger.debug('[OAuth] Sign-in successful!');
     } catch (error: unknown) {
-      console.error('Google sign-in error:', error);
+      logger.error('Google sign-in error:', error);
       const msg =
         error instanceof Error ? error.message : 'Google sign-in failed';
       throw new Error(msg);
@@ -369,7 +370,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await account.deleteSession('current');
     } catch (e) {
-      console.error('Sign out error:', e);
+      logger.error('Sign out error:', e);
     }
     setUser(null);
     setSession(null);
@@ -383,7 +384,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // updateStatus() blocks the account permanently.
       await account.updateStatus();
     } catch (e) {
-      console.error('Delete account error:', e);
+      logger.error('Delete account error:', e);
     }
 
     try {

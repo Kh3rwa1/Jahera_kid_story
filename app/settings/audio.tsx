@@ -8,6 +8,7 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/types/theme';
+import { logger } from '@/utils/logger';
 import { generateAudio } from '@/services/audioService';
 import { profileService } from '@/services/database';
 import Slider from '@react-native-community/slider';
@@ -188,7 +189,7 @@ export default function AudioSettingsScreen() {
         );
       }
     } catch (error) {
-      console.error('Preview error:', error);
+      logger.error('Preview error:', error);
     } finally {
       setIsPreviewing(false);
     }

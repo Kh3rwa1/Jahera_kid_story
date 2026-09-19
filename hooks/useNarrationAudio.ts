@@ -1,4 +1,5 @@
 import { generateAudio } from '@/services/audioService';
+import { logger } from '@/utils/logger';
 import { Audio } from 'expo-av';
 import { useCallback, useEffect, useRef } from 'react';
 
@@ -35,7 +36,7 @@ export function useNarrationAudio(screenTag: string) {
         );
         soundRef.current = sound;
       } catch (err) {
-        console.error(`TTS Error (${screenTag}):`, err);
+        logger.error(`TTS Error (${screenTag}):`, err);
       }
     },
     [screenTag, stopCurrent],

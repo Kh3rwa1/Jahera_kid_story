@@ -194,7 +194,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       if (existingSound) {
         try {
           await existingSound.unloadAsync();
-        } catch (_e) {
+        } catch {
           /* already unloaded */
         }
         soundRef.current = null;
@@ -339,6 +339,10 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // TODO(audio): wrap the six playback functions below in useCallback() so the
+  // context useMemo deps stop changing every render. Suppressed for now to keep
+  // behavior identical — do not chain-refactor without playback regression tests.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const loadAndPlayAudio = async (story: Story) => {
     // If asking to load the same story that's already playing, just toggle play/pause
     if (activeStory?.id === story.id && (isPlaying || sound || isDeviceTTS)) {
@@ -368,12 +372,12 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     if (currentSound) {
       try {
         await currentSound.stopAsync();
-      } catch (_e) {
+      } catch {
         /* already stopped */
       }
       try {
         await currentSound.unloadAsync();
-      } catch (_e) {
+      } catch {
         /* already unloaded */
       }
       soundRef.current = null;
@@ -446,6 +450,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- see TODO(audio) above
   const stopAudio = async () => {
     if (isDeviceTTS) {
       await deviceTTSService.stop();
@@ -468,6 +473,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     setDuration(0);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- see TODO(audio) above
   const playPause = async () => {
     if (isDeviceTTS) {
       try {
@@ -506,12 +512,13 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     } catch (e) {
-      if ((e as any)?.message?.includes('not loaded')) return;
+      if ((e as { message?: string })?.message?.includes('not loaded')) return;
       logger.error('[AudioContext] playPause error:', e);
       setAudioError(true);
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- see TODO(audio) above
   const pauseAudio = async () => {
     if (isDeviceTTS) {
       try {
@@ -536,16 +543,18 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- see TODO(audio) above
   const seek = async (positionMillis: number) => {
     if (isDeviceTTS) return;
     // sound state may be stale, use ref below
     try {
       await (soundRef.current || sound)?.setPositionAsync(positionMillis);
     } catch (e) {
-      console.warn('[AudioContext] Seek error:', e);
+      logger.warn('[AudioContext] Seek error:', e);
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- see TODO(audio) above
   const retryAudio = async () => {
     if (!activeStory) return;
     hapticFeedback.medium();
@@ -603,7 +612,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
       }, 3000);
-    } catch (err) {
+    } catch {
       if (isMountedRef.current) {
         setAudioError(true);
         setAudioPolling(false);

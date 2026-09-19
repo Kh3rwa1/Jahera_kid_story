@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { Platform } from 'react-native';
 import {
   Account,
@@ -17,7 +18,7 @@ const missingRequiredVars = REQUIRED_APPWRITE_VARS.filter(
 );
 
 if (missingRequiredVars.length > 0) {
-  console.error(
+  logger.error(
     `[Jahera] Missing required environment variables: ${missingRequiredVars.join(', ')}. ` +
       'Check your .env and EAS configuration.',
   );
@@ -47,7 +48,7 @@ export const functions = new Functions(client);
 
 const dbId = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID;
 if (!dbId) {
-  console.error('[Jahera] EXPO_PUBLIC_APPWRITE_DATABASE_ID is missing.');
+  logger.error('[Jahera] EXPO_PUBLIC_APPWRITE_DATABASE_ID is missing.');
 }
 export const DATABASE_ID = dbId ?? '';
 export const APPWRITE_ENDPOINT = ENDPOINT;

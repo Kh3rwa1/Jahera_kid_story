@@ -66,7 +66,10 @@ describe('handleError', () => {
 
   it('includes context in console.error call', () => {
     handleError(new Error('test'), 'MyComponent');
+    // logger prefixes all output with '[Jahera]'
+    // eslint-disable-next-line no-console -- asserting on console.error is the point of the test
     expect(console.error).toHaveBeenCalledWith(
+      '[Jahera]',
       'Error in MyComponent:',
       expect.any(Error),
     );
@@ -74,7 +77,9 @@ describe('handleError', () => {
 
   it('uses "unknown context" when no context provided', () => {
     handleError(new Error('test'));
+    // eslint-disable-next-line no-console -- asserting on console.error is the point of the test
     expect(console.error).toHaveBeenCalledWith(
+      '[Jahera]',
       'Error in unknown context:',
       expect.any(Error),
     );

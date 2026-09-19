@@ -1,4 +1,5 @@
 import { analytics } from '@/services/analyticsService';
+import { logger } from '@/utils/logger';
 import { Alert, Platform } from 'react-native';
 
 const webShare = async (text: string, title: string): Promise<boolean> => {
@@ -57,7 +58,7 @@ export const shareStory = async (storyTitle: string, storyContent: string) => {
       Alert.alert('Sharing not available', 'Could not share on this device.');
     }
   } catch (error) {
-    console.error('Failed to share story:', error);
+    logger.error('Failed to share story:', error);
   }
 };
 
@@ -78,7 +79,7 @@ export const shareAchievement = async (
       achievement: achievementTitle,
     });
   } catch (error) {
-    console.error('Failed to share achievement:', error);
+    logger.error('Failed to share achievement:', error);
   }
 };
 
@@ -100,6 +101,6 @@ export const shareApp = async () => {
 
     analytics.trackEngagement('app_shared');
   } catch (error) {
-    console.error('Failed to share app:', error);
+    logger.error('Failed to share app:', error);
   }
 };

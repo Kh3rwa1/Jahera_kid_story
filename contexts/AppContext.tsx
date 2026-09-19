@@ -1,10 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { storage } from '@/utils/storage';
 import { profileService, quizService, storyService } from '@/services/database';
-import {
-  PlanType,
-  revenueCatService,
-} from '@/services/revenueCatServiceInternal';
+import { revenueCatService } from '@/services/revenueCatServiceInternal';
 import {
   streakService,
   subscriptionService,
@@ -18,6 +15,7 @@ import {
 } from '@/types/database';
 import { offlineStoryService } from '@/services/offlineStoryService';
 import { handleError } from '@/utils/errorHandler';
+import { logger } from '@/utils/logger';
 import { personalizeStories } from '@/utils/nameSubstitution';
 import React, {
   createContext,
@@ -80,19 +78,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setError(null);
 
       // 1. Fast path: load from cache immediately
-      const [cachedProfile, cachedSub, cachedStreak, offlineStories] = await Promise.all([
-        storage.getItem<ProfileWithRelations>('app_profile'),
-        storage.getItem<SubscriptionStatus>('app_subscription'),
-        storage.getItem<Streak>('app_streak'),
-        offlineStoryService.getAllOfflineStories(),
-      ]);
+      const [cachedProfile, cachedSub, cachedStreak, offlineStories] =
+        await Promise.all([
+          storage.getItem<ProfileWithRelations>('app_profile'),
+          storage.getItem<SubscriptionStatus>('app_subscription'),
+          storage.getItem<Streak>('app_streak'),
+          offlineStoryService.getAllOfflineStories(),
+        ]);
 
       if (cachedProfile) {
         setProfile(cachedProfile);
         profileIdRef.current = cachedProfile.id;
-        
+
         if (offlineStories && offlineStories.length > 0) {
-          const stories = offlineStories.map(s => s.story);
+          const stories = offlineStories.map((s) => s.story);
           const personalizedStories = personalizeStories(
             stories,
             cachedProfile.kid_name,
@@ -100,10 +99,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           );
           setStories(personalizedStories);
         }
-        
+
         setSubscription(cachedSub || null);
         setStreak(cachedStreak || null);
-        
+
         // Unblock UI immediately
         setIsLoading(false);
       }
@@ -160,7 +159,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         rcListenerCleanupRef.current();
       }
       rcListenerCleanupRef.current = revenueCatService.addCustomerInfoListener(
-        (rcInfo) => {
+        () => {
           (async () => {
             const pid = profileIdRef.current;
             if (!pid) return;
@@ -177,7 +176,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         },
       );
     } catch (err) {
-      console.debug('AppContext background fetch failed, relying on cache', err);
+      logger.debug('AppContext background fetch failed, relying on cache', err);
       const appError = handleError(err, 'AppContext.loadProfile');
       if (!profileIdRef.current) {
         setError(appError.message);
@@ -232,7 +231,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       try {
         const offlineStories = await offlineStoryService.getAllOfflineStories();
         if (offlineStories && offlineStories.length > 0) {
-          const stories = offlineStories.map(s => s.story);
+          const stories = offlineStories.map((s) => s.story);
           const personalized = personalizeStories(
             stories,
             profile.kid_name,
